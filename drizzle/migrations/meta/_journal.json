@@ -78,6 +78,20 @@
       "when": 1789216733072,
       "tag": "0010_illegal_jack_power",
       "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1789221102402,
+      "tag": "0011_dazzling_micromacro",
+      "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "7",
+      "when": 1789221337783,
+      "tag": "0012_medical_colleen_wing",
+      "breakpoints": true
     }
   ]
 }

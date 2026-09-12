@@ -2,7 +2,7 @@ import { relations } from "drizzle-orm";
 import {
   boolean,
   index,
-    integer,
+  integer,
   pgTable,
   text,
   timestamp,
@@ -116,6 +116,7 @@ export const partCategory = pgTable(
       .notNull(),
   },
 );
+
 export const part = pgTable(
   "part",
   {
@@ -160,6 +161,32 @@ export const vehicle = pgTable(
   ],
 );
 
+export const enquiry = pgTable(
+  "enquiry",
+  {
+    id: text("id").primaryKey(),
+    buyerId: text("buyer_id")
+      .notNull()
+      .references(() => user.id, { onDelete: "cascade" }),
+    partId: text("part_id")
+      .notNull()
+      .references(() => part.id, { onDelete: "cascade" }),
+    quantity: integer("quantity").notNull(),
+    message: text("message"),
+    status: text("status").default("open").notNull(),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+    updatedAt: timestamp("updated_at")
+      .defaultNow()
+      .$onUpdate(() => new Date())
+      .notNull(),
+  },
+  (table) => [
+    index("enquiry_buyer_idx").on(table.buyerId),
+    index("enquiry_part_idx").on(table.partId),
+    index("enquiry_status_idx").on(table.status),
+  ],
+);
+
 export const partVehicleCompatibility = pgTable(
   "part_vehicle_compatibility",
   {
@@ -177,8 +204,6 @@ export const partVehicleCompatibility = pgTable(
     index("part_vehicle_compatibility_vehicle_idx").on(table.vehicleId),
   ],
 );
-
-
 export const dealer = pgTable(
   "dealer",
   {
@@ -233,7 +258,6 @@ export const dealerListing = pgTable(
     index("dealer_listing_status_idx").on(table.status),
   ],
 );
-
 
 export const inventory = pgTable(
   "inventory",
