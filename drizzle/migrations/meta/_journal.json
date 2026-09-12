@@ -1,0 +1,27 @@
+{
+  "version": "7",
+  "dialect": "postgresql",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "7",
+      "when": 1789158071123,
+      "tag": "0000_fine_legion",
+      "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1789195074440,
+      "tag": "0001_lethal_scourge",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1789199692075,
+      "tag": "0002_neat_wolverine",
+      "breakpoints": true
+    }
+  ]
+}
