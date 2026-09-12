@@ -117,3 +117,24 @@ export const part = pgTable(
   },
   (table) => [index("part_brand_idx").on(table.brand)],
 );
+
+export const vehicle = pgTable(
+  "vehicle",
+  {
+    id: text("id").primaryKey(),
+    make: text("make").notNull(),
+    model: text("model").notNull(),
+    variant: text("variant"),
+    yearFrom: timestamp("year_from"),
+    yearTo: timestamp("year_to"),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+    updatedAt: timestamp("updated_at")
+      .defaultNow()
+      .$onUpdate(() => new Date())
+      .notNull(),
+  },
+  (table) => [
+    index("vehicle_make_idx").on(table.make),
+    index("vehicle_model_idx").on(table.model),
+  ],
+);
