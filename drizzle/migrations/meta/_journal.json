@@ -57,6 +57,13 @@
       "when": 1789211591682,
       "tag": "0007_cool_morlun",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1789215824943,
+      "tag": "0008_sharp_wraith",
+      "breakpoints": true
     }
   ]
 }

@@ -177,3 +177,31 @@ export const partVehicleCompatibility = pgTable(
   ],
 );
 
+
+export const dealer = pgTable(
+  "dealer",
+  {
+    id: text("id").primaryKey(),
+    userId: text("user_id")
+      .notNull()
+      .unique()
+      .references(() => user.id, { onDelete: "cascade" }),
+    businessName: text("business_name").notNull(),
+    gstin: text("gstin"),
+    phone: text("phone"),
+    email: text("email"),
+    address: text("address"),
+    city: text("city"),
+    state: text("state"),
+    pincode: text("pincode"),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+    updatedAt: timestamp("updated_at")
+      .defaultNow()
+      .$onUpdate(() => new Date())
+      .notNull(),
+  },
+  (table) => [
+    index("dealer_user_idx").on(table.userId),
+    index("dealer_gstin_idx").on(table.gstin),
+  ],
+);
