@@ -1,7 +1,8 @@
-﻿import { relations } from "drizzle-orm";
+import { relations } from "drizzle-orm";
 import {
   boolean,
   index,
+    integer,
   pgTable,
   text,
   timestamp,
@@ -205,3 +206,31 @@ export const dealer = pgTable(
     index("dealer_gstin_idx").on(table.gstin),
   ],
 );
+
+export const dealerListing = pgTable(
+  "dealer_listing",
+  {
+    id: text("id").primaryKey(),
+    dealerId: text("dealer_id")
+      .notNull()
+      .references(() => dealer.id, { onDelete: "cascade" }),
+    partId: text("part_id")
+      .notNull()
+      .references(() => part.id, { onDelete: "cascade" }),
+    sku: text("sku"),
+    pricePaise: integer("price_paise").notNull(),
+    mrpPaise: integer("mrp_paise"),
+    status: text("status").default("active").notNull(),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+    updatedAt: timestamp("updated_at")
+      .defaultNow()
+      .$onUpdate(() => new Date())
+      .notNull(),
+  },
+  (table) => [
+    index("dealer_listing_dealer_idx").on(table.dealerId),
+    index("dealer_listing_part_idx").on(table.partId),
+    index("dealer_listing_status_idx").on(table.status),
+  ],
+);
+
