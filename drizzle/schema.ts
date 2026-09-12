@@ -1,4 +1,4 @@
-import { relations } from "drizzle-orm";
+﻿import { relations } from "drizzle-orm";
 import {
   boolean,
   index,
@@ -101,6 +101,20 @@ export const accountRelations = relations(account, ({ one }) => ({
   }),
 }));
 
+export const partCategory = pgTable(
+  "part_category",
+  {
+    id: text("id").primaryKey(),
+    name: text("name").notNull().unique(),
+    slug: text("slug").notNull().unique(),
+    description: text("description"),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+    updatedAt: timestamp("updated_at")
+      .defaultNow()
+      .$onUpdate(() => new Date())
+      .notNull(),
+  },
+);
 export const part = pgTable(
   "part",
   {
@@ -109,13 +123,19 @@ export const part = pgTable(
     name: text("name").notNull(),
     description: text("description"),
     brand: text("brand"),
+    categoryId: text("category_id").references(() => partCategory.id, {
+      onDelete: "set null",
+    }),
     createdAt: timestamp("created_at").defaultNow().notNull(),
     updatedAt: timestamp("updated_at")
       .defaultNow()
       .$onUpdate(() => new Date())
       .notNull(),
   },
-  (table) => [index("part_brand_idx").on(table.brand)],
+  (table) => [
+    index("part_brand_idx").on(table.brand),
+    index("part_category_idx").on(table.categoryId),
+  ],
 );
 
 export const vehicle = pgTable(
@@ -157,17 +177,3 @@ export const partVehicleCompatibility = pgTable(
   ],
 );
 
-export const partCategory = pgTable(
-  "part_category",
-  {
-    id: text("id").primaryKey(),
-    name: text("name").notNull().unique(),
-    slug: text("slug").notNull().unique(),
-    description: text("description"),
-    createdAt: timestamp("created_at").defaultNow().notNull(),
-    updatedAt: timestamp("updated_at")
-      .defaultNow()
-      .$onUpdate(() => new Date())
-      .notNull(),
-  },
-);

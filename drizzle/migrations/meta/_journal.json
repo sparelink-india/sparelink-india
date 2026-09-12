@@ -50,6 +50,13 @@
       "when": 1789206409249,
       "tag": "0006_curly_spot",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1789211591682,
+      "tag": "0007_cool_morlun",
+      "breakpoints": true
     }
   ]
 }
