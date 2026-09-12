@@ -234,3 +234,22 @@ export const dealerListing = pgTable(
   ],
 );
 
+
+export const inventory = pgTable(
+  "inventory",
+  {
+    id: text("id").primaryKey(),
+    dealerListingId: text("dealer_listing_id")
+      .notNull()
+      .unique()
+      .references(() => dealerListing.id, { onDelete: "cascade" }),
+    quantity: integer("quantity").default(0).notNull(),
+    updatedAt: timestamp("updated_at")
+      .defaultNow()
+      .$onUpdate(() => new Date())
+      .notNull(),
+  },
+  (table) => [
+    index("inventory_listing_idx").on(table.dealerListingId),
+  ],
+);
