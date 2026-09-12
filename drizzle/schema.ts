@@ -156,3 +156,18 @@ export const partVehicleCompatibility = pgTable(
     index("part_vehicle_compatibility_vehicle_idx").on(table.vehicleId),
   ],
 );
+
+export const partCategory = pgTable(
+  "part_category",
+  {
+    id: text("id").primaryKey(),
+    name: text("name").notNull().unique(),
+    slug: text("slug").notNull().unique(),
+    description: text("description"),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+    updatedAt: timestamp("updated_at")
+      .defaultNow()
+      .$onUpdate(() => new Date())
+      .notNull(),
+  },
+);
