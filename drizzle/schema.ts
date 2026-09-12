@@ -100,3 +100,20 @@ export const accountRelations = relations(account, ({ one }) => ({
     references: [user.id],
   }),
 }));
+
+export const part = pgTable(
+  "part",
+  {
+    id: text("id").primaryKey(),
+    partNumber: text("part_number").notNull().unique(),
+    name: text("name").notNull(),
+    description: text("description"),
+    brand: text("brand"),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+    updatedAt: timestamp("updated_at")
+      .defaultNow()
+      .$onUpdate(() => new Date())
+      .notNull(),
+  },
+  (table) => [index("part_brand_idx").on(table.brand)],
+);
