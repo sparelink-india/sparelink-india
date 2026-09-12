@@ -36,6 +36,13 @@
       "when": 1789205296014,
       "tag": "0004_lonely_kid_colt",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1789206052469,
+      "tag": "0005_premium_gideon",
+      "breakpoints": true
     }
   ]
 }

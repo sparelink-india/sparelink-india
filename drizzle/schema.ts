@@ -138,3 +138,21 @@ export const vehicle = pgTable(
     index("vehicle_model_idx").on(table.model),
   ],
 );
+
+export const partVehicleCompatibility = pgTable(
+  "part_vehicle_compatibility",
+  {
+    id: text("id").primaryKey(),
+    partId: text("part_id")
+      .notNull()
+      .references(() => part.id, { onDelete: "cascade" }),
+    vehicleId: text("vehicle_id")
+      .notNull()
+      .references(() => vehicle.id, { onDelete: "cascade" }),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+  },
+  (table) => [
+    index("part_vehicle_compatibility_part_idx").on(table.partId),
+    index("part_vehicle_compatibility_vehicle_idx").on(table.vehicleId),
+  ],
+);
