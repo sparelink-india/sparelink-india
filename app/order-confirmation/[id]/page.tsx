@@ -28,6 +28,12 @@ export default async function OrderConfirmationPage({
         >
           Continue shopping
         </Link>
+        <Link
+          href="/orders"
+          className="mt-3 block text-sm font-medium underline"
+        >
+          View my orders
+        </Link>
       </section>
     </main>
   );

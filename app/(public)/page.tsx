@@ -148,6 +148,9 @@ export default function HomePage() {
             >
               Cart
             </a>
+            <a href="/orders" className="hover:text-zinc-600">
+              My Orders
+            </a>
           </nav>
 
           <a
@@ -171,8 +174,8 @@ export default function HomePage() {
             </h1>
 
             <p className="mx-auto mt-5 max-w-2xl text-base leading-7 text-zinc-600 md:text-lg">
-              Search genuine and compatible automotive spare parts from
-              dealers across India.
+              Search genuine and compatible automotive spare parts from dealers
+              across India.
             </p>
 
             <form
@@ -332,7 +335,9 @@ export default function HomePage() {
 
                                   <button
                                     type="button"
-                                    disabled={!available || addingId === listing.id}
+                                    disabled={
+                                      !available || addingId === listing.id
+                                    }
                                     onClick={() => void addToCart(listing.id)}
                                     className="mt-4 w-full rounded-lg bg-zinc-950 px-4 py-2.5 text-sm font-medium text-white hover:bg-zinc-800 disabled:cursor-not-allowed disabled:bg-zinc-300"
                                   >
@@ -369,12 +374,13 @@ export default function HomePage() {
           </section>
         )}
 
-        <section id="categories" className="border-y border-zinc-200 bg-zinc-50">
+        <section
+          id="categories"
+          className="border-y border-zinc-200 bg-zinc-50"
+        >
           <div className="mx-auto max-w-7xl px-6 py-16">
             <div>
-              <p className="text-sm font-medium text-zinc-500">
-                Browse parts
-              </p>
+              <p className="text-sm font-medium text-zinc-500">Browse parts</p>
               <h2 className="mt-1 text-2xl font-bold tracking-tight">
                 Shop by category
               </h2>
@@ -388,9 +394,7 @@ export default function HomePage() {
                   className="rounded-2xl border border-zinc-200 bg-white p-5 text-left transition hover:-translate-y-0.5 hover:border-zinc-400 hover:shadow-sm"
                 >
                   <div className="text-2xl">{category.icon}</div>
-                  <p className="mt-4 text-sm font-semibold">
-                    {category.name}
-                  </p>
+                  <p className="mt-4 text-sm font-semibold">{category.name}</p>
                 </button>
               ))}
             </div>

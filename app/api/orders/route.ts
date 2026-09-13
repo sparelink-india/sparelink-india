@@ -1,5 +1,5 @@
 import { randomUUID } from "node:crypto";
-import { and, eq, gte, sql } from "drizzle-orm";
+import { and, desc, eq, gte, inArray, sql } from "drizzle-orm";
 import { NextResponse } from "next/server";
 
 import {
@@ -64,6 +64,56 @@ function parseShippingAddress(value: unknown): ShippingAddress | null {
     state: String(address.state).trim(),
     pincode,
   };
+}
+
+export async function GET() {
+  const session = await getServerSession();
+  if (!session || session.user.role !== "buyer") {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  const db = getDb();
+  const orders = await db
+    .select({
+      id: order.id,
+      orderNumber: order.orderNumber,
+      status: order.status,
+      paymentStatus: order.paymentStatus,
+      paymentMethod: order.paymentMethod,
+      totalPaise: order.totalPaise,
+      createdAt: order.createdAt,
+    })
+    .from(order)
+    .where(eq(order.buyerId, session.user.id))
+    .orderBy(desc(order.createdAt));
+
+  if (!orders.length) {
+    return NextResponse.json({ orders: [] });
+  }
+
+  const items = await db
+    .select({
+      orderId: orderItem.orderId,
+      id: orderItem.id,
+      partName: orderItem.partName,
+      partNumber: orderItem.partNumber,
+      quantity: orderItem.quantity,
+      totalPaise: orderItem.totalPaise,
+    })
+    .from(orderItem)
+    .where(
+      inArray(
+        orderItem.orderId,
+        orders.map((item) => item.id),
+      ),
+    );
+
+  return NextResponse.json({
+    orders: orders.map((item) => ({
+      ...item,
+      items: items.filter((orderItem) => orderItem.orderId === item.id),
+    })),
+  });
 }
 
 export async function POST(request: Request) {
