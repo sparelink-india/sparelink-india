@@ -278,6 +278,15 @@ async function main() {
   // Seed test users for dealers
   const dealerUsers = [
     {
+      id: "user-admin",
+      name: "Admin User",
+      email: "admin@sparelink.local",
+      phoneNumber: "+919999999999",
+      phoneNumberVerified: true,
+      role: "admin" as const,
+      emailVerified: true,
+    },
+    {
       id: "user-dealer-1",
       name: "Rajesh Patel",
       email: "rajesh@sparepartner.local",
