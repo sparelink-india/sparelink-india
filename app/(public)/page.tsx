@@ -1,6 +1,6 @@
 "use client";
 
-import { FormEvent, useState } from "react";
+import { FormEvent, useEffect, useMemo, useState } from "react";
 
 type Listing = {
   id: string;
@@ -23,6 +23,19 @@ type SearchHit = {
     category?: string;
   };
   listings?: Listing[];
+  compatibleVehicles?: {
+    vehicleId: string;
+    make: string;
+    model: string;
+    variant: string | null;
+  }[];
+};
+
+type Vehicle = {
+  id: string;
+  make: string;
+  model: string;
+  variant: string | null;
 };
 
 export default function HomePage() {
@@ -33,6 +46,25 @@ export default function HomePage() {
   const [addingId, setAddingId] = useState("");
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
+  const [vehicles, setVehicles] = useState<Vehicle[]>([]);
+  const [selectedMake, setSelectedMake] = useState("");
+  const [selectedVehicleId, setSelectedVehicleId] = useState("");
+
+  useEffect(() => {
+    void fetch("/api/vehicles")
+      .then((response) => response.json())
+      .then((data) => setVehicles(data.vehicles ?? []))
+      .catch(() => setVehicles([]));
+  }, []);
+
+  const makes = useMemo(
+    () => [...new Set(vehicles.map((vehicle) => vehicle.make))],
+    [vehicles],
+  );
+  const vehiclesForMake = useMemo(
+    () => vehicles.filter((vehicle) => vehicle.make === selectedMake),
+    [vehicles, selectedMake],
+  );
 
   const categories = [
     { name: "Engine Parts", icon: "??" },
@@ -58,9 +90,9 @@ export default function HomePage() {
     setMessage("");
 
     try {
-      const response = await fetch(
-        `/api/search/parts?q=${encodeURIComponent(trimmedQuery)}`,
-      );
+      const params = new URLSearchParams({ q: trimmedQuery });
+      if (selectedVehicleId) params.set("vehicleId", selectedVehicleId);
+      const response = await fetch(`/api/search/parts?${params}`);
 
       const data = await response.json();
 
@@ -199,6 +231,43 @@ export default function HomePage() {
               </button>
             </form>
 
+            <div className="mx-auto mt-4 flex max-w-2xl flex-col gap-3 sm:flex-row">
+              <select
+                value={selectedMake}
+                onChange={(event) => {
+                  setSelectedMake(event.target.value);
+                  setSelectedVehicleId("");
+                }}
+                className="h-11 flex-1 rounded-xl border border-zinc-300 bg-white px-3 text-sm outline-none focus:border-zinc-950"
+              >
+                <option value="">Select vehicle make (optional)</option>
+                {makes.map((make) => (
+                  <option key={make} value={make}>
+                    {make}
+                  </option>
+                ))}
+              </select>
+              <select
+                value={selectedVehicleId}
+                disabled={!selectedMake}
+                onChange={(event) => setSelectedVehicleId(event.target.value)}
+                className="h-11 flex-1 rounded-xl border border-zinc-300 bg-white px-3 text-sm outline-none focus:border-zinc-950 disabled:bg-zinc-100"
+              >
+                <option value="">All {selectedMake || "vehicles"}</option>
+                {vehiclesForMake.map((vehicle) => (
+                  <option key={vehicle.id} value={vehicle.id}>
+                    {vehicle.model}
+                    {vehicle.variant ? ` — ${vehicle.variant}` : ""}
+                  </option>
+                ))}
+              </select>
+            </div>
+            {selectedVehicleId && (
+              <p className="mt-3 text-sm font-medium text-green-700">
+                Showing parts verified for your selected vehicle.
+              </p>
+            )}
+
             <div className="mt-5 flex flex-wrap justify-center gap-2 text-sm text-zinc-500">
               <span>Try:</span>
 
@@ -282,6 +351,29 @@ export default function HomePage() {
                             {part.category}
                           </span>
                         )}
+
+                        {selectedVehicleId && (
+                          <p className="mt-4 rounded-lg bg-green-50 px-3 py-2 text-xs font-medium text-green-800">
+                            Verified compatible with your selected vehicle
+                          </p>
+                        )}
+
+                        {!selectedVehicleId &&
+                          (hit.compatibleVehicles?.length ?? 0) > 0 && (
+                            <p className="mt-4 text-xs text-zinc-500">
+                              Compatible with{" "}
+                              {hit.compatibleVehicles
+                                ?.slice(0, 2)
+                                .map(
+                                  (vehicle) =>
+                                    `${vehicle.make} ${vehicle.model}`,
+                                )
+                                .join(", ")}
+                              {(hit.compatibleVehicles?.length ?? 0) > 2
+                                ? ` and ${hit.compatibleVehicles!.length - 2} more`
+                                : ""}
+                            </p>
+                          )}
 
                         {listings.length > 0 ? (
                           <div className="mt-6 space-y-3 border-t border-zinc-100 pt-5">

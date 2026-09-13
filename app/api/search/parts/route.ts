@@ -2,7 +2,13 @@ import { NextRequest, NextResponse } from "next/server";
 import { eq, inArray } from "drizzle-orm";
 import { typesense } from "@/lib/typesense";
 import { getDb } from "@/lib/db";
-import { dealer, dealerListing, inventory } from "@/drizzle/schema";
+import {
+  dealer,
+  dealerListing,
+  inventory,
+  partVehicleCompatibility,
+  vehicle,
+} from "@/drizzle/schema";
 
 type PartDocument = {
   id?: string;
@@ -15,6 +21,7 @@ type PartDocument = {
 
 export async function GET(request: NextRequest) {
   const query = request.nextUrl.searchParams.get("q")?.trim();
+  const vehicleId = request.nextUrl.searchParams.get("vehicleId")?.trim();
 
   if (!query) {
     return NextResponse.json(
@@ -47,9 +54,24 @@ export async function GET(request: NextRequest) {
       .map((hit) => (hit.document as PartDocument | undefined)?.id)
       .filter((id): id is string => Boolean(id));
 
+    const db = getDb();
+    const compatiblePartIds =
+      vehicleId && partIds.length
+        ? await db
+            .select({ partId: partVehicleCompatibility.partId })
+            .from(partVehicleCompatibility)
+            .where(eq(partVehicleCompatibility.vehicleId, vehicleId))
+        : null;
+    const compatibleIdSet = compatiblePartIds
+      ? new Set(compatiblePartIds.map((item) => item.partId))
+      : null;
+    const matchedPartIds = compatibleIdSet
+      ? partIds.filter((partId) => compatibleIdSet.has(partId))
+      : partIds;
+
     const listings =
-      partIds.length > 0
-        ? await getDb()
+      matchedPartIds.length > 0
+        ? await db
             .select({
               id: dealerListing.id,
               partId: dealerListing.partId,
@@ -67,10 +89,29 @@ export async function GET(request: NextRequest) {
               inventory,
               eq(dealerListing.id, inventory.dealerListingId),
             )
-            .where(inArray(dealerListing.partId, partIds))
+            .where(inArray(dealerListing.partId, matchedPartIds))
+        : [];
+
+    const compatibility =
+      matchedPartIds.length > 0
+        ? await db
+            .select({
+              partId: partVehicleCompatibility.partId,
+              vehicleId: vehicle.id,
+              make: vehicle.make,
+              model: vehicle.model,
+              variant: vehicle.variant,
+            })
+            .from(partVehicleCompatibility)
+            .innerJoin(
+              vehicle,
+              eq(partVehicleCompatibility.vehicleId, vehicle.id),
+            )
+            .where(inArray(partVehicleCompatibility.partId, matchedPartIds))
         : [];
 
     const listingsByPartId = new Map<string, typeof listings>();
+    const compatibilityByPartId = new Map<string, typeof compatibility>();
 
     for (const listing of listings) {
       const existing = listingsByPartId.get(listing.partId) ?? [];
@@ -78,25 +119,34 @@ export async function GET(request: NextRequest) {
       listingsByPartId.set(listing.partId, existing);
     }
 
-    const results = hits.map((hit) => {
-      const part = (hit.document as PartDocument | undefined) ?? {};
+    for (const item of compatibility) {
+      const existing = compatibilityByPartId.get(item.partId) ?? [];
+      existing.push(item);
+      compatibilityByPartId.set(item.partId, existing);
+    }
 
-      return {
-        ...hit,
-        listings: listingsByPartId.get(part.id ?? "") ?? [],
-      };
-    });
+    const results = hits
+      .filter((hit) => {
+        const part = (hit.document as PartDocument | undefined) ?? {};
+        return !compatibleIdSet || compatibleIdSet.has(part.id ?? "");
+      })
+      .map((hit) => {
+        const part = (hit.document as PartDocument | undefined) ?? {};
+
+        return {
+          ...hit,
+          listings: listingsByPartId.get(part.id ?? "") ?? [],
+          compatibleVehicles: compatibilityByPartId.get(part.id ?? "") ?? [],
+        };
+      });
 
     return NextResponse.json({
       results,
-      found: searchResults.found,
+      found: results.length,
     });
   } catch (error) {
     console.error("Parts search failed:", error);
 
-    return NextResponse.json(
-      { error: "Search failed" },
-      { status: 500 },
-    );
+    return NextResponse.json({ error: "Search failed" }, { status: 500 });
   }
 }
