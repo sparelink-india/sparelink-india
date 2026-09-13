@@ -277,3 +277,30 @@ export const inventory = pgTable(
     index("inventory_listing_idx").on(table.dealerListingId),
   ],
 );
+export const enquiryOffer = pgTable(
+  "enquiry_offer",
+  {
+    id: text("id").primaryKey(),
+    enquiryId: text("enquiry_id")
+      .notNull()
+      .references(() => enquiry.id, { onDelete: "cascade" }),
+    dealerId: text("dealer_id")
+      .notNull()
+      .references(() => dealer.id, { onDelete: "cascade" }),
+    pricePaise: integer("price_paise").notNull(),
+    quantity: integer("quantity").notNull(),
+    message: text("message"),
+    status: text("status").default("pending").notNull(),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+    updatedAt: timestamp("updated_at")
+      .defaultNow()
+      .$onUpdate(() => new Date())
+      .notNull(),
+  },
+  (table) => [
+    index("enquiry_offer_enquiry_idx").on(table.enquiryId),
+    index("enquiry_offer_dealer_idx").on(table.dealerId),
+    index("enquiry_offer_status_idx").on(table.status),
+  ],
+);
+
