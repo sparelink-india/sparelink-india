@@ -105,6 +105,7 @@ export async function POST(request: Request) {
       id: dealerListing.id,
       pricePaise: dealerListing.pricePaise,
       status: dealerListing.status,
+      firmId: dealerListing.firmId,
       stock: inventory.quantity,
     })
     .from(dealerListing)
@@ -114,9 +115,18 @@ export async function POST(request: Request) {
 
   const selectedListing = listing[0];
 
-  if (!selectedListing || selectedListing.status !== "active") {
+  if (
+    !selectedListing ||
+    selectedListing.status !== "active" ||
+    !selectedListing.firmId
+  ) {
     return NextResponse.json(
-      { error: "Dealer listing not found or inactive" },
+      {
+        error:
+          !selectedListing || selectedListing.status !== "active"
+            ? "Dealer listing not found or inactive"
+            : "This listing is not assigned to a fulfillment partner. Please select another option.",
+      },
       { status: 404 },
     );
   }
