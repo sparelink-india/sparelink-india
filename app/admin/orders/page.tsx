@@ -47,14 +47,28 @@ export default function OrdersPage() {
       </header>
 
       <div className="mx-auto max-w-7xl px-6 py-10">
-        <div className="flex items-center justify-between">
-          <h1 className="text-3xl font-bold">Orders</h1>
-          <Link
-            href="/admin"
-            className="text-sm text-blue-600 hover:underline"
-          >
-            Back to Admin
-          </Link>
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <h1 className="text-3xl font-bold tracking-tight">Customer Orders</h1>
+            <p className="mt-1 text-sm text-zinc-500">
+              Review placed orders, fulfillment status, and export GST summaries
+            </p>
+          </div>
+          <div className="flex items-center gap-3">
+            <a
+              href="/api/admin/orders/export"
+              download
+              className="inline-flex items-center gap-1.5 rounded-xl border border-emerald-300 bg-emerald-50 px-4 py-2 text-xs font-bold text-emerald-800 shadow-xs hover:bg-emerald-100 transition-colors"
+            >
+              <span>📊</span> Export to Excel (.xlsx)
+            </a>
+            <Link
+              href="/admin"
+              className="text-sm font-semibold text-blue-600 hover:underline"
+            >
+              ← Back to Admin
+            </Link>
+          </div>
         </div>
 
         {error && (
@@ -79,6 +93,7 @@ export default function OrdersPage() {
                   <th className="px-4 py-3 font-semibold">Payment</th>
                   <th className="px-4 py-3 font-semibold">Amount</th>
                   <th className="px-4 py-3 font-semibold">Date</th>
+                  <th className="px-4 py-3 font-semibold text-right">Invoice</th>
                 </tr>
               </thead>
               <tbody className="divide-y">
@@ -112,6 +127,16 @@ export default function OrdersPage() {
                     </td>
                     <td className="px-4 py-3 text-xs text-zinc-600">
                       {new Date(o.createdAt).toLocaleDateString("en-IN")}
+                    </td>
+                    <td className="px-4 py-3 text-right">
+                      <a
+                        href={`/api/orders/${o.id}/invoice`}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="inline-flex items-center gap-1 rounded-md border border-zinc-200 bg-white px-2.5 py-1 text-xs font-semibold text-zinc-700 hover:bg-zinc-100"
+                      >
+                        <span>🧾</span> Invoice
+                      </a>
                     </td>
                   </tr>
                 ))}

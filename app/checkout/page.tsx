@@ -3,15 +3,27 @@
 import Link from "next/link";
 import { FormEvent, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { validateGSTIN } from "@/lib/gst";
+
+type CartItem = {
+  id: string;
+  quantity: number;
+  pricePaise: number;
+  partName: string | null;
+  partNumber: string | null;
+  gstRate?: number;
+  itemSubtotalPaise?: number;
+  itemGstPaise?: number;
+};
 
 type CartData = {
-  items: {
-    id: string;
-    quantity: number;
-    pricePaise: number;
-    partName: string | null;
-  }[];
+  id: string | null;
+  items: CartItem[];
+  subtotalPaise?: number;
+  gstPaise?: number;
+  shippingPaise?: number;
   totalPaise: number;
+  itemCount?: number;
 };
 
 type RazorpayResponse = {
@@ -58,6 +70,12 @@ export default function CheckoutPage() {
   const [error, setError] = useState("");
   const [paymentMethod, setPaymentMethod] = useState("cash_on_delivery");
   const [onlinePaymentEnabled, setOnlinePaymentEnabled] = useState(false);
+  const [gstinInput, setGstinInput] = useState("");
+  const [businessNameInput, setBusinessNameInput] = useState("");
+
+  const gstinValidation = gstinInput.trim()
+    ? validateGSTIN(gstinInput)
+    : null;
 
   useEffect(() => {
     async function loadCart() {
@@ -138,14 +156,34 @@ export default function CheckoutPage() {
     event.preventDefault();
     setSubmitting(true);
     setError("");
+
+    if (gstinInput.trim() && gstinValidation && !gstinValidation.valid) {
+      setError("Please provide a valid 15-digit GSTIN or leave it blank.");
+      setSubmitting(false);
+      return;
+    }
+
     const form = new FormData(event.currentTarget);
-    const shippingAddress = Object.fromEntries(form.entries());
+    const shippingAddress = {
+      name: String(form.get("name") || ""),
+      phone: String(form.get("phone") || ""),
+      pincode: String(form.get("pincode") || ""),
+      addressLine1: String(form.get("addressLine1") || ""),
+      addressLine2: String(form.get("addressLine2") || ""),
+      city: String(form.get("city") || ""),
+      state: String(form.get("state") || ""),
+    };
 
     try {
       const response = await fetch("/api/orders", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ shippingAddress, paymentMethod }),
+        body: JSON.stringify({
+          shippingAddress,
+          paymentMethod,
+          buyerGstin: gstinInput.trim().toUpperCase() || undefined,
+          buyerBusinessName: businessNameInput.trim() || undefined,
+        }),
       });
       const data = await response.json();
       if (!response.ok) throw new Error(data.error || "Unable to place order.");
@@ -166,177 +204,410 @@ export default function CheckoutPage() {
     }
   }
 
+  const itemsSubtotalPaise =
+    cart?.subtotalPaise ??
+    (cart?.items.reduce(
+      (acc, item) => acc + item.pricePaise * item.quantity,
+      0,
+    ) ?? 0);
+
+  const gstPaise =
+    cart?.gstPaise ??
+    Math.max(0, (cart?.totalPaise ?? 0) - itemsSubtotalPaise);
+
+  const shippingPaise = cart?.shippingPaise ?? 0;
+  const grandTotalPaise = cart?.totalPaise ?? itemsSubtotalPaise + gstPaise + shippingPaise;
+
   return (
-    <main className="min-h-screen bg-zinc-50 text-zinc-950">
-      <header className="border-b border-zinc-200 bg-white">
-        <div className="mx-auto flex max-w-5xl items-center justify-between px-6 py-4">
-          <Link href="/" className="text-xl font-bold">
-            SpareLink India
+    <div className="min-h-screen bg-slate-50/70 text-slate-900">
+      <header className="sticky top-0 z-30 border-b border-slate-200/80 bg-white/95 backdrop-blur-md">
+        <div className="mx-auto flex max-w-5xl items-center justify-between px-4 py-3.5 sm:px-6">
+          <Link href="/" className="flex items-center gap-2">
+            <span className="text-lg font-bold tracking-tight text-slate-950">
+              SpareLink
+            </span>
+            <span className="rounded bg-slate-100 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-emerald-700">
+              India
+            </span>
           </Link>
           <Link
             href="/cart"
-            className="text-sm font-medium hover:text-zinc-600"
+            className="inline-flex items-center gap-1 text-xs font-semibold text-slate-600 hover:text-slate-950"
           >
-            Back to cart
+            <span>←</span> Back to Cart
           </Link>
         </div>
       </header>
-      <div className="mx-auto max-w-5xl px-6 py-12">
-        <h1 className="text-3xl font-bold tracking-tight">Checkout</h1>
+
+      <div className="mx-auto max-w-5xl px-4 py-8 sm:px-6 lg:py-10">
+        <h1 className="text-2xl font-bold tracking-tight text-slate-950 sm:text-3xl">
+          Secure Checkout
+        </h1>
+        <p className="mt-1 text-sm text-slate-500">
+          Verify your delivery address and review line-item taxes before placing order.
+        </p>
+
         {loading && (
-          <p className="mt-8 text-sm text-zinc-500">Loading checkout...</p>
-        )}
-        {!loading && error && (
-          <div className="mt-8 rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">
-            {error}
+          <div className="mt-8 space-y-4">
+            <div className="h-40 animate-pulse rounded-2xl bg-white border border-slate-200 p-6" />
           </div>
         )}
+
+        {!loading && error && (
+          <div
+            role="alert"
+            className="mt-6 flex items-start gap-3 rounded-xl border border-rose-200 bg-rose-50 p-4 text-sm font-medium text-rose-800"
+          >
+            <svg
+              className="mt-0.5 h-5 w-5 shrink-0 text-rose-600"
+              viewBox="0 0 20 20"
+              fill="currentColor"
+            >
+              <path
+                fillRule="evenodd"
+                d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.28 7.22a.75.75 0 00-1.06 1.06L8.94 10l-1.72 1.72a.75.75 0 101.06 1.06L10 11.06l1.72 1.72a.75.75 0 101.06-1.06L11.06 10l1.72-1.72a.75.75 0 00-1.06-1.06L10 8.94 8.28 7.22z"
+                clipRule="evenodd"
+              />
+            </svg>
+            <div className="flex-1">{error}</div>
+          </div>
+        )}
+
         {!loading && !error && (!cart || !cart.items.length) && (
-          <div className="mt-8 rounded-2xl border border-dashed border-zinc-300 bg-white p-10 text-center">
-            <p className="font-medium">Your cart is empty.</p>
+          <div className="mt-8 rounded-2xl border border-dashed border-slate-300 bg-white p-12 text-center shadow-xs">
+            <p className="font-bold text-slate-900">Your cart is empty.</p>
+            <p className="mt-1 text-sm text-slate-500">
+              Please add automotive parts to your cart before proceeding to checkout.
+            </p>
             <Link
               href="/"
-              className="mt-5 inline-block text-sm font-medium underline"
+              className="mt-5 inline-flex items-center gap-2 rounded-xl bg-slate-950 px-5 py-2.5 text-xs font-bold text-white hover:bg-slate-800"
             >
-              Find parts
+              Find Spare Parts
             </Link>
           </div>
         )}
+
         {!loading && cart && cart.items.length > 0 && (
           <form
             onSubmit={placeOrder}
-            className="mt-8 grid gap-6 md:grid-cols-[1fr_320px]"
+            className="mt-8 grid gap-8 lg:grid-cols-[1fr_360px]"
           >
-            <section className="rounded-2xl border border-zinc-200 bg-white p-6">
-              <h2 className="text-lg font-semibold">Delivery address</h2>
-              <p className="mt-1 text-sm text-zinc-500">
-                We’ll use this address for dispatch and order updates.
-              </p>
-              <div className="mt-6 grid gap-4 sm:grid-cols-2">
-                {[
-                  ["name", "Full name"],
-                  ["phone", "10-digit mobile number"],
-                  ["addressLine1", "Address line 1"],
-                  ["addressLine2", "Address line 2 (optional)"],
-                  ["city", "City"],
-                  ["state", "State"],
-                  ["pincode", "6-digit pincode"],
-                ].map(([name, label]) => (
-                  <label
-                    key={name}
-                    className={
-                      name === "addressLine1" || name === "addressLine2"
-                        ? "sm:col-span-2"
-                        : ""
-                    }
-                  >
-                    <span className="mb-1 block text-sm font-medium">
-                      {label}
+            {/* Delivery Address & Payment Method Form */}
+            <div className="space-y-6">
+              <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-xs">
+                <h2 className="text-base font-bold text-slate-950 sm:text-lg">
+                  1. Delivery Address
+                </h2>
+                <p className="mt-1 text-xs text-slate-500">
+                  GST compliant invoice and shipment dispatch will be directed to this address.
+                </p>
+
+                <div className="mt-5 grid gap-4 sm:grid-cols-2">
+                  {(
+                    [
+                      { name: "name", label: "Full Name / Workshop Name", type: "text", required: true, colSpan: "sm:col-span-2" },
+                      { name: "phone", label: "10-Digit Mobile Number", type: "tel", required: true, colSpan: "" },
+                      { name: "pincode", label: "6-Digit Postal Pincode", type: "text", required: true, colSpan: "" },
+                      { name: "addressLine1", label: "Flat, House no., Building, Street", type: "text", required: true, colSpan: "sm:col-span-2" },
+                      { name: "addressLine2", label: "Area, Landmark (Optional)", type: "text", required: false, colSpan: "sm:col-span-2" },
+                      { name: "city", label: "City / District", type: "text", required: true, colSpan: "" },
+                      { name: "state", label: "State", type: "text", required: true, colSpan: "" },
+                    ] as const
+                  ).map((field) => (
+                    <label key={field.name} className={`block ${field.colSpan}`}>
+                      <span className="mb-1 block text-xs font-semibold text-slate-700">
+                        {field.label} {field.required && <span className="text-rose-500">*</span>}
+                      </span>
+                      <input
+                        name={field.name}
+                        type={field.type}
+                        required={field.required}
+                        inputMode={
+                          field.name === "phone" || field.name === "pincode"
+                            ? "numeric"
+                            : undefined
+                        }
+                        pattern={
+                          field.name === "phone"
+                            ? "(?:\\+91)?[6-9][0-9]{9}"
+                            : field.name === "pincode"
+                              ? "[0-9]{6}"
+                              : undefined
+                        }
+                        className="h-11 w-full rounded-xl border border-slate-200 bg-slate-50/50 px-3.5 text-sm font-medium outline-none transition-all focus:border-slate-950 focus:bg-white focus:ring-2 focus:ring-slate-950/10"
+                      />
+                    </label>
+                  ))}
+                </div>
+              </section>
+
+              {/* B2B / GST Information */}
+              <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-xs">
+                <div className="flex items-center justify-between">
+                  <h2 className="text-base font-bold text-slate-950 sm:text-lg">
+                    2. Business / GST Details (Optional)
+                  </h2>
+                  <span className="rounded bg-slate-100 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-slate-600">
+                    B2B Invoicing
+                  </span>
+                </div>
+                <p className="mt-1 text-xs text-slate-500">
+                  Provide your GSTIN to receive a GST Tax Invoice with Input Tax Credit (ITC).
+                </p>
+
+                <div className="mt-5 grid gap-4 sm:grid-cols-2">
+                  <label className="block sm:col-span-2">
+                    <span className="mb-1 block text-xs font-semibold text-slate-700">
+                      Business / Trade / Workshop Name (Optional)
                     </span>
                     <input
-                      name={name}
-                      required={name !== "addressLine2"}
-                      inputMode={
-                        name === "phone" || name === "pincode"
-                          ? "numeric"
-                          : undefined
-                      }
-                      pattern={
-                        name === "phone"
-                          ? "(?:\\+91)?[6-9][0-9]{9}"
-                          : name === "pincode"
-                            ? "[0-9]{6}"
-                            : undefined
-                      }
-                      className="h-11 w-full rounded-lg border border-zinc-300 px-3 outline-none focus:border-zinc-950"
+                      value={businessNameInput}
+                      onChange={(e) => setBusinessNameInput(e.target.value)}
+                      placeholder="e.g. Metro Auto Repairs & Services"
+                      className="h-11 w-full rounded-xl border border-slate-200 bg-slate-50/50 px-3.5 text-sm font-medium outline-none transition-all focus:border-slate-950 focus:bg-white focus:ring-2 focus:ring-slate-950/10"
                     />
                   </label>
-                ))}
-              </div>
-              <div className="mt-6 space-y-3">
-                <label className="flex cursor-pointer gap-3 rounded-xl border border-zinc-200 p-4 text-sm">
-                  <input
-                    type="radio"
-                    name="paymentMethod"
-                    value="cash_on_delivery"
-                    checked={paymentMethod === "cash_on_delivery"}
-                    onChange={() => setPaymentMethod("cash_on_delivery")}
-                  />
-                  <span>
-                    <span className="block font-medium text-zinc-900">
-                      Cash on delivery
+
+                  <label className="block sm:col-span-2">
+                    <span className="mb-1 block text-xs font-semibold text-slate-700">
+                      Buyer GSTIN (Optional, 15 characters)
                     </span>
-                    <span className="mt-1 block text-zinc-600">
-                      Pay when your order is delivered.
-                    </span>
-                  </span>
-                </label>
-                <label
-                  className={`flex gap-3 rounded-xl border p-4 text-sm ${onlinePaymentEnabled ? "cursor-pointer border-zinc-200" : "cursor-not-allowed border-zinc-100 bg-zinc-50 text-zinc-400"}`}
-                >
-                  <input
-                    type="radio"
-                    name="paymentMethod"
-                    value="razorpay"
-                    checked={paymentMethod === "razorpay"}
-                    disabled={!onlinePaymentEnabled}
-                    onChange={() => setPaymentMethod("razorpay")}
-                  />
-                  <span>
-                    <span className="block font-medium text-zinc-900">
-                      Pay online
-                    </span>
-                    <span className="mt-1 block text-zinc-600">
-                      Secure UPI, card and net-banking payment via Razorpay
-                      {onlinePaymentEnabled ? "." : " — coming soon."}
-                    </span>
-                  </span>
-                </label>
-              </div>
-            </section>
-            <aside className="h-fit rounded-2xl border border-zinc-200 bg-white p-6">
-              <h2 className="text-lg font-semibold">Order summary</h2>
-              <div className="mt-5 space-y-3">
-                {cart.items.map((item) => (
-                  <div
-                    key={item.id}
-                    className="flex justify-between gap-4 text-sm"
+                    <input
+                      value={gstinInput}
+                      onChange={(e) => setGstinInput(e.target.value.toUpperCase())}
+                      maxLength={15}
+                      placeholder="e.g. 24AAACR1234K1Z0"
+                      className={`h-11 w-full font-mono rounded-xl border bg-slate-50/50 px-3.5 text-sm font-medium outline-none transition-all focus:bg-white focus:ring-2 ${
+                        gstinInput.trim() && gstinValidation
+                          ? gstinValidation.valid
+                            ? "border-emerald-500 focus:border-emerald-600 focus:ring-emerald-500/10 text-emerald-950"
+                            : "border-rose-300 focus:border-rose-500 focus:ring-rose-500/10 text-rose-950"
+                          : "border-slate-200 focus:border-slate-950 focus:ring-slate-950/10"
+                      }`}
+                    />
+
+                    {/* GST Validation Status Banner */}
+                    {gstinInput.trim() && gstinValidation && (
+                      <div
+                        className={`mt-2 flex items-center gap-1.5 rounded-lg p-2 text-xs font-medium ${
+                          gstinValidation.valid
+                            ? "bg-emerald-50 text-emerald-800 border border-emerald-200"
+                            : "bg-rose-50 text-rose-700 border border-rose-200"
+                        }`}
+                      >
+                        {gstinValidation.valid ? (
+                          <>
+                            <svg className="h-4 w-4 shrink-0 text-emerald-600" viewBox="0 0 20 20" fill="currentColor">
+                              <path fillRule="evenodd" d="M16.704 4.153a.75.75 0 01.143 1.052l-8 10.5a.75.75 0 01-1.127.075l-4.5-4.5a.75.75 0 011.06-1.06l3.894 3.893 7.48-9.817a.75.75 0 011.05-.143z" clipRule="evenodd" />
+                            </svg>
+                            <span>
+                              {gstinValidation.message} (State: {gstinValidation.stateName})
+                            </span>
+                          </>
+                        ) : (
+                          <>
+                            <svg className="h-4 w-4 shrink-0 text-rose-500" viewBox="0 0 20 20" fill="currentColor">
+                              <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-8-5a.75.75 0 01.75.75v4.5a.75.75 0 01-1.5 0v-4.5A.75.75 0 0110 5zm0 10a1 1 0 100-2 1 1 0 000 2z" clipRule="evenodd" />
+                            </svg>
+                            <span>{gstinValidation.message}</span>
+                          </>
+                        )}
+                      </div>
+                    )}
+                  </label>
+                </div>
+              </section>
+
+              <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-xs">
+                <h2 className="text-base font-bold text-slate-950 sm:text-lg">
+                  3. Payment Method
+                </h2>
+                <p className="mt-1 text-xs text-slate-500">
+                  Select how you would like to settle this order.
+                </p>
+
+                <div className="mt-4 space-y-3">
+                  <label className="flex cursor-pointer items-start gap-3.5 rounded-xl border border-slate-200 p-4 transition-colors hover:bg-slate-50 has-checked:border-slate-950 has-checked:bg-slate-50/50">
+                    <input
+                      type="radio"
+                      name="paymentMethod"
+                      value="cash_on_delivery"
+                      checked={paymentMethod === "cash_on_delivery"}
+                      onChange={() => setPaymentMethod("cash_on_delivery")}
+                      className="mt-0.5"
+                    />
+                    <div>
+                      <span className="block text-sm font-bold text-slate-900">
+                        Cash on Delivery (COD)
+                      </span>
+                      <span className="mt-0.5 block text-xs text-slate-500">
+                        Pay cash or via delivery agent UPI upon part handover.
+                      </span>
+                    </div>
+                  </label>
+
+                  <label
+                    className={`flex items-start gap-3.5 rounded-xl border p-4 transition-colors ${
+                      onlinePaymentEnabled
+                        ? "cursor-pointer border-slate-200 hover:bg-slate-50 has-checked:border-slate-950 has-checked:bg-slate-50/50"
+                        : "cursor-not-allowed border-slate-100 bg-slate-50/70 opacity-60"
+                    }`}
                   >
-                    <span>
-                      {item.partName || "Automotive spare part"} ×{" "}
-                      {item.quantity}
-                    </span>
-                    <span className="font-medium">
-                      ₹
-                      {((item.pricePaise * item.quantity) / 100).toLocaleString(
-                        "en-IN",
-                      )}
+                    <input
+                      type="radio"
+                      name="paymentMethod"
+                      value="razorpay"
+                      checked={paymentMethod === "razorpay"}
+                      disabled={!onlinePaymentEnabled}
+                      onChange={() => setPaymentMethod("razorpay")}
+                      className="mt-0.5"
+                    />
+                    <div>
+                      <span className="block text-sm font-bold text-slate-900">
+                        Online Payment (Razorpay UPI, Cards, NetBanking)
+                      </span>
+                      <span className="mt-0.5 block text-xs text-slate-500">
+                        Instant digital settlement with instant payment receipt
+                        {onlinePaymentEnabled ? "." : " — coming soon."}
+                      </span>
+                    </div>
+                  </label>
+                </div>
+              </section>
+            </div>
+
+            {/* Authoritative Order Summary Sidebar */}
+            <aside aria-label="Order breakdown">
+              <div className="sticky top-20 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+                <h2 className="text-base font-bold text-slate-950 sm:text-lg">
+                  Order Summary
+                </h2>
+
+                {/* Line Items */}
+                <div className="mt-4 divide-y divide-slate-100 border-b border-slate-100 pb-4 text-xs">
+                  {cart.items.map((item) => (
+                    <div
+                      key={item.id}
+                      className="flex items-start justify-between gap-3 py-2.5 first:pt-0"
+                    >
+                      <div>
+                        <p className="font-semibold text-slate-900">
+                          {item.partName || "Spare Part"} × {item.quantity}
+                        </p>
+                        <p className="mt-0.5 text-slate-400">
+                          Base: ₹{((item.pricePaise * item.quantity) / 100).toLocaleString("en-IN")}
+                          {item.gstRate !== undefined && (
+                            <span className="ml-1.5 font-medium text-emerald-700">
+                              (GST {item.gstRate}%)
+                            </span>
+                          )}
+                        </p>
+                      </div>
+                      <span className="font-bold text-slate-900">
+                        ₹
+                        {(
+                          (item.pricePaise * item.quantity) /
+                          100
+                        ).toLocaleString("en-IN")}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Financial Breakdown */}
+                <div className="mt-4 space-y-2.5 text-xs">
+                  <div className="flex items-center justify-between text-slate-600">
+                    <span>Items Subtotal</span>
+                    <span className="font-semibold text-slate-900">
+                      ₹{(itemsSubtotalPaise / 100).toLocaleString("en-IN")}
                     </span>
                   </div>
-                ))}
+
+                  <div className="flex items-center justify-between text-slate-600">
+                    <span className="inline-flex items-center gap-1">
+                      <span>GST / Tax</span>
+                      <span className="rounded bg-emerald-50 px-1 py-0.2 text-[10px] font-bold text-emerald-700 border border-emerald-200/60">
+                        Itemized
+                      </span>
+                    </span>
+                    <span className="font-semibold text-emerald-700">
+                      ₹{(gstPaise / 100).toLocaleString("en-IN")}
+                    </span>
+                  </div>
+
+                  <div className="flex items-center justify-between text-slate-600">
+                    <span>Shipping & Handling</span>
+                    <span className="font-semibold text-emerald-700">
+                      {shippingPaise === 0
+                        ? "₹0 (Free Standard)"
+                        : `₹${(shippingPaise / 100).toLocaleString("en-IN")}`}
+                    </span>
+                  </div>
+
+                  <div className="border-t border-slate-200 pt-3.5">
+                    <div className="flex items-baseline justify-between">
+                      <span className="text-sm font-bold text-slate-950">
+                        Grand Total
+                      </span>
+                      <div className="text-right">
+                        <span className="text-xl font-extrabold text-slate-950">
+                          ₹{(grandTotalPaise / 100).toLocaleString("en-IN")}
+                        </span>
+                        <p className="text-[10px] text-slate-400">
+                          Inclusive of all taxes
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Submit Action */}
+                <button
+                  type="submit"
+                  disabled={submitting}
+                  className="btn-press mt-6 flex w-full items-center justify-center gap-2 rounded-xl bg-slate-950 py-3.5 text-center text-sm font-bold text-white shadow-md transition-all hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  {submitting ? (
+                    <>
+                      <svg
+                        className="h-4 w-4 animate-spin"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                      >
+                        <circle
+                          className="opacity-25"
+                          cx="12"
+                          cy="12"
+                          r="10"
+                          stroke="currentColor"
+                          strokeWidth="4"
+                        />
+                        <path
+                          className="opacity-75"
+                          fill="currentColor"
+                          d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                        />
+                      </svg>
+                      <span>
+                        {paymentMethod === "razorpay"
+                          ? "Opening payment..."
+                          : "Placing order..."}
+                      </span>
+                    </>
+                  ) : (
+                    <span>
+                      {paymentMethod === "razorpay"
+                        ? `Pay ₹${(grandTotalPaise / 100).toLocaleString("en-IN")}`
+                        : "Place COD Order"}
+                    </span>
+                  )}
+                </button>
               </div>
-              <div className="mt-5 flex justify-between border-t border-zinc-100 pt-5">
-                <span className="font-medium">Total</span>
-                <span className="text-xl font-bold">
-                  ₹{(cart.totalPaise / 100).toLocaleString("en-IN")}
-                </span>
-              </div>
-              <button
-                disabled={submitting}
-                className="mt-6 w-full rounded-xl bg-zinc-950 px-5 py-3 text-sm font-medium text-white hover:bg-zinc-800 disabled:opacity-60"
-              >
-                {submitting
-                  ? paymentMethod === "razorpay"
-                    ? "Opening payment..."
-                    : "Placing order..."
-                  : paymentMethod === "razorpay"
-                    ? "Pay securely"
-                    : "Place COD order"}
-              </button>
             </aside>
           </form>
         )}
       </div>
-    </main>
+    </div>
   );
 }

@@ -47,14 +47,28 @@ export default function AllocationsPage() {
       </header>
 
       <div className="mx-auto max-w-7xl px-6 py-10">
-        <div className="flex items-center justify-between">
-          <h1 className="text-3xl font-bold">Firm Order Allocations</h1>
-          <Link
-            href="/admin"
-            className="text-sm text-blue-600 hover:underline"
-          >
-            Back to Admin
-          </Link>
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <h1 className="text-3xl font-bold tracking-tight">Firm Order Allocations</h1>
+            <p className="mt-1 text-sm text-zinc-500">
+              Regional distributor allocations (Ambaji Traders, Hind Motors, India Sales)
+            </p>
+          </div>
+          <div className="flex items-center gap-3">
+            <a
+              href="/api/admin/allocations/export"
+              download
+              className="inline-flex items-center gap-1.5 rounded-xl border border-emerald-300 bg-emerald-50 px-4 py-2 text-xs font-bold text-emerald-800 shadow-xs hover:bg-emerald-100 transition-colors"
+            >
+              <span>📊</span> Export to Excel (.xlsx)
+            </a>
+            <Link
+              href="/admin"
+              className="text-sm font-semibold text-blue-600 hover:underline"
+            >
+              ← Back to Admin
+            </Link>
+          </div>
         </div>
 
         {error && (

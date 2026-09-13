@@ -5,6 +5,7 @@ import { getDb } from "@/lib/db";
 import {
   dealer,
   dealerListing,
+  firm,
   inventory,
   partVehicleCompatibility,
   vehicle,
@@ -77,6 +78,9 @@ export async function GET(request: NextRequest) {
               partId: dealerListing.partId,
               dealerId: dealerListing.dealerId,
               dealerName: dealer.businessName,
+              firmId: dealerListing.firmId,
+              firmName: firm.name,
+              firmCode: firm.code,
               sku: dealerListing.sku,
               pricePaise: dealerListing.pricePaise,
               mrpPaise: dealerListing.mrpPaise,
@@ -85,6 +89,7 @@ export async function GET(request: NextRequest) {
             })
             .from(dealerListing)
             .innerJoin(dealer, eq(dealerListing.dealerId, dealer.id))
+            .leftJoin(firm, eq(dealerListing.firmId, firm.id))
             .leftJoin(
               inventory,
               eq(dealerListing.id, inventory.dealerListingId),

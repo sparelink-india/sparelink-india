@@ -1,6 +1,6 @@
 import dotenv from "dotenv";
 dotenv.config({ path: ".env.local" });
-import { getDb } from "./lib/db";
+import { getDb } from "../lib/db";
 import {
   part,
   partCategory,
@@ -11,7 +11,7 @@ import {
   cartItem,
   orderItem,
   firm,
-} from "./drizzle/schema";
+} from "../drizzle/schema";
 import { eq, ilike, or } from "drizzle-orm";
 
 async function main() {

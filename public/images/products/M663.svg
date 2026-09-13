@@ -1,0 +1,89 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 400" width="100%" height="100%">
+  <defs>
+    <!-- Realistic die-cast metallic textures & gradients -->
+    <linearGradient id="castIron" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#475569" />
+      <stop offset="25%" stop-color="#334155" />
+      <stop offset="50%" stop-color="#1e293b" />
+      <stop offset="75%" stop-color="#334155" />
+      <stop offset="100%" stop-color="#0f172a" />
+    </linearGradient>
+
+    <linearGradient id="castAluminum" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#f1f5f9" />
+      <stop offset="20%" stop-color="#cbd5e1" />
+      <stop offset="45%" stop-color="#e2e8f0" />
+      <stop offset="70%" stop-color="#94a3b8" />
+      <stop offset="90%" stop-color="#64748b" />
+      <stop offset="100%" stop-color="#94a3b8" />
+    </linearGradient>
+
+    <linearGradient id="pulleyHub" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#64748b" />
+      <stop offset="30%" stop-color="#94a3b8" />
+      <stop offset="60%" stop-color="#475569" />
+      <stop offset="100%" stop-color="#1e293b" />
+    </linearGradient>
+
+    <radialGradient id="bearingShaft" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#f8fafc" />
+      <stop offset="40%" stop-color="#94a3b8" />
+      <stop offset="80%" stop-color="#475569" />
+      <stop offset="100%" stop-color="#1e293b" />
+    </radialGradient>
+
+    <filter id="pumpShadow" x="-10%" y="-10%" width="120%" height="130%">
+      <feDropShadow dx="0" dy="12" stdDeviation="14" flood-color="#0f172a" flood-opacity="0.16" />
+    </filter>
+  </defs>
+
+  <!-- Clean neutral product studio background -->
+  <rect width="600" height="400" fill="#f8fafc" />
+
+  <!-- Engine Cooling Water Pump Assembly -->
+  <g filter="url(#pumpShadow)" transform="translate(140, 50)">
+    <!-- Mounting Flange Gasket Base Plate -->
+    <path d="M 60,80 Q 20,130 50,190 Q 70,230 130,260 Q 200,280 260,240 Q 300,200 290,140 Q 270,70 200,60 Q 120,50 60,80 Z" fill="#334155" />
+
+    <!-- Main Volute Chamber / Pump Body (Die-Cast Housing) -->
+    <path d="M 70,90 Q 35,135 60,185 Q 80,220 135,248 Q 195,265 248,230 Q 282,195 275,145 Q 258,82 195,72 Q 125,62 70,90 Z" fill="url(#castAluminum)" stroke="#64748b" stroke-width="1.5" />
+
+    <!-- Water Coolant Outlet Snout / Port -->
+    <path d="M 230,90 L 300,45 L 325,80 L 265,120 Z" fill="url(#castAluminum)" stroke="#475569" stroke-width="1.5" />
+    <!-- Outlet Bore Opening -->
+    <ellipse cx="312" cy="62" rx="15" ry="22" fill="#1e293b" transform="rotate(-30 312 62)" stroke="#94a3b8" stroke-width="1.5" />
+
+    <!-- Bolt Flange Mounting Holes (Reinforced lugs) -->
+    <circle cx="55" cy="110" r="14" fill="url(#castAluminum)" stroke="#475569" stroke-width="1.5" />
+    <circle cx="55" cy="110" r="6" fill="#0f172a" />
+
+    <circle cx="90" cy="235" r="14" fill="url(#castAluminum)" stroke="#475569" stroke-width="1.5" />
+    <circle cx="90" cy="235" r="6" fill="#0f172a" />
+
+    <circle cx="245" cy="245" r="14" fill="url(#castAluminum)" stroke="#475569" stroke-width="1.5" />
+    <circle cx="245" cy="245" r="6" fill="#0f172a" />
+
+    <circle cx="270" cy="120" r="14" fill="url(#castAluminum)" stroke="#475569" stroke-width="1.5" />
+    <circle cx="270" cy="120" r="6" fill="#0f172a" />
+
+    <circle cx="160" cy="60" r="14" fill="url(#castAluminum)" stroke="#475569" stroke-width="1.5" />
+    <circle cx="160" cy="60" r="6" fill="#0f172a" />
+
+    <!-- Central Bearing Hub & Shaft Housing -->
+    <circle cx="165" cy="160" r="75" fill="url(#pulleyHub)" stroke="#334155" stroke-width="2" />
+    <circle cx="165" cy="160" r="58" fill="url(#castIron)" stroke="#475569" stroke-width="1.5" />
+    <circle cx="165" cy="160" r="42" fill="url(#castAluminum)" stroke="#64748b" stroke-width="1.5" />
+
+    <!-- Pulley Mounting Stud Flange (4-hole bolt pattern) -->
+    <circle cx="165" cy="160" r="24" fill="url(#bearingShaft)" stroke="#1e293b" stroke-width="2" />
+    <circle cx="165" cy="160" r="8" fill="#09090b" />
+
+    <circle cx="165" cy="130" r="4.5" fill="#09090b" stroke="#cbd5e1" stroke-width="0.8" />
+    <circle cx="195" cy="160" r="4.5" fill="#09090b" stroke="#cbd5e1" stroke-width="0.8" />
+    <circle cx="165" cy="190" r="4.5" fill="#09090b" stroke="#cbd5e1" stroke-width="0.8" />
+    <circle cx="135" cy="160" r="4.5" fill="#09090b" stroke="#cbd5e1" stroke-width="0.8" />
+
+    <!-- Mechanical Face Seal / Impeller Vent Hole -->
+    <ellipse cx="115" cy="135" rx="6" ry="10" fill="#0f172a" transform="rotate(25 115 135)" />
+  </g>
+</svg>

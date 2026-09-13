@@ -9,6 +9,9 @@ type Order = {
   status: string;
   paymentStatus: string;
   paymentMethod: string;
+  subtotalPaise?: number;
+  shippingPaise?: number;
+  gstPaise?: number;
   totalPaise: number;
   createdAt: string;
   items: {
@@ -16,6 +19,7 @@ type Order = {
     partName: string;
     partNumber: string;
     quantity: number;
+    unitPricePaise?: number;
     totalPaise: number;
   }[];
 };
@@ -118,27 +122,96 @@ export default function OrdersPage() {
                   </p>
                 </div>
               </div>
-              <div className="mt-5 border-t border-zinc-100 pt-4 text-sm">
+              <div className="mt-5 border-t border-zinc-100 pt-4 text-xs space-y-1.5">
+                <p className="font-semibold text-zinc-900 text-sm mb-2">
+                  Items Ordered
+                </p>
                 {order.items.map((item) => (
                   <div
                     key={item.id}
-                    className="flex justify-between gap-4 py-1"
+                    className="flex justify-between gap-4 py-0.5 text-zinc-700"
                   >
                     <span>
                       {item.partName}{" "}
-                      <span className="text-zinc-500">× {item.quantity}</span>
+                      <span className="font-mono text-zinc-400">
+                        (#{item.partNumber})
+                      </span>{" "}
+                      <span className="text-zinc-500 font-semibold">
+                        × {item.quantity}
+                      </span>
                     </span>
-                    <span>
+                    <span className="font-medium text-zinc-900">
                       ₹{(item.totalPaise / 100).toLocaleString("en-IN")}
                     </span>
                   </div>
                 ))}
+
+                <div className="mt-4 border-t border-dashed border-zinc-200 pt-3 space-y-1 text-xs">
+                  {order.subtotalPaise !== undefined && (
+                    <div className="flex justify-between text-zinc-500">
+                      <span>Items Subtotal</span>
+                      <span>
+                        ₹{(order.subtotalPaise / 100).toLocaleString("en-IN")}
+                      </span>
+                    </div>
+                  )}
+
+                  {order.gstPaise !== undefined && order.gstPaise > 0 && (
+                    <div className="flex justify-between text-zinc-500">
+                      <span>GST / Taxes</span>
+                      <span className="text-emerald-700 font-medium">
+                        ₹{(order.gstPaise / 100).toLocaleString("en-IN")}
+                      </span>
+                    </div>
+                  )}
+
+                  <div className="flex justify-between text-zinc-500">
+                    <span>Shipping</span>
+                    <span className="text-emerald-700 font-medium">
+                      {(order.shippingPaise ?? 0) === 0
+                        ? "₹0 (Free Standard)"
+                        : `₹${((order.shippingPaise ?? 0) / 100).toLocaleString("en-IN")}`}
+                    </span>
+                  </div>
+
+                  <div className="flex justify-between border-t border-zinc-200 pt-2 font-bold text-sm text-zinc-900">
+                    <span>Total Paid</span>
+                    <span>
+                      ₹{(order.totalPaise / 100).toLocaleString("en-IN")}
+                    </span>
+                  </div>
+                </div>
               </div>
-              <p className="mt-4 text-xs text-zinc-500">
-                {order.paymentMethod === "cash_on_delivery"
-                  ? "Cash on delivery"
-                  : `Online payment: ${statusLabel(order.paymentStatus)}`}
-              </p>
+
+              <div className="mt-4 flex flex-wrap items-center justify-between gap-3 border-t border-zinc-100 pt-3.5">
+                <p className="text-xs text-zinc-500">
+                  Payment:{" "}
+                  {order.paymentMethod === "cash_on_delivery"
+                    ? "Cash on delivery"
+                    : `Online payment (${statusLabel(order.paymentStatus)})`}
+                </p>
+
+                <div className="flex items-center gap-2">
+                  <a
+                    href={`/api/orders/${order.id}/invoice`}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="inline-flex items-center gap-1.5 rounded-lg border border-zinc-300 bg-white px-3 py-1.5 text-xs font-bold text-zinc-700 hover:bg-zinc-50 transition-colors"
+                  >
+                    <span>🧾</span> Tax Invoice
+                  </a>
+                  <a
+                    href={`https://api.whatsapp.com/send?text=${encodeURIComponent(
+                      `SpareLink India Order #${order.orderNumber} summary: Total ₹${(order.totalPaise / 100).toLocaleString("en-IN")}, Status: ${statusLabel(order.status)}.`,
+                    )}`}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="inline-flex items-center gap-1.5 rounded-lg bg-emerald-600 px-3 py-1.5 text-xs font-bold text-white hover:bg-emerald-700 transition-colors"
+                  >
+                    <span>💬</span> WhatsApp
+                  </a>
+                </div>
+              </div>
             </article>
           ))}
         </section>

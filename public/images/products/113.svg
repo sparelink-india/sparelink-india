@@ -1,0 +1,73 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 400" width="100%" height="100%">
+  <defs>
+    <!-- Realistic metallic chrome reflections -->
+    <linearGradient id="chromeBody" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#f8fafc" />
+      <stop offset="15%" stop-color="#cbd5e1" />
+      <stop offset="35%" stop-color="#ffffff" />
+      <stop offset="60%" stop-color="#94a3b8" />
+      <stop offset="85%" stop-color="#64748b" />
+      <stop offset="100%" stop-color="#cbd5e1" />
+    </linearGradient>
+
+    <linearGradient id="chromeLever" x1="0%" y1="0%" x2="100%" y2="30%">
+      <stop offset="0%" stop-color="#ffffff" />
+      <stop offset="20%" stop-color="#cbd5e1" />
+      <stop offset="50%" stop-color="#f8fafc" />
+      <stop offset="70%" stop-color="#94a3b8" />
+      <stop offset="100%" stop-color="#e2e8f0" />
+    </linearGradient>
+
+    <linearGradient id="housingRecess" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#0f172a" />
+      <stop offset="50%" stop-color="#1e293b" />
+      <stop offset="100%" stop-color="#334155" />
+    </linearGradient>
+
+    <linearGradient id="gasketDark" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#18181b" />
+      <stop offset="100%" stop-color="#27272a" />
+    </linearGradient>
+
+    <filter id="naturalShadow" x="-10%" y="-10%" width="120%" height="130%">
+      <feDropShadow dx="0" dy="10" stdDeviation="12" flood-color="#0f172a" flood-opacity="0.18" />
+    </filter>
+  </defs>
+
+  <!-- Clean neutral product background -->
+  <rect width="600" height="400" fill="#f8fafc" />
+
+  <!-- Main Door Outer Handle Assembly -->
+  <g filter="url(#naturalShadow)" transform="translate(60, 90)">
+    <!-- Base Rubber Gasket & Mounting Flange -->
+    <path d="M 30,30 L 450,30 Q 470,30 470,50 L 470,170 Q 470,190 450,190 L 30,190 Q 10,190 10,170 L 10,50 Q 10,30 30,30 Z" fill="url(#gasketDark)" />
+
+    <!-- Outer Chrome Bezel / Escutcheon -->
+    <path d="M 32,32 L 448,32 Q 466,32 466,50 L 466,168 Q 466,186 448,186 L 32,186 Q 14,186 14,168 L 14,50 Q 14,32 32,32 Z" fill="url(#chromeBody)" stroke="#94a3b8" stroke-width="1.5" />
+
+    <!-- Inner Finger Recess Well -->
+    <rect x="40" y="55" width="400" height="110" rx="14" fill="url(#housingRecess)" />
+
+    <!-- Pull Lever (Metal Chrome) -->
+    <path d="M 50,68 L 365,68 Q 380,68 380,82 L 380,138 Q 380,152 365,152 L 50,152 Q 42,152 42,142 L 42,78 Q 42,68 50,68 Z" fill="url(#chromeLever)" stroke="#64748b" stroke-width="1.2" />
+
+    <!-- Chrome Top-edge Highlight -->
+    <path d="M 52,72 L 362,72" stroke="#ffffff" stroke-width="2.5" stroke-linecap="round" />
+    <!-- Chrome Bottom Bevel Reflected Shadow -->
+    <path d="M 52,148 L 362,148" stroke="#64748b" stroke-width="1.5" stroke-linecap="round" />
+
+    <!-- Key Lock Cylinder Barrel / Escutcheon Assembly -->
+    <circle cx="415" cy="110" r="22" fill="url(#chromeBody)" stroke="#475569" stroke-width="1.5" />
+    <circle cx="415" cy="110" r="16" fill="#0f172a" />
+    <circle cx="415" cy="110" r="14" fill="#334155" stroke="#94a3b8" stroke-width="1" />
+    <!-- Keyhole Slot -->
+    <rect x="412.5" y="100" width="5" height="20" rx="1.5" fill="#09090b" />
+    <circle cx="415" cy="115" r="4.5" fill="#09090b" />
+
+    <!-- Mounting Stud Screw Access Points -->
+    <circle cx="28" cy="48" r="3" fill="#475569" />
+    <circle cx="452" cy="48" r="3" fill="#475569" />
+    <circle cx="28" cy="172" r="3" fill="#475569" />
+    <circle cx="452" cy="172" r="3" fill="#475569" />
+  </g>
+</svg>

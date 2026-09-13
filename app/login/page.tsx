@@ -78,6 +78,13 @@ export default function LoginPage() {
             >
               Send OTP
             </button>
+
+            <div className="pt-2 text-center text-xs text-zinc-500">
+              New customer or workshop?{" "}
+              <a href="/register" className="font-bold text-zinc-900 underline hover:text-zinc-700">
+                Register Account
+              </a>
+            </div>
           </form>
         ) : (
           <form onSubmit={verifyOtp} className="mt-8 space-y-4">

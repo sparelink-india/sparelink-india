@@ -15,6 +15,7 @@ import {
 } from "@/drizzle/schema";
 import { getServerSession } from "@/lib/auth-server";
 import { getDb } from "@/lib/db";
+import { calculateCartTotals, extractGSTRate } from "@/lib/gst";
 
 type ShippingAddress = {
   name: string;
@@ -82,6 +83,8 @@ export async function GET() {
       status: order.status,
       paymentStatus: order.paymentStatus,
       paymentMethod: order.paymentMethod,
+      subtotalPaise: order.subtotalPaise,
+      shippingPaise: order.shippingPaise,
       totalPaise: order.totalPaise,
       createdAt: order.createdAt,
     })
@@ -100,6 +103,7 @@ export async function GET() {
       partName: orderItem.partName,
       partNumber: orderItem.partNumber,
       quantity: orderItem.quantity,
+      unitPricePaise: orderItem.unitPricePaise,
       totalPaise: orderItem.totalPaise,
     })
     .from(orderItem)
@@ -111,10 +115,17 @@ export async function GET() {
     );
 
   return NextResponse.json({
-    orders: orders.map((item) => ({
-      ...item,
-      items: items.filter((orderItem) => orderItem.orderId === item.id),
-    })),
+    orders: orders.map((item) => {
+      const gstPaise = Math.max(
+        0,
+        item.totalPaise - item.subtotalPaise - (item.shippingPaise ?? 0),
+      );
+      return {
+        ...item,
+        gstPaise,
+        items: items.filter((orderItem) => orderItem.orderId === item.id),
+      };
+    }),
   });
 }
 
@@ -128,12 +139,28 @@ export async function POST(request: Request) {
   const body = await request.json().catch(() => null);
   const shippingAddress = parseShippingAddress(body?.shippingAddress);
   const paymentMethod = body?.paymentMethod;
+  const buyerGstin =
+    typeof body?.buyerGstin === "string" && body.buyerGstin.trim()
+      ? body.buyerGstin.trim().toUpperCase()
+      : undefined;
+  const buyerBusinessName =
+    typeof body?.buyerBusinessName === "string" && body.buyerBusinessName.trim()
+      ? body.buyerBusinessName.trim()
+      : undefined;
 
   if (!shippingAddress) {
     return NextResponse.json(
       { error: "Please provide a complete Indian delivery address." },
       { status: 400 },
     );
+  }
+
+  let formattedAddressLine2 = shippingAddress.addressLine2;
+  if (buyerGstin) {
+    const gstinTag = `GSTIN: ${buyerGstin}${buyerBusinessName ? ` | ${buyerBusinessName}` : ""}`;
+    formattedAddressLine2 = formattedAddressLine2
+      ? `${formattedAddressLine2} (${gstinTag})`
+      : gstinTag;
   }
 
   if (paymentMethod !== "cash_on_delivery" && paymentMethod !== "razorpay") {
@@ -165,6 +192,7 @@ export async function POST(request: Request) {
       partId: part.id,
       partNumber: part.partNumber,
       partName: part.name,
+      partDescription: part.description,
     })
     .from(cartItem)
     .innerJoin(dealerListing, eq(cartItem.dealerListingId, dealerListing.id))
@@ -192,10 +220,15 @@ export async function POST(request: Request) {
     );
   }
 
-  const subtotalPaise = cartItems.reduce(
-    (total, item) => total + item.pricePaise * item.quantity,
+  const totals = calculateCartTotals(
+    cartItems.map((i) => ({
+      pricePaise: i.pricePaise,
+      quantity: i.quantity,
+      partDescription: i.partDescription,
+    })),
     0,
   );
+
   const orderId = randomUUID();
   const orderNumber = `SL-${Date.now().toString(36).toUpperCase()}-${orderId.slice(0, 6).toUpperCase()}`;
 
@@ -227,31 +260,39 @@ export async function POST(request: Request) {
         buyerId: session.user.id,
         status: paymentMethod === "razorpay" ? "payment_pending" : "placed",
         paymentMethod,
-        subtotalPaise,
-        shippingPaise: 0,
-        totalPaise: subtotalPaise,
-        shippingName: shippingAddress.name,
+        subtotalPaise: totals.subtotalPaise,
+        shippingPaise: totals.shippingPaise,
+        totalPaise: totals.totalPaise,
+        shippingName: buyerBusinessName
+          ? `${shippingAddress.name} (${buyerBusinessName})`
+          : shippingAddress.name,
         shippingPhone: shippingAddress.phone,
         shippingAddressLine1: shippingAddress.addressLine1,
-        shippingAddressLine2: shippingAddress.addressLine2,
+        shippingAddressLine2: formattedAddressLine2,
         shippingCity: shippingAddress.city,
         shippingState: shippingAddress.state,
         shippingPincode: shippingAddress.pincode,
       });
 
-      const createdItems = cartItems.map((item) => ({
-        id: randomUUID(),
-        orderId,
-        dealerListingId: item.dealerListingId,
-        dealerId: item.dealerId,
-        partId: item.partId,
-        partNumber: item.partNumber,
-        partName: item.partName,
-        quantity: item.quantity,
-        unitPricePaise: item.pricePaise,
-        totalPaise: item.pricePaise * item.quantity,
-      }));
+      const createdItems = cartItems.map((item) => {
+        const gstRate = extractGSTRate(item.partDescription);
+        const itemSubtotal = item.pricePaise * item.quantity;
+        const itemGst = Math.round((itemSubtotal * gstRate) / 100);
+        return {
+          id: randomUUID(),
+          orderId,
+          dealerListingId: item.dealerListingId,
+          dealerId: item.dealerId,
+          partId: item.partId,
+          partNumber: item.partNumber,
+          partName: item.partName,
+          quantity: item.quantity,
+          unitPricePaise: item.pricePaise,
+          totalPaise: itemSubtotal + itemGst,
+        };
+      });
       await tx.insert(orderItem).values(createdItems);
+
       const byFirm = new Map<string, typeof createdItems>();
       for (const item of createdItems) {
         const firmId = cartItems.find(
@@ -306,7 +347,15 @@ export async function POST(request: Request) {
   }
 
   return NextResponse.json(
-    { id: orderId, orderNumber, totalPaise: subtotalPaise, status: "placed" },
+    {
+      id: orderId,
+      orderNumber,
+      subtotalPaise: totals.subtotalPaise,
+      gstPaise: totals.gstPaise,
+      shippingPaise: totals.shippingPaise,
+      totalPaise: totals.totalPaise,
+      status: "placed",
+    },
     { status: 201 },
   );
 }
