@@ -6,6 +6,8 @@ import {
   cart,
   cartItem,
   dealerListing,
+  firmOrder,
+  firmOrderItem,
   inventory,
   order,
   orderItem,
@@ -155,6 +157,7 @@ export async function POST(request: Request) {
       id: cartItem.id,
       dealerListingId: dealerListing.id,
       dealerId: dealerListing.dealerId,
+      firmId: dealerListing.firmId,
       quantity: cartItem.quantity,
       pricePaise: dealerListing.pricePaise,
       listingStatus: dealerListing.status,
@@ -175,7 +178,9 @@ export async function POST(request: Request) {
 
   const unavailableItem = cartItems.find(
     (item) =>
-      item.listingStatus !== "active" || (item.stock ?? 0) < item.quantity,
+      item.listingStatus !== "active" ||
+      !item.firmId ||
+      (item.stock ?? 0) < item.quantity,
   );
 
   if (unavailableItem) {
@@ -234,20 +239,56 @@ export async function POST(request: Request) {
         shippingPincode: shippingAddress.pincode,
       });
 
-      await tx.insert(orderItem).values(
-        cartItems.map((item) => ({
-          id: randomUUID(),
-          orderId,
-          dealerListingId: item.dealerListingId,
-          dealerId: item.dealerId,
-          partId: item.partId,
-          partNumber: item.partNumber,
-          partName: item.partName,
-          quantity: item.quantity,
-          unitPricePaise: item.pricePaise,
-          totalPaise: item.pricePaise * item.quantity,
-        })),
-      );
+      const createdItems = cartItems.map((item) => ({
+        id: randomUUID(),
+        orderId,
+        dealerListingId: item.dealerListingId,
+        dealerId: item.dealerId,
+        partId: item.partId,
+        partNumber: item.partNumber,
+        partName: item.partName,
+        quantity: item.quantity,
+        unitPricePaise: item.pricePaise,
+        totalPaise: item.pricePaise * item.quantity,
+      }));
+      await tx.insert(orderItem).values(createdItems);
+      const byFirm = new Map<string, typeof createdItems>();
+      for (const item of createdItems) {
+        const firmId = cartItems.find(
+          (cartItem) => cartItem.dealerListingId === item.dealerListingId,
+        )?.firmId;
+        if (!firmId)
+          throw new Error(
+            "This listing is not assigned to a fulfillment firm.",
+          );
+        byFirm.set(firmId, [...(byFirm.get(firmId) ?? []), item]);
+      }
+      for (const [firmId, items] of byFirm) {
+        const firmOrderId = randomUUID();
+        const allocationNumber = `SLA-${orderNumber}-${firmId.slice(0, 6).toUpperCase()}`;
+        await tx
+          .insert(firmOrder)
+          .values({
+            id: firmOrderId,
+            orderId,
+            firmId,
+            allocationNumber,
+            amountPaise: items.reduce(
+              (total, item) => total + item.totalPaise,
+              0,
+            ),
+            paymentAccountingReference: `SPL-${orderNumber}-${firmId.slice(0, 8).toUpperCase()}`,
+          });
+        await tx
+          .insert(firmOrderItem)
+          .values(
+            items.map((item) => ({
+              id: randomUUID(),
+              firmOrderId,
+              orderItemId: item.id,
+            })),
+          );
+      }
 
       await tx.delete(cartItem).where(eq(cartItem.cartId, buyerCart.id));
     });

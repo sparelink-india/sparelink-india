@@ -240,6 +240,7 @@ export const dealerListing = pgTable(
     dealerId: text("dealer_id")
       .notNull()
       .references(() => dealer.id, { onDelete: "cascade" }),
+    firmId: text("firm_id").references(() => firm.id, { onDelete: "restrict" }),
     partId: text("part_id")
       .notNull()
       .references(() => part.id, { onDelete: "cascade" }),
@@ -259,6 +260,19 @@ export const dealerListing = pgTable(
     index("dealer_listing_status_idx").on(table.status),
   ],
 );
+
+export const firm = pgTable("firm", {
+  id: text("id").primaryKey(),
+  name: text("name").notNull().unique(),
+  code: text("code").notNull().unique(),
+  ledgerReference: text("ledger_reference").notNull().unique(),
+  isActive: boolean("is_active").default(true).notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at")
+    .defaultNow()
+    .$onUpdate(() => new Date())
+    .notNull(),
+});
 
 export const inventory = pgTable(
   "inventory",
@@ -436,4 +450,51 @@ export const payment = pgTable(
   (table) => [
     index("payment_provider_status_idx").on(table.provider, table.status),
   ],
+);
+
+export const firmOrder = pgTable(
+  "firm_order",
+  {
+    id: text("id").primaryKey(),
+    orderId: text("order_id")
+      .notNull()
+      .references(() => order.id, { onDelete: "cascade" }),
+    firmId: text("firm_id")
+      .notNull()
+      .references(() => firm.id, { onDelete: "restrict" }),
+    allocationNumber: text("allocation_number").notNull().unique(),
+    amountPaise: integer("amount_paise").notNull(),
+    fulfillmentStatus: text("fulfillment_status").default("pending").notNull(),
+    paymentAccountingReference: text("payment_accounting_reference")
+      .notNull()
+      .unique(),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+    updatedAt: timestamp("updated_at")
+      .defaultNow()
+      .$onUpdate(() => new Date())
+      .notNull(),
+  },
+  (table) => [
+    uniqueIndex("firm_order_order_firm_unique").on(table.orderId, table.firmId),
+    index("firm_order_firm_status_idx").on(
+      table.firmId,
+      table.fulfillmentStatus,
+    ),
+  ],
+);
+
+export const firmOrderItem = pgTable(
+  "firm_order_item",
+  {
+    id: text("id").primaryKey(),
+    firmOrderId: text("firm_order_id")
+      .notNull()
+      .references(() => firmOrder.id, { onDelete: "cascade" }),
+    orderItemId: text("order_item_id")
+      .notNull()
+      .unique()
+      .references(() => orderItem.id, { onDelete: "restrict" }),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+  },
+  (table) => [index("firm_order_item_firm_order_idx").on(table.firmOrderId)],
 );
