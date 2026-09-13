@@ -1,4 +1,5 @@
 import dotenv from "dotenv";
+import { randomUUID } from "crypto";
 
 dotenv.config({ path: ".env.local" });
 
@@ -9,7 +10,13 @@ async function main() {
     part,
     vehicle,
     partVehicleCompatibility,
+    user,
+    dealer,
+    dealerListing,
+    inventory,
+    firm,
   } = await import("./schema");
+  const { eq } = await import("drizzle-orm");
 
   const db = getDb();
 
@@ -268,10 +275,162 @@ async function main() {
     .values(compatibility)
     .onConflictDoNothing();
 
-  console.log(`Seeded ${categories.length} part categories.`);
-  console.log(`Seeded ${parts.length} parts.`);
-  console.log(`Seeded ${vehicles.length} vehicles.`);
-  console.log(`Seeded ${compatibility.length} compatibility mappings.`);
+  // Seed test users for dealers
+  const dealerUsers = [
+    {
+      id: "user-dealer-1",
+      name: "Rajesh Patel",
+      email: "rajesh@sparepartner.local",
+      phoneNumber: "+919876543210",
+      phoneNumberVerified: true,
+      role: "dealer" as const,
+      emailVerified: true,
+    },
+    {
+      id: "user-dealer-2",
+      name: "Priya Singh",
+      email: "priya@sparepartner.local",
+      phoneNumber: "+919876543211",
+      phoneNumberVerified: true,
+      role: "dealer" as const,
+      emailVerified: true,
+    },
+    {
+      id: "user-dealer-3",
+      name: "Amit Kumar",
+      email: "amit@sparepartner.local",
+      phoneNumber: "+919876543212",
+      phoneNumberVerified: true,
+      role: "dealer" as const,
+      emailVerified: true,
+    },
+  ];
+
+  await db.insert(user).values(dealerUsers).onConflictDoNothing();
+
+  // Seed dealers
+  const dealers = [
+    {
+      id: "dealer-001",
+      userId: "user-dealer-1",
+      businessName: "Rajesh Auto Parts",
+      gstin: "18AAQPR1234K1Z0",
+      phone: "+919876543210",
+      email: "rajesh@sparepartner.local",
+      address: "123 Main Street",
+      city: "Ahmedabad",
+      state: "Gujarat",
+      pincode: "380001",
+    },
+    {
+      id: "dealer-002",
+      userId: "user-dealer-2",
+      businessName: "Priya's Car Components",
+      gstin: "06AABPU1234K1Z0",
+      phone: "+919876543211",
+      email: "priya@sparepartner.local",
+      address: "456 Market Road",
+      city: "Delhi",
+      state: "Delhi",
+      pincode: "110001",
+    },
+    {
+      id: "dealer-003",
+      userId: "user-dealer-3",
+      businessName: "Kumar Automotive Supply",
+      gstin: "27AABCT1234K1Z0",
+      phone: "+919876543212",
+      email: "amit@sparepartner.local",
+      address: "789 Industrial Area",
+      city: "Bangalore",
+      state: "Karnataka",
+      pincode: "560001",
+    },
+  ];
+
+  await db.insert(dealer).values(dealers).onConflictDoNothing();
+
+  // Get firm ID for Ambaji Traders
+  const ambajiTradersFirm = await db
+    .select({ id: firm.id })
+    .from(firm)
+    .where(eq(firm.code, "AMB"))
+    .limit(1);
+
+  const ambajiTradersFirmId = ambajiTradersFirm[0]?.id || "firm-ambaji-traders";
+
+  // Seed dealer listings with firm assignments
+  // Engine Oil Filter → Ambaji Traders for all dealers
+  const dealerListings = [
+    // Engine Oil Filter to all dealers, assigned to Ambaji Traders
+    {
+      id: "listing-oil-filter-dealer-1",
+      dealerId: "dealer-001",
+      partId: "part-oil-filter-001",
+      firmId: ambajiTradersFirmId,
+      sku: "SKU-OIL-001-R1",
+      pricePaise: 45000, // ₹450
+      mrpPaise: 60000, // ₹600
+      status: "active" as const,
+    },
+    {
+      id: "listing-oil-filter-dealer-2",
+      dealerId: "dealer-002",
+      partId: "part-oil-filter-001",
+      firmId: ambajiTradersFirmId,
+      sku: "SKU-OIL-001-P2",
+      pricePaise: 48000, // ₹480
+      mrpPaise: 60000, // ₹600
+      status: "active" as const,
+    },
+    {
+      id: "listing-oil-filter-dealer-3",
+      dealerId: "dealer-003",
+      partId: "part-oil-filter-001",
+      firmId: ambajiTradersFirmId,
+      sku: "SKU-OIL-001-A3",
+      pricePaise: 46000, // ₹460
+      mrpPaise: 60000, // ₹600
+      status: "active" as const,
+    },
+    // Other parts (Air Filter, Brake Pad, etc.) - no firm assignment yet (for now)
+    {
+      id: "listing-air-filter-dealer-1",
+      dealerId: "dealer-001",
+      partId: "part-air-filter-001",
+      firmId: null,
+      sku: "SKU-AIR-001-R1",
+      pricePaise: 35000, // ₹350
+      mrpPaise: 50000, // ₹500
+      status: "active" as const,
+    },
+    {
+      id: "listing-brake-pad-dealer-2",
+      dealerId: "dealer-002",
+      partId: "part-brake-pad-001",
+      firmId: null,
+      sku: "SKU-BRAKE-001-P2",
+      pricePaise: 250000, // ₹2500
+      mrpPaise: 350000, // ₹3500
+      status: "active" as const,
+    },
+  ];
+
+  await db.insert(dealerListing).values(dealerListings).onConflictDoNothing();
+
+  // Seed inventory for listings
+  const inventoryRecords = dealerListings.map((listing) => ({
+    id: randomUUID(),
+    dealerListingId: listing.id,
+    quantity: 50, // 50 units in stock for each
+  }));
+
+  await db.insert(inventory).values(inventoryRecords).onConflictDoNothing();
+
+  console.log(`Seeded ${dealerUsers.length} dealer users.`);
+  console.log(`Seeded ${dealers.length} dealers.`);
+  console.log(`Seeded ${dealerListings.length} dealer listings.`);
+  console.log(`Seeded ${inventoryRecords.length} inventory records.`);
 }
 
 main().catch((error) => {
