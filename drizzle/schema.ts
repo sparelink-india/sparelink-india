@@ -86,9 +86,20 @@ export const verification = pgTable(
   (table) => [index("verification_identifier_idx").on(table.identifier)],
 );
 
-export const userRelations = relations(user, ({ many }) => ({
+export const userRelations = relations(user, ({ many, one }) => ({
   sessions: many(session),
   accounts: many(account),
+  customerProfile: one(customerProfile, {
+    fields: [user.id],
+    references: [customerProfile.userId],
+  }),
+}));
+
+export const customerProfileRelations = relations(customerProfile, ({ one }) => ({
+  user: one(user, {
+    fields: [customerProfile.userId],
+    references: [user.id],
+  }),
 }));
 
 export const sessionRelations = relations(session, ({ one }) => ({
@@ -384,6 +395,19 @@ export const order = pgTable(
     shippingCity: text("shipping_city").notNull(),
     shippingState: text("shipping_state").notNull(),
     shippingPincode: text("shipping_pincode").notNull(),
+    // Additive immutable snapshot fields
+    buyerBusinessName: text("buyer_business_name"),
+    buyerGstin: text("buyer_gstin"),
+    customerType: text("customer_type").default("b2c").notNull(), // "b2b" | "b2c"
+    shippingMethod: text("shipping_method").default("courier").notNull(), // "self_pickup" | "transport" | "courier"
+    transportName: text("transport_name"),
+    transportPhone: text("transport_phone"),
+    transportGstin: text("transport_gstin"),
+    billingAddressLine1: text("billing_address_line1"),
+    billingAddressLine2: text("billing_address_line2"),
+    billingCity: text("billing_city"),
+    billingState: text("billing_state"),
+    billingPincode: text("billing_pincode"),
     createdAt: timestamp("created_at").defaultNow().notNull(),
     updatedAt: timestamp("updated_at")
       .defaultNow()
@@ -394,6 +418,46 @@ export const order = pgTable(
     index("order_buyer_idx").on(table.buyerId),
     index("order_status_idx").on(table.status),
     index("order_created_at_idx").on(table.createdAt),
+    index("order_buyer_gstin_idx").on(table.buyerGstin),
+  ],
+);
+
+export const customerProfile = pgTable(
+  "customer_profile",
+  {
+    id: text("id").primaryKey(),
+    userId: text("user_id")
+      .notNull()
+      .unique()
+      .references(() => user.id, { onDelete: "cascade" }),
+    contactName: text("contact_name"),
+    businessName: text("business_name"),
+    gstin: text("gstin"),
+    customerType: text("customer_type").default("b2c").notNull(), // "b2b" | "b2c"
+    billingAddressLine1: text("billing_address_line1"),
+    billingAddressLine2: text("billing_address_line2"),
+    billingCity: text("billing_city"),
+    billingState: text("billing_state"),
+    billingPincode: text("billing_pincode"),
+    shippingAddressLine1: text("shipping_address_line1"),
+    shippingAddressLine2: text("shipping_address_line2"),
+    shippingCity: text("shipping_city"),
+    shippingState: text("shipping_state"),
+    shippingPincode: text("shipping_pincode"),
+    shippingPreference: text("shipping_preference").default("courier").notNull(), // "self_pickup" | "transport" | "courier"
+    transportName: text("transport_name"),
+    transportPhone: text("transport_phone"),
+    transportGstin: text("transport_gstin"),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+    updatedAt: timestamp("updated_at")
+      .defaultNow()
+      .$onUpdate(() => new Date())
+      .notNull(),
+  },
+  (table) => [
+    index("customer_profile_user_idx").on(table.userId),
+    index("customer_profile_gstin_idx").on(table.gstin),
+    index("customer_profile_business_name_idx").on(table.businessName),
   ],
 );
 

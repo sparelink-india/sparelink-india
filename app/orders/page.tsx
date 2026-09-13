@@ -191,18 +191,26 @@ export default function OrdersPage() {
                     : `Online payment (${statusLabel(order.paymentStatus)})`}
                 </p>
 
-                <div className="flex items-center gap-2">
+                <div className="flex flex-wrap items-center gap-2">
                   <a
                     href={`/api/orders/${order.id}/invoice`}
                     target="_blank"
                     rel="noreferrer"
+                    download
                     className="inline-flex items-center gap-1.5 rounded-lg border border-zinc-300 bg-white px-3 py-1.5 text-xs font-bold text-zinc-700 hover:bg-zinc-50 transition-colors"
                   >
-                    <span>🧾</span> Tax Invoice
+                    <span>📄</span> Download PDF
+                  </a>
+                  <a
+                    href={`/api/orders/${order.id}/excel`}
+                    download
+                    className="inline-flex items-center gap-1.5 rounded-lg border border-emerald-300 bg-emerald-50 px-3 py-1.5 text-xs font-bold text-emerald-800 hover:bg-emerald-100 transition-colors"
+                  >
+                    <span>📊</span> Download Excel
                   </a>
                   <a
                     href={`https://api.whatsapp.com/send?text=${encodeURIComponent(
-                      `SpareLink India Order #${order.orderNumber} summary: Total ₹${(order.totalPaise / 100).toLocaleString("en-IN")}, Status: ${statusLabel(order.status)}.`,
+                      `SpareLink India Order #${order.orderNumber} status inquiry: Total ₹${(order.totalPaise / 100).toLocaleString("en-IN")}, Status: ${statusLabel(order.status)}.`,
                     )}`}
                     target="_blank"
                     rel="noreferrer"

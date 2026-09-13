@@ -10,6 +10,17 @@ type UserItem = {
   phoneNumber: string | null;
   phoneNumberVerified?: boolean;
   emailVerified: boolean;
+  businessName?: string | null;
+  gstin?: string | null;
+  customerType?: string | null;
+  shippingAddressLine1?: string | null;
+  shippingCity?: string | null;
+  shippingState?: string | null;
+  shippingPincode?: string | null;
+  shippingPreference?: string | null;
+  transportName?: string | null;
+  transportPhone?: string | null;
+  transportGstin?: string | null;
   orderCount?: number;
   createdAt: string;
 };
@@ -77,9 +88,13 @@ export default function UsersPage() {
     if (!q) return true;
     return (
       u.name?.toLowerCase().includes(q) ||
+      u.businessName?.toLowerCase().includes(q) ||
       u.email?.toLowerCase().includes(q) ||
       u.phoneNumber?.toLowerCase().includes(q) ||
-      u.role?.toLowerCase().includes(q)
+      u.gstin?.toLowerCase().includes(q) ||
+      u.role?.toLowerCase().includes(q) ||
+      u.shippingCity?.toLowerCase().includes(q) ||
+      u.transportName?.toLowerCase().includes(q)
     );
   });
 
@@ -146,11 +161,12 @@ export default function UsersPage() {
             <table className="w-full text-left text-sm">
               <thead className="border-b bg-zinc-50 text-xs uppercase text-zinc-500">
                 <tr>
-                  <th className="px-4 py-3 font-semibold">Customer Name</th>
-                  <th className="px-4 py-3 font-semibold">Phone & Email</th>
-                  <th className="px-4 py-3 font-semibold">Account Status</th>
-                  <th className="px-4 py-3 font-semibold text-center">Orders Placed</th>
-                  <th className="px-4 py-3 font-semibold">Joined Date</th>
+                  <th className="px-4 py-3 font-semibold">Customer / Contact</th>
+                  <th className="px-4 py-3 font-semibold">Firm / GSTIN</th>
+                  <th className="px-4 py-3 font-semibold">Phone & Location</th>
+                  <th className="px-4 py-3 font-semibold">Fulfillment & Transport</th>
+                  <th className="px-4 py-3 font-semibold">Status</th>
+                  <th className="px-4 py-3 font-semibold text-center">Orders</th>
                   <th className="px-4 py-3 font-semibold text-right">Actions</th>
                 </tr>
               </thead>
@@ -158,17 +174,45 @@ export default function UsersPage() {
                 {filteredUsers.map((u) => {
                   const isSuspended = u.role === "suspended";
                   const isProcessing = processingId === u.id;
+                  const isB2B = Boolean(u.gstin) || u.customerType === "b2b";
 
                   return (
                     <tr key={u.id} className="hover:bg-zinc-50/80">
                       <td className="px-4 py-3.5">
                         <p className="font-semibold text-zinc-900">{u.name || "Customer"}</p>
-                        <p className="font-mono text-[11px] text-zinc-400">ID: {u.id.slice(0, 10)}...</p>
-                      </td>
-                      <td className="px-4 py-3.5">
-                        <p className="font-medium text-zinc-800">{u.phoneNumber || "-"}</p>
                         <p className="text-xs text-zinc-500">{u.email}</p>
+                        <p className="font-mono text-[10px] text-zinc-400">ID: {u.id.slice(0, 8)}...</p>
                       </td>
+
+                      <td className="px-4 py-3.5">
+                        <p className="font-medium text-zinc-900">{u.businessName || "—"}</p>
+                        {u.gstin ? (
+                          <span className="font-mono text-xs font-semibold text-emerald-700">
+                            GSTIN: {u.gstin}
+                          </span>
+                        ) : (
+                          <span className="text-[11px] text-zinc-400">B2C (Retail)</span>
+                        )}
+                      </td>
+
+                      <td className="px-4 py-3.5">
+                        <p className="font-medium text-zinc-800">{u.phoneNumber || "—"}</p>
+                        <p className="text-xs text-zinc-500">
+                          {u.shippingCity ? `${u.shippingCity}, ${u.shippingState || ""}` : "No address set"}
+                        </p>
+                      </td>
+
+                      <td className="px-4 py-3.5 text-xs">
+                        <p className="font-medium text-zinc-800 capitalize">
+                          {u.shippingPreference ? u.shippingPreference.replace(/_/g, " ") : "Courier"}
+                        </p>
+                        {u.transportName && (
+                          <p className="text-[11px] text-zinc-500">
+                            Transporter: <span className="font-semibold">{u.transportName}</span>
+                          </p>
+                        )}
+                      </td>
+
                       <td className="px-4 py-3.5">
                         {isSuspended ? (
                           <span className="inline-flex items-center gap-1 rounded-md bg-rose-50 px-2 py-0.5 text-xs font-bold text-rose-700 border border-rose-200">
@@ -176,28 +220,19 @@ export default function UsersPage() {
                           </span>
                         ) : u.role === "admin" ? (
                           <span className="inline-flex items-center gap-1 rounded-md bg-purple-50 px-2 py-0.5 text-xs font-bold text-purple-700 border border-purple-200">
-                            Administrator
-                          </span>
-                        ) : u.role === "dealer" ? (
-                          <span className="inline-flex items-center gap-1 rounded-md bg-blue-50 px-2 py-0.5 text-xs font-bold text-blue-700 border border-blue-200">
-                            Dealer
+                            Admin
                           </span>
                         ) : (
                           <span className="inline-flex items-center gap-1 rounded-md bg-emerald-50 px-2 py-0.5 text-xs font-bold text-emerald-700 border border-emerald-200">
-                            Active Buyer (Auto-Verified)
+                            {isB2B ? "B2B Active" : "B2C Active"}
                           </span>
                         )}
                       </td>
+
                       <td className="px-4 py-3.5 text-center font-bold text-zinc-900">
                         {u.orderCount ?? 0}
                       </td>
-                      <td className="px-4 py-3.5 text-xs text-zinc-500">
-                        {new Date(u.createdAt).toLocaleDateString("en-IN", {
-                          day: "numeric",
-                          month: "short",
-                          year: "numeric",
-                        })}
-                      </td>
+
                       <td className="px-4 py-3.5 text-right">
                         {u.role !== "admin" && (
                           <button
@@ -214,10 +249,14 @@ export default function UsersPage() {
                               ? "Updating..."
                               : isSuspended
                                 ? "Reactivate"
-                                : "Deactivate / Suspend"}
+                                : "Suspend"}
                           </button>
                         )}
                       </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
                     </tr>
                   );
                 })}

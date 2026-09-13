@@ -50,22 +50,30 @@ export default async function OrderConfirmationPage({
           </div>
         </div>
 
-        <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
+        <div className="mt-6 flex flex-wrap items-center justify-center gap-2.5">
           <a
             href={`/api/orders/${id}/invoice`}
             target="_blank"
             rel="noreferrer"
-            className="inline-flex items-center gap-2 rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-xs font-bold text-slate-800 shadow-xs hover:bg-slate-50"
+            download
+            className="inline-flex items-center gap-1.5 rounded-xl border border-slate-300 bg-white px-3.5 py-2 text-xs font-bold text-slate-800 shadow-xs hover:bg-slate-50 transition-colors"
           >
-            <span>🧾</span> View / Print Tax Invoice
+            <span>📄</span> Download PDF
+          </a>
+          <a
+            href={`/api/orders/${id}/excel`}
+            download
+            className="inline-flex items-center gap-1.5 rounded-xl border border-emerald-300 bg-emerald-50 px-3.5 py-2 text-xs font-bold text-emerald-800 shadow-xs hover:bg-emerald-100 transition-colors"
+          >
+            <span>📊</span> Download Excel
           </a>
           <a
             href={`https://api.whatsapp.com/send?text=${encodeURIComponent(
-              `Hello, I have placed Order #${number || id} on SpareLink India for automotive parts. View status: https://sparelink.in/orders`,
+              `Hello SpareLink India, I have placed Order #${number || id}. Please proceed with fulfillment & dispatch. View orders: https://sparelink.in/orders`,
             )}`}
             target="_blank"
             rel="noreferrer"
-            className="inline-flex items-center gap-2 rounded-xl bg-emerald-600 px-4 py-2.5 text-xs font-bold text-white shadow-xs hover:bg-emerald-700"
+            className="inline-flex items-center gap-1.5 rounded-xl bg-emerald-600 px-3.5 py-2 text-xs font-bold text-white shadow-xs hover:bg-emerald-700 transition-colors"
           >
             <span>💬</span> Share on WhatsApp
           </a>

@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { getServerSession } from "@/lib/auth-server";
 import { getDb } from "@/lib/db";
-import { user, order } from "@/drizzle/schema";
+import { user, order, customerProfile } from "@/drizzle/schema";
 import { count, desc, eq } from "drizzle-orm";
 
 export async function GET() {
@@ -23,9 +23,21 @@ export async function GET() {
         phoneNumber: user.phoneNumber,
         phoneNumberVerified: user.phoneNumberVerified,
         emailVerified: user.emailVerified,
+        businessName: customerProfile.businessName,
+        gstin: customerProfile.gstin,
+        customerType: customerProfile.customerType,
+        shippingAddressLine1: customerProfile.shippingAddressLine1,
+        shippingCity: customerProfile.shippingCity,
+        shippingState: customerProfile.shippingState,
+        shippingPincode: customerProfile.shippingPincode,
+        shippingPreference: customerProfile.shippingPreference,
+        transportName: customerProfile.transportName,
+        transportPhone: customerProfile.transportPhone,
+        transportGstin: customerProfile.transportGstin,
         createdAt: user.createdAt,
       })
       .from(user)
+      .leftJoin(customerProfile, eq(user.id, customerProfile.userId))
       .orderBy(desc(user.createdAt));
 
     // Get order count for each user

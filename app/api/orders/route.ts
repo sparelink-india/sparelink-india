@@ -254,6 +254,13 @@ export async function POST(request: Request) {
         }
       }
 
+      const shippingMethod = ["self_pickup", "transport", "courier"].includes(body?.shippingMethod)
+        ? body.shippingMethod
+        : "courier";
+      const transportName = typeof body?.transportName === "string" ? body.transportName.trim() : null;
+      const transportPhone = typeof body?.transportPhone === "string" ? body.transportPhone.trim() : null;
+      const transportGstin = typeof body?.transportGstin === "string" ? body.transportGstin.trim().toUpperCase() : null;
+
       await tx.insert(order).values({
         id: orderId,
         orderNumber,
@@ -272,6 +279,18 @@ export async function POST(request: Request) {
         shippingCity: shippingAddress.city,
         shippingState: shippingAddress.state,
         shippingPincode: shippingAddress.pincode,
+        buyerBusinessName: buyerBusinessName || null,
+        buyerGstin: buyerGstin || null,
+        customerType: buyerGstin ? "b2b" : "b2c",
+        shippingMethod,
+        transportName,
+        transportPhone,
+        transportGstin,
+        billingAddressLine1: shippingAddress.addressLine1,
+        billingAddressLine2: formattedAddressLine2,
+        billingCity: shippingAddress.city,
+        billingState: shippingAddress.state,
+        billingPincode: shippingAddress.pincode,
       });
 
       const createdItems = cartItems.map((item) => {

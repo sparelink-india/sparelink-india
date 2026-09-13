@@ -289,10 +289,10 @@ export default function HomePage() {
       <div className="bg-slate-950 px-4 py-2 text-center text-xs font-medium text-slate-300 sm:px-6">
         <span className="inline-flex items-center gap-1.5">
           <span className="flex h-2 w-2 rounded-full bg-emerald-400 animate-pulse" />
-          <span>Verified B2B & B2C Automotive Parts Marketplace</span>
+          <span>SpareLink India — Private Automotive Business Ordering</span>
           <span className="hidden sm:inline text-slate-500">|</span>
           <span className="hidden sm:inline text-slate-400">
-            Multi-Firm Regional Fulfillment (Ambaji Traders • Hind Motors • India Sales)
+            Fulfillment Network: Ambaji Traders • Hind Motors • India Sales
           </span>
         </span>
       </div>
@@ -336,7 +336,7 @@ export default function HomePage() {
           </Link>
 
           {/* Desktop Nav */}
-          <nav className="hidden items-center gap-7 text-sm font-semibold text-slate-600 md:flex">
+          <nav className="hidden items-center gap-6 text-sm font-semibold text-slate-600 md:flex">
             <a
               href="#categories"
               className="transition-colors hover:text-slate-950"
@@ -360,6 +360,12 @@ export default function HomePage() {
               className="transition-colors hover:text-slate-950"
             >
               My Orders
+            </Link>
+            <Link
+              href="/profile"
+              className="transition-colors hover:text-slate-950"
+            >
+              Profile
             </Link>
           </nav>
 
@@ -392,12 +398,12 @@ export default function HomePage() {
               )}
             </Link>
 
-            {/* Login / Portal Link */}
+            {/* Profile / Login Link */}
             <Link
-              href="/login"
+              href="/profile"
               className="hidden sm:inline-flex items-center justify-center rounded-xl bg-slate-950 px-4 py-2 text-xs font-semibold text-white shadow-sm transition-all hover:bg-slate-800 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-950"
             >
-              Buyer Login
+              Account
             </Link>
 
             {/* Mobile Menu Toggle */}
@@ -454,11 +460,18 @@ export default function HomePage() {
                 My Orders
               </Link>
               <Link
+                href="/profile"
+                onClick={() => setMobileMenuOpen(false)}
+                className="py-1 hover:text-slate-950"
+              >
+                Customer Profile
+              </Link>
+              <Link
                 href="/login"
                 onClick={() => setMobileMenuOpen(false)}
                 className="mt-2 inline-flex items-center justify-center rounded-xl bg-slate-950 py-2.5 text-center text-xs font-bold text-white"
               >
-                Buyer Login / Sign in
+                Sign In with OTP
               </Link>
             </div>
           </div>
@@ -1131,8 +1144,9 @@ export default function HomePage() {
               <a href="#search" className="hover:text-white">Find Parts</a>
               <a href="#categories" className="hover:text-white">Categories</a>
               <Link href="/cart" className="hover:text-white">Cart</Link>
-              <Link href="/orders" className="hover:text-white">Orders</Link>
-              <Link href="/dealer" className="hover:text-white">Dealer Portal</Link>
+              <Link href="/orders" className="hover:text-white">My Orders</Link>
+              <Link href="/profile" className="hover:text-white">Customer Profile</Link>
+              <Link href="/admin" className="hover:text-white">Admin Management</Link>
             </div>
           </div>
 

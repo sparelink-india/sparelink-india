@@ -89,6 +89,25 @@ export default function RegisterPage() {
         throw new Error(data.error || "Invalid or expired OTP code.");
       }
 
+      // Persist entered customer profile details
+      await fetch("/api/profile", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          contactName: fullName.trim(),
+          businessName: businessName.trim() || undefined,
+          gstin: gstin.trim().toUpperCase() || undefined,
+          shippingAddressLine1: addressLine1.trim() || undefined,
+          shippingCity: city.trim() || undefined,
+          shippingState: state.trim() || undefined,
+          shippingPincode: pincode.trim() || undefined,
+          shippingPreference: deliveryPreference,
+          transportName: deliveryPreference === "transport" ? transportName.trim() : undefined,
+          transportPhone: deliveryPreference === "transport" ? transportPhone.trim() : undefined,
+          transportGstin: deliveryPreference === "transport" && transportGstin.trim() ? transportGstin.trim().toUpperCase() : undefined,
+        }),
+      }).catch(() => null);
+
       setMessage("Registration verified successfully! Redirecting to catalog...");
       setTimeout(() => {
         router.push("/");
@@ -269,7 +288,7 @@ export default function RegisterPage() {
                 <span className="mb-1.5 block text-xs font-semibold text-slate-700">
                   Preferred Fulfillment Method
                 </span>
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                   <label className="flex items-center gap-2 rounded-xl border border-slate-200 p-3 text-xs font-semibold text-slate-800 cursor-pointer has-checked:border-slate-950 has-checked:bg-slate-50">
                     <input
                       type="radio"
@@ -278,7 +297,7 @@ export default function RegisterPage() {
                       checked={deliveryPreference === "courier"}
                       onChange={() => setDeliveryPreference("courier")}
                     />
-                    <span>Doorstep / Courier Dispatch</span>
+                    <span>Courier Dispatch</span>
                   </label>
                   <label className="flex items-center gap-2 rounded-xl border border-slate-200 p-3 text-xs font-semibold text-slate-800 cursor-pointer has-checked:border-slate-950 has-checked:bg-slate-50">
                     <input
@@ -288,9 +307,66 @@ export default function RegisterPage() {
                       checked={deliveryPreference === "self_pickup"}
                       onChange={() => setDeliveryPreference("self_pickup")}
                     />
-                    <span>Regional Self-Pickup</span>
+                    <span>Self Pickup</span>
+                  </label>
+                  <label className="flex items-center gap-2 rounded-xl border border-slate-200 p-3 text-xs font-semibold text-slate-800 cursor-pointer has-checked:border-slate-950 has-checked:bg-slate-50">
+                    <input
+                      type="radio"
+                      name="deliveryPref"
+                      value="transport"
+                      checked={deliveryPreference === "transport"}
+                      onChange={() => setDeliveryPreference("transport")}
+                    />
+                    <span>Book through Transport</span>
                   </label>
                 </div>
+
+                {deliveryPreference === "transport" && (
+                  <div className="mt-3 rounded-xl bg-slate-50 border border-slate-200 p-4 space-y-3 animate-in fade-in">
+                    <p className="text-xs font-bold text-slate-900">
+                      Transport Booking Details
+                    </p>
+                    <div className="grid gap-3 sm:grid-cols-3">
+                      <div>
+                        <span className="mb-1 block text-xs font-semibold text-slate-700">
+                          Transporter Name <span className="text-rose-500">*</span>
+                        </span>
+                        <input
+                          required={deliveryPreference === "transport"}
+                          value={transportName}
+                          onChange={(e) => setTransportName(e.target.value)}
+                          placeholder="e.g. V-Trans Logistics"
+                          className="h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-xs font-medium outline-none focus:border-slate-950"
+                        />
+                      </div>
+
+                      <div>
+                        <span className="mb-1 block text-xs font-semibold text-slate-700">
+                          Transport Contact Number
+                        </span>
+                        <input
+                          value={transportPhone}
+                          onChange={(e) => setTransportPhone(e.target.value)}
+                          placeholder="e.g. 98XXXXXXXX"
+                          className="h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-xs font-medium outline-none focus:border-slate-950"
+                        />
+                      </div>
+
+                      <div>
+                        <span className="mb-1 block text-xs font-semibold text-slate-700">
+                          Transport GSTIN (Optional)
+                        </span>
+                        <input
+                          maxLength={15}
+                          value={transportGstin}
+                          onChange={(e) => setTransportGstin(e.target.value.toUpperCase())}
+                          placeholder="15-digit GSTIN"
+                          className="h-10 w-full font-mono rounded-xl border border-slate-200 bg-white px-3 text-xs font-medium outline-none focus:border-slate-950"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
 

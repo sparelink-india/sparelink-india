@@ -17,6 +17,10 @@ export type InvoicePDFData = {
   shippingCity: string;
   shippingState: string;
   shippingPincode: string;
+  shippingMethod?: string | null;
+  transportName?: string | null;
+  transportPhone?: string | null;
+  transportGstin?: string | null;
   items: Array<{
     partNumber: string;
     partName: string;
@@ -161,15 +165,21 @@ export async function generateInvoicePDFBuffer(
 
       // Allocation Snapshot (Left) & Totals (Right)
       doc.rect(40, currentY, 260, 65).fill("#f8fafc").strokeColor("#e2e8f0").stroke();
-      doc.fillColor("#0f172a").font("Helvetica-Bold").fontSize(8).text("REGIONAL ALLOCATION & FULFILLMENT", 50, currentY + 8);
+      doc.fillColor("#0f172a").font("Helvetica-Bold").fontSize(8).text("REGIONAL ALLOCATION & LOGISTICS", 50, currentY + 8);
       doc.font("Helvetica").fontSize(7.5).fillColor("#475569");
-      doc.text(`Order Status: ${data.status.toUpperCase()}`, 50, currentY + 22);
+      doc.text(`Order Status: ${data.status.toUpperCase()}`, 50, currentY + 20);
+
+      const modeStr = data.shippingMethod === "self_pickup"
+        ? "Self Pickup"
+        : data.shippingMethod === "transport"
+          ? `Transport (${data.transportName || "Booked Transport"})`
+          : "Standard Courier Dispatch";
+      doc.text(`Logistics: ${modeStr}`, 50, currentY + 31);
+
       if (data.allocations.length > 0) {
-        data.allocations.forEach((a, i) => {
-          doc.text(`Alloc #${i + 1}: ${a.allocationNumber} (${a.firmName})`, 50, currentY + 34 + i * 11);
-        });
+        doc.text(`Alloc: ${data.allocations[0].allocationNumber} (${data.allocations[0].firmName})`, 50, currentY + 42);
       } else {
-        doc.text(`Fulfillment: Direct Regional Dispatch (${primaryFirm})`, 50, currentY + 34);
+        doc.text(`Fulfillment: Direct Dispatch (${primaryFirm})`, 50, currentY + 42);
       }
 
       // Totals Table (Right)

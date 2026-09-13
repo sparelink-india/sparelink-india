@@ -70,35 +70,77 @@ export default function CheckoutPage() {
   const [error, setError] = useState("");
   const [paymentMethod, setPaymentMethod] = useState("cash_on_delivery");
   const [onlinePaymentEnabled, setOnlinePaymentEnabled] = useState(false);
+
+  // Address & Profile Fields
+  const [fullName, setFullName] = useState("");
+  const [phone, setPhone] = useState("");
+  const [pincode, setPincode] = useState("");
+  const [addressLine1, setAddressLine1] = useState("");
+  const [addressLine2, setAddressLine2] = useState("");
+  const [city, setCity] = useState("");
+  const [state, setState] = useState("");
+
+  // B2B / GST Fields
   const [gstinInput, setGstinInput] = useState("");
   const [businessNameInput, setBusinessNameInput] = useState("");
+
+  // Fulfillment & Transport Fields
+  const [shippingMethod, setShippingMethod] = useState<"self_pickup" | "transport" | "courier">("courier");
+  const [transportName, setTransportName] = useState("");
+  const [transportPhone, setTransportPhone] = useState("");
+  const [transportGstin, setTransportGstin] = useState("");
 
   const gstinValidation = gstinInput.trim()
     ? validateGSTIN(gstinInput)
     : null;
 
   useEffect(() => {
-    async function loadCart() {
+    async function loadData() {
       try {
-        const response = await fetch("/api/cart", { cache: "no-store" });
-        const data = await response.json();
-        if (!response.ok) throw new Error(data.error || "Unable to load cart.");
-        setCart(data);
+        const [cartRes, configRes, profileRes] = await Promise.all([
+          fetch("/api/cart", { cache: "no-store" }),
+          fetch("/api/payments/razorpay/config").catch(() => null),
+          fetch("/api/profile", { cache: "no-store" }).catch(() => null),
+        ]);
+
+        const cartData = await cartRes.json();
+        if (!cartRes.ok) throw new Error(cartData.error || "Unable to load cart.");
+        setCart(cartData);
+
+        if (configRes && configRes.ok) {
+          const configData = await configRes.json();
+          setOnlinePaymentEnabled(Boolean(configData.enabled));
+        }
+
+        if (profileRes && profileRes.ok) {
+          const prof = await profileRes.json();
+          if (prof) {
+            if (prof.contactName) setFullName(prof.contactName);
+            if (prof.phoneNumber) setPhone(prof.phoneNumber);
+            if (prof.businessName) setBusinessNameInput(prof.businessName);
+            if (prof.gstin) setGstinInput(prof.gstin);
+            if (prof.shippingAddressLine1) setAddressLine1(prof.shippingAddressLine1);
+            if (prof.shippingAddressLine2) setAddressLine2(prof.shippingAddressLine2);
+            if (prof.shippingCity) setCity(prof.shippingCity);
+            if (prof.shippingState) setState(prof.shippingState);
+            if (prof.shippingPincode) setPincode(prof.shippingPincode);
+            if (prof.shippingPreference) setShippingMethod(prof.shippingPreference);
+            if (prof.transportName) setTransportName(prof.transportName);
+            if (prof.transportPhone) setTransportPhone(prof.transportPhone);
+            if (prof.transportGstin) setTransportGstin(prof.transportGstin);
+          }
+        }
       } catch (loadError) {
         setError(
           loadError instanceof Error
             ? loadError.message
-            : "Unable to load cart.",
+            : "Unable to load checkout data.",
         );
       } finally {
         setLoading(false);
       }
     }
-    void loadCart();
-    void fetch("/api/payments/razorpay/config")
-      .then((response) => response.json())
-      .then((data) => setOnlinePaymentEnabled(Boolean(data.enabled)))
-      .catch(() => setOnlinePaymentEnabled(false));
+    void loadData();
   }, []);
 
   async function openRazorpayPayment(orderId: string) {
@@ -163,15 +205,20 @@ export default function CheckoutPage() {
       return;
     }
 
-    const form = new FormData(event.currentTarget);
+    if (shippingMethod === "transport" && !transportName.trim()) {
+      setError("Please provide the Transporter Name for booking.");
+      setSubmitting(false);
+      return;
+    }
+
     const shippingAddress = {
-      name: String(form.get("name") || ""),
-      phone: String(form.get("phone") || ""),
-      pincode: String(form.get("pincode") || ""),
-      addressLine1: String(form.get("addressLine1") || ""),
-      addressLine2: String(form.get("addressLine2") || ""),
-      city: String(form.get("city") || ""),
-      state: String(form.get("state") || ""),
+      name: fullName.trim(),
+      phone: phone.trim(),
+      pincode: pincode.trim(),
+      addressLine1: addressLine1.trim(),
+      addressLine2: addressLine2.trim() || undefined,
+      city: city.trim(),
+      state: state.trim(),
     };
 
     try {
@@ -183,6 +230,10 @@ export default function CheckoutPage() {
           paymentMethod,
           buyerGstin: gstinInput.trim().toUpperCase() || undefined,
           buyerBusinessName: businessNameInput.trim() || undefined,
+          shippingMethod,
+          transportName: shippingMethod === "transport" ? transportName.trim() : undefined,
+          transportPhone: shippingMethod === "transport" ? transportPhone.trim() : undefined,
+          transportGstin: shippingMethod === "transport" && transportGstin.trim() ? transportGstin.trim().toUpperCase() : undefined,
         }),
       });
       const data = await response.json();
@@ -296,49 +347,204 @@ export default function CheckoutPage() {
             {/* Delivery Address & Payment Method Form */}
             <div className="space-y-6">
               <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-xs">
-                <h2 className="text-base font-bold text-slate-950 sm:text-lg">
-                  1. Delivery Address
-                </h2>
+                <div className="flex items-center justify-between">
+                  <h2 className="text-base font-bold text-slate-950 sm:text-lg">
+                    1. Delivery Address & Contact
+                  </h2>
+                  <span className="text-[11px] font-semibold text-emerald-700">
+                    Pre-filled from Profile
+                  </span>
+                </div>
                 <p className="mt-1 text-xs text-slate-500">
                   GST compliant invoice and shipment dispatch will be directed to this address.
                 </p>
 
                 <div className="mt-5 grid gap-4 sm:grid-cols-2">
-                  {(
-                    [
-                      { name: "name", label: "Full Name / Workshop Name", type: "text", required: true, colSpan: "sm:col-span-2" },
-                      { name: "phone", label: "10-Digit Mobile Number", type: "tel", required: true, colSpan: "" },
-                      { name: "pincode", label: "6-Digit Postal Pincode", type: "text", required: true, colSpan: "" },
-                      { name: "addressLine1", label: "Flat, House no., Building, Street", type: "text", required: true, colSpan: "sm:col-span-2" },
-                      { name: "addressLine2", label: "Area, Landmark (Optional)", type: "text", required: false, colSpan: "sm:col-span-2" },
-                      { name: "city", label: "City / District", type: "text", required: true, colSpan: "" },
-                      { name: "state", label: "State", type: "text", required: true, colSpan: "" },
-                    ] as const
-                  ).map((field) => (
-                    <label key={field.name} className={`block ${field.colSpan}`}>
-                      <span className="mb-1 block text-xs font-semibold text-slate-700">
-                        {field.label} {field.required && <span className="text-rose-500">*</span>}
-                      </span>
+                  <label className="block sm:col-span-2">
+                    <span className="mb-1 block text-xs font-semibold text-slate-700">
+                      Full Name / Contact Person <span className="text-rose-500">*</span>
+                    </span>
+                    <input
+                      required
+                      value={fullName}
+                      onChange={(e) => setFullName(e.target.value)}
+                      placeholder="e.g. Ramesh Sharma"
+                      className="h-11 w-full rounded-xl border border-slate-200 bg-slate-50/50 px-3.5 text-sm font-medium outline-none transition-all focus:border-slate-950 focus:bg-white focus:ring-2 focus:ring-slate-950/10"
+                    />
+                  </label>
+
+                  <label className="block">
+                    <span className="mb-1 block text-xs font-semibold text-slate-700">
+                      10-Digit Mobile Number <span className="text-rose-500">*</span>
+                    </span>
+                    <input
+                      required
+                      type="tel"
+                      value={phone}
+                      onChange={(e) => setPhone(e.target.value)}
+                      placeholder="+91XXXXXXXXXX"
+                      className="h-11 w-full rounded-xl border border-slate-200 bg-slate-50/50 px-3.5 text-sm font-medium outline-none transition-all focus:border-slate-950 focus:bg-white focus:ring-2 focus:ring-slate-950/10"
+                    />
+                  </label>
+
+                  <label className="block">
+                    <span className="mb-1 block text-xs font-semibold text-slate-700">
+                      6-Digit Postal Pincode <span className="text-rose-500">*</span>
+                    </span>
+                    <input
+                      required
+                      maxLength={6}
+                      value={pincode}
+                      onChange={(e) => setPincode(e.target.value)}
+                      placeholder="e.g. 380001"
+                      className="h-11 w-full rounded-xl border border-slate-200 bg-slate-50/50 px-3.5 text-sm font-medium outline-none transition-all focus:border-slate-950 focus:bg-white focus:ring-2 focus:ring-slate-950/10"
+                    />
+                  </label>
+
+                  <label className="block sm:col-span-2">
+                    <span className="mb-1 block text-xs font-semibold text-slate-700">
+                      Flat, House no., Building, Street <span className="text-rose-500">*</span>
+                    </span>
+                    <input
+                      required
+                      value={addressLine1}
+                      onChange={(e) => setAddressLine1(e.target.value)}
+                      placeholder="Street / Industrial Area / Plot No."
+                      className="h-11 w-full rounded-xl border border-slate-200 bg-slate-50/50 px-3.5 text-sm font-medium outline-none transition-all focus:border-slate-950 focus:bg-white focus:ring-2 focus:ring-slate-950/10"
+                    />
+                  </label>
+
+                  <label className="block sm:col-span-2">
+                    <span className="mb-1 block text-xs font-semibold text-slate-700">
+                      Area, Landmark (Optional)
+                    </span>
+                    <input
+                      value={addressLine2}
+                      onChange={(e) => setAddressLine2(e.target.value)}
+                      placeholder="Nearby landmark or unit"
+                      className="h-11 w-full rounded-xl border border-slate-200 bg-slate-50/50 px-3.5 text-sm font-medium outline-none transition-all focus:border-slate-950 focus:bg-white focus:ring-2 focus:ring-slate-950/10"
+                    />
+                  </label>
+
+                  <label className="block">
+                    <span className="mb-1 block text-xs font-semibold text-slate-700">
+                      City / District <span className="text-rose-500">*</span>
+                    </span>
+                    <input
+                      required
+                      value={city}
+                      onChange={(e) => setCity(e.target.value)}
+                      placeholder="e.g. Ahmedabad"
+                      className="h-11 w-full rounded-xl border border-slate-200 bg-slate-50/50 px-3.5 text-sm font-medium outline-none transition-all focus:border-slate-950 focus:bg-white focus:ring-2 focus:ring-slate-950/10"
+                    />
+                  </label>
+
+                  <label className="block">
+                    <span className="mb-1 block text-xs font-semibold text-slate-700">
+                      State <span className="text-rose-500">*</span>
+                    </span>
+                    <input
+                      required
+                      value={state}
+                      onChange={(e) => setState(e.target.value)}
+                      placeholder="e.g. Gujarat"
+                      className="h-11 w-full rounded-xl border border-slate-200 bg-slate-50/50 px-3.5 text-sm font-medium outline-none transition-all focus:border-slate-950 focus:bg-white focus:ring-2 focus:ring-slate-950/10"
+                    />
+                  </label>
+                </div>
+              </section>
+
+              {/* Fulfillment & Transport Preference */}
+              <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-xs">
+                <h2 className="text-base font-bold text-slate-950 sm:text-lg">
+                  2. Fulfillment & Delivery Option
+                </h2>
+                <p className="mt-1 text-xs text-slate-500">
+                  Select your preferred regional shipping mode.
+                </p>
+
+                <div className="mt-4 space-y-3">
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                    <label className="flex items-center gap-2.5 rounded-xl border border-slate-200 p-3.5 text-xs font-bold text-slate-800 cursor-pointer has-checked:border-slate-950 has-checked:bg-slate-50">
                       <input
-                        name={field.name}
-                        type={field.type}
-                        required={field.required}
-                        inputMode={
-                          field.name === "phone" || field.name === "pincode"
-                            ? "numeric"
-                            : undefined
-                        }
-                        pattern={
-                          field.name === "phone"
-                            ? "(?:\\+91)?[6-9][0-9]{9}"
-                            : field.name === "pincode"
-                              ? "[0-9]{6}"
-                              : undefined
-                        }
-                        className="h-11 w-full rounded-xl border border-slate-200 bg-slate-50/50 px-3.5 text-sm font-medium outline-none transition-all focus:border-slate-950 focus:bg-white focus:ring-2 focus:ring-slate-950/10"
+                        type="radio"
+                        name="shipMethod"
+                        value="courier"
+                        checked={shippingMethod === "courier"}
+                        onChange={() => setShippingMethod("courier")}
                       />
+                      <span>Courier Dispatch</span>
                     </label>
-                  ))}
+
+                    <label className="flex items-center gap-2.5 rounded-xl border border-slate-200 p-3.5 text-xs font-bold text-slate-800 cursor-pointer has-checked:border-slate-950 has-checked:bg-slate-50">
+                      <input
+                        type="radio"
+                        name="shipMethod"
+                        value="self_pickup"
+                        checked={shippingMethod === "self_pickup"}
+                        onChange={() => setShippingMethod("self_pickup")}
+                      />
+                      <span>Self Pickup</span>
+                    </label>
+
+                    <label className="flex items-center gap-2.5 rounded-xl border border-slate-200 p-3.5 text-xs font-bold text-slate-800 cursor-pointer has-checked:border-slate-950 has-checked:bg-slate-50">
+                      <input
+                        type="radio"
+                        name="shipMethod"
+                        value="transport"
+                        checked={shippingMethod === "transport"}
+                        onChange={() => setShippingMethod("transport")}
+                      />
+                      <span>Book through Transport</span>
+                    </label>
+                  </div>
+
+                  {shippingMethod === "transport" && (
+                    <div className="rounded-xl bg-slate-50 border border-slate-200 p-4 space-y-3 animate-in fade-in">
+                      <p className="text-xs font-bold text-slate-900">
+                        Transport Agency Details
+                      </p>
+                      <div className="grid gap-3 sm:grid-cols-3">
+                        <div>
+                          <span className="mb-1 block text-xs font-semibold text-slate-700">
+                            Transporter Name <span className="text-rose-500">*</span>
+                          </span>
+                          <input
+                            required={shippingMethod === "transport"}
+                            value={transportName}
+                            onChange={(e) => setTransportName(e.target.value)}
+                            placeholder="e.g. V-Trans Logistics"
+                            className="h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-xs font-medium outline-none focus:border-slate-950"
+                          />
+                        </div>
+
+                        <div>
+                          <span className="mb-1 block text-xs font-semibold text-slate-700">
+                            Transport Contact Number
+                          </span>
+                          <input
+                            value={transportPhone}
+                            onChange={(e) => setTransportPhone(e.target.value)}
+                            placeholder="e.g. 98XXXXXXXX"
+                            className="h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-xs font-medium outline-none focus:border-slate-950"
+                          />
+                        </div>
+
+                        <div>
+                          <span className="mb-1 block text-xs font-semibold text-slate-700">
+                            Transport GSTIN (Optional)
+                          </span>
+                          <input
+                            maxLength={15}
+                            value={transportGstin}
+                            onChange={(e) => setTransportGstin(e.target.value.toUpperCase())}
+                            placeholder="15-digit GSTIN"
+                            className="h-10 w-full font-mono rounded-xl border border-slate-200 bg-white px-3 text-xs font-medium outline-none focus:border-slate-950"
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  )}
                 </div>
               </section>
 
@@ -346,7 +552,7 @@ export default function CheckoutPage() {
               <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-xs">
                 <div className="flex items-center justify-between">
                   <h2 className="text-base font-bold text-slate-950 sm:text-lg">
-                    2. Business / GST Details (Optional)
+                    3. Business / GST Details (Optional)
                   </h2>
                   <span className="rounded bg-slate-100 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-slate-600">
                     B2B Invoicing
@@ -421,7 +627,7 @@ export default function CheckoutPage() {
 
               <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-xs">
                 <h2 className="text-base font-bold text-slate-950 sm:text-lg">
-                  3. Payment Method
+                  4. Payment Method
                 </h2>
                 <p className="mt-1 text-xs text-slate-500">
                   Select how you would like to settle this order.

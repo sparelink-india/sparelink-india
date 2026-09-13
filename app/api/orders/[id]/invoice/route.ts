@@ -86,6 +86,10 @@ export async function GET(
       shippingCity: orderRecord.shippingCity,
       shippingState: orderRecord.shippingState,
       shippingPincode: orderRecord.shippingPincode,
+      shippingMethod: orderRecord.shippingMethod,
+      transportName: orderRecord.transportName,
+      transportPhone: orderRecord.transportPhone,
+      transportGstin: orderRecord.transportGstin,
       items,
       allocations,
     });
