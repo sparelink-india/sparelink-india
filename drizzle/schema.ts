@@ -6,6 +6,7 @@ import {
   pgTable,
   text,
   timestamp,
+  uniqueIndex,
 } from "drizzle-orm/pg-core";
 
 export const user = pgTable("user", {
@@ -102,20 +103,17 @@ export const accountRelations = relations(account, ({ one }) => ({
   }),
 }));
 
-export const partCategory = pgTable(
-  "part_category",
-  {
-    id: text("id").primaryKey(),
-    name: text("name").notNull().unique(),
-    slug: text("slug").notNull().unique(),
-    description: text("description"),
-    createdAt: timestamp("created_at").defaultNow().notNull(),
-    updatedAt: timestamp("updated_at")
-      .defaultNow()
-      .$onUpdate(() => new Date())
-      .notNull(),
-  },
-);
+export const partCategory = pgTable("part_category", {
+  id: text("id").primaryKey(),
+  name: text("name").notNull().unique(),
+  slug: text("slug").notNull().unique(),
+  description: text("description"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at")
+    .defaultNow()
+    .$onUpdate(() => new Date())
+    .notNull(),
+});
 
 export const part = pgTable(
   "part",
@@ -161,6 +159,24 @@ export const vehicle = pgTable(
   ],
 );
 
+export const partVehicleCompatibility = pgTable(
+  "part_vehicle_compatibility",
+  {
+    id: text("id").primaryKey(),
+    partId: text("part_id")
+      .notNull()
+      .references(() => part.id, { onDelete: "cascade" }),
+    vehicleId: text("vehicle_id")
+      .notNull()
+      .references(() => vehicle.id, { onDelete: "cascade" }),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+  },
+  (table) => [
+    index("part_vehicle_compatibility_part_idx").on(table.partId),
+    index("part_vehicle_compatibility_vehicle_idx").on(table.vehicleId),
+  ],
+);
+
 export const enquiry = pgTable(
   "enquiry",
   {
@@ -187,23 +203,6 @@ export const enquiry = pgTable(
   ],
 );
 
-export const partVehicleCompatibility = pgTable(
-  "part_vehicle_compatibility",
-  {
-    id: text("id").primaryKey(),
-    partId: text("part_id")
-      .notNull()
-      .references(() => part.id, { onDelete: "cascade" }),
-    vehicleId: text("vehicle_id")
-      .notNull()
-      .references(() => vehicle.id, { onDelete: "cascade" }),
-    createdAt: timestamp("created_at").defaultNow().notNull(),
-  },
-  (table) => [
-    index("part_vehicle_compatibility_part_idx").on(table.partId),
-    index("part_vehicle_compatibility_vehicle_idx").on(table.vehicleId),
-  ],
-);
 export const dealer = pgTable(
   "dealer",
   {
@@ -273,10 +272,9 @@ export const inventory = pgTable(
       .$onUpdate(() => new Date())
       .notNull(),
   },
-  (table) => [
-    index("inventory_listing_idx").on(table.dealerListingId),
-  ],
+  (table) => [index("inventory_listing_idx").on(table.dealerListingId)],
 );
+
 export const enquiryOffer = pgTable(
   "enquiry_offer",
   {
@@ -304,3 +302,47 @@ export const enquiryOffer = pgTable(
   ],
 );
 
+export const cart = pgTable(
+  "cart",
+  {
+    id: text("id").primaryKey(),
+    buyerId: text("buyer_id")
+      .notNull()
+      .unique()
+      .references(() => user.id, { onDelete: "cascade" }),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+    updatedAt: timestamp("updated_at")
+      .defaultNow()
+      .$onUpdate(() => new Date())
+      .notNull(),
+  },
+  (table) => [index("cart_buyer_idx").on(table.buyerId)],
+);
+
+export const cartItem = pgTable(
+  "cart_item",
+  {
+    id: text("id").primaryKey(),
+    cartId: text("cart_id")
+      .notNull()
+      .references(() => cart.id, { onDelete: "cascade" }),
+    dealerListingId: text("dealer_listing_id")
+      .notNull()
+      .references(() => dealerListing.id, { onDelete: "cascade" }),
+    quantity: integer("quantity").notNull(),
+    pricePaise: integer("price_paise").notNull(),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+    updatedAt: timestamp("updated_at")
+      .defaultNow()
+      .$onUpdate(() => new Date())
+      .notNull(),
+  },
+  (table) => [
+    index("cart_item_cart_idx").on(table.cartId),
+    index("cart_item_listing_idx").on(table.dealerListingId),
+    uniqueIndex("cart_item_cart_listing_unique").on(
+      table.cartId,
+      table.dealerListingId,
+    ),
+  ],
+);
