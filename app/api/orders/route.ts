@@ -75,10 +75,18 @@ export async function POST(request: Request) {
 
   const body = await request.json().catch(() => null);
   const shippingAddress = parseShippingAddress(body?.shippingAddress);
+  const paymentMethod = body?.paymentMethod;
 
   if (!shippingAddress) {
     return NextResponse.json(
       { error: "Please provide a complete Indian delivery address." },
+      { status: 400 },
+    );
+  }
+
+  if (paymentMethod !== "cash_on_delivery" && paymentMethod !== "razorpay") {
+    return NextResponse.json(
+      { error: "Please choose a valid payment method." },
       { status: 400 },
     );
   }
@@ -162,6 +170,8 @@ export async function POST(request: Request) {
         id: orderId,
         orderNumber,
         buyerId: session.user.id,
+        status: paymentMethod === "razorpay" ? "payment_pending" : "placed",
+        paymentMethod,
         subtotalPaise,
         shippingPaise: 0,
         totalPaise: subtotalPaise,

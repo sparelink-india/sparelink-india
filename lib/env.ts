@@ -15,4 +15,6 @@ export const env = {
   DATABASE_URL: readOptional("DATABASE_URL"),
   NEXT_PUBLIC_APP_URL:
     readOptional("NEXT_PUBLIC_APP_URL") ?? "http://localhost:3000",
+  RAZORPAY_KEY_ID: readOptional("RAZORPAY_KEY_ID"),
+  RAZORPAY_KEY_SECRET: readOptional("RAZORPAY_KEY_SECRET"),
 } as const;

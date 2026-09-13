@@ -412,3 +412,28 @@ export const orderItem = pgTable(
     index("order_item_listing_idx").on(table.dealerListingId),
   ],
 );
+
+export const payment = pgTable(
+  "payment",
+  {
+    id: text("id").primaryKey(),
+    orderId: text("order_id")
+      .notNull()
+      .unique()
+      .references(() => order.id, { onDelete: "restrict" }),
+    provider: text("provider").notNull(),
+    providerOrderId: text("provider_order_id").notNull().unique(),
+    providerPaymentId: text("provider_payment_id").unique(),
+    amountPaise: integer("amount_paise").notNull(),
+    currency: text("currency").default("INR").notNull(),
+    status: text("status").default("created").notNull(),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+    updatedAt: timestamp("updated_at")
+      .defaultNow()
+      .$onUpdate(() => new Date())
+      .notNull(),
+  },
+  (table) => [
+    index("payment_provider_status_idx").on(table.provider, table.status),
+  ],
+);

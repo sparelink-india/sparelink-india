@@ -14,12 +14,50 @@ type CartData = {
   totalPaise: number;
 };
 
+type RazorpayResponse = {
+  razorpay_payment_id: string;
+  razorpay_order_id: string;
+  razorpay_signature: string;
+};
+
+type RazorpayOptions = {
+  key: string;
+  amount: number;
+  currency: string;
+  name: string;
+  description: string;
+  order_id: string;
+  prefill: { name: string; email: string; contact: string };
+  handler: (response: RazorpayResponse) => void;
+  modal: { ondismiss: () => void };
+};
+
+declare global {
+  interface Window {
+    Razorpay?: new (options: RazorpayOptions) => { open: () => void };
+  }
+}
+
+function loadRazorpayCheckout() {
+  return new Promise<void>((resolve, reject) => {
+    if (window.Razorpay) return resolve();
+    const script = document.createElement("script");
+    script.src = "https://checkout.razorpay.com/v1/checkout.js";
+    script.onload = () => resolve();
+    script.onerror = () =>
+      reject(new Error("Unable to load secure payment checkout."));
+    document.body.appendChild(script);
+  });
+}
+
 export default function CheckoutPage() {
   const router = useRouter();
   const [cart, setCart] = useState<CartData | null>(null);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
+  const [paymentMethod, setPaymentMethod] = useState("cash_on_delivery");
+  const [onlinePaymentEnabled, setOnlinePaymentEnabled] = useState(false);
 
   useEffect(() => {
     async function loadCart() {
@@ -39,7 +77,62 @@ export default function CheckoutPage() {
       }
     }
     void loadCart();
+    void fetch("/api/payments/razorpay/config")
+      .then((response) => response.json())
+      .then((data) => setOnlinePaymentEnabled(Boolean(data.enabled)))
+      .catch(() => setOnlinePaymentEnabled(false));
   }, []);
+
+  async function openRazorpayPayment(orderId: string) {
+    const response = await fetch("/api/payments/razorpay/order", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ orderId }),
+    });
+    const paymentData = await response.json();
+    if (!response.ok)
+      throw new Error(paymentData.error || "Unable to start payment.");
+    await loadRazorpayCheckout();
+    if (!window.Razorpay)
+      throw new Error("Unable to open secure payment checkout.");
+
+    new window.Razorpay({
+      key: paymentData.keyId,
+      amount: paymentData.amountPaise,
+      currency: paymentData.currency,
+      name: "SpareLink India",
+      description: `Order ${paymentData.orderNumber}`,
+      order_id: paymentData.providerOrderId,
+      prefill: {
+        name: paymentData.buyerName,
+        email: paymentData.buyerEmail,
+        contact: paymentData.buyerPhone,
+      },
+      handler: async (paymentResponse) => {
+        try {
+          const verification = await fetch("/api/payments/razorpay/verify", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(paymentResponse),
+          });
+          const result = await verification.json();
+          if (!verification.ok)
+            throw new Error(result.error || "Payment verification failed.");
+          router.push(
+            `/order-confirmation/${result.orderId}?number=${encodeURIComponent(result.orderNumber)}`,
+          );
+        } catch (verificationError) {
+          setError(
+            verificationError instanceof Error
+              ? verificationError.message
+              : "Payment verification failed. Please contact support.",
+          );
+          setSubmitting(false);
+        }
+      },
+      modal: { ondismiss: () => setSubmitting(false) },
+    }).open();
+  }
 
   async function placeOrder(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -52,13 +145,17 @@ export default function CheckoutPage() {
       const response = await fetch("/api/orders", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ shippingAddress }),
+        body: JSON.stringify({ shippingAddress, paymentMethod }),
       });
       const data = await response.json();
       if (!response.ok) throw new Error(data.error || "Unable to place order.");
-      router.push(
-        `/order-confirmation/${data.id}?number=${encodeURIComponent(data.orderNumber)}`,
-      );
+      if (paymentMethod === "razorpay") {
+        await openRazorpayPayment(data.id);
+      } else {
+        router.push(
+          `/order-confirmation/${data.id}?number=${encodeURIComponent(data.orderNumber)}`,
+        );
+      }
     } catch (checkoutError) {
       setError(
         checkoutError instanceof Error
@@ -156,12 +253,45 @@ export default function CheckoutPage() {
                   </label>
                 ))}
               </div>
-              <div className="mt-6 rounded-xl bg-zinc-50 p-4 text-sm text-zinc-600">
-                <p className="font-medium text-zinc-900">Cash on delivery</p>
-                <p className="mt-1">
-                  Online payment will be available in the next release. No
-                  payment is collected now.
-                </p>
+              <div className="mt-6 space-y-3">
+                <label className="flex cursor-pointer gap-3 rounded-xl border border-zinc-200 p-4 text-sm">
+                  <input
+                    type="radio"
+                    name="paymentMethod"
+                    value="cash_on_delivery"
+                    checked={paymentMethod === "cash_on_delivery"}
+                    onChange={() => setPaymentMethod("cash_on_delivery")}
+                  />
+                  <span>
+                    <span className="block font-medium text-zinc-900">
+                      Cash on delivery
+                    </span>
+                    <span className="mt-1 block text-zinc-600">
+                      Pay when your order is delivered.
+                    </span>
+                  </span>
+                </label>
+                <label
+                  className={`flex gap-3 rounded-xl border p-4 text-sm ${onlinePaymentEnabled ? "cursor-pointer border-zinc-200" : "cursor-not-allowed border-zinc-100 bg-zinc-50 text-zinc-400"}`}
+                >
+                  <input
+                    type="radio"
+                    name="paymentMethod"
+                    value="razorpay"
+                    checked={paymentMethod === "razorpay"}
+                    disabled={!onlinePaymentEnabled}
+                    onChange={() => setPaymentMethod("razorpay")}
+                  />
+                  <span>
+                    <span className="block font-medium text-zinc-900">
+                      Pay online
+                    </span>
+                    <span className="mt-1 block text-zinc-600">
+                      Secure UPI, card and net-banking payment via Razorpay
+                      {onlinePaymentEnabled ? "." : " — coming soon."}
+                    </span>
+                  </span>
+                </label>
               </div>
             </section>
             <aside className="h-fit rounded-2xl border border-zinc-200 bg-white p-6">
@@ -195,7 +325,13 @@ export default function CheckoutPage() {
                 disabled={submitting}
                 className="mt-6 w-full rounded-xl bg-zinc-950 px-5 py-3 text-sm font-medium text-white hover:bg-zinc-800 disabled:opacity-60"
               >
-                {submitting ? "Placing order..." : "Place COD order"}
+                {submitting
+                  ? paymentMethod === "razorpay"
+                    ? "Opening payment..."
+                    : "Placing order..."
+                  : paymentMethod === "razorpay"
+                    ? "Pay securely"
+                    : "Place COD order"}
               </button>
             </aside>
           </form>
