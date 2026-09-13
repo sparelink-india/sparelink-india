@@ -4,7 +4,7 @@ dotenv.config({ path: ".env.local" });
 
 async function main() {
   const { getDb } = await import("../lib/db");
-  const { part, partCategory, partVehicleCompatibility, vehicle } =
+  const { part, partCategory, partVehicleCompatibility } =
     await import("../drizzle/schema");
   const { eq } = await import("drizzle-orm");
   const Typesense = (await import("typesense")).default;

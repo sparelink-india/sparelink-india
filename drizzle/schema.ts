@@ -14,7 +14,9 @@ export const user = pgTable("user", {
   name: text("name").notNull(),
   email: text("email").notNull().unique(),
   phoneNumber: text("phone_number").unique(),
-  phoneNumberVerified: boolean("phone_number_verified").default(false).notNull(),
+  phoneNumberVerified: boolean("phone_number_verified")
+    .default(false)
+    .notNull(),
   role: text("role").default("buyer").notNull(),
   emailVerified: boolean("email_verified").default(false).notNull(),
   image: text("image"),
@@ -344,5 +346,69 @@ export const cartItem = pgTable(
       table.cartId,
       table.dealerListingId,
     ),
+  ],
+);
+
+export const order = pgTable(
+  "order",
+  {
+    id: text("id").primaryKey(),
+    orderNumber: text("order_number").notNull().unique(),
+    buyerId: text("buyer_id")
+      .notNull()
+      .references(() => user.id, { onDelete: "restrict" }),
+    status: text("status").default("placed").notNull(),
+    paymentStatus: text("payment_status").default("pending").notNull(),
+    paymentMethod: text("payment_method").default("cash_on_delivery").notNull(),
+    subtotalPaise: integer("subtotal_paise").notNull(),
+    shippingPaise: integer("shipping_paise").default(0).notNull(),
+    totalPaise: integer("total_paise").notNull(),
+    shippingName: text("shipping_name").notNull(),
+    shippingPhone: text("shipping_phone").notNull(),
+    shippingAddressLine1: text("shipping_address_line1").notNull(),
+    shippingAddressLine2: text("shipping_address_line2"),
+    shippingCity: text("shipping_city").notNull(),
+    shippingState: text("shipping_state").notNull(),
+    shippingPincode: text("shipping_pincode").notNull(),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+    updatedAt: timestamp("updated_at")
+      .defaultNow()
+      .$onUpdate(() => new Date())
+      .notNull(),
+  },
+  (table) => [
+    index("order_buyer_idx").on(table.buyerId),
+    index("order_status_idx").on(table.status),
+    index("order_created_at_idx").on(table.createdAt),
+  ],
+);
+
+export const orderItem = pgTable(
+  "order_item",
+  {
+    id: text("id").primaryKey(),
+    orderId: text("order_id")
+      .notNull()
+      .references(() => order.id, { onDelete: "cascade" }),
+    dealerListingId: text("dealer_listing_id")
+      .notNull()
+      .references(() => dealerListing.id, { onDelete: "restrict" }),
+    dealerId: text("dealer_id")
+      .notNull()
+      .references(() => dealer.id, { onDelete: "restrict" }),
+    partId: text("part_id")
+      .notNull()
+      .references(() => part.id, { onDelete: "restrict" }),
+    partNumber: text("part_number").notNull(),
+    partName: text("part_name").notNull(),
+    quantity: integer("quantity").notNull(),
+    unitPricePaise: integer("unit_price_paise").notNull(),
+    totalPaise: integer("total_paise").notNull(),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+  },
+  (table) => [
+    index("order_item_order_idx").on(table.orderId),
+    index("order_item_dealer_idx").on(table.dealerId),
+    index("order_item_listing_idx").on(table.dealerListingId),
   ],
 );

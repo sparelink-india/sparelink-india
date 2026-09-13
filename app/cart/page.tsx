@@ -133,10 +133,9 @@ export default function CartPage() {
 
                     <p className="text-lg font-bold">
                       ₹
-                      {(
-                        (item.pricePaise * item.quantity) /
-                        100
-                      ).toLocaleString("en-IN")}
+                      {((item.pricePaise * item.quantity) / 100).toLocaleString(
+                        "en-IN",
+                      )}
                     </p>
                   </div>
                 </article>
@@ -153,13 +152,12 @@ export default function CartPage() {
                 </span>
               </div>
 
-              <button
-                type="button"
-                disabled
-                className="mt-6 w-full rounded-xl bg-zinc-300 px-5 py-3 text-sm font-medium text-zinc-600"
+              <Link
+                href="/checkout"
+                className="mt-6 block w-full rounded-xl bg-zinc-950 px-5 py-3 text-center text-sm font-medium text-white hover:bg-zinc-800"
               >
-                Checkout — Coming Soon
-              </button>
+                Proceed to checkout
+              </Link>
             </aside>
           </div>
         )}

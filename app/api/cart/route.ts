@@ -1,10 +1,16 @@
 import { randomUUID } from "node:crypto";
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import { NextResponse } from "next/server";
 
 import { getDb } from "@/lib/db";
 import { getServerSession } from "@/lib/auth-server";
-import { cart, cartItem, dealerListing, inventory, part } from "@/drizzle/schema";
+import {
+  cart,
+  cartItem,
+  dealerListing,
+  inventory,
+  part,
+} from "@/drizzle/schema";
 
 async function getBuyerSession() {
   const session = await getServerSession();
@@ -52,10 +58,7 @@ export async function GET() {
       partName: part.name,
     })
     .from(cartItem)
-    .innerJoin(
-      dealerListing,
-      eq(cartItem.dealerListingId, dealerListing.id),
-    )
+    .innerJoin(dealerListing, eq(cartItem.dealerListingId, dealerListing.id))
     .innerJoin(part, eq(dealerListing.partId, part.id))
     .where(eq(cartItem.cartId, existingCart.id));
 
@@ -105,10 +108,7 @@ export async function POST(request: Request) {
       stock: inventory.quantity,
     })
     .from(dealerListing)
-    .leftJoin(
-      inventory,
-      eq(inventory.dealerListingId, dealerListing.id),
-    )
+    .leftJoin(inventory, eq(inventory.dealerListingId, dealerListing.id))
     .where(eq(dealerListing.id, dealerListingId))
     .limit(1);
 
@@ -146,10 +146,13 @@ export async function POST(request: Request) {
   }
 
   const existingItem = await db.query.cartItem.findFirst({
-    where: eq(cartItem.dealerListingId, dealerListingId),
+    where: and(
+      eq(cartItem.cartId, existingCart.id),
+      eq(cartItem.dealerListingId, dealerListingId),
+    ),
   });
 
-  if (existingItem && existingItem.cartId === existingCart.id) {
+  if (existingItem) {
     const newQuantity = existingItem.quantity + quantity;
 
     if (newQuantity > stock) {
