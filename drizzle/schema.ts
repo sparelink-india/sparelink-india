@@ -97,7 +97,7 @@ export const customerProfile = pgTable(
     contactName: text("contact_name"),
     businessName: text("business_name"),
     gstin: text("gstin"),
-    customerType: text("customer_type").default("b2c").notNull(), // "b2b" | "b2c"
+    customerType: text("customer_type").default("b2c").notNull(),
     billingAddressLine1: text("billing_address_line1"),
     billingAddressLine2: text("billing_address_line2"),
     billingCity: text("billing_city"),
@@ -108,7 +108,9 @@ export const customerProfile = pgTable(
     shippingCity: text("shipping_city"),
     shippingState: text("shipping_state"),
     shippingPincode: text("shipping_pincode"),
-    shippingPreference: text("shipping_preference").default("courier").notNull(), // "self_pickup" | "transport" | "courier"
+    shippingPreference: text("shipping_preference")
+      .default("courier")
+      .notNull(),
     transportName: text("transport_name"),
     transportPhone: text("transport_phone"),
     transportGstin: text("transport_gstin"),
@@ -132,14 +134,18 @@ export const userRelations = relations(user, ({ many, one }) => ({
     fields: [user.id],
     references: [customerProfile.userId],
   }),
+  manualPaymentSubmissions: many(manualPaymentSubmission),
 }));
 
-export const customerProfileRelations = relations(customerProfile, ({ one }) => ({
-  user: one(user, {
-    fields: [customerProfile.userId],
-    references: [user.id],
+export const customerProfileRelations = relations(
+  customerProfile,
+  ({ one }) => ({
+    user: one(user, {
+      fields: [customerProfile.userId],
+      references: [user.id],
+    }),
   }),
-}));
+);
 
 export const sessionRelations = relations(session, ({ one }) => ({
   user: one(user, {
@@ -290,7 +296,9 @@ export const dealerListing = pgTable(
     dealerId: text("dealer_id")
       .notNull()
       .references(() => dealer.id, { onDelete: "cascade" }),
-    firmId: text("firm_id").references(() => firm.id, { onDelete: "restrict" }),
+    firmId: text("firm_id").references(() => firm.id, {
+      onDelete: "restrict",
+    }),
     partId: text("part_id")
       .notNull()
       .references(() => part.id, { onDelete: "cascade" }),
@@ -423,7 +431,9 @@ export const order = pgTable(
       .references(() => user.id, { onDelete: "restrict" }),
     status: text("status").default("placed").notNull(),
     paymentStatus: text("payment_status").default("pending").notNull(),
-    paymentMethod: text("payment_method").default("cash_on_delivery").notNull(),
+    paymentMethod: text("payment_method")
+      .default("cash_on_delivery")
+      .notNull(),
     subtotalPaise: integer("subtotal_paise").notNull(),
     shippingPaise: integer("shipping_paise").default(0).notNull(),
     totalPaise: integer("total_paise").notNull(),
@@ -434,11 +444,10 @@ export const order = pgTable(
     shippingCity: text("shipping_city").notNull(),
     shippingState: text("shipping_state").notNull(),
     shippingPincode: text("shipping_pincode").notNull(),
-    // Additive immutable snapshot fields
     buyerBusinessName: text("buyer_business_name"),
     buyerGstin: text("buyer_gstin"),
-    customerType: text("customer_type").default("b2c").notNull(), // "b2b" | "b2c"
-    shippingMethod: text("shipping_method").default("courier").notNull(), // "self_pickup" | "transport" | "courier"
+    customerType: text("customer_type").default("b2c").notNull(),
+    shippingMethod: text("shipping_method").default("courier").notNull(),
     transportName: text("transport_name"),
     transportPhone: text("transport_phone"),
     transportGstin: text("transport_gstin"),
@@ -563,5 +572,56 @@ export const firmOrderItem = pgTable(
   (table) => [index("firm_order_item_firm_order_idx").on(table.firmOrderId)],
 );
 
+export const manualPaymentSubmission = pgTable(
+  "manual_payment_submission",
+  {
+    id: text("id").primaryKey(),
+    orderId: text("order_id")
+      .notNull()
+      .references(() => order.id, { onDelete: "cascade" }),
+    buyerId: text("buyer_id")
+      .notNull()
+      .references(() => user.id, { onDelete: "cascade" }),
+    amountPaise: integer("amount_paise").notNull(),
+    utrReference: text("utr_reference").notNull(),
+    paymentDate: timestamp("payment_date").notNull(),
+    proofFileUrl: text("proof_file_url"),
+    proofFileName: text("proof_file_name"),
+    proofFileType: text("proof_file_type"),
+    status: text("status").default("submitted").notNull(),
+    adminNote: text("admin_note"),
+    reviewedBy: text("reviewed_by").references(() => user.id, {
+      onDelete: "set null",
+    }),
+    reviewedAt: timestamp("reviewed_at"),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+    updatedAt: timestamp("updated_at")
+      .defaultNow()
+      .$onUpdate(() => new Date())
+      .notNull(),
+  },
+  (table) => [
+    index("manual_payment_order_idx").on(table.orderId),
+    index("manual_payment_buyer_idx").on(table.buyerId),
+    index("manual_payment_status_idx").on(table.status),
+    index("manual_payment_utr_idx").on(table.utrReference),
+  ],
+);
 
-
+export const manualPaymentSubmissionRelations = relations(
+  manualPaymentSubmission,
+  ({ one }) => ({
+    order: one(order, {
+      fields: [manualPaymentSubmission.orderId],
+      references: [order.id],
+    }),
+    buyer: one(user, {
+      fields: [manualPaymentSubmission.buyerId],
+      references: [user.id],
+    }),
+    reviewer: one(user, {
+      fields: [manualPaymentSubmission.reviewedBy],
+      references: [user.id],
+    }),
+  }),
+);

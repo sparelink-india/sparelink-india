@@ -4,6 +4,7 @@ import Link from "next/link";
 import { FormEvent, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { validateGSTIN } from "@/lib/gst";
+import { SignOutButton } from "@/components/sign-out-button";
 
 type CartItem = {
   id: string;
@@ -240,6 +241,8 @@ export default function CheckoutPage() {
       if (!response.ok) throw new Error(data.error || "Unable to place order.");
       if (paymentMethod === "razorpay") {
         await openRazorpayPayment(data.id);
+      } else if (paymentMethod === "bank_transfer") {
+        router.push(`/orders/${data.id}/payment`);
       } else {
         router.push(
           `/order-confirmation/${data.id}?number=${encodeURIComponent(data.orderNumber)}`,
@@ -287,6 +290,7 @@ export default function CheckoutPage() {
           >
             <span>←</span> Back to Cart
           </Link>
+          <SignOutButton />
         </div>
       </header>
 
@@ -653,6 +657,25 @@ export default function CheckoutPage() {
                     </div>
                   </label>
 
+                  <label className="flex cursor-pointer items-start gap-3.5 rounded-xl border border-slate-200 p-4 transition-colors hover:bg-slate-50 has-checked:border-slate-950 has-checked:bg-slate-50/50">
+                    <input
+                      type="radio"
+                      name="paymentMethod"
+                      value="bank_transfer"
+                      checked={paymentMethod === "bank_transfer"}
+                      onChange={() => setPaymentMethod("bank_transfer")}
+                      className="mt-0.5"
+                    />
+                    <div>
+                      <span className="block text-sm font-bold text-slate-900">
+                        Direct Bank Transfer / UPI
+                      </span>
+                      <span className="mt-0.5 block text-xs text-slate-500">
+                        Transfer directly to firm bank account or business UPI ID and submit your UTR reference.
+                      </span>
+                    </div>
+                  </label>
+
                   <label
                     className={`flex items-start gap-3.5 rounded-xl border p-4 transition-colors ${
                       onlinePaymentEnabled
@@ -805,7 +828,9 @@ export default function CheckoutPage() {
                     <span>
                       {paymentMethod === "razorpay"
                         ? `Pay ₹${(grandTotalPaise / 100).toLocaleString("en-IN")}`
-                        : "Place COD Order"}
+                        : paymentMethod === "bank_transfer"
+                          ? "Proceed to Bank / UPI Transfer"
+                          : "Place COD Order"}
                     </span>
                   )}
                 </button>

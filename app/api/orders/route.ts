@@ -163,7 +163,11 @@ export async function POST(request: Request) {
       : gstinTag;
   }
 
-  if (paymentMethod !== "cash_on_delivery" && paymentMethod !== "razorpay") {
+  if (
+    paymentMethod !== "cash_on_delivery" &&
+    paymentMethod !== "razorpay" &&
+    paymentMethod !== "bank_transfer"
+  ) {
     return NextResponse.json(
       { error: "Please choose a valid payment method." },
       { status: 400 },

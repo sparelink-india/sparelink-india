@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useState, useTransition } from "react";
+import { SignOutButton } from "@/components/sign-out-button";
 
 type CartItem = {
   id: string;
@@ -276,6 +277,7 @@ export default function CartPage() {
               </svg>
               Continue Shopping
             </Link>
+            <SignOutButton />
           </nav>
         </div>
       </header>

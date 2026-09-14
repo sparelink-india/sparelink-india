@@ -183,6 +183,18 @@ export default function AdminDashboard() {
                     Manage system users
                   </p>
                 </Link>
+
+                <Link
+                  href="/admin/payments"
+                  className="rounded-lg border border-amber-200 bg-amber-50 p-6 hover:bg-amber-100"
+                >
+                  <p className="text-sm font-semibold text-amber-900">
+                    Bank / UPI Payments
+                  </p>
+                  <p className="mt-1 text-xs text-amber-700">
+                    Verify customer UTR payments
+                  </p>
+                </Link>
               </div>
             </section>
 

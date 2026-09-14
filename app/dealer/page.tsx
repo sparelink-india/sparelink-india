@@ -1,6 +1,7 @@
 "use client";
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import { SignOutButton } from "@/components/sign-out-button";
 type Listing = {
   id: string;
   partName: string;
@@ -71,7 +72,10 @@ export default function DealerPage() {
           <Link href="/" className="text-xl font-bold">
             SpareLink India
           </Link>
-          <span className="text-sm">Dealer portal</span>
+          <div className="flex items-center gap-3">
+            <span className="text-sm">Dealer portal</span>
+            <SignOutButton />
+          </div>
         </div>
       </header>
       <div className="mx-auto max-w-6xl px-6 py-10">

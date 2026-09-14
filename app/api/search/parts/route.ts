@@ -1,7 +1,8 @@
-import { NextRequest, NextResponse } from "next/server";
+﻿import { NextRequest, NextResponse } from "next/server";
 import { eq, inArray } from "drizzle-orm";
 import { typesense } from "@/lib/typesense";
 import { getDb } from "@/lib/db";
+import { getServerSession } from "@/lib/auth-server";
 import {
   dealer,
   dealerListing,
@@ -21,6 +22,21 @@ type PartDocument = {
 };
 
 export async function GET(request: NextRequest) {
+  const session = await getServerSession();
+
+  if (!session?.user) {
+    return NextResponse.json(
+      { error: "Authentication required" },
+      { status: 401 },
+    );
+  }
+
+  if (session.user.role !== "buyer" && session.user.role !== "admin") {
+    return NextResponse.json(
+      { error: "Catalog access denied" },
+      { status: 403 },
+    );
+  }
   const query = request.nextUrl.searchParams.get("q")?.trim();
   const vehicleId = request.nextUrl.searchParams.get("vehicleId")?.trim();
 

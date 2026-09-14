@@ -3,6 +3,20 @@
 import { FormEvent, useState } from "react";
 import { useRouter } from "next/navigation";
 
+function normalizeIndianPhoneNumber(value: string): string {
+  const digits = value.replace(/\D/g, "");
+
+  if (digits.length === 10) {
+    return `+91${digits}`;
+  }
+
+  if (digits.length === 12 && digits.startsWith("91")) {
+    return `+${digits}`;
+  }
+
+  return value.trim();
+}
+
 export default function LoginPage() {
   const router = useRouter();
   const [phoneNumber, setPhoneNumber] = useState("");
@@ -16,10 +30,17 @@ export default function LoginPage() {
     setError("");
     setMessage("");
 
+    const normalizedPhoneNumber = normalizeIndianPhoneNumber(phoneNumber);
+    if (!/^\+91[6-9]\d{9}$/.test(normalizedPhoneNumber)) {
+      setError("Enter a valid 10-digit Indian mobile number.");
+      return;
+    }
+    setPhoneNumber(normalizedPhoneNumber);
+
     const response = await fetch("/api/auth/phone-number/send-otp", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ phoneNumber }),
+      body: JSON.stringify({ phoneNumber: normalizedPhoneNumber }),
     });
 
     const data = await response.json();
@@ -38,10 +59,12 @@ export default function LoginPage() {
     setError("");
     setMessage("");
 
+    const normalizedPhoneNumber = normalizeIndianPhoneNumber(phoneNumber);
+
     const response = await fetch("/api/auth/phone-number/verify", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ phoneNumber, code }),
+      body: JSON.stringify({ phoneNumber: normalizedPhoneNumber, code }),
     });
 
     const data = await response.json();

@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import { SignOutButton } from "@/components/sign-out-button";
 
 type Order = {
   id: string;
@@ -69,6 +70,7 @@ export default function OrdersPage() {
           >
             Cart
           </Link>
+          <SignOutButton />
         </div>
       </header>
       <div className="mx-auto max-w-5xl px-6 py-12">
@@ -188,10 +190,24 @@ export default function OrdersPage() {
                   Payment:{" "}
                   {order.paymentMethod === "cash_on_delivery"
                     ? "Cash on delivery"
-                    : `Online payment (${statusLabel(order.paymentStatus)})`}
+                    : order.paymentMethod === "bank_transfer"
+                      ? `Bank / UPI Transfer (${statusLabel(order.paymentStatus)})`
+                      : `Online payment (${statusLabel(order.paymentStatus)})`}
                 </p>
 
                 <div className="flex flex-wrap items-center gap-2">
+                  {order.paymentMethod === "bank_transfer" && (
+                    <Link
+                      href={`/orders/${order.id}/payment`}
+                      className={`inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-bold transition-colors ${
+                        order.paymentStatus === "paid"
+                          ? "border border-emerald-300 bg-emerald-50 text-emerald-800 hover:bg-emerald-100"
+                          : "bg-slate-950 text-white hover:bg-slate-800"
+                      }`}
+                    >
+                      <span>💳</span> {order.paymentStatus === "paid" ? "Payment Details" : "Submit Payment UTR"}
+                    </Link>
+                  )}
                   <a
                     href={`/api/orders/${order.id}/invoice`}
                     target="_blank"

@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { FormEvent, useEffect, useState } from "react";
 import { validateGSTIN } from "@/lib/gst";
+import { SignOutButton } from "@/components/sign-out-button";
 
 type ProfileData = {
   id: string;
@@ -154,6 +155,7 @@ export default function ProfilePage() {
             >
               Order Parts
             </Link>
+            <SignOutButton className="rounded-full border border-slate-300 px-3 py-1.5 text-xs font-semibold text-slate-700 transition-colors hover:bg-slate-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-950 disabled:cursor-not-allowed disabled:opacity-60" />
           </nav>
         </div>
       </header>
