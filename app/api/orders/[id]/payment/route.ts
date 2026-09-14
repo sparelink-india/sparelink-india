@@ -1,5 +1,5 @@
 ﻿import { NextRequest, NextResponse } from "next/server";
-import { and, desc, eq } from "drizzle-orm";
+import { desc, eq } from "drizzle-orm";
 import { randomUUID } from "node:crypto";
 import { getServerSession } from "@/lib/auth-server";
 import { getDb } from "@/lib/db";
@@ -7,15 +7,20 @@ import {
   order,
   manualPaymentSubmission,
   orderItem,
-  user,
+  firm,
+  firmOrder,
 } from "@/drizzle/schema";
-import { getBankPaymentConfig } from "@/lib/bank-payment-config";
+import {
+  getBankPaymentConfig,
+  getFirmBankPaymentConfig,
+} from "@/lib/bank-payment-config";
 
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> },
 ) {
   const session = await getServerSession();
+
   if (!session) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
@@ -31,7 +36,6 @@ export async function GET(
     return NextResponse.json({ error: "Order not found" }, { status: 404 });
   }
 
-  // Ownership authorization
   if (session.user.role !== "admin" && orderRecord.buyerId !== session.user.id) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
@@ -66,7 +70,28 @@ export async function GET(
     .where(eq(manualPaymentSubmission.orderId, orderRecord.id))
     .orderBy(desc(manualPaymentSubmission.createdAt));
 
-  const bankConfig = getBankPaymentConfig();
+  const firmAllocations = await db
+    .select({
+      firmId: firmOrder.firmId,
+      firmName: firm.name,
+      firmCode: firm.code,
+      allocationNumber: firmOrder.allocationNumber,
+      amountPaise: firmOrder.amountPaise,
+      fulfillmentStatus: firmOrder.fulfillmentStatus,
+      paymentAccountingReference: firmOrder.paymentAccountingReference,
+    })
+    .from(firmOrder)
+    .innerJoin(firm, eq(firmOrder.firmId, firm.id))
+    .where(eq(firmOrder.orderId, orderRecord.id));
+
+  const firmPayments = firmAllocations.map((allocation) => ({
+    ...allocation,
+    bankConfig: getFirmBankPaymentConfig(
+      allocation.firmId,
+      allocation.firmName,
+      allocation.amountPaise,
+    ),
+  }));
 
   return NextResponse.json({
     order: {
@@ -81,7 +106,8 @@ export async function GET(
       createdAt: orderRecord.createdAt,
       items,
     },
-    bankConfig,
+    bankConfig: getBankPaymentConfig(),
+    firmPayments,
     submissions,
     latestSubmission: submissions[0] || null,
   });
@@ -92,6 +118,7 @@ export async function POST(
   { params }: { params: Promise<{ id: string }> },
 ) {
   const session = await getServerSession();
+
   if (!session || session.user.role === "suspended") {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
@@ -107,7 +134,6 @@ export async function POST(
     return NextResponse.json({ error: "Order not found" }, { status: 404 });
   }
 
-  // Ownership authorization
   if (session.user.role !== "admin" && orderRecord.buyerId !== session.user.id) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
@@ -123,11 +149,13 @@ export async function POST(
     const formData = await request.formData();
     const utrReference = formData.get("utrReference")?.toString().trim();
     const paymentDateStr = formData.get("paymentDate")?.toString().trim();
-    const proofFile = formData.get("proofFile") as File | null;
 
     if (!utrReference || utrReference.length < 4 || utrReference.length > 50) {
       return NextResponse.json(
-        { error: "Please enter a valid UTR / Transaction Reference number (4-50 characters)." },
+        {
+          error:
+            "Please enter a valid UTR / Transaction Reference number (4-50 characters).",
+        },
         { status: 400 },
       );
     }
@@ -140,6 +168,7 @@ export async function POST(
     }
 
     const paymentDate = new Date(paymentDateStr);
+
     if (isNaN(paymentDate.getTime())) {
       return NextResponse.json(
         { error: "Invalid payment date provided." },
@@ -147,15 +176,7 @@ export async function POST(
       );
     }
 
-    // Payment amount is always authoritative from the server-side order total.\r\n    const amountPaise = orderRecord.totalPaise;
-
-    let proofFileUrl: string | null = null;
-    let proofFileName: string | null = null;
-    let proofFileType: string | null = null;
-
-
     const amountPaise = orderRecord.totalPaise;
-
     const submissionId = randomUUID();
 
     await db.insert(manualPaymentSubmission).values({
@@ -165,9 +186,9 @@ export async function POST(
       amountPaise,
       utrReference,
       paymentDate,
-      proofFileUrl,
-      proofFileName,
-      proofFileType,
+      proofFileUrl: null,
+      proofFileName: null,
+      proofFileType: null,
       status: "submitted",
     });
 
@@ -178,13 +199,10 @@ export async function POST(
     });
   } catch (error) {
     console.error("Manual payment submission error:", error);
+
     return NextResponse.json(
       { error: "Failed to submit payment details. Please try again." },
       { status: 500 },
     );
   }
 }
-
-
-
-
