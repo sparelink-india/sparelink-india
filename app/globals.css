@@ -27,6 +27,14 @@ body {
     linear-gradient(to bottom, rgba(148, 163, 184, 0.08) 1px, transparent 1px);
 }
 
+/* Automotive Spare Parts Hero Background */
+.hero-automotive-bg {
+  background-image: url('/images/spareparts-bg.png');
+  background-size: cover;
+  background-position: center center;
+  background-repeat: no-repeat;
+}
+
 /* Respect user's motion preferences */
 @media (prefers-reduced-motion: reduce) {
   *, ::before, ::after {

@@ -257,10 +257,6 @@ export default function UsersPage() {
                   );
                 })}
               </tbody>
-                    </tr>
-                  );
-                })}
-              </tbody>
             </table>
           </div>
         )}

@@ -208,7 +208,15 @@ export default function HomePage() {
       if (vId) params.set("vehicleId", vId);
 
       const response = await fetch(`/api/search/parts?${params}`);
-      const data = await response.json();
+      const responseText = await response.text();
+      let data: { results?: SearchHit[]; found?: number; error?: string } = {};
+      if (responseText.trim()) {
+        try {
+          data = JSON.parse(responseText);
+        } catch {
+          throw new Error(`Search API returned invalid JSON (${response.status})`);
+        }
+      }
 
       if (!response.ok) {
         throw new Error(data.error || "Search failed");
@@ -482,10 +490,10 @@ export default function HomePage() {
         {/* Hero & Search Section */}
         <section
           id="search"
-          className="relative overflow-hidden border-b border-slate-200 bg-gradient-to-b from-white via-slate-50 to-slate-100/80 py-16 sm:py-20 lg:py-24"
+          className="relative overflow-hidden border-b border-slate-200 hero-automotive-bg py-16 sm:py-20 lg:py-24"
         >
-          {/* Subtle Grid Ambient */}
-          <div className="bg-grid-pattern absolute inset-0 opacity-40 pointer-events-none" />
+          {/* Subtle contrast overlay to enhance text readability without blurring image */}
+          <div className="absolute inset-0 bg-gradient-to-b from-white/90 via-white/80 to-slate-50/95 pointer-events-none" />
 
           <div className="relative mx-auto max-w-5xl px-4 text-center sm:px-6">
             {/* Pill Tag */}
@@ -1226,3 +1234,4 @@ export default function HomePage() {
     </div>
   );
 }
+

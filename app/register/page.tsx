@@ -17,8 +17,10 @@ export default function RegisterPage() {
   const [city, setCity] = useState("");
   const [state, setState] = useState("");
   const [pincode, setPincode] = useState("");
-  const [deliveryPreference, setDeliveryPreference] = useState<"courier" | "self_pickup">("courier");
-
+  const [deliveryPreference, setDeliveryPreference] = useState<"courier" | "self_pickup" | "transport">("courier");
+  const [transportName, setTransportName] = useState("");
+  const [transportPhone, setTransportPhone] = useState("");
+  const [transportGstin, setTransportGstin] = useState("");
   // OTP Verification State
   const [step, setStep] = useState<"details" | "otp">("details");
   const [code, setCode] = useState("");
@@ -438,3 +440,4 @@ export default function RegisterPage() {
     </main>
   );
 }
+
