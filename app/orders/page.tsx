@@ -191,21 +191,36 @@ export default function OrdersPage() {
                   {order.paymentMethod === "cash_on_delivery"
                     ? "Cash on delivery"
                     : order.paymentMethod === "bank_transfer"
-                      ? `Bank / UPI Transfer (${statusLabel(order.paymentStatus)})`
-                      : `Online payment (${statusLabel(order.paymentStatus)})`}
+                      ? "Bank / UPI Transfer"
+                      : "Online payment"}{" "}
+                  ({order.paymentStatus === "paid"
+                    ? "Paid"
+                    : order.paymentStatus === "partial"
+                      ? "Partially Paid"
+                      : "Pending"})
                 </p>
 
                 <div className="flex flex-wrap items-center gap-2">
-                  {order.paymentMethod === "bank_transfer" && (
+                  {order.paymentMethod !== "cash_on_delivery" &&
+                    order.paymentStatus !== "paid" && (
                     <Link
                       href={`/orders/${order.id}/payment`}
-                      className={`inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-bold transition-colors ${
-                        order.paymentStatus === "paid"
-                          ? "border border-emerald-300 bg-emerald-50 text-emerald-800 hover:bg-emerald-100"
-                          : "bg-slate-950 text-white hover:bg-slate-800"
-                      }`}
+                      className="inline-flex items-center gap-1.5 rounded-lg bg-slate-950 px-3 py-1.5 text-xs font-bold text-white hover:bg-slate-800"
                     >
-                      <span>💳</span> {order.paymentStatus === "paid" ? "Payment Details" : "Submit Payment UTR"}
+                      {order.paymentStatus === "partial"
+                        ? "Complete remaining payment"
+                        : order.paymentMethod === "bank_transfer"
+                          ? "Submit Payment UTR"
+                          : "Pay now"}
+                    </Link>
+                  )}
+                  {order.paymentMethod !== "cash_on_delivery" &&
+                    order.paymentStatus === "paid" && (
+                    <Link
+                      href={`/orders/${order.id}/payment`}
+                      className="inline-flex items-center gap-1.5 rounded-lg border border-emerald-300 bg-emerald-50 px-3 py-1.5 text-xs font-bold text-emerald-800 hover:bg-emerald-100"
+                    >
+                      Payment details
                     </Link>
                   )}
                   <a

@@ -1,7 +1,15 @@
 import type { ReactNode } from "react";
-import { SignOutButton } from "@/components/sign-out-button";
 
-export default function AdminLayout({ children }: { children: ReactNode }) {
+import { SignOutButton } from "@/components/sign-out-button";
+import { requireRole } from "@/lib/require-role";
+
+export default async function AdminLayout({
+  children,
+}: {
+  children: ReactNode;
+}) {
+  await requireRole(["admin"]);
+
   return (
     <>
       <div className="fixed right-4 top-3 z-50 sm:right-6">

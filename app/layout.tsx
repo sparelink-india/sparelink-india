@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import type { ReactNode } from "react";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
@@ -13,9 +13,40 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
+const siteDescription =
+  "Spare-parts marketplace for India. Search by vehicle or part number across Ambaji Traders, Hind Motors, and India Sales.";
+
 export const metadata: Metadata = {
-  title: "SpareLink India",
-  description: "Spare-parts marketplace for India",
+  metadataBase: new URL(
+    process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000",
+  ),
+  title: {
+    default: "SpareLink India",
+    template: "%s | SpareLink India",
+  },
+  description: siteDescription,
+  applicationName: "SpareLink India",
+  appleWebApp: {
+    capable: true,
+    title: "SpareLink",
+    statusBarStyle: "default",
+  },
+  formatDetection: {
+    telephone: false,
+  },
+  openGraph: {
+    title: "SpareLink India",
+    description: siteDescription,
+    siteName: "SpareLink India",
+    locale: "en_IN",
+    type: "website",
+  },
+};
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  themeColor: "#020617",
 };
 
 export default function RootLayout({

@@ -15,8 +15,11 @@
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "db:generate": "drizzle-kit generate",
-    "db:migrate": "drizzle-kit migrate",
-    "db:studio": "drizzle-kit studio"
+    "db:migrate": "node scripts/with-db-target.mjs",
+    "db:migrate:test": "node scripts/with-db-target.mjs test migrate",
+    "db:migrate:production": "node scripts/with-db-target.mjs production migrate --i-understand-production",
+    "db:studio": "node scripts/with-db-target.mjs test studio",
+    "db:studio:production": "node scripts/with-db-target.mjs production studio --i-understand-production"
   },
   "dependencies": {
     "@better-auth/drizzle-adapter": "^1.7.4",

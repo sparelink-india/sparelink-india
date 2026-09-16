@@ -1,8 +1,18 @@
 import { NextResponse } from "next/server";
+import { count, desc, eq } from "drizzle-orm";
+import { firm, firmOrder, firmOrderItem, order } from "@/drizzle/schema";
+import { writeAuditLog } from "@/lib/audit";
 import { getServerSession } from "@/lib/auth-server";
 import { getDb } from "@/lib/db";
-import { firmOrder, order, firm, firmOrderItem } from "@/drizzle/schema";
-import { desc, eq, count } from "drizzle-orm";
+
+const ALLOWED_STATUSES = new Set([
+  "pending",
+  "confirmed",
+  "packed",
+  "shipped",
+  "delivered",
+  "cancelled",
+]);
 
 export async function GET() {
   const session = await getServerSession();
@@ -29,7 +39,6 @@ export async function GET() {
       .innerJoin(firm, eq(firmOrder.firmId, firm.id))
       .orderBy(desc(firmOrder.createdAt));
 
-    // Get item count for each allocation
     const allocationsWithCounts = await Promise.all(
       allocationsData.map(async (a) => {
         const itemResult = await db
@@ -51,4 +60,70 @@ export async function GET() {
       { status: 500 },
     );
   }
+}
+
+export async function PATCH(request: Request) {
+  const session = await getServerSession();
+
+  if (!session || session.user.role !== "admin") {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  const body = await request.json().catch(() => null);
+  if (!body || typeof body !== "object") {
+    return NextResponse.json({ error: "Invalid payload" }, { status: 400 });
+  }
+
+  const firmOrderId =
+    typeof body.firmOrderId === "string" ? body.firmOrderId.trim() : "";
+  const fulfillmentStatus =
+    typeof body.fulfillmentStatus === "string"
+      ? body.fulfillmentStatus.trim()
+      : "";
+
+  if (!firmOrderId) {
+    return NextResponse.json(
+      { error: "firmOrderId is required" },
+      { status: 400 },
+    );
+  }
+  if (!ALLOWED_STATUSES.has(fulfillmentStatus)) {
+    return NextResponse.json(
+      { error: "Invalid fulfillmentStatus" },
+      { status: 400 },
+    );
+  }
+
+  const db = getDb();
+  const existing = await db.query.firmOrder.findFirst({
+    where: eq(firmOrder.id, firmOrderId),
+  });
+
+  if (!existing) {
+    return NextResponse.json(
+      { error: "Allocation not found" },
+      { status: 404 },
+    );
+  }
+
+  await db
+    .update(firmOrder)
+    .set({
+      fulfillmentStatus,
+      updatedAt: new Date(),
+    })
+    .where(eq(firmOrder.id, firmOrderId));
+
+  await writeAuditLog({
+    actorUserId: session.user.id,
+    action: "allocation.status_update",
+    entityType: "firm_order",
+    entityId: firmOrderId,
+    metadata: {
+      previousStatus: existing.fulfillmentStatus,
+      fulfillmentStatus,
+    },
+  });
+
+  return NextResponse.json({ success: true, fulfillmentStatus });
 }

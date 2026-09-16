@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { FormEvent, useEffect, useMemo, useState } from "react";
+import { SiteFooter } from "@/components/site-footer";
 
 type Listing = {
   id: string;
@@ -300,7 +301,7 @@ export default function HomePage() {
           <span>SpareLink India — Private Automotive Business Ordering</span>
           <span className="hidden sm:inline text-slate-500">|</span>
           <span className="hidden sm:inline text-slate-400">
-            Fulfillment Network: Ambaji Traders • Hind Motors • India Sales
+            Fulfillment Network: Ambaji Traders · Hind Motors · India Sales
           </span>
         </span>
       </div>
@@ -493,7 +494,7 @@ export default function HomePage() {
           className="relative overflow-hidden border-b border-slate-200 hero-automotive-bg py-16 sm:py-20 lg:py-24"
         >
           {/* Subtle contrast overlay to enhance text readability without blurring image */}
-          <div className="absolute inset-0 bg-gradient-to-b from-white/90 via-white/80 to-slate-50/95 pointer-events-none" />
+          
 
           <div className="relative mx-auto max-w-5xl px-4 text-center sm:px-6">
             {/* Pill Tag */}
@@ -586,7 +587,7 @@ export default function HomePage() {
                         setSelectedMake(event.target.value);
                         setSelectedVehicleId("");
                       }}
-                      className="h-10 w-full rounded-xl border border-slate-200 bg-slate-50/70 px-3 text-xs font-semibold text-slate-700 outline-none transition-colors hover:bg-slate-100 focus:border-slate-950 focus:bg-white"
+                      className="h-10 w-full rounded-xl border border-[#d9b8c2] bg-[#fffaf9] px-3 text-xs font-semibold text-[#3b1822] opacity-100 outline-none transition-colors hover:bg-white focus:border-[#8f173f] focus:bg-white"
                     >
                       <option value="">Vehicle Make (Optional)</option>
                       {makes.map((make) => (
@@ -602,7 +603,7 @@ export default function HomePage() {
                       value={selectedVehicleId}
                       disabled={!selectedMake}
                       onChange={(event) => setSelectedVehicleId(event.target.value)}
-                      className="h-10 w-full rounded-xl border border-slate-200 bg-slate-50/70 px-3 text-xs font-semibold text-slate-700 outline-none transition-colors hover:bg-slate-100 focus:border-slate-950 focus:bg-white disabled:bg-slate-100 disabled:text-slate-400"
+                      className="h-10 w-full rounded-xl border border-[#d9b8c2] bg-[#fffaf9] px-3 text-xs font-semibold text-[#3b1822] opacity-100 outline-none transition-colors hover:bg-white focus:border-[#8f173f] focus:bg-white disabled:bg-[#fffaf9] disabled:text-[#3b1822] disabled:opacity-100"
                     >
                       <option value="">All {selectedMake || "Models"}</option>
                       {vehiclesForMake.map((vehicle) => (
@@ -1132,37 +1133,7 @@ export default function HomePage() {
         </section>
       </main>
 
-      {/* Footer */}
-      <footer className="border-t border-slate-200 bg-slate-950 text-slate-400 py-12">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6">
-          <div className="flex flex-col md:flex-row items-center justify-between gap-6">
-            <div>
-              <div className="flex items-center gap-2">
-                <span className="text-lg font-bold text-white">SpareLink</span>
-                <span className="rounded bg-emerald-950 px-1.5 py-0.5 text-[10px] font-bold uppercase text-emerald-400 border border-emerald-800">
-                  India
-                </span>
-              </div>
-              <p className="mt-1 text-xs text-slate-500">
-                Automotive spare parts distribution and regional fulfillment network.
-              </p>
-            </div>
-
-            <div className="flex flex-wrap gap-6 text-xs font-semibold text-slate-300">
-              <a href="#search" className="hover:text-white">Find Parts</a>
-              <a href="#categories" className="hover:text-white">Categories</a>
-              <Link href="/cart" className="hover:text-white">Cart</Link>
-              <Link href="/orders" className="hover:text-white">My Orders</Link>
-              <Link href="/profile" className="hover:text-white">Customer Profile</Link>
-              <Link href="/admin" className="hover:text-white">Admin Management</Link>
-            </div>
-          </div>
-
-          <div className="mt-8 border-t border-slate-800 pt-8 text-center text-xs text-slate-500">
-            &copy; {new Date().getFullYear()} SpareLink India. All rights reserved.
-          </div>
-        </div>
-      </footer>
+      <SiteFooter />
 
       {/* Product Image Lightbox Modal */}
       {lightboxImage && (
@@ -1222,7 +1193,7 @@ export default function HomePage() {
             <div className="flex items-center justify-between border-t border-slate-100 px-5 py-3 text-xs text-slate-500 bg-white">
               <span>
                 {lightboxImage.brand || "SpareLink"}
-                {lightboxImage.category ? ` • ${lightboxImage.category}` : ""}
+                {lightboxImage.category ? ` · ${lightboxImage.category}` : ""}
               </span>
               <span className="hidden sm:inline">
                 Click outside or press <kbd className="rounded border border-slate-300 bg-slate-100 px-1.5 py-0.5 font-mono text-[10px]">Esc</kbd> to close
@@ -1234,4 +1205,5 @@ export default function HomePage() {
     </div>
   );
 }
+
 

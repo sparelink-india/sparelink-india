@@ -2,6 +2,7 @@ import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "@better-auth/drizzle-adapter";
 import { phoneNumber } from "better-auth/plugins";
 import { getDb } from "@/lib/db";
+import { deliverBuyerOtp } from "@/lib/otp";
 import * as schema from "@/drizzle/schema";
 
 export const auth = betterAuth({
@@ -29,7 +30,7 @@ export const auth = betterAuth({
   plugins: [
     phoneNumber({
       sendOTP: async ({ phoneNumber, code }) => {
-        console.log(`OTP for ${phoneNumber}: ${code}`);
+        await deliverBuyerOtp({ phoneNumber, code });
       },
 
       signUpOnVerification: {

@@ -1,15 +1,46 @@
-import Link from "next/link";
+"use client";
 
-type Props = {
-  params: Promise<{ id: string }>;
-  searchParams: Promise<{ number?: string }>;
+import Link from "next/link";
+import { useParams } from "next/navigation";
+import { useEffect, useState } from "react";
+
+type PaymentOrder = {
+  id: string;
+  orderNumber: string;
+  paymentStatus: string;
+  paymentMethod: string;
 };
 
-export default async function OrderConfirmationPage({
-  params,
-  searchParams,
-}: Props) {
-  const [{ id }, { number }] = await Promise.all([params, searchParams]);
+function parentPaymentLabel(status: string) {
+  if (status === "paid") return "Paid";
+  if (status === "partial") return "Partially Paid";
+  return "Pending";
+}
+
+export default function OrderConfirmationPage() {
+  const params = useParams();
+  const id = typeof params.id === "string" ? params.id : "";
+  const [order, setOrder] = useState<PaymentOrder | null>(null);
+
+  useEffect(() => {
+    if (!id) return;
+    void fetch(`/api/orders/${id}/payment`, { cache: "no-store" })
+      .then(async (res) => {
+        const data = await res.json();
+        if (res.ok && data.order) {
+          setOrder(data.order);
+        }
+      })
+      .catch(() => {
+        setOrder(null);
+      });
+  }, [id]);
+
+  const needsPayment =
+    order &&
+    order.paymentMethod !== "cash_on_delivery" &&
+    order.paymentStatus !== "paid";
+
   return (
     <main className="min-h-screen bg-slate-50/80 px-4 py-16 text-slate-900 sm:px-6 sm:py-24">
       <section className="mx-auto max-w-xl rounded-2xl border border-slate-200 bg-white p-8 sm:p-10 text-center shadow-sm">
@@ -31,8 +62,15 @@ export default async function OrderConfirmationPage({
         </h1>
 
         <p className="mt-3 text-sm text-slate-600">
-          Your order {number ? <strong className="font-mono font-bold text-slate-900">#{number}</strong> : ""} has been
-          received and allocated to regional fulfillment partners.
+          Your order{" "}
+          {order?.orderNumber ? (
+            <strong className="font-mono font-bold text-slate-900">
+              #{order.orderNumber}
+            </strong>
+          ) : (
+            ""
+          )}{" "}
+          has been received and allocated to regional fulfillment partners.
         </p>
 
         <div className="mt-6 rounded-xl bg-slate-50 border border-slate-100 p-4 text-xs text-slate-500 space-y-1.5 text-left">
@@ -41,14 +79,29 @@ export default async function OrderConfirmationPage({
             <span className="font-mono text-slate-700">{id}</span>
           </div>
           <div className="flex justify-between">
-            <span>Fulfillment Status:</span>
-            <span className="text-emerald-700 font-semibold">Allocated to Regional Distributor</span>
+            <span>Payment status:</span>
+            <span className="text-slate-900 font-medium">
+              {order
+                ? parentPaymentLabel(order.paymentStatus)
+                : "Confirming from SpareLink..."}
+            </span>
           </div>
           <div className="flex justify-between">
             <span>GST Tax Invoice:</span>
             <span className="text-slate-900 font-medium">Ready for Download</span>
           </div>
         </div>
+
+        {needsPayment && (
+          <Link
+            href={`/orders/${id}/payment`}
+            className="mt-6 inline-flex w-full items-center justify-center rounded-xl bg-slate-950 px-6 py-3 text-sm font-bold text-white shadow-sm hover:bg-slate-800"
+          >
+            {order.paymentStatus === "partial"
+              ? "Complete remaining payment"
+              : "Pay now"}
+          </Link>
+        )}
 
         <div className="mt-6 flex flex-wrap items-center justify-center gap-2.5">
           <a
@@ -66,16 +119,6 @@ export default async function OrderConfirmationPage({
             className="inline-flex items-center gap-1.5 rounded-xl border border-emerald-300 bg-emerald-50 px-3.5 py-2 text-xs font-bold text-emerald-800 shadow-xs hover:bg-emerald-100 transition-colors"
           >
             <span>📊</span> Download Excel
-          </a>
-          <a
-            href={`https://api.whatsapp.com/send?text=${encodeURIComponent(
-              `Hello SpareLink India, I have placed Order #${number || id}. Please proceed with fulfillment & dispatch. View orders: https://sparelink.in/orders`,
-            )}`}
-            target="_blank"
-            rel="noreferrer"
-            className="inline-flex items-center gap-1.5 rounded-xl bg-emerald-600 px-3.5 py-2 text-xs font-bold text-white shadow-xs hover:bg-emerald-700 transition-colors"
-          >
-            <span>💬</span> Share on WhatsApp
           </a>
         </div>
 

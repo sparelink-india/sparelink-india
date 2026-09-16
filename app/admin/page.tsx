@@ -189,10 +189,10 @@ export default function AdminDashboard() {
                   className="rounded-lg border border-amber-200 bg-amber-50 p-6 hover:bg-amber-100"
                 >
                   <p className="text-sm font-semibold text-amber-900">
-                    Bank / UPI Payments
+                    Payments
                   </p>
                   <p className="mt-1 text-xs text-amber-700">
-                    Verify customer UTR payments
+                    Firm allocations, Cashfree, and UTR verification
                   </p>
                 </Link>
               </div>

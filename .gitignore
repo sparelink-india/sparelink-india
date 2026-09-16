@@ -44,3 +44,8 @@ next-env.d.ts
 /AGENTS.md
 /CLAUDE.md
 .neon
+
+# local/accidental
+*.backup
+bank details.txt
+/sparelink-safety-backups/

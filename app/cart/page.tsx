@@ -1,8 +1,10 @@
-﻿"use client";
+/* eslint-disable react-hooks/set-state-in-effect */
+"use client";
 
 import Link from "next/link";
 import { useEffect, useState, useTransition } from "react";
 import { SignOutButton } from "@/components/sign-out-button";
+import { SiteFooter } from "@/components/site-footer";
 
 type CartItem = {
   id: string;
@@ -324,7 +326,7 @@ export default function CartPage() {
               className="text-xs font-semibold text-rose-600 hover:text-rose-900"
               aria-label="Dismiss error"
             >
-              ✕
+              ?
             </button>
           </div>
         )}
@@ -353,7 +355,7 @@ export default function CartPage() {
               className="text-xs font-semibold text-emerald-700 hover:text-emerald-950"
               aria-label="Dismiss message"
             >
-              ✕
+              ?
             </button>
           </div>
         )}
@@ -693,7 +695,7 @@ export default function CartPage() {
                   <div className="flex items-center justify-between text-slate-600">
                     <span>Items Subtotal ({cart.itemCount})</span>
                     <span className="font-semibold text-slate-900">
-                      ₹
+                      ?
                       {(
                         (cart.subtotalPaise ??
                           cart.items.reduce(
@@ -713,7 +715,7 @@ export default function CartPage() {
                       </span>
                     </span>
                     <span className="font-semibold text-emerald-700">
-                      ₹
+                      ?
                       {(
                         (cart.gstPaise ??
                           Math.max(
@@ -888,6 +890,8 @@ export default function CartPage() {
           </div>
         </div>
       )}
+      <SiteFooter />
     </div>
   );
 }
+

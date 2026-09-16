@@ -14,6 +14,8 @@ import {
   getBankPaymentConfig,
   getFirmBankPaymentConfig,
 } from "@/lib/bank-payment-config";
+import { isCashfreeConfiguredForFirm } from "@/lib/cashfree";
+import { isAllowedFirmId } from "@/lib/firms";
 
 export async function GET(
   request: NextRequest,
@@ -55,6 +57,8 @@ export async function GET(
   const submissions = await db
     .select({
       id: manualPaymentSubmission.id,
+      firmOrderId: manualPaymentSubmission.firmOrderId,
+      firmId: manualPaymentSubmission.firmId,
       amountPaise: manualPaymentSubmission.amountPaise,
       utrReference: manualPaymentSubmission.utrReference,
       paymentDate: manualPaymentSubmission.paymentDate,
@@ -72,12 +76,14 @@ export async function GET(
 
   const firmAllocations = await db
     .select({
+      firmOrderId: firmOrder.id,
       firmId: firmOrder.firmId,
       firmName: firm.name,
       firmCode: firm.code,
       allocationNumber: firmOrder.allocationNumber,
       amountPaise: firmOrder.amountPaise,
       fulfillmentStatus: firmOrder.fulfillmentStatus,
+      paymentStatus: firmOrder.paymentStatus,
       paymentAccountingReference: firmOrder.paymentAccountingReference,
     })
     .from(firmOrder)
@@ -86,6 +92,7 @@ export async function GET(
 
   const firmPayments = firmAllocations.map((allocation) => ({
     ...allocation,
+    onlinePaymentConfigured: isCashfreeConfiguredForFirm(allocation.firmId),
     bankConfig: getFirmBankPaymentConfig(
       allocation.firmId,
       allocation.firmName,
@@ -138,17 +145,25 @@ export async function POST(
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
-  if (orderRecord.paymentStatus === "paid") {
+  if (orderRecord.paymentMethod === "cash_on_delivery") {
     return NextResponse.json(
-      { error: "This order has already been marked as paid." },
+      { error: "Cash on delivery orders do not use UTR submission." },
       { status: 400 },
     );
   }
 
   try {
     const formData = await request.formData();
+    const firmOrderId = formData.get("firmOrderId")?.toString().trim() ?? "";
     const utrReference = formData.get("utrReference")?.toString().trim();
     const paymentDateStr = formData.get("paymentDate")?.toString().trim();
+
+    if (!firmOrderId) {
+      return NextResponse.json(
+        { error: "firmOrderId is required." },
+        { status: 400 },
+      );
+    }
 
     if (!utrReference || utrReference.length < 4 || utrReference.length > 50) {
       return NextResponse.json(
@@ -176,14 +191,43 @@ export async function POST(
       );
     }
 
-    const amountPaise = orderRecord.totalPaise;
+    const allocation = await db.query.firmOrder.findFirst({
+      where: eq(firmOrder.id, firmOrderId),
+    });
+
+    if (!allocation || allocation.orderId !== orderRecord.id) {
+      return NextResponse.json(
+        { error: "Firm allocation not found for this order." },
+        { status: 404 },
+      );
+    }
+
+    if (!isAllowedFirmId(allocation.firmId)) {
+      return NextResponse.json(
+        {
+          error:
+            "This allocation is not assigned to a valid fulfillment firm.",
+        },
+        { status: 400 },
+      );
+    }
+
+    if (allocation.paymentStatus === "paid") {
+      return NextResponse.json(
+        { error: "This firm allocation has already been marked as paid." },
+        { status: 400 },
+      );
+    }
+
     const submissionId = randomUUID();
 
     await db.insert(manualPaymentSubmission).values({
       id: submissionId,
       orderId: orderRecord.id,
+      firmOrderId: allocation.id,
+      firmId: allocation.firmId,
       buyerId: orderRecord.buyerId,
-      amountPaise,
+      amountPaise: allocation.amountPaise,
       utrReference,
       paymentDate,
       proofFileUrl: null,

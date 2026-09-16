@@ -6,7 +6,7 @@ const eslintConfig = defineConfig([
   ...nextVitals,
   ...nextTs,
   // Override default ignores of eslint-config-next.
-  globalIgnores([
+  globalIgnores(["sparelink-pre-master-backup-20260915-190600/**", 
     // Default ignores of eslint-config-next:
     ".next/**",
     "out/**",
@@ -16,3 +16,4 @@ const eslintConfig = defineConfig([
 ]);
 
 export default eslintConfig;
+

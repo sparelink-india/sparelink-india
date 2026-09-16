@@ -1,7 +1,9 @@
 ﻿"use client";
 
 import { FormEvent, useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { SiteFooter } from "@/components/site-footer";
 
 function normalizeIndianPhoneNumber(value: string): string {
   const digits = value.replace(/\D/g, "");
@@ -51,7 +53,7 @@ export default function LoginPage() {
     }
 
     setStep("otp");
-    setMessage("OTP sent. Check the server console.");
+    setMessage("OTP sent. Check your mobile.");
   }
 
   async function verifyOtp(event: FormEvent) {
@@ -79,9 +81,13 @@ export default function LoginPage() {
   }
 
   return (
-    <main className="flex min-h-screen items-center justify-center bg-zinc-50 px-6">
+    <div className="flex min-h-screen flex-col bg-slate-50">
+    <main className="flex flex-1 items-center justify-center px-6 py-12">
       <div className="w-full max-w-md rounded-2xl border border-zinc-200 bg-white p-8 shadow-sm">
-        <h1 className="text-2xl font-bold">SpareLink India</h1>
+        <Link href="/" className="text-xs font-semibold text-emerald-700 hover:underline">
+          ← Catalog
+        </Link>
+        <h1 className="mt-3 text-2xl font-bold">SpareLink India</h1>
         <p className="mt-2 text-sm text-zinc-500">Buyer Login</p>
 
         {step === "phone" ? (
@@ -144,5 +150,7 @@ export default function LoginPage() {
         )}
       </div>
     </main>
+    <SiteFooter />
+    </div>
   );
 }

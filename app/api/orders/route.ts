@@ -1,4 +1,4 @@
-import { randomUUID } from "node:crypto";
+﻿import { randomUUID } from "node:crypto";
 import { and, desc, eq, gte, inArray, sql } from "drizzle-orm";
 import { NextResponse } from "next/server";
 
@@ -16,6 +16,7 @@ import {
 import { getServerSession } from "@/lib/auth-server";
 import { getDb } from "@/lib/db";
 import { calculateCartTotals, extractGSTRate } from "@/lib/gst";
+import { isCashfreeConfiguredForFirm } from "@/lib/cashfree";
 
 type ShippingAddress = {
   name: string;
@@ -165,8 +166,8 @@ export async function POST(request: Request) {
 
   if (
     paymentMethod !== "cash_on_delivery" &&
-    paymentMethod !== "razorpay" &&
-    paymentMethod !== "bank_transfer"
+    paymentMethod !== "bank_transfer" &&
+    paymentMethod !== "online_payment"
   ) {
     return NextResponse.json(
       { error: "Please choose a valid payment method." },
@@ -224,6 +225,23 @@ export async function POST(request: Request) {
     );
   }
 
+  if (paymentMethod === "online_payment") {
+    const hasOnlineCapableFirm = cartItems.some(
+      (item) =>
+        typeof item.firmId === "string" &&
+        isCashfreeConfiguredForFirm(item.firmId),
+    );
+    if (!hasOnlineCapableFirm) {
+      return NextResponse.json(
+        {
+          error:
+            "Online payment is not available for these firms yet. Please choose Cash on Delivery.",
+        },
+        { status: 400 },
+      );
+    }
+  }
+
   const totals = calculateCartTotals(
     cartItems.map((i) => ({
       pricePaise: i.pricePaise,
@@ -269,7 +287,7 @@ export async function POST(request: Request) {
         id: orderId,
         orderNumber,
         buyerId: session.user.id,
-        status: paymentMethod === "razorpay" ? "payment_pending" : "placed",
+        status: "placed",
         paymentMethod,
         subtotalPaise: totals.subtotalPaise,
         shippingPaise: totals.shippingPaise,
@@ -357,13 +375,16 @@ export async function POST(request: Request) {
       await tx.delete(cartItem).where(eq(cartItem.cartId, buyerCart.id));
     });
   } catch (error) {
-    console.error("Checkout failed", error);
+    console.error("Checkout failed");
+    const known =
+      error instanceof Error &&
+      (error.message.endsWith("is no longer available.") ||
+        error.message === "This listing is not assigned to a fulfillment firm.");
     return NextResponse.json(
       {
-        error:
-          error instanceof Error
-            ? error.message
-            : "Unable to place your order. Please try again.",
+        error: known
+          ? error.message
+          : "Unable to place your order. Please try again.",
       },
       { status: 409 },
     );
@@ -382,3 +403,6 @@ export async function POST(request: Request) {
     { status: 201 },
   );
 }
+
+
+

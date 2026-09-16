@@ -1,5 +1,5 @@
 ﻿import { NextRequest, NextResponse } from "next/server";
-import { eq, inArray } from "drizzle-orm";
+import { and, eq, inArray } from "drizzle-orm";
 import { typesense } from "@/lib/typesense";
 import { getDb } from "@/lib/db";
 import { getServerSession } from "@/lib/auth-server";
@@ -23,15 +23,13 @@ type PartDocument = {
 
 export async function GET(request: NextRequest) {
   const session = await getServerSession();
+  const isAdmin = session?.user?.role === "admin";
 
-  if (!session?.user) {
-    return NextResponse.json(
-      { error: "Authentication required" },
-      { status: 401 },
-    );
-  }
-
-  if (session.user.role !== "buyer" && session.user.role !== "admin") {
+  if (
+    session?.user &&
+    session.user.role !== "buyer" &&
+    session.user.role !== "admin"
+  ) {
     return NextResponse.json(
       { error: "Catalog access denied" },
       { status: 403 },
@@ -110,7 +108,14 @@ export async function GET(request: NextRequest) {
               inventory,
               eq(dealerListing.id, inventory.dealerListingId),
             )
-            .where(inArray(dealerListing.partId, matchedPartIds))
+            .where(
+              isAdmin
+                ? inArray(dealerListing.partId, matchedPartIds)
+                : and(
+                    inArray(dealerListing.partId, matchedPartIds),
+                    eq(dealerListing.status, "active"),
+                  ),
+            )
         : [];
 
     const compatibility =
@@ -165,9 +170,12 @@ export async function GET(request: NextRequest) {
       results,
       found: results.length,
     });
-  } catch (error) {
-    console.error("Parts search failed:", error);
+  } catch {
+    console.error("Parts search failed");
 
-    return NextResponse.json({ error: error instanceof Error ? error.message : String(error) }, { status: 500 });
+    return NextResponse.json(
+      { error: "Unable to search parts right now. Please try again." },
+      { status: 500 },
+    );
   }
 }

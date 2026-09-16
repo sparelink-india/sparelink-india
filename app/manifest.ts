@@ -1,0 +1,21 @@
+import type { MetadataRoute } from "next";
+
+export default function manifest(): MetadataRoute.Manifest {
+  return {
+    name: "SpareLink India",
+    short_name: "SpareLink",
+    description:
+      "Spare-parts marketplace for India. Search by vehicle or part number.",
+    start_url: "/",
+    display: "standalone",
+    background_color: "#f8fafc",
+    theme_color: "#020617",
+    icons: [
+      {
+        src: "/favicon.ico",
+        sizes: "48x48",
+        type: "image/x-icon",
+      },
+    ],
+  };
+}

@@ -15,6 +15,8 @@ type CartItem = {
   gstRate?: number;
   itemSubtotalPaise?: number;
   itemGstPaise?: number;
+  firmId?: string | null;
+  firmName?: string | null;
 };
 
 type CartData = {
@@ -27,42 +29,6 @@ type CartData = {
   itemCount?: number;
 };
 
-type RazorpayResponse = {
-  razorpay_payment_id: string;
-  razorpay_order_id: string;
-  razorpay_signature: string;
-};
-
-type RazorpayOptions = {
-  key: string;
-  amount: number;
-  currency: string;
-  name: string;
-  description: string;
-  order_id: string;
-  prefill: { name: string; email: string; contact: string };
-  handler: (response: RazorpayResponse) => void;
-  modal: { ondismiss: () => void };
-};
-
-declare global {
-  interface Window {
-    Razorpay?: new (options: RazorpayOptions) => { open: () => void };
-  }
-}
-
-function loadRazorpayCheckout() {
-  return new Promise<void>((resolve, reject) => {
-    if (window.Razorpay) return resolve();
-    const script = document.createElement("script");
-    script.src = "https://checkout.razorpay.com/v1/checkout.js";
-    script.onload = () => resolve();
-    script.onerror = () =>
-      reject(new Error("Unable to load secure payment checkout."));
-    document.body.appendChild(script);
-  });
-}
-
 export default function CheckoutPage() {
   const router = useRouter();
   const [cart, setCart] = useState<CartData | null>(null);
@@ -70,7 +36,9 @@ export default function CheckoutPage() {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
   const [paymentMethod, setPaymentMethod] = useState("cash_on_delivery");
-  const [onlinePaymentEnabled, setOnlinePaymentEnabled] = useState(false);
+  const [onlineCapableFirmIds, setOnlineCapableFirmIds] = useState<string[]>(
+    [],
+  );
 
   // Address & Profile Fields
   const [fullName, setFullName] = useState("");
@@ -98,19 +66,23 @@ export default function CheckoutPage() {
   useEffect(() => {
     async function loadData() {
       try {
-        const [cartRes, configRes, profileRes] = await Promise.all([
+        const [cartRes, profileRes, cashfreeRes] = await Promise.all([
           fetch("/api/cart", { cache: "no-store" }),
-          fetch("/api/payments/razorpay/config").catch(() => null),
           fetch("/api/profile", { cache: "no-store" }).catch(() => null),
+          fetch("/api/payments/cashfree/config", { cache: "no-store" }).catch(
+            () => null,
+          ),
         ]);
 
         const cartData = await cartRes.json();
         if (!cartRes.ok) throw new Error(cartData.error || "Unable to load cart.");
         setCart(cartData);
 
-        if (configRes && configRes.ok) {
-          const configData = await configRes.json();
-          setOnlinePaymentEnabled(Boolean(configData.enabled));
+        if (cashfreeRes && cashfreeRes.ok) {
+          const cashfreeData = await cashfreeRes.json();
+          if (Array.isArray(cashfreeData.configuredFirmIds)) {
+            setOnlineCapableFirmIds(cashfreeData.configuredFirmIds);
+          }
         }
 
         if (profileRes && profileRes.ok) {
@@ -144,57 +116,6 @@ export default function CheckoutPage() {
     void loadData();
   }, []);
 
-  async function openRazorpayPayment(orderId: string) {
-    const response = await fetch("/api/payments/razorpay/order", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ orderId }),
-    });
-    const paymentData = await response.json();
-    if (!response.ok)
-      throw new Error(paymentData.error || "Unable to start payment.");
-    await loadRazorpayCheckout();
-    if (!window.Razorpay)
-      throw new Error("Unable to open secure payment checkout.");
-
-    new window.Razorpay({
-      key: paymentData.keyId,
-      amount: paymentData.amountPaise,
-      currency: paymentData.currency,
-      name: "SpareLink India",
-      description: `Order ${paymentData.orderNumber}`,
-      order_id: paymentData.providerOrderId,
-      prefill: {
-        name: paymentData.buyerName,
-        email: paymentData.buyerEmail,
-        contact: paymentData.buyerPhone,
-      },
-      handler: async (paymentResponse) => {
-        try {
-          const verification = await fetch("/api/payments/razorpay/verify", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(paymentResponse),
-          });
-          const result = await verification.json();
-          if (!verification.ok)
-            throw new Error(result.error || "Payment verification failed.");
-          router.push(
-            `/order-confirmation/${result.orderId}?number=${encodeURIComponent(result.orderNumber)}`,
-          );
-        } catch (verificationError) {
-          setError(
-            verificationError instanceof Error
-              ? verificationError.message
-              : "Payment verification failed. Please contact support.",
-          );
-          setSubmitting(false);
-        }
-      },
-      modal: { ondismiss: () => setSubmitting(false) },
-    }).open();
-  }
-
   async function placeOrder(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setSubmitting(true);
@@ -202,6 +123,14 @@ export default function CheckoutPage() {
 
     if (gstinInput.trim() && gstinValidation && !gstinValidation.valid) {
       setError("Please provide a valid 15-digit GSTIN or leave it blank.");
+      setSubmitting(false);
+      return;
+    }
+
+    if (effectivePaymentMethod === "online_payment" && !hasOnlineCapableFirm) {
+      setError(
+        "Online payment is not available for these firms yet. Please choose Cash on Delivery.",
+      );
       setSubmitting(false);
       return;
     }
@@ -228,7 +157,7 @@ export default function CheckoutPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           shippingAddress,
-          paymentMethod,
+          paymentMethod: effectivePaymentMethod,
           buyerGstin: gstinInput.trim().toUpperCase() || undefined,
           buyerBusinessName: businessNameInput.trim() || undefined,
           shippingMethod,
@@ -239,9 +168,10 @@ export default function CheckoutPage() {
       });
       const data = await response.json();
       if (!response.ok) throw new Error(data.error || "Unable to place order.");
-      if (paymentMethod === "razorpay") {
-        await openRazorpayPayment(data.id);
-      } else if (paymentMethod === "bank_transfer") {
+      if (
+        effectivePaymentMethod === "online_payment" ||
+        effectivePaymentMethod === "bank_transfer"
+      ) {
         router.push(`/orders/${data.id}/payment`);
       } else {
         router.push(
@@ -271,6 +201,21 @@ export default function CheckoutPage() {
 
   const shippingPaise = cart?.shippingPaise ?? 0;
   const grandTotalPaise = cart?.totalPaise ?? itemsSubtotalPaise + gstPaise + shippingPaise;
+  const onlineCapableSet = new Set(onlineCapableFirmIds);
+  const hasOnlineCapableFirm = Boolean(
+    cart?.items.some(
+      (item) => item.firmId && onlineCapableSet.has(item.firmId),
+    ),
+  );
+  const hasComingSoonFirm = Boolean(
+    cart?.items.some(
+      (item) => item.firmId && !onlineCapableSet.has(item.firmId),
+    ),
+  );
+  const effectivePaymentMethod =
+    paymentMethod === "online_payment" && !hasOnlineCapableFirm
+      ? "cash_on_delivery"
+      : paymentMethod;
 
   return (
     <div className="min-h-screen bg-slate-50/70 text-slate-900">
@@ -643,7 +588,7 @@ export default function CheckoutPage() {
                       type="radio"
                       name="paymentMethod"
                       value="cash_on_delivery"
-                      checked={paymentMethod === "cash_on_delivery"}
+                      checked={effectivePaymentMethod === "cash_on_delivery"}
                       onChange={() => setPaymentMethod("cash_on_delivery")}
                       className="mt-0.5"
                     />
@@ -652,7 +597,9 @@ export default function CheckoutPage() {
                         Cash on Delivery (COD)
                       </span>
                       <span className="mt-0.5 block text-xs text-slate-500">
-                        Pay cash or via delivery agent UPI upon part handover.
+                        Available for Ambaji Traders, Hind Motors, and India
+                        Sales. Pay cash or via delivery agent UPI upon part
+                        handover.
                       </span>
                     </div>
                   </label>
@@ -662,7 +609,7 @@ export default function CheckoutPage() {
                       type="radio"
                       name="paymentMethod"
                       value="bank_transfer"
-                      checked={paymentMethod === "bank_transfer"}
+                      checked={effectivePaymentMethod === "bank_transfer"}
                       onChange={() => setPaymentMethod("bank_transfer")}
                       className="mt-0.5"
                     />
@@ -676,32 +623,42 @@ export default function CheckoutPage() {
                     </div>
                   </label>
 
-                  <label
-                    className={`flex items-start gap-3.5 rounded-xl border p-4 transition-colors ${
-                      onlinePaymentEnabled
-                        ? "cursor-pointer border-slate-200 hover:bg-slate-50 has-checked:border-slate-950 has-checked:bg-slate-50/50"
-                        : "cursor-not-allowed border-slate-100 bg-slate-50/70 opacity-60"
-                    }`}
-                  >
-                    <input
-                      type="radio"
-                      name="paymentMethod"
-                      value="razorpay"
-                      checked={paymentMethod === "razorpay"}
-                      disabled={!onlinePaymentEnabled}
-                      onChange={() => setPaymentMethod("razorpay")}
-                      className="mt-0.5"
-                    />
-                    <div>
+                  {hasOnlineCapableFirm ? (
+                    <label className="flex cursor-pointer items-start gap-3.5 rounded-xl border border-slate-200 p-4 transition-colors hover:bg-slate-50 has-checked:border-slate-950 has-checked:bg-slate-50/50">
+                      <input
+                        type="radio"
+                        name="paymentMethod"
+                        value="online_payment"
+                        checked={effectivePaymentMethod === "online_payment"}
+                        onChange={() => setPaymentMethod("online_payment")}
+                        className="mt-0.5"
+                      />
+                      <div>
+                        <span className="block text-sm font-bold text-slate-900">
+                          Online Payment
+                        </span>
+                        <span className="mt-0.5 block text-xs text-slate-500">
+                          Cashfree is available for Ambaji Traders. Pay that
+                          allocation after the order is placed. Payment is
+                          confirmed only after SpareLink verifies it with the
+                          payment gateway.
+                          {hasComingSoonFirm
+                            ? " Hind Motors and India Sales online payment is coming soon — use COD or bank/UPI for those allocations."
+                            : ""}
+                        </span>
+                      </div>
+                    </label>
+                  ) : (
+                    <div className="rounded-xl border border-dashed border-slate-300 bg-slate-50 p-4">
                       <span className="block text-sm font-bold text-slate-900">
-                        Online Payment (Razorpay UPI, Cards, NetBanking)
+                        Online Payment — Coming Soon
                       </span>
                       <span className="mt-0.5 block text-xs text-slate-500">
-                        Instant digital settlement with instant payment receipt
-                        {onlinePaymentEnabled ? "." : " — coming soon."}
+                        Cashfree is not available for Hind Motors or India Sales
+                        yet. Please use Cash on Delivery, or bank/UPI transfer.
                       </span>
                     </div>
-                  </label>
+                  )}
                 </div>
               </section>
             </div>
@@ -818,16 +775,12 @@ export default function CheckoutPage() {
                           d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
                         />
                       </svg>
-                      <span>
-                        {paymentMethod === "razorpay"
-                          ? "Opening payment..."
-                          : "Placing order..."}
-                      </span>
+                      <span>Placing order...</span>
                     </>
                   ) : (
                     <span>
-                      {paymentMethod === "razorpay"
-                        ? `Pay ₹${(grandTotalPaise / 100).toLocaleString("en-IN")}`
+                      {effectivePaymentMethod === "online_payment"
+                        ? "Place order and pay online"
                         : paymentMethod === "bank_transfer"
                           ? "Proceed to Bank / UPI Transfer"
                           : "Place COD Order"}

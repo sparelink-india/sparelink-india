@@ -134,7 +134,7 @@ export async function POST(request: NextRequest) {
       }
 
       // Parse rows
-      let rows = parseImportRows(data, headerMap);
+      const rows = parseImportRows(data, headerMap);
 
       // Validate context
       const context = await getValidationContext();
@@ -205,7 +205,7 @@ export async function POST(request: NextRequest) {
 
         // Execute import in transaction
         await db.transaction(async (tx) => {
-          const docs: any[] = [];
+          const docs: object[] = [];
 
           // Assuming product import for now (can be extended for listings)
           for (const row of validRows) {
@@ -320,3 +320,6 @@ export async function POST(request: NextRequest) {
     );
   }
 }
+
+
+

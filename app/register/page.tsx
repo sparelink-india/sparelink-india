@@ -61,7 +61,7 @@ export default function RegisterPage() {
       }
 
       setStep("otp");
-      setMessage(`Verification OTP sent to ${phoneNumber}. Check console in development.`);
+      setMessage(`Verification OTP sent to ${phoneNumber}.`);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to initiate registration.");
     } finally {

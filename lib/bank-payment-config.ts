@@ -4,122 +4,126 @@
   accountNumber?: string;
   ifscCode?: string;
   bankName?: string;
+  branch?: string;
   upiId?: string;
   qrImageUrl?: string;
   instructions: string;
+  codEnabled: boolean;
 };
 
 export type FirmBankPaymentConfig = BankPaymentConfig & {
   firmId: string;
   firmName: string;
+  firmCode?: string;
   allocationAmountPaise: number;
 };
 
+type FirmEnvPrefix =
+  | "AMBAJI_TRADERS"
+  | "HIND_MOTORS"
+  | "INDIA_SALES"
+  | string;
+
+function resolveFirmPrefix(firmName: string, firmCode?: string): FirmEnvPrefix | null {
+  const normalizedName = firmName.trim().toLowerCase();
+  const normalizedCode = firmCode?.trim().toUpperCase();
+
+  if (normalizedName === "ambaji traders" || normalizedCode === "AMB") {
+    return "AMBAJI_TRADERS";
+  }
+  if (normalizedName === "hind motors" || normalizedCode === "HIN") {
+    return "HIND_MOTORS";
+  }
+  if (normalizedName === "india sales" || normalizedCode === "IND") {
+    return "INDIA_SALES";
+  }
+  return null;
+}
+
 function getFirmBankConfig(
-  prefix: string,
+  prefix: FirmEnvPrefix,
   firmId: string,
   firmName: string,
   allocationAmountPaise: number,
+  firmCode?: string,
 ): FirmBankPaymentConfig {
   const accountName = process.env[`${prefix}_BANK_ACCOUNT_NAME`];
   const accountNumber = process.env[`${prefix}_BANK_ACCOUNT_NUMBER`];
   const ifscCode = process.env[`${prefix}_BANK_IFSC_CODE`];
   const bankName = process.env[`${prefix}_BANK_NAME`];
+  const branch = process.env[`${prefix}_BANK_BRANCH`];
   const upiId = process.env[`${prefix}_BANK_UPI_ID`];
   const qrImageUrl = process.env[`${prefix}_BANK_QR_IMAGE_URL`];
+  const customInstructions = process.env[`${prefix}_BANK_PAYMENT_INSTRUCTIONS`];
+  const codEnabled =
+    (process.env[`${prefix}_COD_ENABLED`] ?? "true").toLowerCase() !== "false";
 
   const isConfigured = Boolean((accountNumber && ifscCode) || upiId);
 
   return {
     firmId,
     firmName,
+    firmCode,
     allocationAmountPaise,
     isConfigured,
     accountName: accountName || undefined,
     accountNumber: accountNumber || undefined,
     ifscCode: ifscCode || undefined,
     bankName: bankName || undefined,
+    branch: branch || undefined,
     upiId: upiId || undefined,
     qrImageUrl: qrImageUrl || undefined,
+    codEnabled,
     instructions: isConfigured
-      ? "Please transfer the exact allocated amount using the bank details or UPI ID above. After completing the payment, enter the UTR / Transaction Reference number and payment date for verification."
-      : "Payment details for this firm are not configured yet. Please contact administration before making payment.",
+      ? customInstructions ||
+        `Pay exactly ₹${(allocationAmountPaise / 100).toLocaleString("en-IN")} to ${firmName} only using the UPI ID or bank details below. Do not use another firm's account. After payment, submit the UTR for this firm.`
+      : `Payment details for ${firmName} are not configured yet. Please contact SpareLink support before paying.`,
   };
 }
 
+/**
+ * Returns ONLY the payment details for the given firm.
+ * Never mixes Ambaji Traders / Hind Motors / India Sales details.
+ */
 export function getFirmBankPaymentConfig(
   firmId: string,
   firmName: string,
   allocationAmountPaise: number,
+  firmCode?: string,
 ): FirmBankPaymentConfig {
-  const normalizedName = firmName.trim().toLowerCase();
+  const prefix = resolveFirmPrefix(firmName, firmCode);
 
-  if (normalizedName === "ambaji traders") {
+  if (prefix) {
     return getFirmBankConfig(
-      "AMBAJI_TRADERS",
+      prefix,
       firmId,
       firmName,
       allocationAmountPaise,
-    );
-  }
-
-  if (normalizedName === "india sales") {
-    return getFirmBankConfig(
-      "INDIA_SALES",
-      firmId,
-      firmName,
-      allocationAmountPaise,
-    );
-  }
-
-  if (normalizedName === "hind motors") {
-    return getFirmBankConfig(
-      "HIND_MOTORS",
-      firmId,
-      firmName,
-      allocationAmountPaise,
+      firmCode,
     );
   }
 
   return {
     firmId,
     firmName,
+    firmCode,
     allocationAmountPaise,
     isConfigured: false,
-    instructions:
-      "Payment details for this firm are not configured yet. Please contact administration before making payment.",
+    codEnabled: true,
+    instructions: `Payment details for ${firmName} are not configured yet. Please contact administration before making payment.`,
   };
 }
 
+/**
+ * @deprecated Shared/legacy bank config. Prefer firm-wise configs.
+ * Kept only for backwards-compatible admin diagnostics — never show on
+ * customer payment pages as the primary payment destination.
+ */
 export function getBankPaymentConfig(): BankPaymentConfig {
-  const accountName =
-    process.env.BANK_ACCOUNT_NAME ||
-    process.env.NEXT_PUBLIC_BANK_ACCOUNT_NAME;
-  const accountNumber =
-    process.env.BANK_ACCOUNT_NUMBER ||
-    process.env.NEXT_PUBLIC_BANK_ACCOUNT_NUMBER;
-  const ifscCode =
-    process.env.BANK_IFSC_CODE || process.env.NEXT_PUBLIC_BANK_IFSC_CODE;
-  const bankName =
-    process.env.BANK_NAME || process.env.NEXT_PUBLIC_BANK_NAME;
-  const upiId =
-    process.env.BANK_UPI_ID || process.env.NEXT_PUBLIC_BANK_UPI_ID;
-  const qrImageUrl =
-    process.env.BANK_QR_IMAGE_URL ||
-    process.env.NEXT_PUBLIC_BANK_QR_IMAGE_URL;
-
-  const isConfigured = Boolean((accountNumber && ifscCode) || upiId);
-
   return {
-    isConfigured,
-    accountName: accountName || undefined,
-    accountNumber: accountNumber || undefined,
-    ifscCode: ifscCode || undefined,
-    bankName: bankName || undefined,
-    upiId: upiId || undefined,
-    qrImageUrl: qrImageUrl || undefined,
-    instructions: isConfigured
-      ? "Please transfer the exact order amount using the bank details or UPI ID above. After completing the payment, enter your UTR / Transaction Reference number and payment date below to submit for verification."
-      : "Bank transfer and UPI payment details are currently not configured in the environment. Please contact administration or choose another payment method.",
+    isConfigured: false,
+    codEnabled: true,
+    instructions:
+      "Use the firm-wise bank / UPI details shown for your order allocation. Shared company bank details are not used.",
   };
 }

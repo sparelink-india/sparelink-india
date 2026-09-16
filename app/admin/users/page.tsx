@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/set-state-in-effect */
 "use client";
 import Link from "next/link";
 import { useEffect, useState } from "react";
@@ -270,3 +271,4 @@ export default function UsersPage() {
     </main>
   );
 }
+
