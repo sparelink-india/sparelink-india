@@ -8,12 +8,10 @@ import { SiteFooter } from "@/components/site-footer";
 import { StorefrontHeader } from "@/components/storefront-header";
 import { HomeHero } from "@/components/home-hero";
 import { PublicBrandsSection } from "@/components/public-brand-grid";
-import { InclusivePrice } from "@/components/inclusive-price";
 import { ProductDetailModal } from "@/components/product-detail-modal";
 import { SearchExperience, type SearchTab } from "@/components/search-experience";
 import { useI18n } from "@/components/preferences-provider";
 import { rememberSearch } from "@/lib/recent-searches";
-import { isAuthoritativeSellingPricePaise } from "@/lib/storefront-price-display";
 
 type Listing = {
   id: string;
@@ -158,9 +156,9 @@ export function HomePageContent({
   const [query, setQuery] = useState(urlQuery);
   const [searchedQuery, setSearchedQuery] = useState(urlQuery);
   const [page, setPage] = useState(urlPage);
-  const [brandFilter, setBrandFilter] = useState(urlBrand);
-  const [categoryFilter, setCategoryFilter] = useState(urlCategory);
-  const [tab, setTab] = useState<SearchTab>(urlTab);
+  const brandFilter = urlBrand;
+  const categoryFilter = urlCategory;
+  const tab = urlTab;
   const [results, setResults] = useState<SearchHit[]>([]);
   const [found, setFound] = useState(0);
   const [facetBrands, setFacetBrands] = useState<Array<{ value: string; count: number }>>([]);
@@ -169,7 +167,6 @@ export function HomePageContent({
   const [perPage, setPerPage] = useState(24);
   const [loading, setLoading] = useState(() => Boolean(urlQuery));
   const [addingId, setAddingId] = useState("");
-  const [addedId, setAddedId] = useState("");
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
   const [cartCount, setCartCount] = useState<number>(0);
@@ -357,9 +354,6 @@ export function HomePageContent({
     );
     const nextBrand = (params.get("brand") ?? urlBrand).trim();
     const nextCategory = (params.get("categoryName") ?? urlCategory).trim();
-    setBrandFilter(nextBrand);
-    setCategoryFilter(nextCategory);
-    setTab(parseSearchTab(params.get("tab") ?? urlTab));
     void performSearch(q, nextPage, { brand: nextBrand, categoryName: nextCategory });
     // eslint-disable-next-line react-hooks/exhaustive-deps -- layout search from the real URL
   }, [urlQuery, urlPage, urlBrand, urlCategory, urlTab, initialQuery, initialPage]);
@@ -391,9 +385,6 @@ export function HomePageContent({
       if (!response.ok) {
         throw new Error(data.error || t("product.addFail"));
       }
-
-      setAddedId(listingId);
-      setTimeout(() => setAddedId(""), 2500);
 
       // Increment cart badge
       setCartCount((prev) => prev + 1);

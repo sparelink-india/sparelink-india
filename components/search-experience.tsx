@@ -98,6 +98,81 @@ function FacetChecks({
   );
 }
 
+function SearchFilters({
+  activeBrand,
+  activeCategory,
+  onBrand,
+  onCategory,
+  categories,
+  brands,
+  vehicles,
+}: {
+  activeBrand: string;
+  activeCategory: string;
+  onBrand: (brand: string) => void;
+  onCategory: (category: string) => void;
+  categories: FacetRow[];
+  brands: FacetRow[];
+  vehicles: VehicleRow[];
+}) {
+  const { t } = useI18n();
+  return (
+    <aside className="space-y-6 rounded-2xl border border-slate-200 bg-white p-4">
+      <div className="flex items-center justify-between">
+        <h2 className="text-sm font-bold text-slate-900">{t("search.filters")}</h2>
+        {activeBrand || activeCategory ? (
+          <button
+            type="button"
+            className="text-[11px] font-semibold text-[#7a1233]"
+            onClick={() => {
+              onBrand("");
+              onCategory("");
+            }}
+          >
+            {t("search.clearAll")}
+          </button>
+        ) : null}
+      </div>
+      <FacetChecks
+        title={t("search.categoryFilter")}
+        rows={categories}
+        active={activeCategory}
+        onToggle={onCategory}
+        tClear={t("search.clearAll")}
+      />
+      <FacetChecks
+        title={t("search.brandFilter")}
+        rows={brands}
+        active={activeBrand}
+        onToggle={onBrand}
+        tClear={t("search.clearAll")}
+      />
+      {vehicles.length ? (
+        <section>
+          <h3 className="text-[11px] font-bold uppercase tracking-widest text-slate-500">
+            {t("search.tabVehicles")}
+          </h3>
+          <ul className="mt-2 space-y-1">
+            {vehicles.slice(0, 8).map((row) => (
+              <li key={`${row.make}-${row.model}`}>
+                <Link
+                  href={`/vehicle-fitment/${slugifyFitment(row.make)}/${slugifyFitment(row.model)}`}
+                  className="flex items-center justify-between rounded-lg px-1 py-1.5 text-sm text-slate-800 hover:bg-slate-50"
+                >
+                  <span className="min-w-0 truncate">
+                    {row.make} {row.model}
+                  </span>
+                  <span className="text-xs text-slate-500">{row.count}</span>
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </section>
+      ) : null}
+    </aside>
+  );
+}
+
 export function SearchExperience({
   query,
   loading,
@@ -177,63 +252,15 @@ export function SearchExperience({
     );
   }, [results, sort]);
 
-  function Filters() {
-    return (
-      <aside className="space-y-6 rounded-2xl border border-slate-200 bg-white p-4">
-        <div className="flex items-center justify-between">
-          <h2 className="text-sm font-bold text-slate-900">{t("search.filters")}</h2>
-          {activeBrand || activeCategory ? (
-            <button
-              type="button"
-              className="text-[11px] font-semibold text-[#7a1233]"
-              onClick={() => {
-                onBrand("");
-                onCategory("");
-              }}
-            >
-              {t("search.clearAll")}
-            </button>
-          ) : null}
-        </div>
-        <FacetChecks
-          title={t("search.categoryFilter")}
-          rows={categories}
-          active={activeCategory}
-          onToggle={onCategory}
-          tClear={t("search.clearAll")}
-        />
-        <FacetChecks
-          title={t("search.brandFilter")}
-          rows={brands}
-          active={activeBrand}
-          onToggle={onBrand}
-          tClear={t("search.clearAll")}
-        />
-        {vehicles.length ? (
-          <section>
-            <h3 className="text-[11px] font-bold uppercase tracking-widest text-slate-500">
-              {t("search.tabVehicles")}
-            </h3>
-            <ul className="mt-2 space-y-1">
-              {vehicles.slice(0, 8).map((row) => (
-                <li key={`${row.make}-${row.model}`}>
-                  <Link
-                    href={`/vehicle-fitment/${slugifyFitment(row.make)}/${slugifyFitment(row.model)}`}
-                    className="flex items-center justify-between rounded-lg px-1 py-1.5 text-sm text-slate-800 hover:bg-slate-50"
-                  >
-                    <span className="min-w-0 truncate">
-                      {row.make} {row.model}
-                    </span>
-                    <span className="text-xs text-slate-500">{row.count}</span>
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          </section>
-        ) : null}
-      </aside>
-    );
-  }
+  const filterProps = {
+    activeBrand,
+    activeCategory,
+    onBrand,
+    onCategory,
+    categories,
+    brands,
+    vehicles,
+  };
 
   return (
     <section id="search-results" className="border-b border-slate-200 bg-slate-50">
@@ -289,13 +316,13 @@ export function SearchExperience({
         </div>
         {filtersOpen ? (
           <div className="mt-3 lg:hidden">
-            <Filters />
+            <SearchFilters {...filterProps} />
           </div>
         ) : null}
 
         <div className="mt-4 grid min-w-0 gap-5 lg:grid-cols-[minmax(12rem,16.25rem)_minmax(0,1fr)]">
           <div className="hidden lg:block">
-            <Filters />
+            <SearchFilters {...filterProps} />
           </div>
 
           <div className="min-w-0">

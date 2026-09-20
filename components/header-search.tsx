@@ -211,29 +211,18 @@ export function HeaderSearchField({
   const [suggesting, setSuggesting] = useState(false);
   const [loadingMore, setLoadingMore] = useState(false);
   const [addingId, setAddingId] = useState("");
-  const [recent, setRecent] = useState<string[]>([]);
   const fetchGen = useRef(0);
-
-  useEffect(() => {
-    setRecent(readRecentSearches());
-  }, [open]);
+  const recent = readRecentSearches();
 
   useEffect(() => {
     const q = value.trim();
     if (q.length < 2) {
-      setSuggestions([]);
-      setBrands([]);
-      setCategories([]);
-      setVehicles([]);
-      setFound(0);
-      setPage(1);
-      setSuggesting(false);
       return;
     }
 
-    setSuggesting(true);
     const controller = new AbortController();
     const handle = window.setTimeout(() => {
+      setSuggesting(true);
       const gen = ++fetchGen.current;
       void fetch(`/api/search/parts?q=${encodeURIComponent(q)}&page=1&perPage=24`, {
         signal: controller.signal,
@@ -254,7 +243,6 @@ export function HeaderSearchField({
           const focused = Boolean(rootRef.current?.contains(document.activeElement));
           if (focused && !suppressOpenRef.current) setOpen(true);
           rememberSearch(q);
-          setRecent(readRecentSearches());
         })
         .catch((error: unknown) => {
           if (error instanceof DOMException && error.name === "AbortError") return;
@@ -344,12 +332,13 @@ export function HeaderSearchField({
   const showDropdown =
     open &&
     (showIdle ||
-      suggesting ||
-      suggestions.length > 0 ||
-      brands.length > 0 ||
-      categories.length > 0 ||
-      vehicles.length > 0 ||
-      (canSuggest && !suggesting));
+      (canSuggest &&
+        (suggesting ||
+          suggestions.length > 0 ||
+          brands.length > 0 ||
+          categories.length > 0 ||
+          vehicles.length > 0 ||
+          !suggesting)));
   const productCount = found;
   const brandCount = brands.length;
   const categoryCount = categories.length;

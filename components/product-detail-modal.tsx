@@ -149,11 +149,7 @@ export function ProductDetailModal({
   }, [open]);
 
   useEffect(() => {
-    if (!open) {
-      setPayload(null);
-      setError("");
-      return;
-    }
+    if (!open) return;
     if (!partId && !sku) return;
     const params = new URLSearchParams();
     if (partId) params.set("partId", partId);
