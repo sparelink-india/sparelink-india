@@ -4,9 +4,14 @@ import Link from "next/link";
 import { FormEvent, useState } from "react";
 import { useRouter } from "next/navigation";
 import { validateGSTIN } from "@/lib/gst";
+import { BrandLogo } from "@/components/brand-logo";
+import { StorefrontHeader } from "@/components/storefront-header";
+import { SiteFooter } from "@/components/site-footer";
+import { useI18n } from "@/components/preferences-provider";
 
 export default function RegisterPage() {
   const router = useRouter();
+  const { t } = useI18n();
 
   // Registration Form State
   const [fullName, setFullName] = useState("");
@@ -15,7 +20,7 @@ export default function RegisterPage() {
   const [gstin, setGstin] = useState("");
   const [addressLine1, setAddressLine1] = useState("");
   const [city, setCity] = useState("");
-  const [state, setState] = useState("");
+  const [state] = useState("");
   const [pincode, setPincode] = useState("");
   const [deliveryPreference, setDeliveryPreference] = useState<"courier" | "self_pickup" | "transport">("courier");
   const [transportName, setTransportName] = useState("");
@@ -36,12 +41,12 @@ export default function RegisterPage() {
     setMessage("");
 
     if (!phoneNumber || !/^(?:\+91)?[6-9]\d{9}$/.test(phoneNumber.replace(/[\s-]/g, ""))) {
-      setError("Please provide a valid 10-digit Indian mobile number (+91XXXXXXXXXX).");
+      setError(t("register.phoneInvalid"));
       return;
     }
 
     if (gstin.trim() && gstinValidation && !gstinValidation.valid) {
-      setError("Please correct your 15-character GSTIN or leave it blank for B2C registration.");
+      setError(t("register.gstinInvalid"));
       return;
     }
 
@@ -57,13 +62,13 @@ export default function RegisterPage() {
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.error || "Unable to send verification OTP.");
+        throw new Error(data.error || t("register.otpSendFail"));
       }
 
       setStep("otp");
-      setMessage(`Verification OTP sent to ${phoneNumber}.`);
+      setMessage(t("register.otpSent", { phone: phoneNumber }));
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to initiate registration.");
+      setError(err instanceof Error ? err.message : t("register.initFail"));
     } finally {
       setLoading(false);
     }
@@ -88,7 +93,7 @@ export default function RegisterPage() {
       const data = await response.json();
 
       if (!response.ok || !data.status) {
-        throw new Error(data.error || "Invalid or expired OTP code.");
+        throw new Error(data.error || t("register.otpInvalid"));
       }
 
       // Persist entered customer profile details
@@ -110,31 +115,26 @@ export default function RegisterPage() {
         }),
       }).catch(() => null);
 
-      setMessage("Registration verified successfully! Redirecting to catalog...");
+      setMessage(t("register.verified"));
       setTimeout(() => {
         router.push("/");
       }, 1000);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "OTP verification failed.");
+      setError(err instanceof Error ? err.message : t("register.verifyFail"));
     } finally {
       setLoading(false);
     }
   }
 
   return (
-    <main className="min-h-screen bg-slate-50/70 text-slate-900 px-4 py-12 sm:px-6">
-      {/* Brand Header */}
-      <div className="mx-auto max-w-xl text-center mb-8">
-        <Link href="/" className="inline-flex items-center gap-2">
-          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-slate-950 text-white font-bold text-lg shadow-sm">
-            SL
-          </div>
-          <span className="text-2xl font-black tracking-tight text-slate-950">
-            SpareLink <span className="text-emerald-600 text-sm font-bold uppercase tracking-widest">India</span>
-          </span>
-        </Link>
+    <div className="min-h-screen bg-slate-50/70 text-slate-900">
+    <StorefrontHeader />
+    <main className="px-4 py-12 sm:px-6">
+      <div className="mx-auto mb-8 flex max-w-xl flex-col items-center text-center">
+        <BrandLogo />
+        <h1 className="sr-only">SpareLink India</h1>
         <p className="mt-2 text-xs font-semibold uppercase tracking-wider text-slate-500">
-          Automotive Buyer & Workshop Registration
+          {t("register.kicker")}
         </p>
       </div>
 
@@ -163,31 +163,31 @@ export default function RegisterPage() {
           <form onSubmit={handleSendOtp} className="space-y-5">
             <div>
               <h1 className="text-xl font-bold text-slate-950 sm:text-2xl">
-                Create Customer Account
+                {t("register.heading")}
               </h1>
               <p className="mt-1 text-xs text-slate-500">
-                Register as a retail buyer (B2C) or workshop/garage (B2B with GSTIN).
+                {t("register.hint")}
               </p>
             </div>
 
             <div className="grid gap-4 sm:grid-cols-2">
               <label className="block sm:col-span-2">
                 <span className="mb-1 block text-xs font-semibold text-slate-700">
-                  Full Name / Contact Person <span className="text-rose-500">*</span>
+                  {t("register.fullName")} <span className="text-rose-500">*</span>
                 </span>
                 <input
                   type="text"
                   required
                   value={fullName}
                   onChange={(e) => setFullName(e.target.value)}
-                  placeholder="e.g. Ramesh Sharma"
+                  placeholder={t("register.phName")}
                   className="h-11 w-full rounded-xl border border-slate-200 bg-slate-50/50 px-3.5 text-sm font-medium outline-none focus:border-slate-950 focus:bg-white focus:ring-2 focus:ring-slate-950/10"
                 />
               </label>
 
               <label className="block sm:col-span-2">
                 <span className="mb-1 block text-xs font-semibold text-slate-700">
-                  Mobile Number (For OTP Verification) <span className="text-rose-500">*</span>
+                  {t("register.mobile")} <span className="text-rose-500">*</span>
                 </span>
                 <input
                   type="tel"
@@ -201,13 +201,13 @@ export default function RegisterPage() {
 
               <label className="block sm:col-span-2">
                 <span className="mb-1 block text-xs font-semibold text-slate-700">
-                  Business / Garage / Workshop Name (Optional)
+                  {t("register.business")}
                 </span>
                 <input
                   type="text"
                   value={businessName}
                   onChange={(e) => setBusinessName(e.target.value)}
-                  placeholder="e.g. Sharma Motors & Diagnostics"
+                  placeholder={t("register.phBusiness")}
                   className="h-11 w-full rounded-xl border border-slate-200 bg-slate-50/50 px-3.5 text-sm font-medium outline-none focus:border-slate-950 focus:bg-white focus:ring-2 focus:ring-slate-950/10"
                 />
               </label>
@@ -215,7 +215,7 @@ export default function RegisterPage() {
               <label className="block sm:col-span-2">
                 <div className="flex items-center justify-between">
                   <span className="mb-1 block text-xs font-semibold text-slate-700">
-                    GSTIN (Optional — Leave blank for B2C)
+                    {t("register.gstin")}
                   </span>
                   <span className="text-[10px] font-semibold text-slate-400 uppercase">
                     15 Chars
@@ -226,7 +226,7 @@ export default function RegisterPage() {
                   maxLength={15}
                   value={gstin}
                   onChange={(e) => setGstin(e.target.value.toUpperCase())}
-                  placeholder="e.g. 24AAACR1234K1Z0"
+                  placeholder={t("register.phGstin")}
                   className={`h-11 w-full font-mono rounded-xl border bg-slate-50/50 px-3.5 text-sm font-medium outline-none focus:bg-white focus:ring-2 ${
                     gstin.trim() && gstinValidation
                       ? gstinValidation.valid
@@ -248,33 +248,33 @@ export default function RegisterPage() {
 
               <label className="block sm:col-span-2">
                 <span className="mb-1 block text-xs font-semibold text-slate-700">
-                  Address / Workshop Location (Optional)
+                  {t("register.address")}
                 </span>
                 <input
                   type="text"
                   value={addressLine1}
                   onChange={(e) => setAddressLine1(e.target.value)}
-                  placeholder="Street / Industrial Area / Landmark"
+                  placeholder={t("register.phAddress")}
                   className="h-11 w-full rounded-xl border border-slate-200 bg-slate-50/50 px-3.5 text-sm font-medium outline-none focus:border-slate-950 focus:bg-white focus:ring-2 focus:ring-slate-950/10"
                 />
               </label>
 
               <label className="block">
                 <span className="mb-1 block text-xs font-semibold text-slate-700">
-                  City
+                  {t("register.city")}
                 </span>
                 <input
                   type="text"
                   value={city}
                   onChange={(e) => setCity(e.target.value)}
-                  placeholder="Ahmedabad / Delhi"
+                  placeholder={t("register.phCity")}
                   className="h-11 w-full rounded-xl border border-slate-200 bg-slate-50/50 px-3.5 text-sm font-medium outline-none focus:border-slate-950 focus:bg-white focus:ring-2 focus:ring-slate-950/10"
                 />
               </label>
 
               <label className="block">
                 <span className="mb-1 block text-xs font-semibold text-slate-700">
-                  Pincode
+                  {t("register.pincode")}
                 </span>
                 <input
                   type="text"
@@ -288,7 +288,7 @@ export default function RegisterPage() {
 
               <div className="sm:col-span-2">
                 <span className="mb-1.5 block text-xs font-semibold text-slate-700">
-                  Preferred Fulfillment Method
+                  {t("register.method")}
                 </span>
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                   <label className="flex items-center gap-2 rounded-xl border border-slate-200 p-3 text-xs font-semibold text-slate-800 cursor-pointer has-checked:border-slate-950 has-checked:bg-slate-50">
@@ -299,7 +299,7 @@ export default function RegisterPage() {
                       checked={deliveryPreference === "courier"}
                       onChange={() => setDeliveryPreference("courier")}
                     />
-                    <span>Courier Dispatch</span>
+                    <span>{t("register.courier")}</span>
                   </label>
                   <label className="flex items-center gap-2 rounded-xl border border-slate-200 p-3 text-xs font-semibold text-slate-800 cursor-pointer has-checked:border-slate-950 has-checked:bg-slate-50">
                     <input
@@ -309,7 +309,7 @@ export default function RegisterPage() {
                       checked={deliveryPreference === "self_pickup"}
                       onChange={() => setDeliveryPreference("self_pickup")}
                     />
-                    <span>Self Pickup</span>
+                    <span>{t("register.pickup")}</span>
                   </label>
                   <label className="flex items-center gap-2 rounded-xl border border-slate-200 p-3 text-xs font-semibold text-slate-800 cursor-pointer has-checked:border-slate-950 has-checked:bg-slate-50">
                     <input
@@ -319,50 +319,50 @@ export default function RegisterPage() {
                       checked={deliveryPreference === "transport"}
                       onChange={() => setDeliveryPreference("transport")}
                     />
-                    <span>Book through Transport</span>
+                    <span>{t("register.transport")}</span>
                   </label>
                 </div>
 
                 {deliveryPreference === "transport" && (
                   <div className="mt-3 rounded-xl bg-slate-50 border border-slate-200 p-4 space-y-3 animate-in fade-in">
                     <p className="text-xs font-bold text-slate-900">
-                      Transport Booking Details
+                      {t("register.transportTitle")}
                     </p>
                     <div className="grid gap-3 sm:grid-cols-3">
                       <div>
                         <span className="mb-1 block text-xs font-semibold text-slate-700">
-                          Transporter Name <span className="text-rose-500">*</span>
+                          {t("register.transporter")} <span className="text-rose-500">*</span>
                         </span>
                         <input
                           required={deliveryPreference === "transport"}
                           value={transportName}
                           onChange={(e) => setTransportName(e.target.value)}
-                          placeholder="e.g. V-Trans Logistics"
+                          placeholder={t("register.phTransporter")}
                           className="h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-xs font-medium outline-none focus:border-slate-950"
                         />
                       </div>
 
                       <div>
                         <span className="mb-1 block text-xs font-semibold text-slate-700">
-                          Transport Contact Number
+                          {t("register.transportPhone")}
                         </span>
                         <input
                           value={transportPhone}
                           onChange={(e) => setTransportPhone(e.target.value)}
-                          placeholder="e.g. 98XXXXXXXX"
+                          placeholder={t("register.phTransportPhone")}
                           className="h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-xs font-medium outline-none focus:border-slate-950"
                         />
                       </div>
 
                       <div>
                         <span className="mb-1 block text-xs font-semibold text-slate-700">
-                          Transport GSTIN (Optional)
+                          {t("register.transportGstin")}
                         </span>
                         <input
                           maxLength={15}
                           value={transportGstin}
                           onChange={(e) => setTransportGstin(e.target.value.toUpperCase())}
-                          placeholder="15-digit GSTIN"
+                          placeholder={t("profile.phTransportGstin")}
                           className="h-10 w-full font-mono rounded-xl border border-slate-200 bg-white px-3 text-xs font-medium outline-none focus:border-slate-950"
                         />
                       </div>
@@ -377,14 +377,14 @@ export default function RegisterPage() {
               disabled={loading}
               className="btn-press flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-slate-950 text-sm font-bold text-white shadow-md transition-all hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-60"
             >
-              {loading ? "Sending OTP..." : "Send Verification OTP →"}
+              {loading ? t("register.sending") : t("register.sendOtp")}
             </button>
 
             <div className="text-center pt-2 border-t border-slate-100">
               <p className="text-xs text-slate-500">
-                Already registered?{" "}
+                {t("register.already")}{" "}
                 <Link href="/login" className="font-bold text-slate-900 underline hover:text-slate-700">
-                  Sign In with OTP
+                  {t("register.signIn")}
                 </Link>
               </p>
             </div>
@@ -393,16 +393,16 @@ export default function RegisterPage() {
           <form onSubmit={handleVerifyOtp} className="space-y-5">
             <div>
               <h2 className="text-xl font-bold text-slate-950 sm:text-2xl">
-                Enter Verification Code
+                {t("register.otpTitle")}
               </h2>
               <p className="mt-1 text-xs text-slate-500">
-                Please enter the 6-digit OTP sent to <strong>{phoneNumber}</strong>.
+                {t("register.otpHint", { phone: phoneNumber })}
               </p>
             </div>
 
             <label className="block">
               <span className="mb-1 block text-xs font-semibold text-slate-700">
-                6-Digit OTP Code
+                {t("register.otpLabel")}
               </span>
               <input
                 type="text"
@@ -420,7 +420,7 @@ export default function RegisterPage() {
               disabled={loading}
               className="btn-press flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-slate-950 text-sm font-bold text-white shadow-md transition-all hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-60"
             >
-              {loading ? "Verifying..." : "Verify & Activate Account"}
+              {loading ? t("register.verifying") : t("register.verify")}
             </button>
 
             <button
@@ -432,12 +432,14 @@ export default function RegisterPage() {
               }}
               className="w-full text-center text-xs font-semibold text-slate-500 hover:text-slate-900"
             >
-              ← Edit details or change phone number
+              {t("register.edit")}
             </button>
           </form>
         )}
       </div>
     </main>
+    <SiteFooter />
+    </div>
   );
 }
 

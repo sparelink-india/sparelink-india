@@ -1,8 +1,8 @@
 import { NextResponse } from "next/server";
 import { getServerSession } from "@/lib/auth-server";
 import { getDb } from "@/lib/db";
-import { firmOrder, order, firm, firmOrderItem } from "@/drizzle/schema";
-import { desc, eq, count } from "drizzle-orm";
+import { firmOrder, order, firm } from "@/drizzle/schema";
+import { desc, eq } from "drizzle-orm";
 import * as XLSX from "xlsx";
 
 export async function GET() {

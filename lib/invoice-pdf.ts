@@ -1,5 +1,6 @@
 import PDFDocument from "pdfkit";
 import { extractGSTRate } from "@/lib/gst";
+import { splitInclusiveGst } from "@/lib/party-pricing";
 
 export type InvoicePDFData = {
   orderNumber: string;
@@ -132,9 +133,9 @@ export async function generateInvoicePDFBuffer(
 
       data.items.forEach((item, index) => {
         const gstRate = extractGSTRate(item.partDescription);
-        const itemTaxablePaise = item.unitPricePaise * item.quantity;
-        const itemGstPaise = Math.round((itemTaxablePaise * gstRate) / 100);
-        totalCalculatedTaxPaise += itemGstPaise;
+        const inclusiveTotal = item.totalPaise;
+        const tax = splitInclusiveGst(inclusiveTotal, gstRate);
+        totalCalculatedTaxPaise += tax.gstPaise;
 
         let hsn = "87089900";
         if (item.partDescription?.includes("HSN:")) {
@@ -150,10 +151,10 @@ export async function generateInvoicePDFBuffer(
 
         doc.text(hsn, 245, currentY, { width: 50, align: "center" });
         doc.text(String(item.quantity), 300, currentY, { width: 30, align: "center" });
-        doc.text((item.unitPricePaise / 100).toFixed(2), 335, currentY, { width: 55, align: "right" });
-        doc.text((itemTaxablePaise / 100).toFixed(2), 395, currentY, { width: 55, align: "right" });
+        doc.text((tax.basePaise / Math.max(item.quantity, 1) / 100).toFixed(2), 335, currentY, { width: 55, align: "right" });
+        doc.text((tax.basePaise / 100).toFixed(2), 395, currentY, { width: 55, align: "right" });
         doc.text(`${gstRate}%`, 455, currentY, { width: 35, align: "center" });
-        doc.font("Helvetica-Bold").text(((itemTaxablePaise + itemGstPaise) / 100).toFixed(2), 495, currentY, { width: 55, align: "right" });
+        doc.font("Helvetica-Bold").text((inclusiveTotal / 100).toFixed(2), 495, currentY, { width: 55, align: "right" });
         doc.font("Helvetica");
 
         currentY += 24;

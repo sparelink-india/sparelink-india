@@ -8,9 +8,9 @@ import {
   firmOrder,
   firm,
   part,
-  user,
 } from "@/drizzle/schema";
 import { generateInvoicePDFBuffer } from "@/lib/invoice-pdf";
+import { canAccessCustomerOrder } from "@/lib/order-architecture";
 
 export async function GET(
   request: NextRequest,
@@ -32,8 +32,12 @@ export async function GET(
     return NextResponse.json({ error: "Order not found" }, { status: 404 });
   }
 
-  // Authorization: Only the buyer who placed the order or an admin can access the invoice
-  if (session.user.role !== "admin" && orderRecord.buyerId !== session.user.id) {
+  if (
+    !canAccessCustomerOrder(
+      { role: session.user.role, id: session.user.id },
+      orderRecord.buyerId,
+    )
+  ) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 

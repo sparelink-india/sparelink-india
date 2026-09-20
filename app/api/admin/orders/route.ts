@@ -4,6 +4,7 @@ import { order, orderItem, user } from "@/drizzle/schema";
 import { writeAuditLog } from "@/lib/audit";
 import { getServerSession } from "@/lib/auth-server";
 import { getDb } from "@/lib/db";
+import { canMutateOrderPaymentStatus } from "@/lib/order-architecture";
 
 const ALLOWED_STATUSES = new Set([
   "pending",
@@ -14,6 +15,15 @@ const ALLOWED_STATUSES = new Set([
   "cancelled",
   "returned",
   "placed",
+  "processing",
+  "completed",
+]);
+
+const ALLOWED_PAYMENT_STATUSES = new Set([
+  "pending",
+  "paid",
+  "failed",
+  "unpaid",
 ]);
 
 export async function GET() {
@@ -94,6 +104,17 @@ export async function PATCH(request: Request) {
   }
   if (status && !ALLOWED_STATUSES.has(status)) {
     return NextResponse.json({ error: "Invalid status" }, { status: 400 });
+  }
+  if (paymentStatus) {
+    if (!canMutateOrderPaymentStatus(session.user.role)) {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    }
+    if (!ALLOWED_PAYMENT_STATUSES.has(paymentStatus)) {
+      return NextResponse.json(
+        { error: "Invalid payment status" },
+        { status: 400 },
+      );
+    }
   }
 
   const db = getDb();

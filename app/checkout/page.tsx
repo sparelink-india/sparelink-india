@@ -5,6 +5,10 @@ import { FormEvent, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { validateGSTIN } from "@/lib/gst";
 import { SignOutButton } from "@/components/sign-out-button";
+import { SiteFooter } from "@/components/site-footer";
+import { StorefrontHeader } from "@/components/storefront-header";
+import { useI18n } from "@/components/preferences-provider";
+import { isAuthoritativeSellingPricePaise } from "@/lib/storefront-price-display";
 
 type CartItem = {
   id: string;
@@ -13,10 +17,21 @@ type CartItem = {
   partName: string | null;
   partNumber: string | null;
   gstRate?: number;
+  listInclusivePaise?: number;
+  netInclusivePaise?: number;
+  discountPercent?: number;
   itemSubtotalPaise?: number;
   itemGstPaise?: number;
+  itemTotalPaise?: number;
   firmId?: string | null;
   firmName?: string | null;
+  isPensol?: boolean;
+  pensolUnit?: string | null;
+  pensolPackUnits?: number | null;
+  pensolCashDiscountPaisePerUnit?: number;
+  pensolCreditDiscountPaisePerUnit?: number;
+  pensolCashNetInclusivePaise?: number;
+  pensolCreditNetInclusivePaise?: number;
 };
 
 type CartData = {
@@ -27,15 +42,21 @@ type CartData = {
   shippingPaise?: number;
   totalPaise: number;
   itemCount?: number;
+  requiresLogin?: boolean;
+  hasPensol?: boolean;
+  pensolCashTotalPaise?: number;
+  pensolCreditTotalPaise?: number;
 };
 
 export default function CheckoutPage() {
   const router = useRouter();
+  const { t } = useI18n();
   const [cart, setCart] = useState<CartData | null>(null);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
   const [paymentMethod, setPaymentMethod] = useState("cash_on_delivery");
+  const [pensolSettlement, setPensolSettlement] = useState<"cash" | "credit">("cash");
   const [onlineCapableFirmIds, setOnlineCapableFirmIds] = useState<string[]>(
     [],
   );
@@ -58,6 +79,7 @@ export default function CheckoutPage() {
   const [transportName, setTransportName] = useState("");
   const [transportPhone, setTransportPhone] = useState("");
   const [transportGstin, setTransportGstin] = useState("");
+  const [addressPrefilled, setAddressPrefilled] = useState(false);
 
   const gstinValidation = gstinInput.trim()
     ? validateGSTIN(gstinInput)
@@ -75,7 +97,11 @@ export default function CheckoutPage() {
         ]);
 
         const cartData = await cartRes.json();
-        if (!cartRes.ok) throw new Error(cartData.error || "Unable to load cart.");
+        if (!cartRes.ok) throw new Error(cartData.error || t("cart.loadFail"));
+        if (cartData.requiresLogin) {
+          router.replace("/login");
+          return;
+        }
         setCart(cartData);
 
         if (cashfreeRes && cashfreeRes.ok) {
@@ -101,20 +127,30 @@ export default function CheckoutPage() {
             if (prof.transportName) setTransportName(prof.transportName);
             if (prof.transportPhone) setTransportPhone(prof.transportPhone);
             if (prof.transportGstin) setTransportGstin(prof.transportGstin);
+            setAddressPrefilled(
+              Boolean(
+                prof.contactName ||
+                  prof.phoneNumber ||
+                  prof.shippingAddressLine1 ||
+                  prof.shippingCity ||
+                  prof.shippingState ||
+                  prof.shippingPincode,
+              ),
+            );
           }
         }
       } catch (loadError) {
         setError(
           loadError instanceof Error
             ? loadError.message
-            : "Unable to load checkout data.",
+            : t("checkout.loadFail"),
         );
       } finally {
         setLoading(false);
       }
     }
     void loadData();
-  }, []);
+  }, [router]);
 
   async function placeOrder(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -122,21 +158,35 @@ export default function CheckoutPage() {
     setError("");
 
     if (gstinInput.trim() && gstinValidation && !gstinValidation.valid) {
-      setError("Please provide a valid 15-digit GSTIN or leave it blank.");
+      setError(t("profile.gstinInvalid"));
       setSubmitting(false);
       return;
     }
 
     if (effectivePaymentMethod === "online_payment" && !hasOnlineCapableFirm) {
       setError(
-        "Online payment is not available for these firms yet. Please choose Cash on Delivery.",
+        t("checkout.onlineUnavailable"),
       );
       setSubmitting(false);
       return;
     }
 
     if (shippingMethod === "transport" && !transportName.trim()) {
-      setError("Please provide the Transporter Name for booking.");
+      setError(t("checkout.transporterRequired"));
+      setSubmitting(false);
+      return;
+    }
+
+    const unpricedItem = cart?.items.find(
+      (item) =>
+        !isAuthoritativeSellingPricePaise(
+          item.listInclusivePaise,
+          item.netInclusivePaise,
+          item.pricePaise,
+        ),
+    );
+    if (unpricedItem) {
+      setError(t("price.onRequest"));
       setSubmitting(false);
       return;
     }
@@ -164,10 +214,11 @@ export default function CheckoutPage() {
           transportName: shippingMethod === "transport" ? transportName.trim() : undefined,
           transportPhone: shippingMethod === "transport" ? transportPhone.trim() : undefined,
           transportGstin: shippingMethod === "transport" && transportGstin.trim() ? transportGstin.trim().toUpperCase() : undefined,
+          pensolSettlement,
         }),
       });
       const data = await response.json();
-      if (!response.ok) throw new Error(data.error || "Unable to place order.");
+      if (!response.ok) throw new Error(data.error || t("checkout.placeFail"));
       if (
         effectivePaymentMethod === "online_payment" ||
         effectivePaymentMethod === "bank_transfer"
@@ -182,7 +233,7 @@ export default function CheckoutPage() {
       setError(
         checkoutError instanceof Error
           ? checkoutError.message
-          : "Unable to place order.",
+          : t("checkout.placeFail"),
       );
       setSubmitting(false);
     }
@@ -200,16 +251,17 @@ export default function CheckoutPage() {
     Math.max(0, (cart?.totalPaise ?? 0) - itemsSubtotalPaise);
 
   const shippingPaise = cart?.shippingPaise ?? 0;
-  const grandTotalPaise = cart?.totalPaise ?? itemsSubtotalPaise + gstPaise + shippingPaise;
+  const hasPensol = Boolean(cart?.hasPensol || cart?.items.some((item) => item.isPensol));
+  const grandTotalPaise =
+    hasPensol
+      ? pensolSettlement === "credit"
+        ? cart?.pensolCreditTotalPaise ?? cart?.totalPaise ?? 0
+        : cart?.pensolCashTotalPaise ?? cart?.totalPaise ?? 0
+      : cart?.totalPaise ?? itemsSubtotalPaise + gstPaise + shippingPaise;
   const onlineCapableSet = new Set(onlineCapableFirmIds);
   const hasOnlineCapableFirm = Boolean(
     cart?.items.some(
       (item) => item.firmId && onlineCapableSet.has(item.firmId),
-    ),
-  );
-  const hasComingSoonFirm = Boolean(
-    cart?.items.some(
-      (item) => item.firmId && !onlineCapableSet.has(item.firmId),
     ),
   );
   const effectivePaymentMethod =
@@ -219,32 +271,20 @@ export default function CheckoutPage() {
 
   return (
     <div className="min-h-screen bg-slate-50/70 text-slate-900">
-      <header className="sticky top-0 z-30 border-b border-slate-200/80 bg-white/95 backdrop-blur-md">
-        <div className="mx-auto flex max-w-5xl items-center justify-between px-4 py-3.5 sm:px-6">
-          <Link href="/" className="flex items-center gap-2">
-            <span className="text-lg font-bold tracking-tight text-slate-950">
-              SpareLink
-            </span>
-            <span className="rounded bg-slate-100 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-emerald-700">
-              India
-            </span>
-          </Link>
-          <Link
-            href="/cart"
-            className="inline-flex items-center gap-1 text-xs font-semibold text-slate-600 hover:text-slate-950"
-          >
-            <span>←</span> Back to Cart
+      <StorefrontHeader cartCount={cart?.itemCount ?? 0} />
+
+      <div className="mx-auto max-w-5xl px-4 py-8 sm:px-6 lg:py-10">
+        <div className="mb-4 flex items-center justify-between">
+          <Link href="/cart" className="text-xs font-semibold text-[#7a1233] hover:underline">
+            {t("cart.continue")}
           </Link>
           <SignOutButton />
         </div>
-      </header>
-
-      <div className="mx-auto max-w-5xl px-4 py-8 sm:px-6 lg:py-10">
         <h1 className="text-2xl font-bold tracking-tight text-slate-950 sm:text-3xl">
-          Secure Checkout
+          {t("cart.checkout")}
         </h1>
         <p className="mt-1 text-sm text-slate-500">
-          Verify your delivery address and review line-item taxes before placing order.
+          {t("cart.genuine")}
         </p>
 
         {loading && (
@@ -275,15 +315,15 @@ export default function CheckoutPage() {
 
         {!loading && !error && (!cart || !cart.items.length) && (
           <div className="mt-8 rounded-2xl border border-dashed border-slate-300 bg-white p-12 text-center shadow-xs">
-            <p className="font-bold text-slate-900">Your cart is empty.</p>
+            <p className="font-bold text-slate-900">{t("cart.emptyTitle")}</p>
             <p className="mt-1 text-sm text-slate-500">
-              Please add automotive parts to your cart before proceeding to checkout.
+              {t("cart.emptyBody")}
             </p>
             <Link
               href="/"
               className="mt-5 inline-flex items-center gap-2 rounded-xl bg-slate-950 px-5 py-2.5 text-xs font-bold text-white hover:bg-slate-800"
             >
-              Find Spare Parts
+              {t("cart.find")}
             </Link>
           </div>
         )}
@@ -298,33 +338,35 @@ export default function CheckoutPage() {
               <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-xs">
                 <div className="flex items-center justify-between">
                   <h2 className="text-base font-bold text-slate-950 sm:text-lg">
-                    1. Delivery Address & Contact
+                    {t("checkout.addressTitle")}
                   </h2>
-                  <span className="text-[11px] font-semibold text-emerald-700">
-                    Pre-filled from Profile
-                  </span>
+                  {addressPrefilled ? (
+                    <span className="text-[11px] font-semibold text-emerald-700">
+                      {t("checkout.prefilled")}
+                    </span>
+                  ) : null}
                 </div>
                 <p className="mt-1 text-xs text-slate-500">
-                  GST compliant invoice and shipment dispatch will be directed to this address.
+                  {t("checkout.addressHint")}
                 </p>
 
                 <div className="mt-5 grid gap-4 sm:grid-cols-2">
                   <label className="block sm:col-span-2">
                     <span className="mb-1 block text-xs font-semibold text-slate-700">
-                      Full Name / Contact Person <span className="text-rose-500">*</span>
+                      {t("register.fullName")} <span className="text-rose-500">*</span>
                     </span>
                     <input
                       required
                       value={fullName}
                       onChange={(e) => setFullName(e.target.value)}
-                      placeholder="e.g. Ramesh Sharma"
+                      placeholder={t("checkout.phName")}
                       className="h-11 w-full rounded-xl border border-slate-200 bg-slate-50/50 px-3.5 text-sm font-medium outline-none transition-all focus:border-slate-950 focus:bg-white focus:ring-2 focus:ring-slate-950/10"
                     />
                   </label>
 
                   <label className="block">
                     <span className="mb-1 block text-xs font-semibold text-slate-700">
-                      10-Digit Mobile Number <span className="text-rose-500">*</span>
+                      {t("checkout.mobile10")} <span className="text-rose-500">*</span>
                     </span>
                     <input
                       required
@@ -338,7 +380,7 @@ export default function CheckoutPage() {
 
                   <label className="block">
                     <span className="mb-1 block text-xs font-semibold text-slate-700">
-                      6-Digit Postal Pincode <span className="text-rose-500">*</span>
+                      {t("profile.pincode")} <span className="text-rose-500">*</span>
                     </span>
                     <input
                       required
@@ -352,51 +394,51 @@ export default function CheckoutPage() {
 
                   <label className="block sm:col-span-2">
                     <span className="mb-1 block text-xs font-semibold text-slate-700">
-                      Flat, House no., Building, Street <span className="text-rose-500">*</span>
+                      {t("checkout.line1")} <span className="text-rose-500">*</span>
                     </span>
                     <input
                       required
                       value={addressLine1}
                       onChange={(e) => setAddressLine1(e.target.value)}
-                      placeholder="Street / Industrial Area / Plot No."
+                      placeholder={t("checkout.phLine1")}
                       className="h-11 w-full rounded-xl border border-slate-200 bg-slate-50/50 px-3.5 text-sm font-medium outline-none transition-all focus:border-slate-950 focus:bg-white focus:ring-2 focus:ring-slate-950/10"
                     />
                   </label>
 
                   <label className="block sm:col-span-2">
                     <span className="mb-1 block text-xs font-semibold text-slate-700">
-                      Area, Landmark (Optional)
+                      {t("checkout.landmarkOptional")}
                     </span>
                     <input
                       value={addressLine2}
                       onChange={(e) => setAddressLine2(e.target.value)}
-                      placeholder="Nearby landmark or unit"
+                      placeholder={t("checkout.phLandmark")}
                       className="h-11 w-full rounded-xl border border-slate-200 bg-slate-50/50 px-3.5 text-sm font-medium outline-none transition-all focus:border-slate-950 focus:bg-white focus:ring-2 focus:ring-slate-950/10"
                     />
                   </label>
 
                   <label className="block">
                     <span className="mb-1 block text-xs font-semibold text-slate-700">
-                      City / District <span className="text-rose-500">*</span>
+                      {t("checkout.cityDistrict")} <span className="text-rose-500">*</span>
                     </span>
                     <input
                       required
                       value={city}
                       onChange={(e) => setCity(e.target.value)}
-                      placeholder="e.g. Ahmedabad"
+                      placeholder={t("checkout.phCity")}
                       className="h-11 w-full rounded-xl border border-slate-200 bg-slate-50/50 px-3.5 text-sm font-medium outline-none transition-all focus:border-slate-950 focus:bg-white focus:ring-2 focus:ring-slate-950/10"
                     />
                   </label>
 
                   <label className="block">
                     <span className="mb-1 block text-xs font-semibold text-slate-700">
-                      State <span className="text-rose-500">*</span>
+                      {t("checkout.state")} <span className="text-rose-500">*</span>
                     </span>
                     <input
                       required
                       value={state}
                       onChange={(e) => setState(e.target.value)}
-                      placeholder="e.g. Gujarat"
+                      placeholder={t("checkout.phState")}
                       className="h-11 w-full rounded-xl border border-slate-200 bg-slate-50/50 px-3.5 text-sm font-medium outline-none transition-all focus:border-slate-950 focus:bg-white focus:ring-2 focus:ring-slate-950/10"
                     />
                   </label>
@@ -406,10 +448,10 @@ export default function CheckoutPage() {
               {/* Fulfillment & Transport Preference */}
               <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-xs">
                 <h2 className="text-base font-bold text-slate-950 sm:text-lg">
-                  2. Fulfillment & Delivery Option
+                  {t("checkout.fulfillTitle")}
                 </h2>
                 <p className="mt-1 text-xs text-slate-500">
-                  Select your preferred regional shipping mode.
+                  {t("checkout.fulfillHint")}
                 </p>
 
                 <div className="mt-4 space-y-3">
@@ -422,7 +464,7 @@ export default function CheckoutPage() {
                         checked={shippingMethod === "courier"}
                         onChange={() => setShippingMethod("courier")}
                       />
-                      <span>Courier Dispatch</span>
+                      <span>{t("register.courier")}</span>
                     </label>
 
                     <label className="flex items-center gap-2.5 rounded-xl border border-slate-200 p-3.5 text-xs font-bold text-slate-800 cursor-pointer has-checked:border-slate-950 has-checked:bg-slate-50">
@@ -433,7 +475,7 @@ export default function CheckoutPage() {
                         checked={shippingMethod === "self_pickup"}
                         onChange={() => setShippingMethod("self_pickup")}
                       />
-                      <span>Self Pickup</span>
+                      <span>{t("register.pickup")}</span>
                     </label>
 
                     <label className="flex items-center gap-2.5 rounded-xl border border-slate-200 p-3.5 text-xs font-bold text-slate-800 cursor-pointer has-checked:border-slate-950 has-checked:bg-slate-50">
@@ -444,50 +486,50 @@ export default function CheckoutPage() {
                         checked={shippingMethod === "transport"}
                         onChange={() => setShippingMethod("transport")}
                       />
-                      <span>Book through Transport</span>
+                      <span>{t("register.transport")}</span>
                     </label>
                   </div>
 
                   {shippingMethod === "transport" && (
                     <div className="rounded-xl bg-slate-50 border border-slate-200 p-4 space-y-3 animate-in fade-in">
                       <p className="text-xs font-bold text-slate-900">
-                        Transport Agency Details
+                        {t("checkout.transportDetails")}
                       </p>
                       <div className="grid gap-3 sm:grid-cols-3">
                         <div>
                           <span className="mb-1 block text-xs font-semibold text-slate-700">
-                            Transporter Name <span className="text-rose-500">*</span>
+                            {t("checkout.transporterName")} <span className="text-rose-500">*</span>
                           </span>
                           <input
                             required={shippingMethod === "transport"}
                             value={transportName}
                             onChange={(e) => setTransportName(e.target.value)}
-                            placeholder="e.g. V-Trans Logistics"
+                            placeholder={t("checkout.phTransporter")}
                             className="h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-xs font-medium outline-none focus:border-slate-950"
                           />
                         </div>
 
                         <div>
                           <span className="mb-1 block text-xs font-semibold text-slate-700">
-                            Transport Contact Number
+                            {t("checkout.transportContact")}
                           </span>
                           <input
                             value={transportPhone}
                             onChange={(e) => setTransportPhone(e.target.value)}
-                            placeholder="e.g. 98XXXXXXXX"
+                            placeholder={t("checkout.phTransportPhone")}
                             className="h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-xs font-medium outline-none focus:border-slate-950"
                           />
                         </div>
 
                         <div>
                           <span className="mb-1 block text-xs font-semibold text-slate-700">
-                            Transport GSTIN (Optional)
+                            {t("checkout.transportGstin")}
                           </span>
                           <input
                             maxLength={15}
                             value={transportGstin}
                             onChange={(e) => setTransportGstin(e.target.value.toUpperCase())}
-                            placeholder="15-digit GSTIN"
+                            placeholder={t("profile.phTransportGstin")}
                             className="h-10 w-full font-mono rounded-xl border border-slate-200 bg-white px-3 text-xs font-medium outline-none focus:border-slate-950"
                           />
                         </div>
@@ -501,32 +543,32 @@ export default function CheckoutPage() {
               <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-xs">
                 <div className="flex items-center justify-between">
                   <h2 className="text-base font-bold text-slate-950 sm:text-lg">
-                    3. Business / GST Details (Optional)
+                    {t("checkout.gstTitle")}
                   </h2>
                   <span className="rounded bg-slate-100 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-slate-600">
-                    B2B Invoicing
+                    {t("checkout.b2bBadge")}
                   </span>
                 </div>
                 <p className="mt-1 text-xs text-slate-500">
-                  Provide your GSTIN to receive a GST Tax Invoice with Input Tax Credit (ITC).
+                  {t("checkout.gstHint")}
                 </p>
 
                 <div className="mt-5 grid gap-4 sm:grid-cols-2">
                   <label className="block sm:col-span-2">
                     <span className="mb-1 block text-xs font-semibold text-slate-700">
-                      Business / Trade / Workshop Name (Optional)
+                      {t("register.business")}
                     </span>
                     <input
                       value={businessNameInput}
                       onChange={(e) => setBusinessNameInput(e.target.value)}
-                      placeholder="e.g. Metro Auto Repairs & Services"
+                      placeholder={t("checkout.phBusiness")}
                       className="h-11 w-full rounded-xl border border-slate-200 bg-slate-50/50 px-3.5 text-sm font-medium outline-none transition-all focus:border-slate-950 focus:bg-white focus:ring-2 focus:ring-slate-950/10"
                     />
                   </label>
 
                   <label className="block sm:col-span-2">
                     <span className="mb-1 block text-xs font-semibold text-slate-700">
-                      Buyer GSTIN (Optional, 15 characters)
+                      {t("checkout.buyerGstin")}
                     </span>
                     <input
                       value={gstinInput}
@@ -576,11 +618,52 @@ export default function CheckoutPage() {
 
               <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-xs">
                 <h2 className="text-base font-bold text-slate-950 sm:text-lg">
-                  4. Payment Method
+                  {t("checkout.payTitle")}
                 </h2>
                 <p className="mt-1 text-xs text-slate-500">
-                  Select how you would like to settle this order.
+                  {t("checkout.payHint")}
                 </p>
+
+                {hasPensol ? (
+                  <div className="mt-4 space-y-3 rounded-xl border border-amber-200 bg-amber-50/60 p-4">
+                    <p className="text-sm font-bold text-slate-900">{t("checkout.pensolPayTitle")}</p>
+                    <label className="flex cursor-pointer items-start gap-3">
+                      <input
+                        type="radio"
+                        name="pensolSettlement"
+                        checked={pensolSettlement === "cash"}
+                        onChange={() => setPensolSettlement("cash")}
+                      />
+                      <span className="text-sm">
+                        {t("checkout.pensolCash")}
+                      </span>
+                    </label>
+                    <label className="flex cursor-pointer items-start gap-3">
+                      <input
+                        type="radio"
+                        name="pensolSettlement"
+                        checked={pensolSettlement === "credit"}
+                        onChange={() => setPensolSettlement("credit")}
+                      />
+                      <span className="text-sm">
+                        {t("checkout.pensolCredit")}
+                      </span>
+                    </label>
+                    <p className="text-xs text-slate-600">
+                      {cart?.items
+                        .filter((item) => item.isPensol)
+                        .map((item) => {
+                          const unit = (item.pensolUnit || "unit").toUpperCase();
+                          const amount =
+                            pensolSettlement === "credit"
+                              ? item.pensolCreditDiscountPaisePerUnit ?? 0
+                              : item.pensolCashDiscountPaisePerUnit ?? 0;
+                          return `${item.partName || "Pensol"}: ₹${(amount / 100).toLocaleString("en-IN")} / ${unit}`;
+                        })
+                        .join(" · ")}
+                    </p>
+                  </div>
+                ) : null}
 
                 <div className="mt-4 space-y-3">
                   <label className="flex cursor-pointer items-start gap-3.5 rounded-xl border border-slate-200 p-4 transition-colors hover:bg-slate-50 has-checked:border-slate-950 has-checked:bg-slate-50/50">
@@ -594,12 +677,10 @@ export default function CheckoutPage() {
                     />
                     <div>
                       <span className="block text-sm font-bold text-slate-900">
-                        Cash on Delivery (COD)
+                        {t("checkout.cod")}
                       </span>
                       <span className="mt-0.5 block text-xs text-slate-500">
-                        Available for Ambaji Traders, Hind Motors, and India
-                        Sales. Pay cash or via delivery agent UPI upon part
-                        handover.
+                        {t("checkout.codHint")}
                       </span>
                     </div>
                   </label>
@@ -615,10 +696,10 @@ export default function CheckoutPage() {
                     />
                     <div>
                       <span className="block text-sm font-bold text-slate-900">
-                        Direct Bank Transfer / UPI
+                        {t("checkout.bank")}
                       </span>
                       <span className="mt-0.5 block text-xs text-slate-500">
-                        Transfer directly to firm bank account or business UPI ID and submit your UTR reference.
+                        {t("checkout.bankHint")}
                       </span>
                     </div>
                   </label>
@@ -635,27 +716,20 @@ export default function CheckoutPage() {
                       />
                       <div>
                         <span className="block text-sm font-bold text-slate-900">
-                          Online Payment
+                          {t("checkout.online")}
                         </span>
                         <span className="mt-0.5 block text-xs text-slate-500">
-                          Cashfree is available for Ambaji Traders. Pay that
-                          allocation after the order is placed. Payment is
-                          confirmed only after SpareLink verifies it with the
-                          payment gateway.
-                          {hasComingSoonFirm
-                            ? " Hind Motors and India Sales online payment is coming soon — use COD or bank/UPI for those allocations."
-                            : ""}
+                        {t("checkout.onlineHint")}
                         </span>
                       </div>
                     </label>
                   ) : (
                     <div className="rounded-xl border border-dashed border-slate-300 bg-slate-50 p-4">
                       <span className="block text-sm font-bold text-slate-900">
-                        Online Payment — Coming Soon
+                        {t("checkout.comingSoon")}
                       </span>
                       <span className="mt-0.5 block text-xs text-slate-500">
-                        Cashfree is not available for Hind Motors or India Sales
-                        yet. Please use Cash on Delivery, or bank/UPI transfer.
+                        {t("checkout.onlineHint")}
                       </span>
                     </div>
                   )}
@@ -667,7 +741,7 @@ export default function CheckoutPage() {
             <aside aria-label="Order breakdown">
               <div className="sticky top-20 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
                 <h2 className="text-base font-bold text-slate-950 sm:text-lg">
-                  Order Summary
+                  {t("checkout.summary")}
                 </h2>
 
                 {/* Line Items */}
@@ -679,23 +753,47 @@ export default function CheckoutPage() {
                     >
                       <div>
                         <p className="font-semibold text-slate-900">
-                          {item.partName || "Spare Part"} × {item.quantity}
+                          {item.partName || t("checkout.sparePart")} × {item.quantity}
                         </p>
                         <p className="mt-0.5 text-slate-400">
-                          Base: ₹{((item.pricePaise * item.quantity) / 100).toLocaleString("en-IN")}
+                          {isAuthoritativeSellingPricePaise(
+                            item.listInclusivePaise,
+                            item.netInclusivePaise,
+                            item.pricePaise,
+                          )
+                            ? `${t("price.listRate")}: ₹${(((item.listInclusivePaise ?? item.pricePaise) * item.quantity) / 100).toLocaleString("en-IN")}`
+                            : t("price.onRequest")}
                           {item.gstRate !== undefined && (
                             <span className="ml-1.5 font-medium text-emerald-700">
                               (GST {item.gstRate}%)
                             </span>
                           )}
                         </p>
+                        {(item.discountPercent ?? 0) > 0 ? (
+                          <p className="text-[11px] font-semibold text-[#7a1233]">
+                            {t("price.inclTaxDiscount", { percent: String(item.discountPercent) })}
+                          </p>
+                        ) : null}
                       </div>
                       <span className="font-bold text-slate-900">
-                        ₹
-                        {(
-                          (item.pricePaise * item.quantity) /
-                          100
-                        ).toLocaleString("en-IN")}
+                        {isAuthoritativeSellingPricePaise(
+                          item.listInclusivePaise,
+                          item.netInclusivePaise,
+                          item.pricePaise,
+                        )
+                          ? `₹${(
+                              ((item.isPensol
+                                ? ((pensolSettlement === "credit"
+                                    ? item.pensolCreditNetInclusivePaise
+                                    : item.pensolCashNetInclusivePaise) ??
+                                    item.netInclusivePaise ??
+                                    item.pricePaise) * item.quantity
+                                : item.itemTotalPaise ??
+                                  (item.netInclusivePaise ?? item.pricePaise) *
+                                    item.quantity) ) /
+                              100
+                            ).toLocaleString("en-IN")}`
+                          : t("price.onRequest")}
                       </span>
                     </div>
                   ))}
@@ -704,7 +802,7 @@ export default function CheckoutPage() {
                 {/* Financial Breakdown */}
                 <div className="mt-4 space-y-2.5 text-xs">
                   <div className="flex items-center justify-between text-slate-600">
-                    <span>Items Subtotal</span>
+                    <span>{t("checkout.subtotalPlain")}</span>
                     <span className="font-semibold text-slate-900">
                       ₹{(itemsSubtotalPaise / 100).toLocaleString("en-IN")}
                     </span>
@@ -712,9 +810,9 @@ export default function CheckoutPage() {
 
                   <div className="flex items-center justify-between text-slate-600">
                     <span className="inline-flex items-center gap-1">
-                      <span>GST / Tax</span>
+                      <span>{t("checkout.gstTax")}</span>
                       <span className="rounded bg-emerald-50 px-1 py-0.2 text-[10px] font-bold text-emerald-700 border border-emerald-200/60">
-                        Itemized
+                        {t("checkout.itemized")}
                       </span>
                     </span>
                     <span className="font-semibold text-emerald-700">
@@ -723,10 +821,10 @@ export default function CheckoutPage() {
                   </div>
 
                   <div className="flex items-center justify-between text-slate-600">
-                    <span>Shipping & Handling</span>
+                    <span>{t("checkout.shippingHandle")}</span>
                     <span className="font-semibold text-emerald-700">
                       {shippingPaise === 0
-                        ? "₹0 (Free Standard)"
+                        ? t("checkout.freeStd")
                         : `₹${(shippingPaise / 100).toLocaleString("en-IN")}`}
                     </span>
                   </div>
@@ -734,14 +832,14 @@ export default function CheckoutPage() {
                   <div className="border-t border-slate-200 pt-3.5">
                     <div className="flex items-baseline justify-between">
                       <span className="text-sm font-bold text-slate-950">
-                        Grand Total
+                        {t("checkout.grand")}
                       </span>
                       <div className="text-right">
                         <span className="text-xl font-extrabold text-slate-950">
                           ₹{(grandTotalPaise / 100).toLocaleString("en-IN")}
                         </span>
                         <p className="text-[10px] text-slate-400">
-                          Inclusive of all taxes
+                          {t("checkout.inclusive")}
                         </p>
                       </div>
                     </div>
@@ -775,15 +873,15 @@ export default function CheckoutPage() {
                           d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
                         />
                       </svg>
-                      <span>Placing order...</span>
+                      <span>{t("checkout.placing")}</span>
                     </>
                   ) : (
                     <span>
                       {effectivePaymentMethod === "online_payment"
-                        ? "Place order and pay online"
+                        ? t("checkout.placeOnline")
                         : paymentMethod === "bank_transfer"
-                          ? "Proceed to Bank / UPI Transfer"
-                          : "Place COD Order"}
+                          ? t("checkout.placeBank")
+                          : t("checkout.placeCod")}
                     </span>
                   )}
                 </button>
@@ -792,6 +890,7 @@ export default function CheckoutPage() {
           </form>
         )}
       </div>
+      <SiteFooter />
     </div>
   );
 }

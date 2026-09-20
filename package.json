@@ -8,9 +8,13 @@
   },
   "scripts": {
     "dev": "next dev",
+    "prepare-catalogue-images": "node scripts/prepare-catalogue-images.mjs",
+    "prebuild": "node scripts/prepare-catalogue-images.mjs",
+    "postbuild": "node scripts/strip-catalogue-image-traces.mjs",
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
+    "test": "tsx --test lib/*.test.ts",
     "typecheck": "next typegen && tsc --noEmit",
     "format": "prettier --write .",
     "format:check": "prettier --check .",

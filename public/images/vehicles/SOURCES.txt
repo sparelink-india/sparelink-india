@@ -1,0 +1,79 @@
+Vehicle Fitment visual assets — source and licence
+
+Logos are Wikimedia Commons PD-textlogo files (simple geometry/text, below copyright originality).
+They remain trademarks of the manufacturers. Used here only to identify vehicles in the catalogue.
+
+hyundai.svg
+  File:Hyundai Motor Company logo.svg
+  https://commons.wikimedia.org/wiki/File:Hyundai_Motor_Company_logo.svg
+  Licence: Public domain (PD-textlogo). Trademark: Hyundai Motor Company.
+
+mahindra.svg
+  File:Mahindra logo.svg
+  https://commons.wikimedia.org/wiki/File:Mahindra_logo.svg
+  Source noted on Commons: converted from https://www.mahindra.com/newsroom/logos
+  Licence: Public domain (PD-textlogo). Trademark: Mahindra & Mahindra Limited.
+
+maruti-suzuki.svg
+  File:Maruti Suzuki logo.svg
+  https://commons.wikimedia.org/wiki/File:Maruti_Suzuki_logo.svg
+  Source noted on Commons: https://www.marutisuzuki.com
+  Licence: Public domain (PD-textlogo). Trademark: Maruti Suzuki.
+
+tata.svg
+  File:Tata Motors Logo.svg
+  https://commons.wikimedia.org/wiki/File:Tata_Motors_Logo.svg
+  Licence: Public domain (PD-textlogo). Trademark: Tata Motors.
+
+universal
+  No manufacturer logo. Catalogue grouping only. Placeholder not used.
+
+Photographs are Wikimedia Commons works with documented Creative Commons licences.
+Resized for web use; no other creative changes.
+
+hyundai-creta.jpg
+  File:2022 Hyundai Creta 1.5 IVT orange and black front view in Brunei.jpg
+  Author: AIMHO'S REBELLION 8490s. CC BY-SA 4.0.
+
+hyundai-i20.jpg
+  File:Hyundai i20 1.0 T-GDi 48V MHEV BC3 Atlas White (1).jpg
+  Author: Damian B Oh. CC BY-SA 4.0.
+
+mahindra-bolero.jpg
+  File:Mahindra Bolero GLX Front.JPG
+  Author: Ominae. CC BY-SA 4.0.
+
+mahindra-reva.jpg
+  File:REVAi, London (LRM 20240515 134545).jpg
+  Author: Matti Blume. CC BY-SA 4.0.
+  (Mahindra Reva Electric / REVAi)
+
+maruti-suzuki-baleno.jpg
+  File:2017 Suzuki Baleno SZ3 Dualjet 1.2 Front.jpg
+  Author: Vauxford. CC BY-SA 4.0.
+  (Suzuki Baleno = Maruti Suzuki Baleno)
+
+maruti-suzuki-swift.jpg
+  File:2018 Suzuki Swift SZ5 Boosterjet SHVS 1.0 Front.jpg
+  Author: Vauxford. CC BY-SA 4.0.
+  (Suzuki Swift = Maruti Suzuki Swift)
+
+tata-ace.jpg
+  File:Tata Ace Mini Truck (1).JPG
+  Author: SnapMeUp. CC BY-SA 4.0.
+
+tata-magic.jpg
+  File:Tata Magic à Keur Massar.png
+  Author: Lisa Coulaud. CC BY-SA 4.0.
+  Converted to JPEG for file size only.
+
+tata-nexon.jpg
+  File:2023 Tata Nexon XZA+ front view.jpg
+  Author: Dairokkan9. CC BY-SA 4.0.
+
+tata-sumo.jpg
+  File:Tata Sumo Victa Turbo DI.jpg
+  Author: shankar s. CC BY 2.0.
+
+universal-car
+  Not added. Model identity is generic "Car". Placeholder retained.

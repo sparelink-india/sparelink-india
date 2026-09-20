@@ -5,7 +5,7 @@ export default function manifest(): MetadataRoute.Manifest {
     name: "SpareLink India",
     short_name: "SpareLink",
     description:
-      "Spare-parts marketplace for India. Search by vehicle or part number.",
+      "SpareLink India is the digital sales platform for Hind Motors, Ambaji Traders and India Sales.",
     start_url: "/",
     display: "standalone",
     background_color: "#f8fafc",

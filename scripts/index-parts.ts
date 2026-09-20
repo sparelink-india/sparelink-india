@@ -4,6 +4,7 @@ dotenv.config({ path: ".env.local" });
 
 async function main() {
   const { getDb } = await import("../lib/db");
+  const { partNumberSearchText } = await import("../lib/search-intent");
   const { part, partCategory, partVehicleCompatibility } =
     await import("../drizzle/schema");
   const { eq } = await import("drizzle-orm");
@@ -46,6 +47,7 @@ async function main() {
     documents.push({
       id: item.id,
       part_number: item.partNumber,
+      part_number_search: partNumberSearchText(item.partNumber),
       name: item.name,
       description: item.description ?? "",
       brand: item.brand ?? "",

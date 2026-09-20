@@ -10,6 +10,7 @@ import {
   part,
 } from "@/drizzle/schema";
 import { getServerSession } from "@/lib/auth-server";
+import { denyIfMustChangePassword } from "@/lib/require-role";
 import { getDb } from "@/lib/db";
 
 async function getDealerId() {
@@ -28,6 +29,8 @@ async function getDealerId() {
         { status: 403 },
       ),
     };
+  const blocked = await denyIfMustChangePassword(session.user.id);
+  if (blocked) return { error: blocked };
   const profile = await getDb().query.dealer.findFirst({
     where: eq(dealer.userId, session.user.id),
   });

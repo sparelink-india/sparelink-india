@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { getServerSession } from "@/lib/auth-server";
 import { getDb } from "@/lib/db";
-import { order, user, orderItem } from "@/drizzle/schema";
+import { order, user } from "@/drizzle/schema";
 import { desc, eq } from "drizzle-orm";
 import * as XLSX from "xlsx";
 

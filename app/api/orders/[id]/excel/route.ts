@@ -8,9 +8,10 @@ import {
   firmOrder,
   firm,
   part,
-  user,
 } from "@/drizzle/schema";
 import { extractGSTRate } from "@/lib/gst";
+import { canAccessCustomerOrder } from "@/lib/order-architecture";
+import { splitInclusiveGst } from "@/lib/party-pricing";
 import * as XLSX from "xlsx";
 
 export async function GET(
@@ -33,8 +34,12 @@ export async function GET(
     return NextResponse.json({ error: "Order not found" }, { status: 404 });
   }
 
-  // Ownership verification
-  if (session.user.role !== "admin" && orderRecord.buyerId !== session.user.id) {
+  if (
+    !canAccessCustomerOrder(
+      { role: session.user.role, id: session.user.id },
+      orderRecord.buyerId,
+    )
+  ) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
@@ -103,8 +108,7 @@ export async function GET(
   const primaryFirmName = allocations[0]?.firmName || "Ambaji Traders";
   const itemRows = items.map((item) => {
     const gstRate = extractGSTRate(item.partDescription);
-    const taxableSubtotal = item.unitPricePaise * item.quantity;
-    const itemGst = Math.round((taxableSubtotal * gstRate) / 100);
+    const tax = splitInclusiveGst(item.totalPaise, gstRate);
 
     return {
       "Part Number": item.partNumber,
@@ -113,9 +117,9 @@ export async function GET(
       Quantity: item.quantity,
       "Unit Price (₹)": (item.unitPricePaise / 100).toFixed(2),
       "GST (%)": `${gstRate}%`,
-      "GST Amount (₹)": (itemGst / 100).toFixed(2),
-      "Subtotal (₹)": (taxableSubtotal / 100).toFixed(2),
-      "Line Total (₹)": ((taxableSubtotal + itemGst) / 100).toFixed(2),
+      "GST Amount (₹)": (tax.gstPaise / 100).toFixed(2),
+      "Subtotal (₹)": (tax.basePaise / 100).toFixed(2),
+      "Line Total (₹)": (item.totalPaise / 100).toFixed(2),
     };
   });
 

@@ -177,10 +177,10 @@ export default function AdminDashboard() {
                   className="rounded-lg border border-teal-200 bg-teal-50 p-6 hover:bg-teal-100"
                 >
                   <p className="text-sm font-semibold text-teal-900">
-                    Users
+                    Users & Pricing
                   </p>
                   <p className="mt-1 text-xs text-teal-700">
-                    Manage system users
+                    Customer accounts and inclusive-tax discounts
                   </p>
                 </Link>
 
@@ -200,7 +200,7 @@ export default function AdminDashboard() {
 
             <section className="mt-10">
               <h2 className="text-2xl font-semibold">Data Management</h2>
-              <div className="mt-6 grid gap-4">
+              <div className="mt-6 grid gap-4 md:grid-cols-2">
                 <Link
                   href="/admin/import"
                   className="rounded-lg border border-slate-300 bg-slate-50 p-6 hover:bg-slate-100"
@@ -210,6 +210,17 @@ export default function AdminDashboard() {
                   </p>
                   <p className="mt-1 text-xs text-slate-600">
                     Import products and dealer listings via CSV/Excel
+                  </p>
+                </Link>
+                <Link
+                  href="/admin/source-catalogue"
+                  className="rounded-lg border border-slate-300 bg-slate-50 p-6 hover:bg-slate-100"
+                >
+                  <p className="text-sm font-semibold text-slate-900">
+                    Source catalogue review
+                  </p>
+                  <p className="mt-1 text-xs text-slate-600">
+                    READY / REVIEW / DUPLICATE / CONFLICT extraction report
                   </p>
                 </Link>
               </div>

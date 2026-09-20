@@ -1,11 +1,18 @@
 import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "@better-auth/drizzle-adapter";
+import { nextCookies } from "better-auth/next-js";
 import { phoneNumber } from "better-auth/plugins";
 import { getDb } from "@/lib/db";
 import { deliverBuyerOtp } from "@/lib/otp";
 import * as schema from "@/drizzle/schema";
 
+const googleClientId = process.env.GOOGLE_CLIENT_ID?.trim();
+const googleClientSecret = process.env.GOOGLE_CLIENT_SECRET?.trim();
+const googleEnabled = Boolean(googleClientId && googleClientSecret);
+
 export const auth = betterAuth({
+  secret: process.env.BETTER_AUTH_SECRET,
+  baseURL: process.env.BETTER_AUTH_URL || process.env.NEXT_PUBLIC_APP_URL,
   database: drizzleAdapter(getDb(), {
     provider: "pg",
     schema: {
@@ -16,6 +23,12 @@ export const auth = betterAuth({
     },
   }),
 
+  emailAndPassword: {
+    enabled: true,
+    disableSignUp: true,
+    minPasswordLength: 3,
+  },
+
   user: {
     additionalFields: {
       role: {
@@ -24,6 +37,35 @@ export const auth = betterAuth({
         defaultValue: "buyer",
         input: false,
       },
+    },
+  },
+
+  socialProviders: googleEnabled
+    ? {
+        google: {
+          clientId: googleClientId as string,
+          clientSecret: googleClientSecret as string,
+        },
+      }
+    : undefined,
+
+  databaseHooks: {
+    user: {
+      create: {
+        before: async (user) => ({
+          data: {
+            ...user,
+            role: "buyer",
+          },
+        }),
+      },
+    },
+  },
+
+  account: {
+    accountLinking: {
+      enabled: true,
+      trustedProviders: googleEnabled ? ["google"] : [],
     },
   },
 
@@ -38,5 +80,6 @@ export const auth = betterAuth({
         getTempName: (phoneNumber) => phoneNumber,
       },
     }),
+    nextCookies(),
   ],
 });

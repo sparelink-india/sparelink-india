@@ -1,6 +1,10 @@
 import type { Metadata, Viewport } from "next";
 import type { ReactNode } from "react";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Geist, Geist_Mono, Noto_Sans_Devanagari } from "next/font/google";
+import { cookies } from "next/headers";
+import { PasswordChangeGuard } from "@/components/password-change-guard";
+import { PreferencesProvider } from "@/components/preferences-provider";
+import { LOCALE_COOKIE, PREFERENCE_BOOTSTRAP, THEME_COOKIE } from "@/lib/i18n";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -13,8 +17,14 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
+const notoDevanagari = Noto_Sans_Devanagari({
+  variable: "--font-hi",
+  subsets: ["devanagari"],
+  weight: ["400", "600", "700"],
+});
+
 const siteDescription =
-  "Spare-parts marketplace for India. Search by vehicle or part number across Ambaji Traders, Hind Motors, and India Sales.";
+  "SpareLink India is the digital sales platform for Hind Motors, Ambaji Traders and India Sales.";
 
 export const metadata: Metadata = {
   metadataBase: new URL(
@@ -46,21 +56,33 @@ export const metadata: Metadata = {
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
-  themeColor: "#020617",
+  themeColor: "#7a1233",
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: ReactNode;
 }>) {
+  const jar = await cookies();
+  const locale = jar.get(LOCALE_COOKIE)?.value === "hi" ? "hi" : "en";
+  const themeName = jar.get(THEME_COOKIE)?.value === "dark" ? "dark" : "light";
+  const theme = themeName === "dark" ? "dark" : "";
+
   return (
     <html
-      lang="en"
-      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
+      lang={locale}
+      suppressHydrationWarning
+      className={`${geistSans.variable} ${geistMono.variable} ${notoDevanagari.variable} h-full antialiased ${theme}`.trim()}
     >
-      <body className="flex min-h-full flex-col bg-background text-foreground">
-        {children}
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: PREFERENCE_BOOTSTRAP }} />
+      </head>
+      <body className="flex min-h-full flex-col bg-background font-sans text-foreground">
+        <PreferencesProvider initialLocale={locale} initialTheme={themeName}>
+          <PasswordChangeGuard />
+          {children}
+        </PreferencesProvider>
       </body>
     </html>
   );

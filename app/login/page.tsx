@@ -1,156 +1,141 @@
 ﻿"use client";
 
-import { FormEvent, useState } from "react";
+import { FormEvent, useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { BrandLogo } from "@/components/brand-logo";
 import { SiteFooter } from "@/components/site-footer";
-
-function normalizeIndianPhoneNumber(value: string): string {
-  const digits = value.replace(/\D/g, "");
-
-  if (digits.length === 10) {
-    return `+91${digits}`;
-  }
-
-  if (digits.length === 12 && digits.startsWith("91")) {
-    return `+${digits}`;
-  }
-
-  return value.trim();
-}
+import { StorefrontHeader } from "@/components/storefront-header";
+import { useI18n } from "@/components/preferences-provider";
+import { authClient } from "@/lib/auth-client";
 
 export default function LoginPage() {
   const router = useRouter();
-  const [phoneNumber, setPhoneNumber] = useState("");
-  const [code, setCode] = useState("");
-  const [step, setStep] = useState<"phone" | "otp">("phone");
+  const { t } = useI18n();
+  const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
+  const [googleConfigured, setGoogleConfigured] = useState(false);
+  const [busy, setBusy] = useState(false);
 
-  async function sendOtp(event: FormEvent) {
+  useEffect(() => {
+    void fetch("/api/auth/login-options")
+      .then((response) => response.json())
+      .then((data) => setGoogleConfigured(Boolean(data.googleConfigured)))
+      .catch(() => setGoogleConfigured(false));
+  }, []);
+
+  async function handlePasswordLogin(event: FormEvent) {
     event.preventDefault();
     setError("");
     setMessage("");
-
-    const normalizedPhoneNumber = normalizeIndianPhoneNumber(phoneNumber);
-    if (!/^\+91[6-9]\d{9}$/.test(normalizedPhoneNumber)) {
-      setError("Enter a valid 10-digit Indian mobile number.");
-      return;
+    setBusy(true);
+    try {
+      const response = await fetch("/api/auth/username-login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ username, password }),
+      });
+      const data = await response.json();
+      if (!response.ok) {
+        setError(data.error || t("login.fail"));
+        return;
+      }
+      setMessage(t("login.ok"));
+      router.push(typeof data.redirectTo === "string" ? data.redirectTo : "/");
+      router.refresh();
+    } catch {
+      setError(t("login.fail"));
+    } finally {
+      setBusy(false);
     }
-    setPhoneNumber(normalizedPhoneNumber);
-
-    const response = await fetch("/api/auth/phone-number/send-otp", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ phoneNumber: normalizedPhoneNumber }),
-    });
-
-    const data = await response.json();
-
-    if (!response.ok) {
-      setError(data.error || "Unable to send OTP.");
-      return;
-    }
-
-    setStep("otp");
-    setMessage("OTP sent. Check your mobile.");
   }
 
-  async function verifyOtp(event: FormEvent) {
-    event.preventDefault();
+  async function handleGoogle() {
     setError("");
-    setMessage("");
-
-    const normalizedPhoneNumber = normalizeIndianPhoneNumber(phoneNumber);
-
-    const response = await fetch("/api/auth/phone-number/verify", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ phoneNumber: normalizedPhoneNumber, code }),
-    });
-
-    const data = await response.json();
-
-    if (!response.ok || !data.status) {
-      setError(data.error || "Invalid OTP.");
+    if (!googleConfigured) {
+      setError(t("login.googleNeeded"));
       return;
     }
-
-    setMessage("Login successful. Redirecting...");
-    router.push("/");
+    await authClient.signIn.social({ provider: "google", callbackURL: "/" });
   }
 
   return (
     <div className="flex min-h-screen flex-col bg-slate-50">
-    <main className="flex flex-1 items-center justify-center px-6 py-12">
-      <div className="w-full max-w-md rounded-2xl border border-zinc-200 bg-white p-8 shadow-sm">
-        <Link href="/" className="text-xs font-semibold text-emerald-700 hover:underline">
-          ← Catalog
-        </Link>
-        <h1 className="mt-3 text-2xl font-bold">SpareLink India</h1>
-        <p className="mt-2 text-sm text-zinc-500">Buyer Login</p>
+      <StorefrontHeader />
+      <main className="flex flex-1 items-center justify-center px-6 py-12">
+        <div className="w-full max-w-md rounded-2xl border border-zinc-200 bg-white p-8 shadow-sm">
+          <Link href="/" className="text-xs font-semibold text-[#7a1233] hover:underline">
+            {t("search.catalog")}
+          </Link>
+          <div className="mt-4">
+            <BrandLogo />
+          </div>
+          <h1 className="sr-only">SpareLink India</h1>
+          <p className="mt-2 text-sm text-zinc-500">{t("login.passwordHint")}</p>
 
-        {step === "phone" ? (
-          <form onSubmit={sendOtp} className="mt-8 space-y-4">
-            <input
-              type="tel"
-              value={phoneNumber}
-              onChange={(event) => setPhoneNumber(event.target.value)}
-              placeholder="+91XXXXXXXXXX"
-              className="h-12 w-full rounded-xl border border-zinc-300 px-4 outline-none focus:border-zinc-950"
-              required
-            />
-
-            <button
-              type="submit"
-              className="h-12 w-full rounded-xl bg-zinc-950 font-medium text-white hover:bg-zinc-800"
-            >
-              Send OTP
-            </button>
-
-            <div className="pt-2 text-center text-xs text-zinc-500">
-              New customer or workshop?{" "}
-              <a href="/register" className="font-bold text-zinc-900 underline hover:text-zinc-700">
-                Register Account
-              </a>
-            </div>
-          </form>
-        ) : (
-          <form onSubmit={verifyOtp} className="mt-8 space-y-4">
+          <form onSubmit={handlePasswordLogin} className="mt-8 space-y-4">
             <input
               type="text"
-              inputMode="numeric"
-              value={code}
-              onChange={(event) => setCode(event.target.value)}
-              placeholder="Enter OTP"
-              maxLength={6}
+              autoComplete="username"
+              value={username}
+              onChange={(event) => setUsername(event.target.value)}
+              placeholder={t("login.username")}
               className="h-12 w-full rounded-xl border border-zinc-300 px-4 outline-none focus:border-zinc-950"
               required
             />
-
+            <input
+              type="password"
+              autoComplete="current-password"
+              value={password}
+              onChange={(event) => setPassword(event.target.value)}
+              placeholder={t("login.password")}
+              className="h-12 w-full rounded-xl border border-zinc-300 px-4 outline-none focus:border-zinc-950"
+              required
+            />
             <button
               type="submit"
-              className="h-12 w-full rounded-xl bg-zinc-950 font-medium text-white hover:bg-zinc-800"
+              disabled={busy}
+              className="h-12 w-full rounded-xl bg-[#7a1233] font-medium text-white hover:bg-[#611029] disabled:opacity-60"
             >
-              Verify OTP
+              {t("login.submit")}
             </button>
           </form>
-        )}
 
-        {message && (
-          <p className="mt-5 rounded-xl bg-green-50 p-3 text-sm text-green-700">
-            {message}
-          </p>
-        )}
+          <div className="mt-6">
+            <button
+              type="button"
+              onClick={() => void handleGoogle()}
+              className="h-12 w-full rounded-xl border border-zinc-300 font-medium text-zinc-800 hover:bg-zinc-50"
+            >
+              {t("login.google")}
+            </button>
+            {!googleConfigured ? (
+              <p className="mt-2 text-center text-xs text-zinc-500">{t("login.googleNeeded")}</p>
+            ) : null}
+          </div>
 
-        {error && (
-          <p className="mt-5 rounded-xl bg-red-50 p-3 text-sm text-red-700">
-            {error}
-          </p>
-        )}
-      </div>
-    </main>
-    <SiteFooter />
+          <div className="pt-4 text-center text-xs text-zinc-500">
+            {t("login.new")}{" "}
+            <Link href="/register" className="font-bold text-zinc-900 underline hover:text-zinc-700">
+              {t("login.register")}
+            </Link>
+            <span className="mx-1">·</span>
+            <Link href="/login/dealer" className="font-bold text-zinc-900 underline hover:text-zinc-700">
+              {t("login.dealerLink")}
+            </Link>
+          </div>
+
+          {message ? (
+            <p className="mt-5 rounded-xl bg-green-50 p-3 text-sm text-green-700">{message}</p>
+          ) : null}
+          {error ? (
+            <p className="mt-5 rounded-xl bg-red-50 p-3 text-sm text-red-700">{error}</p>
+          ) : null}
+        </div>
+      </main>
+      <SiteFooter />
     </div>
   );
 }

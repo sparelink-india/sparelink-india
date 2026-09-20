@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { SignOutButton } from "@/components/sign-out-button";
+import { useI18n } from "@/components/preferences-provider";
 
 type Order = {
   id: string;
@@ -32,6 +33,7 @@ function statusLabel(status: string) {
 }
 
 export default function OrdersPage() {
+  const { t } = useI18n();
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -42,20 +44,20 @@ export default function OrdersPage() {
         const response = await fetch("/api/orders", { cache: "no-store" });
         const data = await response.json();
         if (!response.ok)
-          throw new Error(data.error || "Unable to load orders.");
+          throw new Error(data.error || t("orders.loadFail"));
         setOrders(data.orders);
       } catch (loadError) {
         setError(
           loadError instanceof Error
             ? loadError.message
-            : "Unable to load orders.",
+            : t("orders.loadFail"),
         );
       } finally {
         setLoading(false);
       }
     }
     void loadOrders();
-  }, []);
+  }, [t]);
 
   return (
     <main className="min-h-screen bg-zinc-50 text-zinc-950">
@@ -68,15 +70,15 @@ export default function OrdersPage() {
             href="/cart"
             className="text-sm font-medium hover:text-zinc-600"
           >
-            Cart
+            {t("orders.cart")}
           </Link>
           <SignOutButton />
         </div>
       </header>
       <div className="mx-auto max-w-5xl px-6 py-12">
-        <h1 className="text-3xl font-bold tracking-tight">My orders</h1>
+        <h1 className="text-3xl font-bold tracking-tight">{t("orders.title")}</h1>
         {loading && (
-          <p className="mt-8 text-sm text-zinc-500">Loading your orders...</p>
+          <p className="mt-8 text-sm text-zinc-500">{t("orders.loading")}</p>
         )}
         {error && (
           <div className="mt-8 rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">
@@ -85,9 +87,9 @@ export default function OrdersPage() {
         )}
         {!loading && !error && orders.length === 0 && (
           <div className="mt-8 rounded-2xl border border-dashed border-zinc-300 bg-white p-12 text-center">
-            <h2 className="font-semibold">No orders yet</h2>
+            <h2 className="font-semibold">{t("orders.emptyTitle")}</h2>
             <p className="mt-2 text-sm text-zinc-500">
-              Your completed checkout orders will appear here.
+              {t("orders.emptyBody")}
             </p>
             <Link
               href="/"

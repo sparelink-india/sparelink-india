@@ -1,0 +1,4 @@
+{
+  "note": "Admin-managed special offers. Leave empty until an offer is explicitly configured. Do not invent discounts.",
+  "offers": []
+}

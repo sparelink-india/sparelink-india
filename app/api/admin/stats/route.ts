@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getServerSession } from "@/lib/auth-server";
 import { getDb } from "@/lib/db";
+import { denyIfMustChangePassword } from "@/lib/require-role";
 import {
   firm,
   dealer,
@@ -21,6 +22,9 @@ export async function GET() {
     return NextResponse.json({ error: "Admin access required" }, { status: 403 });
   }
 
+  const blocked = await denyIfMustChangePassword(session.user.id);
+  if (blocked) return blocked;
+
   const db = getDb();
 
   try {
@@ -30,7 +34,6 @@ export async function GET() {
       partStats,
       listingStats,
       orderStats,
-      revenueStats,
     ] = await Promise.all([
       db.select({ value: count() }).from(firm),
       db.select({ value: count() }).from(dealer),
@@ -40,12 +43,6 @@ export async function GET() {
         .from(dealerListing)
         .where(eq(dealerListing.status, "active")),
       db.select({ value: count() }).from(order),
-      db
-        .select({
-          total: count(),
-          revenue: count(), // Will calculate from order totals
-        })
-        .from(order),
     ]);
 
     // Get total revenue

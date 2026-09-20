@@ -5,12 +5,16 @@ import { getServerSession } from "@/lib/auth-server";
 import { getDb } from "@/lib/db";
 import { customerProfile, user } from "@/drizzle/schema";
 import { validateGSTIN } from "@/lib/gst";
+import { denyIfMustChangePassword } from "@/lib/require-role";
 
 export async function GET() {
   const session = await getServerSession();
   if (!session) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
+
+  const blocked = await denyIfMustChangePassword(session.user.id);
+  if (blocked) return blocked;
 
   const db = getDb();
   const userData = await db.query.user.findFirst({
@@ -57,6 +61,9 @@ export async function PATCH(request: Request) {
   if (!session) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
+
+  const blocked = await denyIfMustChangePassword(session.user.id);
+  if (blocked) return blocked;
 
   const body = await request.json().catch(() => null);
   if (!body || typeof body !== "object") {

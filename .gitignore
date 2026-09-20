@@ -36,6 +36,51 @@ yarn-error.log*
 # vercel
 .vercel
 
+# runtime junction/symlink to catalogue image store — do not duplicate ~3.4 GB
+/public/catalogue-images
+
+# local catalogue rasters — served via public/catalogue-images junction, never git
+/data/source-catalogue/images/
+/data/catalogue-image-store/
+/data/pensol-catalogue/images/
+
+# MEKO / source archives — local extract libraries, never git
+/CATALOGUE SOURCE/
+/catalogue-source/
+/data/meko-catalogue-archive/
+/data/meko-official-catalogue/
+/scripts/meko-tools/
+
+# import/OCR/audit artifacts — keep required runtime JSON unignored
+/eng.traineddata
+/data/ci-image-cleanup/
+/data/starlinks-ci-filters-mapping-report.json
+/data/menon-brakes-catalogue/
+/data/source-catalogue/*-report.json
+/data/source-catalogue/*-review.csv
+/data/source-catalogue/admin-import-*
+/data/source-catalogue/ci-automotive-extract.csv
+/data/source-catalogue/existing-compare.json
+/data/source-catalogue/image-manifest.json
+/data/source-catalogue/image-index.json
+/data/source-catalogue/full-catalogue.csv
+/data/source-catalogue/import-ready.csv
+/data/source-catalogue/typesense-index-plan.json
+/data/pensol-catalogue/*-report.json
+/data/pensol-catalogue/*-check.json
+/data/pensol-catalogue/import-*.json
+/data/pensol-catalogue/import-*.csv
+/data/pensol-catalogue/full-catalogue.csv
+/data/pensol-catalogue/image-manifest.json
+/data/pensol-catalogue/duplicate-check.json
+
+# local debug / scratch
+/public/images/hero/_debug-*.png
+/ChatGPT Image Sep 16, 2026, 11_50_33 PM.svg
+/YE KUCH ERRORS HAIN YE SAHI HONE HA.txt
+/_backups/
+/_migration-manifest/
+
 # typescript
 *.tsbuildinfo
 next-env.d.ts
