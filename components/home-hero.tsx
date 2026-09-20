@@ -9,6 +9,18 @@ import Link from "next/link";
 import { useI18n } from "@/components/preferences-provider";
 import type { MessageKey } from "@/lib/i18n";
 
+const HERO_CATALOGUE_LINKS = [
+  { id: "handles", label: "Outer Handles", href: "/category/outside-door-handle" },
+  { id: "cables", label: "Automotive Cables", href: "/category/cables-wires" },
+  { id: "regulators", label: "Window Regulators", href: "/category/window-regulator-assy" },
+  { id: "pensol", label: "Pensol Lubricants", href: "/?q=Pensol" },
+  { id: "uj", label: "Universal Joint Cross & Cross Holder", href: "/?q=Universal%20Joint" },
+  { id: "pumps", label: "Water Pump Assemblies", href: "/category/water-pump-assy" },
+] as const;
+
+const HERO_LINK_CLASS =
+  "hero-catalogue-link cursor-pointer text-inherit no-underline outline-none focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-[#f0c14b]";
+
 const QUICK_SEARCHES = [
   { label: "Water Pump Bolero (M663)", q: "M663" },
   { label: "Door Handle (113)", q: "113" },
@@ -56,18 +68,24 @@ export function HomeHero({
               side="left"
               src="/images/hero/cutouts/outer-handles.png"
               label={t("hero.labelHandles")}
+              href={HERO_CATALOGUE_LINKS[0].href}
+              ariaLabel={`Open ${HERO_CATALOGUE_LINKS[0].label} catalogue`}
               imgClass="hero-cutout-lg"
             />
             <ProductPanel
               side="left"
               src="/images/hero/cutouts/cables.png"
               label={t("hero.labelCables")}
+              href={HERO_CATALOGUE_LINKS[1].href}
+              ariaLabel={`Open ${HERO_CATALOGUE_LINKS[1].label} catalogue`}
               imgClass="hero-cutout-lg"
             />
             <ProductPanel
               side="left"
               src="/images/hero/cutouts/window-regulators.png"
               label={t("hero.labelRegulators")}
+              href={HERO_CATALOGUE_LINKS[2].href}
+              ariaLabel={`Open ${HERO_CATALOGUE_LINKS[2].label} catalogue`}
               imgClass="hero-cutout-lg"
             />
           </div>
@@ -98,14 +116,24 @@ export function HomeHero({
           </div>
 
           <div className="hero-col hero-col-right hidden lg:flex">
-            <PensolPanel label={t("hero.labelPensol")} />
+            <PensolPanel
+              label={t("hero.labelPensol")}
+              href={HERO_CATALOGUE_LINKS[3].href}
+              ariaLabel={`Open ${HERO_CATALOGUE_LINKS[3].label} catalogue`}
+            />
             <ProductPanel
               side="right"
               src="/images/hero/cutouts/uj-cross.png"
               label={t("hero.labelUj")}
+              href={HERO_CATALOGUE_LINKS[4].href}
+              ariaLabel={`Open ${HERO_CATALOGUE_LINKS[4].label} catalogue`}
               imgClass="hero-cutout-lg"
             />
-            <WaterPumpPanel label={t("hero.labelPumps")} />
+            <WaterPumpPanel
+              label={t("hero.labelPumps")}
+              href={HERO_CATALOGUE_LINKS[5].href}
+              ariaLabel={`Open ${HERO_CATALOGUE_LINKS[5].label} catalogue`}
+            />
           </div>
 
           <div className="hero-mobile-panels z-[3] grid grid-cols-2 gap-2 px-2 pb-3 lg:hidden">
@@ -113,28 +141,46 @@ export function HomeHero({
               side="left"
               src="/images/hero/cutouts/outer-handles.png"
               label={t("hero.labelHandles")}
+              href={HERO_CATALOGUE_LINKS[0].href}
+              ariaLabel={`Open ${HERO_CATALOGUE_LINKS[0].label} catalogue`}
               imgClass="hero-cutout-lg"
             />
             <ProductPanel
               side="right"
               src="/images/hero/cutouts/cables.png"
               label={t("hero.labelCables")}
+              href={HERO_CATALOGUE_LINKS[1].href}
+              ariaLabel={`Open ${HERO_CATALOGUE_LINKS[1].label} catalogue`}
               imgClass="hero-cutout-lg"
             />
             <ProductPanel
               side="left"
               src="/images/hero/cutouts/window-regulators.png"
               label={t("hero.labelRegulators")}
+              href={HERO_CATALOGUE_LINKS[2].href}
+              ariaLabel={`Open ${HERO_CATALOGUE_LINKS[2].label} catalogue`}
               imgClass="hero-cutout-lg"
             />
-            <PensolPanel label={t("hero.labelPensol")} compact />
+            <PensolPanel
+              label={t("hero.labelPensol")}
+              href={HERO_CATALOGUE_LINKS[3].href}
+              ariaLabel={`Open ${HERO_CATALOGUE_LINKS[3].label} catalogue`}
+              compact
+            />
             <ProductPanel
               side="right"
               src="/images/hero/cutouts/uj-cross.png"
               label={t("hero.labelUj")}
+              href={HERO_CATALOGUE_LINKS[4].href}
+              ariaLabel={`Open ${HERO_CATALOGUE_LINKS[4].label} catalogue`}
               imgClass="hero-cutout-lg"
             />
-            <WaterPumpPanel label={t("hero.labelPumps")} compact />
+            <WaterPumpPanel
+              label={t("hero.labelPumps")}
+              href={HERO_CATALOGUE_LINKS[5].href}
+              ariaLabel={`Open ${HERO_CATALOGUE_LINKS[5].label} catalogue`}
+              compact
+            />
           </div>
         </div>
       </div>
@@ -178,26 +224,40 @@ export function HomeHero({
 function ProductPanel({
   src,
   label,
+  href,
+  ariaLabel,
   imgClass,
   side,
 }: {
   src: string;
   label: string;
+  href: string;
+  ariaLabel: string;
   imgClass?: string;
   side: "left" | "right";
 }) {
   return (
-    <figure className={`hero-panel hero-panel-${side}`}>
-      <figcaption className="hero-product-label">{label}</figcaption>
+    <Link href={href} aria-label={ariaLabel} className={`hero-panel hero-panel-${side} ${HERO_LINK_CLASS}`}>
+      <span className="hero-product-label">{label}</span>
       <img src={src} alt="" className={`hero-panel-img ${imgClass ?? ""}`} />
-    </figure>
+    </Link>
   );
 }
 
-function PensolPanel({ label, compact = false }: { label: string; compact?: boolean }) {
+function PensolPanel({
+  label,
+  href,
+  ariaLabel,
+  compact = false,
+}: {
+  label: string;
+  href: string;
+  ariaLabel: string;
+  compact?: boolean;
+}) {
   return (
-    <figure className="hero-panel hero-panel-right">
-      <figcaption className="hero-product-label">{label}</figcaption>
+    <Link href={href} aria-label={ariaLabel} className={`hero-panel hero-panel-right ${HERO_LINK_CLASS}`}>
+      <span className="hero-product-label">{label}</span>
       <div className="hero-pensol-row">
         <img
           src="/images/hero/pensol-4st-extra.jpg"
@@ -215,22 +275,32 @@ function PensolPanel({ label, compact = false }: { label: string; compact?: bool
           className={`-ml-1 w-auto max-w-[34%] object-contain hero-photo-knockout ${compact ? "h-[4.5rem]" : "h-[6.85rem]"}`}
         />
       </div>
-    </figure>
+    </Link>
   );
 }
 
-function WaterPumpPanel({ label, compact = false }: { label: string; compact?: boolean }) {
+function WaterPumpPanel({
+  label,
+  href,
+  ariaLabel,
+  compact = false,
+}: {
+  label: string;
+  href: string;
+  ariaLabel: string;
+  compact?: boolean;
+}) {
   const size = compact ? "h-[4.5rem]" : "h-[5.55rem]";
   return (
-    <figure className="hero-panel hero-panel-right">
-      <figcaption className="hero-product-label">{label}</figcaption>
+    <Link href={href} aria-label={ariaLabel} className={`hero-panel hero-panel-right ${HERO_LINK_CLASS}`}>
+      <span className="hero-product-label">{label}</span>
       <div className="hero-pump-grid">
         <img src="/images/hero/pumps/m-547.png" alt="" className={`hero-pump-img w-auto object-contain ${size}`} />
         <img src="/images/hero/pumps/m-516.png" alt="" className={`hero-pump-img w-auto object-contain ${size}`} />
         <img src="/images/hero/pumps/m-518.png" alt="" className={`hero-pump-img w-auto object-contain ${size}`} />
         <img src="/images/hero/pumps/m-522.png" alt="" className={`hero-pump-img w-auto object-contain ${size}`} />
       </div>
-    </figure>
+    </Link>
   );
 }
 
