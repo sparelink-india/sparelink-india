@@ -141,12 +141,9 @@ export function HomeHero({
 
   return (
     <section id="search" className="relative">
-      <div
-        className="relative hidden w-full lg:block"
-        style={{ aspectRatio: "1635 / 796" }}
-      >
+      <div className="relative hidden w-full lg:block">
         <h1 className="sr-only">India&apos;s Trusted Auto Parts Distributor &amp; Dealer</h1>
-        <picture>
+        <picture className="block w-full">
           <source srcSet="/images/hero/hero-banner-full.webp" type="image/webp" />
           <img
             src="/images/hero/hero-banner-full.png"
@@ -155,7 +152,8 @@ export function HomeHero({
             height={796}
             fetchPriority="high"
             decoding="async"
-            className="absolute inset-0 h-full w-full"
+            className="block h-auto w-full max-w-full"
+            style={{ aspectRatio: "1635 / 796" }}
           />
         </picture>
         {HERO_LINKS.map((link) => (
