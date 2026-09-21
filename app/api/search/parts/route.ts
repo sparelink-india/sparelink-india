@@ -6,6 +6,7 @@ import {
   partNumberDigits,
   rankSearchHits,
 } from "@/lib/search-intent";
+import { isCustomerVisibleProduct } from "@/lib/ci-sync/types";
 import { typesense } from "@/lib/typesense";
 import { getDb } from "@/lib/db";
 import { getServerSession } from "@/lib/auth-server";
@@ -364,6 +365,8 @@ export async function GET(request: NextRequest) {
 
     if (suggest) {
       const suggested = filterAutocompleteHits(intent, hits, documentFromHit, perPage);
+      // Suggest mode still needs DB visibility checks when possible; keep Typesense-only ids
+      // but never invent commercial fields in this lightweight path.
       return NextResponse.json({
         results: suggested.map((hit, index) => {
           const doc = documentFromHit(hit);
@@ -381,6 +384,16 @@ export async function GET(request: NextRequest) {
         page,
         perPage,
         mode: "suggest",
+        intent: intent.naturalLanguage
+          ? {
+              normalizedQuery: intent.typesenseQuery,
+              side: intent.naturalLanguage.side,
+              position: intent.naturalLanguage.position,
+              brandHints: intent.naturalLanguage.brandHints,
+              vehicleHints: intent.naturalLanguage.vehicleHints,
+              productHints: intent.naturalLanguage.productHints,
+            }
+          : null,
       });
     }
 
@@ -419,6 +432,7 @@ export async function GET(request: NextRequest) {
             brand: part.brand,
             specifications: part.specifications,
             isPublished: part.isPublished,
+            approvalStatus: part.approvalStatus,
           })
           .from(part)
           .where(or(...partConditions))
@@ -438,7 +452,16 @@ export async function GET(request: NextRequest) {
       ...new Set(
         documents
           .map((doc) => resolveDbPart(doc)?.id)
-          .filter((id): id is string => Boolean(id)),
+          .filter((id): id is string => Boolean(id))
+          .filter((id) => {
+            if (isAdmin) return true;
+            const row = dbPartById.get(id);
+            if (!row) return false;
+            return isCustomerVisibleProduct({
+              isPublished: row.isPublished,
+              approvalStatus: row.approvalStatus,
+            });
+          }),
       ),
     ];
 
@@ -517,8 +540,19 @@ export async function GET(request: NextRequest) {
     const results = rankedHits
       .filter((hit) => {
         const doc = (hit.document as PartDocument | undefined) ?? {};
-        if (!compatibleIdSet) return true;
         const dbPart = resolveDbPart(doc);
+        if (!isAdmin) {
+          if (!dbPart) return false;
+          if (
+            !isCustomerVisibleProduct({
+              isPublished: dbPart.isPublished,
+              approvalStatus: dbPart.approvalStatus,
+            })
+          ) {
+            return false;
+          }
+        }
+        if (!compatibleIdSet) return true;
         return dbPart ? compatibleIdSet.has(dbPart.id) : false;
       })
       .map((hit) => {

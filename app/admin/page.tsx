@@ -319,6 +319,17 @@ export default function AdminDashboard() {
                     READY / REVIEW / DUPLICATE / CONFLICT extraction report
                   </p>
                 </Link>
+                <Link
+                  href="/admin/ci-sync"
+                  className="rounded-lg border border-sky-200 bg-sky-50 p-6 hover:bg-sky-100"
+                >
+                  <p className="text-sm font-semibold text-sky-900">
+                    CI Auto-Sync
+                  </p>
+                  <p className="mt-1 text-xs text-sky-700">
+                    Sync runs, pending approvals, source price isolation
+                  </p>
+                </Link>
               </div>
             </section>
           </>
