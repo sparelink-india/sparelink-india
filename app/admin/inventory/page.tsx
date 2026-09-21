@@ -34,7 +34,8 @@ export default function InventoryPage() {
   };
 
   useEffect(() => {
-    void load();
+    const timeout = window.setTimeout(() => void load(), 0);
+    return () => window.clearTimeout(timeout);
   }, []);
 
   const save = async (inventoryId: string) => {

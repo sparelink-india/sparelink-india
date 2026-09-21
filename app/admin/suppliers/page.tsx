@@ -32,7 +32,8 @@ export default function SuppliersPage() {
   };
 
   useEffect(() => {
-    void load();
+    const timeout = window.setTimeout(() => void load(), 0);
+    return () => window.clearTimeout(timeout);
   }, []);
 
   const create = async (e: React.FormEvent) => {

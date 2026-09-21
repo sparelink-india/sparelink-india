@@ -44,7 +44,8 @@ export default function B2bReportsPage() {
         setError(e instanceof Error ? e.message : "Load failed");
       }
     };
-    void load();
+    const timeout = window.setTimeout(() => void load(), 0);
+    return () => window.clearTimeout(timeout);
   }, []);
 
   return (

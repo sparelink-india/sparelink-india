@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { desc, eq } from "drizzle-orm";
+import { desc } from "drizzle-orm";
 import { randomUUID } from "node:crypto";
 import { salesOrder, salesOrderItem } from "@/drizzle/schema";
 import { writeAuditLog } from "@/lib/audit";

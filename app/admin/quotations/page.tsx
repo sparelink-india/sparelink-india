@@ -46,9 +46,12 @@ export default function QuotationsPage() {
   };
 
   useEffect(() => {
-    void load().catch((e) =>
-      setError(e instanceof Error ? e.message : "Load failed"),
-    );
+    const timeout = window.setTimeout(() => {
+      void load().catch((e) =>
+        setError(e instanceof Error ? e.message : "Load failed"),
+      );
+    }, 0);
+    return () => window.clearTimeout(timeout);
   }, []);
 
   const search = async () => {
