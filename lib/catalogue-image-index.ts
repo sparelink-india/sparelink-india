@@ -5,6 +5,18 @@ function sanitizeCatalogueImageKey(sku: string): string {
   return sku.replace(/[^A-Za-z0-9._-]+/g, "_");
 }
 
+/** Public CDN origin for catalogue rasters (no trailing slash). Empty = same-origin relative paths. */
+function catalogueImageOrigin(): string {
+  return String(process.env.CATALOGUE_IMAGE_ORIGIN || "")
+    .trim()
+    .replace(/\/+$/, "");
+}
+
+function withCatalogueImageOrigin(publicPath: string): string {
+  const origin = catalogueImageOrigin();
+  return origin ? `${origin}${publicPath}` : publicPath;
+}
+
 let cachedIndex: Record<string, string> | null = null;
 
 function loadCatalogueImageIndex(): Record<string, string> {
@@ -32,7 +44,9 @@ export function catalogueImagePublicPath(sku: string): string | null {
   const safe = sanitizeCatalogueImageKey(sku.trim());
   const ext = getCatalogueImageExt(sku);
   if (!safe || !ext) return null;
-  return `/catalogue-images/${encodeURIComponent(safe)}${ext}`;
+  return withCatalogueImageOrigin(
+    `/catalogue-images/${encodeURIComponent(safe)}${ext}`,
+  );
 }
 
 function escapeRegExp(value: string): string {
@@ -57,7 +71,9 @@ export function catalogueGalleryPublicPaths(sku: string): string[] {
   for (const key of keys) {
     const ext = index[key];
     if (typeof ext !== "string" || !ext.startsWith(".")) continue;
-    const url = `/catalogue-images/${encodeURIComponent(key)}${ext}`;
+    const url = withCatalogueImageOrigin(
+      `/catalogue-images/${encodeURIComponent(key)}${ext}`,
+    );
     if (seen.has(url)) continue;
     seen.add(url);
     urls.push(url);

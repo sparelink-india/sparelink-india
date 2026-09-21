@@ -19,6 +19,7 @@ Configure these on the production host (for example Vercel Production). Do not c
 - `BETTER_AUTH_URL` — same public https origin as `NEXT_PUBLIC_APP_URL`
 - `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET` — optional; leave empty until Google login is issued. New Google users are created as buyers only
 - `TYPESENSE_HOST`, `TYPESENSE_PORT`, `TYPESENSE_PROTOCOL`, `TYPESENSE_API_KEY`
+- `CATALOGUE_IMAGE_ORIGIN` — `https://assets.sparelinkindia.com` (no trailing slash). Prefixes catalogue raster URLs; leave unset only for local junction serving
 - Cashfree production dashboard webhook: `https://<public-host>/api/payments/cashfree/webhook` on **each onboarded firm merchant** (Ambaji now; Hind/India Sales when those keys exist)
 
 Optional on the host (not secrets in git):
@@ -33,6 +34,7 @@ Never use TEST database URLs or sandbox Cashfree keys in the production host env
 | Variable | Local development | Production host |
 | --- | --- | --- |
 | `NEXT_PUBLIC_APP_URL` | `http://localhost:3000` | public `https` origin, not localhost |
+| `CATALOGUE_IMAGE_ORIGIN` | empty (local `/catalogue-images` junction) | `https://assets.sparelinkindia.com` |
 | `CASHFREE_ENVIRONMENT` | `sandbox` | `production` |
 | `DATABASE_URL` | TEST Neon / local Postgres | production Postgres only |
 | `OTP_DELIVERY_WEBHOOK_URL` | optional (OTP prints to server console) | required HTTPS webhook |
