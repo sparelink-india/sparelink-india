@@ -1,16 +1,20 @@
 import { randomUUID } from "node:crypto";
-import { desc, eq } from "drizzle-orm";
+import { and, desc, eq } from "drizzle-orm";
 import { NextResponse } from "next/server";
-import { order, warrantyClaim } from "@/drizzle/schema";
+import { order, orderItem, warrantyClaim } from "@/drizzle/schema";
 import { generateTicketNumber, writeAuditLog } from "@/lib/audit";
 import { getServerSession } from "@/lib/auth-server";
 import { getDb } from "@/lib/db";
+import { denyIfMustChangePassword } from "@/lib/require-role";
 
 export async function GET() {
   const session = await getServerSession();
   if (!session) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
+
+  const blocked = await denyIfMustChangePassword(session.user.id);
+  if (blocked) return blocked;
 
   const db = getDb();
   const isAdmin = session.user.role === "admin";
@@ -22,7 +26,19 @@ export async function GET() {
           .from(warrantyClaim)
           .orderBy(desc(warrantyClaim.createdAt))
       : await db
-          .select()
+          .select({
+            id: warrantyClaim.id,
+            claimNumber: warrantyClaim.claimNumber,
+            orderId: warrantyClaim.orderId,
+            orderItemId: warrantyClaim.orderItemId,
+            partId: warrantyClaim.partId,
+            issueDescription: warrantyClaim.issueDescription,
+            status: warrantyClaim.status,
+            resolutionNote: warrantyClaim.resolutionNote,
+            createdAt: warrantyClaim.createdAt,
+            updatedAt: warrantyClaim.updatedAt,
+            resolvedAt: warrantyClaim.resolvedAt,
+          })
           .from(warrantyClaim)
           .where(eq(warrantyClaim.buyerId, session.user.id))
           .orderBy(desc(warrantyClaim.createdAt));
@@ -42,6 +58,9 @@ export async function POST(request: Request) {
   if (!session) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
+
+  const blocked = await denyIfMustChangePassword(session.user.id);
+  if (blocked) return blocked;
 
   const body = await request.json().catch(() => null);
   if (!body || typeof body !== "object") {
@@ -84,6 +103,19 @@ export async function POST(request: Request) {
     buyerOrder.buyerId !== session.user.id
   ) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  if (orderItemId) {
+    const line = await db.query.orderItem.findFirst({
+      where: and(eq(orderItem.id, orderItemId), eq(orderItem.orderId, orderId)),
+      columns: { id: true },
+    });
+    if (!line) {
+      return NextResponse.json(
+        { error: "orderItemId does not belong to this order" },
+        { status: 400 },
+      );
+    }
   }
 
   const id = randomUUID();

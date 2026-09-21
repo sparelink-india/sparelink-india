@@ -40,6 +40,19 @@ export async function restockInventoryForCancelledOrder(
   return { restockedLines };
 }
 
+/** Statuses where inventory is still considered held / not yet shipped. */
+export const CANCEL_RESTOCKABLE_STATUSES = new Set([
+  "placed",
+  "pending",
+  "confirmed",
+  "processing",
+  "packed",
+]);
+
+/**
+ * Restock only on first transition into cancelled from a pre-ship status.
+ * Shipped / delivered / completed / returned never auto-restock.
+ */
 export function shouldRestockOnStatusChange(
   previousStatus: string,
   nextStatus: string | undefined,
@@ -48,5 +61,5 @@ export function shouldRestockOnStatusChange(
   if (previousStatus === "cancelled" || previousStatus === "returned") {
     return false;
   }
-  return true;
+  return CANCEL_RESTOCKABLE_STATUSES.has(previousStatus);
 }

@@ -23,5 +23,7 @@ describe("phase4 COD / cancel helpers", () => {
     assert.equal(shouldRestockOnStatusChange("returned", "cancelled"), false);
     assert.equal(shouldRestockOnStatusChange("placed", "shipped"), false);
     assert.equal(shouldRestockOnStatusChange("placed", undefined), false);
+    assert.equal(shouldRestockOnStatusChange("shipped", "cancelled"), false);
+    assert.equal(shouldRestockOnStatusChange("delivered", "cancelled"), false);
   });
 });

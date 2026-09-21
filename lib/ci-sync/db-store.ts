@@ -99,7 +99,8 @@ export function createDbSyncStore(): SyncApplyStore {
         .limit(1);
 
       let partId = existingParts[0]?.id ?? null;
-      let approvalStatus = APPROVAL_STATUS.PENDING_ADMIN_APPROVAL;
+      let approvalStatus: (typeof APPROVAL_STATUS)[keyof typeof APPROVAL_STATUS] =
+        APPROVAL_STATUS.PENDING_ADMIN_APPROVAL;
 
       if (!partId) {
         partId = randomUUID();
@@ -115,9 +116,13 @@ export function createDbSyncStore(): SyncApplyStore {
         });
       } else {
         // Existing SpareLink part — do not auto-publish or invent price; keep commercial state.
+        // Source linkage stays pending unless the part is already approved + published.
+        const existingApproval = (existingParts[0]?.approvalStatus || "").toUpperCase();
+        const existingPublished = existingParts[0]?.isPublished === true;
         approvalStatus =
-          (existingParts[0]?.approvalStatus as typeof approvalStatus) ||
-          APPROVAL_STATUS.APPROVED;
+          existingPublished && existingApproval === APPROVAL_STATUS.APPROVED
+            ? APPROVAL_STATUS.APPROVED
+            : APPROVAL_STATUS.PENDING_ADMIN_APPROVAL;
       }
 
       const id = randomUUID();
@@ -136,10 +141,7 @@ export function createDbSyncStore(): SyncApplyStore {
         sourceUrl: product.sourceUrl,
         sourceHash: hash,
         sourceStatus: SOURCE_STATUS.LIVE,
-        approvalStatus:
-          partId && existingParts[0]
-            ? APPROVAL_STATUS.APPROVED
-            : APPROVAL_STATUS.PENDING_ADMIN_APPROVAL,
+        approvalStatus,
         partId,
         lastSeenAt: now,
       });
@@ -148,10 +150,7 @@ export function createDbSyncStore(): SyncApplyStore {
         type: "create",
         sourceSku: product.sku,
         partId,
-        approvalStatus:
-          partId && existingParts[0]
-            ? approvalStatus
-            : APPROVAL_STATUS.PENDING_ADMIN_APPROVAL,
+        approvalStatus,
         sourceStatus: SOURCE_STATUS.LIVE,
         sourcePricePaise: product.sourcePricePaise,
         sparelinkPricePaise: null,

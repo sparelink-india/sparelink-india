@@ -3,6 +3,7 @@ import { getServerSession } from "@/lib/auth-server";
 import { getDb } from "@/lib/db";
 import { dealerListing, part, dealer, firm } from "@/drizzle/schema";
 import { desc, eq } from "drizzle-orm";
+import { isAllowedFirmId } from "@/lib/firms";
 
 export async function GET() {
   const session = await getServerSession();
@@ -65,6 +66,10 @@ export async function PATCH(request: Request) {
       { error: "firmId must be a string or null" },
       { status: 400 },
     );
+  }
+
+  if (firmId !== null && !isAllowedFirmId(firmId)) {
+    return NextResponse.json({ error: "Invalid firmId" }, { status: 400 });
   }
 
   const db = getDb();

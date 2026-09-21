@@ -32,6 +32,8 @@ async function main() {
       description: part.description,
       brand: part.brand,
       category: partCategory.name,
+      isPublished: part.isPublished,
+      approvalStatus: part.approvalStatus,
     })
     .from(part)
     .leftJoin(partCategory, eq(part.categoryId, partCategory.id));
@@ -39,6 +41,13 @@ async function main() {
   const documents = [];
 
   for (const item of parts) {
+    // Customer search verifies visibility in the API; still avoid indexing
+    // pending/unpublished parts so suggest/autocomplete cannot leak them.
+    const approval = (item.approvalStatus || "APPROVED").toUpperCase();
+    if (item.isPublished !== true || approval !== "APPROVED") {
+      continue;
+    }
+
     const compatibility = await db
       .select({ vehicleId: partVehicleCompatibility.vehicleId })
       .from(partVehicleCompatibility)

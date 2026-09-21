@@ -44,7 +44,7 @@ async function executeSync(input: {
     sourceKey: CI_SOURCE_KEY,
     dryRun: input.dryRun,
     fetcher,
-    store: input.dryRun ? undefined : createDbSyncStore(),
+    store: createDbSyncStore(),
   });
 
   const finishedAt = new Date();

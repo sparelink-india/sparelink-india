@@ -29,6 +29,7 @@ export async function loadActiveListingById(listingId: string) {
   const rows = await db
     .select({
       id: dealerListing.id,
+      dealerId: dealerListing.dealerId,
       firmId: dealerListing.firmId,
       partId: dealerListing.partId,
       sku: dealerListing.sku,
@@ -57,6 +58,7 @@ export async function loadActiveListingsByPartNumbers(partNumbers: string[]) {
   const rows = await db
     .select({
       id: dealerListing.id,
+      dealerId: dealerListing.dealerId,
       firmId: dealerListing.firmId,
       partId: dealerListing.partId,
       sku: dealerListing.sku,

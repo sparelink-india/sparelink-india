@@ -57,5 +57,10 @@ export const config = {
     "/api/wishlist/:path*",
     "/api/enquiries/:path*",
     "/api/garage/:path*",
+    "/api/returns/:path*",
+    "/api/warranty/:path*",
+    "/api/payments/:path*",
+    "/api/b2b/:path*",
+    "/api/support/:path*",
   ],
 };

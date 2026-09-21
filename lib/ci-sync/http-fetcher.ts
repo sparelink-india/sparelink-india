@@ -1,3 +1,4 @@
+import { evaluateCiFetchCompleteness } from "./fetch-complete";
 import { mapCiApiProduct } from "./normalize";
 import type { CiCatalogueFetcher, CiFetchResult } from "./run";
 import type { CiSourceProduct } from "./types";
@@ -29,6 +30,9 @@ export function createCiHttpFetcher(options: CiHttpFetcherOptions = {}): CiCatal
     let offset = 0;
     let total: number | null = null;
     let pages = 0;
+    let lastPageEmpty = false;
+    let hasMore: boolean | null = null;
+    let hitMaxPages = false;
 
     try {
       while (pages < MAX_PAGES) {
@@ -57,7 +61,11 @@ export function createCiHttpFetcher(options: CiHttpFetcherOptions = {}): CiCatal
           hasMore?: boolean;
         };
         const pageItems = Array.isArray(payload.items) ? payload.items : [];
-        total = Number(payload.total ?? total ?? pageItems.length);
+        if (typeof payload.total === "number" && Number.isFinite(payload.total)) {
+          total = payload.total;
+        } else if (total == null && pageItems.length === 0 && pages === 0) {
+          total = 0;
+        }
 
         for (const raw of pageItems) {
           if (!raw || typeof raw !== "object") continue;
@@ -66,27 +74,37 @@ export function createCiHttpFetcher(options: CiHttpFetcherOptions = {}): CiCatal
         }
 
         pages += 1;
+        lastPageEmpty = pageItems.length === 0;
+        hasMore =
+          typeof payload.hasMore === "boolean" ? payload.hasMore : null;
+
         if (!pageItems.length || payload.hasMore === false) break;
         offset = Number(payload.offset ?? offset) + pageItems.length;
         if (total != null && products.length >= total) break;
+
+        if (pages >= MAX_PAGES) {
+          hitMaxPages = true;
+        }
       }
 
-      const fetchComplete =
-        total == null ? products.length > 0 : products.length >= total || pages > 0;
-
-      // If API returned zero pages successfully but claimed a positive total, incomplete.
-      if (total != null && total > 0 && products.length === 0) {
-        return {
-          products,
-          fetchComplete: false,
-          errorSummary: "CI source returned empty catalogue while total > 0",
-        };
+      // Loop exited because of MAX_PAGES without a clean end.
+      if (pages >= MAX_PAGES && hasMore !== false && !(total != null && products.length >= total)) {
+        hitMaxPages = true;
       }
+
+      const completeness = evaluateCiFetchCompleteness({
+        productsMapped: products.length,
+        total,
+        pagesFetched: pages,
+        hitMaxPages,
+        lastPageEmpty,
+        hasMore,
+      });
 
       return {
         products,
-        fetchComplete: Boolean(fetchComplete),
-        errorSummary: null,
+        fetchComplete: completeness.fetchComplete,
+        errorSummary: completeness.errorSummary,
       };
     } catch (error) {
       return {

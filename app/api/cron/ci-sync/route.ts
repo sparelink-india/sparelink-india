@@ -38,7 +38,8 @@ export async function GET(request: NextRequest) {
       fetcher: createCiHttpFetcher({
         authHeader: process.env.CI_SOURCE_AUTH_HEADER || null,
       }),
-      store: dryRun ? undefined : createDbSyncStore(),
+      // Always attach store so dry-run diffs reflect existing rows; dryRun skips writes.
+      store: createDbSyncStore(),
     });
 
     await recordSyncRun({

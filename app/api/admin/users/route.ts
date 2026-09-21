@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { getServerSession } from "@/lib/auth-server";
 import { getDb } from "@/lib/db";
-import { user, order, customerProfile } from "@/drizzle/schema";
+import { user, order, customerProfile, dealer } from "@/drizzle/schema";
 import { count, desc, eq } from "drizzle-orm";
 import { applyInclusiveDiscount, parseDiscountPercentInput } from "@/lib/party-pricing";
 import {
@@ -208,7 +208,21 @@ export async function PATCH(request: Request) {
     );
   }
 
-  const newRole = action === "suspend" ? "suspended" : "buyer";
+  let newRole: string;
+  if (action === "suspend") {
+    newRole = "suspended";
+  } else {
+    // Reactivate: restore dealer when a dealer profile exists; otherwise buyer.
+    const dealerProfile = await db.query.dealer.findFirst({
+      where: eq(dealer.userId, userId),
+      columns: { id: true },
+    });
+    if (targetUser.role === "dealer" || dealerProfile) {
+      newRole = "dealer";
+    } else {
+      newRole = "buyer";
+    }
+  }
 
   await db
     .update(user)

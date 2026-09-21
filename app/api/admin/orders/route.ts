@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { count, desc, eq } from "drizzle-orm";
+import { and, count, desc, eq, ne, sql } from "drizzle-orm";
 import { order, orderItem, user } from "@/drizzle/schema";
 import { writeAuditLog } from "@/lib/audit";
 import { getServerSession } from "@/lib/auth-server";
@@ -123,13 +123,6 @@ export async function PATCH(request: Request) {
   }
 
   const db = getDb();
-  const existing = await db.query.order.findFirst({
-    where: eq(order.id, orderId),
-  });
-
-  if (!existing) {
-    return NextResponse.json({ error: "Order not found" }, { status: 404 });
-  }
 
   const updates: {
     status?: string;
@@ -140,16 +133,67 @@ export async function PATCH(request: Request) {
   if (status) updates.status = status;
   if (paymentStatus) updates.paymentStatus = paymentStatus;
 
-  const doRestock = shouldRestockOnStatusChange(existing.status, status);
-
   let restockedLines = 0;
-  await db.transaction(async (tx) => {
-    await tx.update(order).set(updates).where(eq(order.id, orderId));
-    if (doRestock) {
-      const result = await restockInventoryForCancelledOrder(tx, orderId);
-      restockedLines = result.restockedLines;
+  let previousStatus = "";
+  let previousPaymentStatus = "";
+  let didRestock = false;
+
+  try {
+    await db.transaction(async (tx) => {
+      const locked = await tx
+        .select({
+          id: order.id,
+          status: order.status,
+          paymentStatus: order.paymentStatus,
+        })
+        .from(order)
+        .where(eq(order.id, orderId))
+        .for("update");
+
+      const existing = locked[0];
+      if (!existing) {
+        throw new Error("ORDER_NOT_FOUND");
+      }
+
+      previousStatus = existing.status;
+      previousPaymentStatus = existing.paymentStatus;
+      const doRestock = shouldRestockOnStatusChange(existing.status, status);
+      didRestock = doRestock;
+
+      if (status === "cancelled" && doRestock) {
+        // Conditional update: only the first cancel wins restock under concurrency.
+        const cancelled = await tx
+          .update(order)
+          .set(updates)
+          .where(
+            and(
+              eq(order.id, orderId),
+              ne(order.status, "cancelled"),
+              sql`${order.status} IN ('placed','pending','confirmed','processing','packed')`,
+            ),
+          )
+          .returning({ id: order.id });
+
+        if (!cancelled.length) {
+          // Already cancelled or not restockable — still apply non-restock updates if needed.
+          await tx.update(order).set(updates).where(eq(order.id, orderId));
+          didRestock = false;
+          return;
+        }
+
+        const result = await restockInventoryForCancelledOrder(tx, orderId);
+        restockedLines = result.restockedLines;
+        return;
+      }
+
+      await tx.update(order).set(updates).where(eq(order.id, orderId));
+    });
+  } catch (error) {
+    if (error instanceof Error && error.message === "ORDER_NOT_FOUND") {
+      return NextResponse.json({ error: "Order not found" }, { status: 404 });
     }
-  });
+    throw error;
+  }
 
   await writeAuditLog({
     actorUserId: session.user.id,
@@ -157,13 +201,13 @@ export async function PATCH(request: Request) {
     entityType: "order",
     entityId: orderId,
     metadata: {
-      previousStatus: existing.status,
-      previousPaymentStatus: existing.paymentStatus,
+      previousStatus,
+      previousPaymentStatus,
       status,
       paymentStatus,
-      restockedLines: doRestock ? restockedLines : 0,
+      restockedLines: didRestock ? restockedLines : 0,
     },
   });
 
-  return NextResponse.json({ success: true, restockedLines });
+  return NextResponse.json({ success: true, restockedLines: didRestock ? restockedLines : 0 });
 }

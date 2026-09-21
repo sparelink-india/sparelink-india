@@ -92,7 +92,7 @@ export async function POST(request: Request) {
       );
     }
     const listing = await loadActiveListingById(dealerListingId);
-    if (!listing) {
+    if (!listing || listing.dealerId !== profile.id) {
       return NextResponse.json(
         { error: `Active listing not found: ${dealerListingId}` },
         { status: 400 },
