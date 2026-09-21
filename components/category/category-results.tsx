@@ -223,7 +223,7 @@ export function CategoryResults({
                   <div className="flex items-start gap-3 sm:gap-4">
                     <button
                       type="button"
-                      className="h-[132px] w-[132px] shrink-0 overflow-hidden rounded-xl bg-slate-100 min-[430px]:h-[148px] min-[430px]:w-[148px] md:h-[240px] md:w-[250px]"
+                      className="h-[160px] w-[160px] shrink-0 overflow-hidden rounded-xl bg-slate-100 min-[430px]:h-[168px] min-[430px]:w-[168px] md:h-[240px] md:w-[250px]"
                       onClick={() =>
                         setDetailTarget({
                           partId: partData.id,
