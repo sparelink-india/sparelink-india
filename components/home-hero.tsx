@@ -142,7 +142,7 @@ export function HomeHero({
   return (
     <section id="search" className="relative">
       {/* Hero-only: keep baked 6-panel banner above 768 so Chrome zoom stays on the same image. */}
-      <div className="relative hidden w-full min-[769px]:block">
+      <div className="relative mx-auto hidden w-full max-w-[1635px] min-[769px]:block">
         <h1 className="sr-only">India&apos;s Trusted Auto Parts Distributor &amp; Dealer</h1>
         <picture className="block w-full">
           <source srcSet="/images/hero/hero-banner-full.webp" type="image/webp" />
