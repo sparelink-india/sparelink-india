@@ -195,6 +195,102 @@ export default function AdminDashboard() {
                     Firm allocations, Cashfree, and UTR verification
                   </p>
                 </Link>
+
+                <Link
+                  href="/admin/suppliers"
+                  className="rounded-lg border border-zinc-300 bg-white p-6 hover:bg-zinc-100"
+                >
+                  <p className="text-sm font-semibold text-zinc-900">
+                    Suppliers
+                  </p>
+                  <p className="mt-1 text-xs text-zinc-600">
+                    B2B supplier master
+                  </p>
+                </Link>
+
+                <Link
+                  href="/admin/sales-orders"
+                  className="rounded-lg border border-zinc-300 bg-white p-6 hover:bg-zinc-100"
+                >
+                  <p className="text-sm font-semibold text-zinc-900">
+                    Sales Orders
+                  </p>
+                  <p className="mt-1 text-xs text-zinc-600">
+                    B2B sales orders and CSV export
+                  </p>
+                </Link>
+
+                <Link
+                  href="/admin/purchase-orders"
+                  className="rounded-lg border border-zinc-300 bg-white p-6 hover:bg-zinc-100"
+                >
+                  <p className="text-sm font-semibold text-zinc-900">
+                    Purchase Orders
+                  </p>
+                  <p className="mt-1 text-xs text-zinc-600">
+                    Supplier POs (no auto stock)
+                  </p>
+                </Link>
+
+                <Link
+                  href="/admin/quotations"
+                  className="rounded-lg border border-zinc-300 bg-white p-6 hover:bg-zinc-100"
+                >
+                  <p className="text-sm font-semibold text-zinc-900">
+                    Quotations
+                  </p>
+                  <p className="mt-1 text-xs text-zinc-600">
+                    Quotes convertible to sales orders
+                  </p>
+                </Link>
+
+                <Link
+                  href="/admin/bulk-orders"
+                  className="rounded-lg border border-zinc-300 bg-white p-6 hover:bg-zinc-100"
+                >
+                  <p className="text-sm font-semibold text-zinc-900">
+                    Bulk Orders
+                  </p>
+                  <p className="mt-1 text-xs text-zinc-600">
+                    Validate part lists and create draft SO
+                  </p>
+                </Link>
+
+                <Link
+                  href="/admin/warehouses"
+                  className="rounded-lg border border-zinc-300 bg-white p-6 hover:bg-zinc-100"
+                >
+                  <p className="text-sm font-semibold text-zinc-900">
+                    Warehouses
+                  </p>
+                  <p className="mt-1 text-xs text-zinc-600">
+                    Ensure MAIN warehouse
+                  </p>
+                </Link>
+
+                <Link
+                  href="/admin/stock-adjustments"
+                  className="rounded-lg border border-zinc-300 bg-white p-6 hover:bg-zinc-100"
+                >
+                  <p className="text-sm font-semibold text-zinc-900">
+                    Stock Adjustments
+                  </p>
+                  <p className="mt-1 text-xs text-zinc-600">
+                    Quantity change ledger
+                  </p>
+                </Link>
+
+                <Link
+                  href="/admin/reports"
+                  className="rounded-lg border border-zinc-300 bg-white p-6 hover:bg-zinc-100"
+                >
+                  <p className="text-sm font-semibold text-zinc-900">
+                    B2B Reports
+                  </p>
+                  <p className="mt-1 text-xs text-zinc-600">
+                    Counts, adjustments, BUSY export
+                  </p>
+                </Link>
               </div>
             </section>
 

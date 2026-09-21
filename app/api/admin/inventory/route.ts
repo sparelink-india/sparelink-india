@@ -1,16 +1,20 @@
 import { NextResponse } from "next/server";
 import { desc, eq } from "drizzle-orm";
-import { dealer, dealerListing, inventory, part } from "@/drizzle/schema";
+import { randomUUID } from "node:crypto";
+import {
+  dealer,
+  dealerListing,
+  inventory,
+  part,
+  stockAdjustment,
+} from "@/drizzle/schema";
 import { writeAuditLog } from "@/lib/audit";
-import { getServerSession } from "@/lib/auth-server";
 import { getDb } from "@/lib/db";
+import { requireAdminApi } from "@/lib/require-role";
 
 export async function GET() {
-  const session = await getServerSession();
-
-  if (!session || session.user.role !== "admin") {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+  const access = await requireAdminApi();
+  if ("error" in access) return access.error;
 
   const db = getDb();
 
@@ -42,11 +46,8 @@ export async function GET() {
 }
 
 export async function PATCH(request: Request) {
-  const session = await getServerSession();
-
-  if (!session || session.user.role !== "admin") {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+  const access = await requireAdminApi();
+  if ("error" in access) return access.error;
 
   const body = await request.json().catch(() => null);
   if (!body || typeof body !== "object") {
@@ -61,7 +62,7 @@ export async function PATCH(request: Request) {
       : "";
   const quantity = Number(body.quantity);
   const reason =
-    typeof body.reason === "string" ? body.reason.trim() || null : null;
+    typeof body.reason === "string" ? body.reason.trim() : "";
 
   if (!inventoryId && !dealerListingId) {
     return NextResponse.json(
@@ -72,6 +73,12 @@ export async function PATCH(request: Request) {
   if (!Number.isInteger(quantity) || quantity < 0) {
     return NextResponse.json(
       { error: "quantity must be a non-negative integer" },
+      { status: 400 },
+    );
+  }
+  if (!reason) {
+    return NextResponse.json(
+      { error: "reason is required for stock adjustments" },
       { status: 400 },
     );
   }
@@ -92,23 +99,41 @@ export async function PATCH(request: Request) {
     );
   }
 
-  await db
-    .update(inventory)
-    .set({ quantity, updatedAt: new Date() })
-    .where(eq(inventory.id, existing.id));
+  const previousQuantity = existing.quantity;
+  const delta = quantity - previousQuantity;
+
+  await db.transaction(async (tx) => {
+    await tx
+      .update(inventory)
+      .set({ quantity, updatedAt: new Date() })
+      .where(eq(inventory.id, existing.id));
+
+    await tx.insert(stockAdjustment).values({
+      id: randomUUID(),
+      inventoryId: existing.id,
+      dealerListingId: existing.dealerListingId,
+      actorUserId: access.session.user.id,
+      previousQuantity,
+      newQuantity: quantity,
+      delta,
+      reason,
+      warehouseCode: existing.warehouseCode || "MAIN",
+    });
+  });
 
   await writeAuditLog({
-    actorUserId: session.user.id,
+    actorUserId: access.session.user.id,
     action: "inventory.quantity_update",
     entityType: "inventory",
     entityId: existing.id,
     metadata: {
-      previousQuantity: existing.quantity,
+      previousQuantity,
       quantity,
+      delta,
       reason,
       dealerListingId: existing.dealerListingId,
     },
   });
 
-  return NextResponse.json({ success: true, quantity });
+  return NextResponse.json({ success: true, quantity, delta });
 }
