@@ -26,6 +26,7 @@ type CartItem = {
   mrpPaise: number | null;
   stock: number | null;
   listingStatus: string;
+  imageUrl?: string | null;
   gstRate?: number;
   listInclusivePaise?: number;
   netInclusivePaise?: number;
@@ -429,9 +430,9 @@ export default function CartPage() {
                         tabIndex={0}
                         onClick={() =>
                           setLightboxImage({
-                            src: item.partNumber
-                              ? `/images/products/${item.partNumber}.svg`
-                              : "/images/products/placeholder.svg",
+                            src:
+                              item.imageUrl ||
+                              "/images/products/placeholder.svg",
                             alt: item.partName || "Automotive part",
                             name: item.partName || "Automotive Spare Part",
                             partNumber: item.partNumber,
@@ -441,9 +442,9 @@ export default function CartPage() {
                           if (e.key === "Enter" || e.key === " ") {
                             e.preventDefault();
                             setLightboxImage({
-                              src: item.partNumber
-                                ? `/images/products/${item.partNumber}.svg`
-                                : "/images/products/placeholder.svg",
+                              src:
+                                item.imageUrl ||
+                                "/images/products/placeholder.svg",
                               alt: item.partName || "Automotive part",
                               name: item.partName || "Automotive Spare Part",
                               partNumber: item.partNumber,
@@ -456,9 +457,8 @@ export default function CartPage() {
                         {/* eslint-disable-next-line @next/next/no-img-element */}
                         <img
                           src={
-                            item.partNumber
-                              ? `/images/products/${item.partNumber}.svg`
-                              : "/images/products/placeholder.svg"
+                            item.imageUrl ||
+                            "/images/products/placeholder.svg"
                           }
                           alt={item.partName || "Automotive part"}
                           className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"

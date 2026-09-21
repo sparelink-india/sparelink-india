@@ -33,19 +33,66 @@ function loadCatalogueImageIndex(): Record<string, string> {
   return cachedIndex;
 }
 
-export function getCatalogueImageExt(sku: string): string | null {
-  const safe = sanitizeCatalogueImageKey(sku.trim());
-  if (!safe) return null;
-  const ext = loadCatalogueImageIndex()[safe];
+function indexExt(key: string): string | null {
+  const ext = loadCatalogueImageIndex()[key];
   return typeof ext === "string" && ext.startsWith(".") ? ext : null;
 }
 
+/**
+ * Resolve the catalogue-image-index key for a SKU.
+ * Exact sanitized key wins. Narrow fallbacks only when that key is absent:
+ * 1) strip a trailing letter suffix separated by whitespace/underscore
+ * 2) first token before `/`
+ * Never invent keys that are not already in the index.
+ */
+function resolveCatalogueImageKey(sku: string): string | null {
+  const trimmed = sku.trim();
+  if (!trimmed) return null;
+
+  const exact = sanitizeCatalogueImageKey(trimmed);
+  if (exact && indexExt(exact)) return exact;
+
+  // Trailing letter suffix: "M-644 A" / "M-644_A" → "M-644" (not "00110L")
+  const letterStripped = trimmed.replace(/[\s_]+[A-Za-z]$/u, "").trim();
+  if (letterStripped && letterStripped !== trimmed) {
+    const key = sanitizeCatalogueImageKey(letterStripped);
+    if (key && indexExt(key)) return key;
+  }
+  if (/_[A-Za-z]$/.test(exact)) {
+    const key = exact.replace(/_[A-Za-z]$/, "");
+    if (key && indexExt(key)) return key;
+  }
+
+  // Compound SKU: "M-650 / M-603 A" → try "M-650" (then letter-strip on that token)
+  if (trimmed.includes("/")) {
+    const first = trimmed.split("/")[0]?.trim() || "";
+    if (first) {
+      const firstExact = sanitizeCatalogueImageKey(first);
+      if (firstExact && indexExt(firstExact)) return firstExact;
+      const firstLetterStripped = first.replace(/[\s_]+[A-Za-z]$/u, "").trim();
+      if (firstLetterStripped && firstLetterStripped !== first) {
+        const key = sanitizeCatalogueImageKey(firstLetterStripped);
+        if (key && indexExt(key)) return key;
+      }
+    }
+  }
+
+  return null;
+}
+
+export function getCatalogueImageExt(sku: string): string | null {
+  const key = resolveCatalogueImageKey(sku);
+  if (!key) return null;
+  return indexExt(key);
+}
+
 export function catalogueImagePublicPath(sku: string): string | null {
-  const safe = sanitizeCatalogueImageKey(sku.trim());
-  const ext = getCatalogueImageExt(sku);
-  if (!safe || !ext) return null;
+  const key = resolveCatalogueImageKey(sku);
+  if (!key) return null;
+  const ext = indexExt(key);
+  if (!ext) return null;
   return withCatalogueImageOrigin(
-    `/catalogue-images/${encodeURIComponent(safe)}${ext}`,
+    `/catalogue-images/${encodeURIComponent(key)}${ext}`,
   );
 }
 
@@ -55,7 +102,7 @@ function escapeRegExp(value: string): string {
 
 /** Additional official images stored as SKU.2, SKU.3, … beside the primary SKU file. */
 export function catalogueGalleryPublicPaths(sku: string): string[] {
-  const safe = sanitizeCatalogueImageKey(sku.trim());
+  const safe = resolveCatalogueImageKey(sku);
   if (!safe) return [];
   const index = loadCatalogueImageIndex();
   const extra = new RegExp(`^${escapeRegExp(safe)}(?:\\.\\d+|_\\d+)$`, "i");

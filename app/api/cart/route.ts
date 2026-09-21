@@ -25,6 +25,18 @@ import {
 import { ignoreClientPricing } from "@/lib/party-pricing";
 import { priceStorefrontLines } from "@/lib/storefront-line-price";
 import { isAuthoritativeSellingPricePaise } from "@/lib/storefront-price-display";
+import { catalogueImagePublicPath } from "@/lib/catalogue-image-index";
+
+function resolveCartImageUrl(
+  ...candidates: Array<string | null | undefined>
+): string | null {
+  for (const candidate of candidates) {
+    if (!candidate) continue;
+    const url = catalogueImagePublicPath(candidate);
+    if (url) return url;
+  }
+  return null;
+}
 
 async function getBuyerSession() {
   const session = await getServerSession();
@@ -146,6 +158,7 @@ export async function GET() {
     const creditLine = credit.priced[index];
     return {
       ...item,
+      imageUrl: resolveCartImageUrl(item.sku, item.partNumber),
       gstRate: line.gstRate,
       listInclusivePaise: line.listInclusivePaise,
       netInclusivePaise: line.netInclusivePaise,
