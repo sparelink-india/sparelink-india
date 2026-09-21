@@ -1,9 +1,7 @@
 "use client";
 
 /* Hero uses pre-cut product rasters; next/image crop would clip edges. */
-/* eslint-disable @next/next/no-img-element */
 
-import type { ReactNode } from "react";
 import Link from "next/link";
 
 import { useI18n } from "@/components/preferences-provider";
@@ -100,11 +98,6 @@ const HERO_LINKS = [
   },
 ] as const;
 
-const HERO_CATALOGUE_LINKS = HERO_LINKS;
-
-const HERO_LINK_CLASS =
-  "hero-catalogue-link relative z-20 flex min-h-0 flex-1 cursor-pointer text-inherit no-underline outline-none pointer-events-auto focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-[#f0c14b]";
-
 const HERO_HOTSPOT_CLASS =
   "absolute z-10 cursor-pointer border-0 bg-transparent no-underline outline-none focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-[#f0c14b]";
 
@@ -141,8 +134,8 @@ export function HomeHero({
 
   return (
     <section id="search" className="relative">
-      {/* Hero-only: keep baked 6-panel banner above 768 so Chrome zoom stays on the same image. */}
-      <div className="relative mx-auto hidden w-full max-w-[1635px] min-[769px]:block">
+      {/* Single six-panel baked Hero for all viewport sizes and browser zoom levels. */}
+      <div className="relative mx-auto w-full max-w-[1635px]">
         <h1 className="sr-only">India&apos;s Trusted Auto Parts Distributor &amp; Dealer</h1>
         <picture className="block w-full">
           <source srcSet="/images/hero/hero-banner-full.webp" type="image/webp" />
@@ -171,137 +164,6 @@ export function HomeHero({
             }}
           />
         ))}
-      </div>
-
-      <div className="hero-reference relative overflow-hidden text-white min-[769px]:hidden">
-        <img
-          src="/images/hero/sparelink-clean-hero-bg.png?v=4"
-          alt=""
-          className="hero-scene-img pointer-events-none absolute inset-0 z-0 h-full w-full object-cover"
-        />
-        <div className="pointer-events-none absolute inset-0 z-[2] hero-scene-veil" aria-hidden />
-
-        <div className="hero-stage relative z-10">
-          <div className="hero-col hero-col-left relative z-20 hidden lg:flex">
-            <ProductPanel
-              side="left"
-              src="/images/hero/cutouts/outer-handles.png"
-              label={t("hero.labelHandles")}
-              href={HERO_CATALOGUE_LINKS[0].href}
-              ariaLabel={HERO_CATALOGUE_LINKS[0].ariaLabel}
-              imgClass="hero-cutout-lg"
-            />
-            <ProductPanel
-              side="left"
-              src="/images/hero/cutouts/cables.png"
-              label={t("hero.labelCables")}
-              href={HERO_CATALOGUE_LINKS[1].href}
-              ariaLabel={HERO_CATALOGUE_LINKS[1].ariaLabel}
-              imgClass="hero-cutout-lg"
-            />
-            <ProductPanel
-              side="left"
-              src="/images/hero/cutouts/window-regulators.png"
-              label={t("hero.labelRegulators")}
-              href={HERO_CATALOGUE_LINKS[2].href}
-              ariaLabel={HERO_CATALOGUE_LINKS[2].ariaLabel}
-              imgClass="hero-cutout-lg"
-            />
-          </div>
-
-          <div className="hero-center relative z-[1] mx-auto flex flex-col items-center justify-center px-3 text-center pointer-events-none sm:px-4">
-            <p className="hero-eyebrow">{t("hero.eyebrow")}</p>
-            <h1 className="hero-headline">
-              <span className="block text-white">{t("hero.titleLine1")}</span>
-              <span className="block text-[#f0c14b]">{t("hero.titleAccent")}</span>
-              <span className="block text-white">{t("hero.titleLine3")}</span>
-            </h1>
-            <p className="hero-subhead">{t("hero.subtitle")}</p>
-            <div className="mt-5 flex flex-wrap items-center justify-center gap-3">
-              <Link href={HERO_LINKS[6].href} className="hero-cta pointer-events-auto">
-                {t("hero.browse")}
-              </Link>
-              <Link href={HERO_LINKS[7].href} className="hero-cta inline-flex items-center gap-2 pointer-events-auto">
-                <CarIcon />
-                {t("hero.findVehicle")}
-              </Link>
-            </div>
-            <div className="hero-badges">
-              <HeroStat icon={<ShieldMini />} line1={t("hero.statGenuine1")} line2={t("hero.statGenuine2")} />
-              <HeroStat icon={<TruckMini />} line1={t("hero.statSupply1")} line2={t("hero.statSupply2")} />
-              <HeroStat icon={<RupeeMini />} line1={t("hero.statPrice1")} line2={t("hero.statPrice2")} />
-              <HeroStat icon={<HeadsetMini />} line1={t("hero.statDealer1")} line2={t("hero.statDealer2")} />
-            </div>
-          </div>
-
-          <div className="hero-col hero-col-right relative z-20 hidden lg:flex">
-            <PensolPanel
-              label={t("hero.labelPensol")}
-              href={HERO_CATALOGUE_LINKS[3].href}
-              ariaLabel={HERO_CATALOGUE_LINKS[3].ariaLabel}
-            />
-            <ProductPanel
-              side="right"
-              src="/images/hero/cutouts/uj-cross.png"
-              label={t("hero.labelUj")}
-              href={HERO_CATALOGUE_LINKS[4].href}
-              ariaLabel={HERO_CATALOGUE_LINKS[4].ariaLabel}
-              imgClass="hero-cutout-lg"
-            />
-            <WaterPumpPanel
-              label={t("hero.labelPumps")}
-              href={HERO_CATALOGUE_LINKS[5].href}
-              ariaLabel={HERO_CATALOGUE_LINKS[5].ariaLabel}
-            />
-          </div>
-
-          <div className="hero-mobile-panels relative z-20 grid grid-cols-2 gap-2 px-2 pb-3 lg:hidden">
-            <ProductPanel
-              side="left"
-              src="/images/hero/cutouts/outer-handles.png"
-              label={t("hero.labelHandles")}
-              href={HERO_CATALOGUE_LINKS[0].href}
-              ariaLabel={HERO_CATALOGUE_LINKS[0].ariaLabel}
-              imgClass="hero-cutout-lg"
-            />
-            <ProductPanel
-              side="right"
-              src="/images/hero/cutouts/cables.png"
-              label={t("hero.labelCables")}
-              href={HERO_CATALOGUE_LINKS[1].href}
-              ariaLabel={HERO_CATALOGUE_LINKS[1].ariaLabel}
-              imgClass="hero-cutout-lg"
-            />
-            <ProductPanel
-              side="left"
-              src="/images/hero/cutouts/window-regulators.png"
-              label={t("hero.labelRegulators")}
-              href={HERO_CATALOGUE_LINKS[2].href}
-              ariaLabel={HERO_CATALOGUE_LINKS[2].ariaLabel}
-              imgClass="hero-cutout-lg"
-            />
-            <PensolPanel
-              label={t("hero.labelPensol")}
-              href={HERO_CATALOGUE_LINKS[3].href}
-              ariaLabel={HERO_CATALOGUE_LINKS[3].ariaLabel}
-              compact
-            />
-            <ProductPanel
-              side="right"
-              src="/images/hero/cutouts/uj-cross.png"
-              label={t("hero.labelUj")}
-              href={HERO_CATALOGUE_LINKS[4].href}
-              ariaLabel={HERO_CATALOGUE_LINKS[4].ariaLabel}
-              imgClass="hero-cutout-lg"
-            />
-            <WaterPumpPanel
-              label={t("hero.labelPumps")}
-              href={HERO_CATALOGUE_LINKS[5].href}
-              ariaLabel={HERO_CATALOGUE_LINKS[5].ariaLabel}
-              compact
-            />
-          </div>
-        </div>
       </div>
 
       <div className="hero-vehicle-strip border-b border-slate-200 bg-white">
@@ -340,110 +202,6 @@ export function HomeHero({
   );
 }
 
-function ProductPanel({
-  src,
-  label,
-  href,
-  ariaLabel,
-  imgClass,
-  side,
-}: {
-  src: string;
-  label: string;
-  href: string;
-  ariaLabel: string;
-  imgClass?: string;
-  side: "left" | "right";
-}) {
-  return (
-    <Link href={href} aria-label={ariaLabel} className={HERO_LINK_CLASS}>
-      <span className={`hero-panel hero-panel-${side} pointer-events-none h-full w-full`}>
-        <span className="hero-product-label">{label}</span>
-        <img src={src} alt="" className={`hero-panel-img ${imgClass ?? ""}`} />
-      </span>
-    </Link>
-  );
-}
-
-function PensolPanel({
-  label,
-  href,
-  ariaLabel,
-  compact = false,
-}: {
-  label: string;
-  href: string;
-  ariaLabel: string;
-  compact?: boolean;
-}) {
-  return (
-    <Link href={href} aria-label={ariaLabel} className={HERO_LINK_CLASS}>
-      <span className="hero-panel hero-panel-right pointer-events-none h-full w-full">
-        <span className="hero-product-label">{label}</span>
-        <div className="hero-pensol-row">
-          <img
-            src="/images/hero/pensol-4st-extra.jpg"
-            alt=""
-            className={`w-auto max-w-[38%] object-contain hero-photo-knockout ${compact ? "h-[5.35rem]" : "h-[8.15rem]"}`}
-          />
-          <img
-            src="/images/hero/pensol-4st-extra-sl.jpg"
-            alt=""
-            className={`-ml-1 w-auto max-w-[42%] object-contain hero-photo-knockout ${compact ? "h-[6.1rem]" : "h-[8.85rem]"}`}
-          />
-          <img
-            src="/images/hero/pensol-ap-lr.jpg"
-            alt=""
-            className={`-ml-1 w-auto max-w-[34%] object-contain hero-photo-knockout ${compact ? "h-[4.5rem]" : "h-[6.85rem]"}`}
-          />
-        </div>
-      </span>
-    </Link>
-  );
-}
-
-function WaterPumpPanel({
-  label,
-  href,
-  ariaLabel,
-  compact = false,
-}: {
-  label: string;
-  href: string;
-  ariaLabel: string;
-  compact?: boolean;
-}) {
-  const size = compact ? "h-[4.5rem]" : "h-[5.55rem]";
-  return (
-    <Link href={href} aria-label={ariaLabel} className={HERO_LINK_CLASS}>
-      <span className="hero-panel hero-panel-right pointer-events-none h-full w-full">
-        <span className="hero-product-label">{label}</span>
-        <div className="hero-pump-grid">
-          <img src="/images/hero/pumps/m-547.png" alt="" className={`hero-pump-img w-auto object-contain ${size}`} />
-          <img src="/images/hero/pumps/m-516.png" alt="" className={`hero-pump-img w-auto object-contain ${size}`} />
-          <img src="/images/hero/pumps/m-518.png" alt="" className={`hero-pump-img w-auto object-contain ${size}`} />
-          <img src="/images/hero/pumps/m-522.png" alt="" className={`hero-pump-img w-auto object-contain ${size}`} />
-        </div>
-      </span>
-    </Link>
-  );
-}
-
-function HeroStat({ icon, line1, line2 }: { icon: ReactNode; line1: string; line2: string }) {
-  return (
-    <div className="flex flex-col items-center gap-1.5 text-center">
-      <span className="hero-stat-badge inline-flex h-10 w-10 items-center justify-center rounded-full text-white">
-        {icon}
-      </span>
-      <p className="max-w-[8.5rem] text-[10px] font-semibold leading-tight text-white">
-        {line1}
-        <br />
-        {line2}
-      </p>
-    </div>
-  );
-}
-
 function VehicleGlyph({ kind }: { kind: (typeof VEHICLE_TYPES)[number]["icon"] }) {
   const common = "h-7 w-7 text-slate-800";
   return (
@@ -459,46 +217,6 @@ function VehicleGlyph({ kind }: { kind: (typeof VEHICLE_TYPES)[number]["icon"] }
       ) : (
         <path strokeLinecap="round" strokeLinejoin="round" d="M3 13l2-5h14l2 5M5 17a1.5 1.5 0 100-3 1.5 1.5 0 000 3zm14 0a1.5 1.5 0 100-3 1.5 1.5 0 000 3zM4 13h16" />
       )}
-    </svg>
-  );
-}
-
-function CarIcon() {
-  return (
-    <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.8">
-      <path strokeLinecap="round" strokeLinejoin="round" d="M3 13l2-5h14l2 5M5 17a1.5 1.5 0 100-3 1.5 1.5 0 000 3zm14 0a1.5 1.5 0 100-3 1.5 1.5 0 000 3zM4 13h16" />
-    </svg>
-  );
-}
-
-function ShieldMini() {
-  return (
-    <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.8">
-      <path strokeLinecap="round" strokeLinejoin="round" d="M12 3l8 3v6c0 5-3.5 8.5-8 10-4.5-1.5-8-5-8-10V6l8-3z" />
-    </svg>
-  );
-}
-
-function TruckMini() {
-  return (
-    <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.8">
-      <path strokeLinecap="round" strokeLinejoin="round" d="M3 16V7h11v9M14 10h4l3 3v3h-7M7 18a2 2 0 100-4 2 2 0 000 4zm10 0a2 2 0 100-4 2 2 0 000 4z" />
-    </svg>
-  );
-}
-
-function RupeeMini() {
-  return (
-    <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.8">
-      <path strokeLinecap="round" strokeLinejoin="round" d="M7 6h10M7 10h10M7 6c4 0 6 2 6 4s-2 4-6 4c2.5 0 6 2 8 4" />
-    </svg>
-  );
-}
-
-function HeadsetMini() {
-  return (
-    <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.8">
-      <path strokeLinecap="round" strokeLinejoin="round" d="M4 12a8 8 0 1116 0v5a2 2 0 01-2 2h-2v-7h4M4 12v5a2 2 0 002 2h2v-7H4" />
     </svg>
   );
 }
