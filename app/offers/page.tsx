@@ -80,12 +80,7 @@ export default function OffersPage() {
                   <div className="aspect-[4/3] overflow-hidden rounded-xl bg-slate-100">
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img
-                      src={
-                        offer.imageUrl ||
-                        (offer.partNumber
-                          ? `/images/products/${offer.partNumber}.svg`
-                          : "/images/products/placeholder.svg")
-                      }
+                      src={offer.imageUrl || "/images/products/placeholder.svg"}
                       alt={offer.name || "Offer product"}
                       className="h-full w-full object-cover"
                       onError={(event) => {

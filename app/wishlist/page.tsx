@@ -19,6 +19,7 @@ type WishlistItem = {
   netInclusivePaise?: number | null;
   discountPercent?: number | null;
   gstRate?: number | null;
+  imageUrl?: string | null;
 };
 
 export default function WishlistPage() {
@@ -117,7 +118,7 @@ export default function WishlistPage() {
               <div className="aspect-[4/3] overflow-hidden rounded-xl bg-slate-100">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
-                  src={item.partNumber ? `/images/products/${item.partNumber}.svg` : "/images/products/placeholder.svg"}
+                  src={item.imageUrl || "/images/products/placeholder.svg"}
                   alt={item.partName || "Part"}
                   className="h-full w-full object-cover"
                   onError={(event) => {
