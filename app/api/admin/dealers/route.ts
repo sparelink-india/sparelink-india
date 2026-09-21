@@ -88,14 +88,69 @@ export async function PATCH(request: Request) {
       ? body.rejectionReason.trim() || null
       : null;
 
+  const db = getDb();
+
   if (!dealerId || !action) {
+    // Allow credit/price-group configuration without approve/reject.
+    if (dealerId && body.action === "configure") {
+      const updates: {
+        creditLimitPaise?: number;
+        priceGroup?: string;
+        paymentTerms?: string | null;
+        updatedAt: Date;
+      } = { updatedAt: new Date() };
+
+      if (body.creditLimitPaise !== undefined) {
+        const creditLimitPaise = Number(body.creditLimitPaise);
+        if (!Number.isInteger(creditLimitPaise) || creditLimitPaise < 0) {
+          return NextResponse.json(
+            { error: "creditLimitPaise must be a non-negative integer" },
+            { status: 400 },
+          );
+        }
+        updates.creditLimitPaise = creditLimitPaise;
+      }
+      if (typeof body.priceGroup === "string" && body.priceGroup.trim()) {
+        updates.priceGroup = body.priceGroup.trim();
+      }
+      if (body.paymentTerms !== undefined) {
+        updates.paymentTerms =
+          typeof body.paymentTerms === "string"
+            ? body.paymentTerms.trim() || null
+            : null;
+      }
+
+      const existing = await db.query.dealer.findFirst({
+        where: eq(dealer.id, dealerId),
+      });
+      if (!existing) {
+        return NextResponse.json({ error: "Dealer not found" }, { status: 404 });
+      }
+
+      await db.update(dealer).set(updates).where(eq(dealer.id, dealerId));
+      await writeAuditLog({
+        actorUserId: session.user.id,
+        action: "dealer.configure",
+        entityType: "dealer",
+        entityId: dealerId,
+        metadata: {
+          previous: {
+            creditLimitPaise: existing.creditLimitPaise,
+            priceGroup: existing.priceGroup,
+            paymentTerms: existing.paymentTerms,
+          },
+          updates,
+        },
+      });
+      return NextResponse.json({ success: true, ...updates });
+    }
+
     return NextResponse.json(
-      { error: "dealerId and action (approve|reject) are required" },
+      { error: "dealerId and action (approve|reject|configure) are required" },
       { status: 400 },
     );
   }
 
-  const db = getDb();
   const existing = await db.query.dealer.findFirst({
     where: eq(dealer.id, dealerId),
   });

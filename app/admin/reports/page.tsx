@@ -9,6 +9,10 @@ type Report = {
   suppliers: number;
   lowStock: number;
   stockAdjustments: number;
+  goodsReceipts?: number;
+  pricingRules?: number;
+  ledgerEntries?: number;
+  pendingReceiveQuantity?: number;
 };
 
 type Adjustment = {
@@ -88,6 +92,10 @@ export default function B2bReportsPage() {
                 ["Suppliers", report.suppliers],
                 ["Low stock (<5)", report.lowStock],
                 ["Stock adjustments", report.stockAdjustments],
+                ["Goods receipts", report.goodsReceipts ?? 0],
+                ["Pricing rules", report.pricingRules ?? 0],
+                ["Ledger entries", report.ledgerEntries ?? 0],
+                ["Pending receive qty", report.pendingReceiveQuantity ?? 0],
               ] as const
             ).map(([label, value]) => (
               <div key={label} className="rounded-lg border bg-white p-4">

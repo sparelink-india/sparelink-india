@@ -15,6 +15,8 @@ import {
 } from "@/lib/b2b-listings";
 import { getDb } from "@/lib/db";
 import { isAllowedFirmId } from "@/lib/firms";
+import { assertDealerCreditForDebit } from "@/lib/party-credit-service";
+import { resolvePartyEffectivePrice } from "@/lib/pricing-rules-service";
 import { requireAdminApi } from "@/lib/require-role";
 
 const SO_STATUSES = new Set(["draft", "submitted"]);
@@ -93,7 +95,16 @@ export async function POST(request: Request) {
         { status: 400 },
       );
     }
-    resolved.push(resolveSalesLineFromListing(listing, quantity));
+    const priced = await resolvePartyEffectivePrice({
+      listInclusivePaise: listing.pricePaise,
+      dealerId,
+      customerUserId:
+        typeof body.buyerUserId === "string" ? body.buyerUserId.trim() : null,
+      applyVerificationFallback: true,
+    });
+    resolved.push(
+      resolveSalesLineFromListing(listing, quantity, priced.netInclusivePaise),
+    );
   }
 
   if (!firmId) {
@@ -102,6 +113,16 @@ export async function POST(request: Request) {
   }
 
   const totals = sumDocumentTotals(resolved);
+
+  if (dealerId && status === "submitted") {
+    const credit = await assertDealerCreditForDebit({
+      dealerId,
+      additionalDebitPaise: totals.totalPaise,
+    });
+    if (!credit.ok) {
+      return NextResponse.json({ error: credit.error }, { status: credit.status });
+    }
+  }
   const id = randomUUID();
   const soNumber = nextB2bDocNumber("SO");
   const db = getDb();
