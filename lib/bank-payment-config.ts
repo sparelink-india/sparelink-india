@@ -115,6 +115,18 @@ export function getFirmBankPaymentConfig(
 }
 
 /**
+ * Whether COD is enabled for a firm via env (`*_COD_ENABLED`, default true).
+ * Used by checkout to reject COD when a firm in the cart has COD disabled.
+ */
+export function isCodEnabledForFirm(
+  firmId: string,
+  firmName: string,
+  firmCode?: string,
+): boolean {
+  return getFirmBankPaymentConfig(firmId, firmName, 0, firmCode).codEnabled;
+}
+
+/**
  * @deprecated Shared/legacy bank config. Prefer firm-wise configs.
  * Kept only for backwards-compatible admin diagnostics — never show on
  * customer payment pages as the primary payment destination.

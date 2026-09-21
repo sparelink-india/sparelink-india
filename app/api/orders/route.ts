@@ -6,6 +6,7 @@ import {
   cart,
   cartItem,
   dealerListing,
+  firm,
   firmOrder,
   firmOrderItem,
   inventory,
@@ -14,10 +15,11 @@ import {
   part,
 } from "@/drizzle/schema";
 import { getServerSession } from "@/lib/auth-server";
+import { isCodEnabledForFirm } from "@/lib/bank-payment-config";
 import { getDb } from "@/lib/db";
 import { extractGSTRate } from "@/lib/gst";
 import { isCashfreeConfiguredForFirm } from "@/lib/cashfree";
-import { isAllowedFirmId } from "@/lib/firms";
+import { SPARELINK_FIRMS, isAllowedFirmId } from "@/lib/firms";
 import {
   splitLinesByFirm,
   validateAvailableStock,
@@ -122,12 +124,15 @@ export async function GET() {
       orderId: firmOrder.orderId,
       id: firmOrder.id,
       firmId: firmOrder.firmId,
+      firmName: firm.name,
+      firmCode: firm.code,
       allocationNumber: firmOrder.allocationNumber,
       amountPaise: firmOrder.amountPaise,
       fulfillmentStatus: firmOrder.fulfillmentStatus,
       paymentStatus: firmOrder.paymentStatus,
     })
     .from(firmOrder)
+    .innerJoin(firm, eq(firmOrder.firmId, firm.id))
     .where(inArray(firmOrder.orderId, orderIds));
 
   const items = await db
@@ -294,6 +299,30 @@ export async function POST(request: Request) {
       },
       { status: 400 },
     );
+  }
+
+  if (paymentMethod === "cash_on_delivery") {
+    const firmMeta = new Map(
+      SPARELINK_FIRMS.map((row) => [row.id, row] as const),
+    );
+    const codBlocked = cartItems.find((item) => {
+      if (typeof item.firmId !== "string") return true;
+      const meta = firmMeta.get(item.firmId);
+      if (!meta) return true;
+      return !isCodEnabledForFirm(meta.id, meta.name, meta.code);
+    });
+    if (codBlocked) {
+      const meta =
+        typeof codBlocked.firmId === "string"
+          ? firmMeta.get(codBlocked.firmId)
+          : undefined;
+      return NextResponse.json(
+        {
+          error: `Cash on delivery is not available for ${meta?.name ?? "one of the firms"} in your cart.`,
+        },
+        { status: 400 },
+      );
+    }
   }
 
   if (paymentMethod === "online_payment") {
