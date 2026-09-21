@@ -243,7 +243,7 @@ export function CategoryResults({
                       />
                     </button>
                     <div className="min-w-0 flex-1 overflow-hidden">
-                      <h3 className="break-words font-bold leading-snug text-slate-950">
+                      <h3 className="line-clamp-3 break-words font-bold leading-snug text-slate-950">
                         {partData.name || t("product.partFallback")}
                       </h3>
                       <p className="mt-1 text-xs text-slate-500">
