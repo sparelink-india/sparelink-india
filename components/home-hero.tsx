@@ -17,7 +17,6 @@ const HERO_LINKS = [
     top: "5.8%",
     width: "20.5%",
     height: "30.2%",
-    hover: true,
   },
   {
     id: "cables",
@@ -28,7 +27,6 @@ const HERO_LINKS = [
     top: "38.2%",
     width: "25.4%",
     height: "31.5%",
-    hover: true,
   },
   {
     id: "regulators",
@@ -39,7 +37,6 @@ const HERO_LINKS = [
     top: "69.7%",
     width: "25.7%",
     height: "28.3%",
-    hover: true,
   },
   {
     id: "pensol",
@@ -50,7 +47,6 @@ const HERO_LINKS = [
     top: "5.8%",
     width: "23.9%",
     height: "33.2%",
-    hover: true,
   },
   {
     id: "uj",
@@ -61,7 +57,6 @@ const HERO_LINKS = [
     top: "39.3%",
     width: "26.0%",
     height: "29.8%",
-    hover: true,
   },
   {
     id: "pumps",
@@ -72,7 +67,6 @@ const HERO_LINKS = [
     top: "69.7%",
     width: "26.9%",
     height: "28.3%",
-    hover: true,
   },
   {
     id: "browse",
@@ -83,7 +77,6 @@ const HERO_LINKS = [
     top: "64.3%",
     width: "16.9%",
     height: "8.9%",
-    hover: false,
   },
   {
     id: "findVehicle",
@@ -94,12 +87,11 @@ const HERO_LINKS = [
     top: "64.6%",
     width: "16.1%",
     height: "8.5%",
-    hover: false,
   },
 ] as const;
 
 const HERO_HOTSPOT_CLASS =
-  "absolute z-10 cursor-pointer border-0 bg-transparent no-underline outline-none focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-[#f0c14b]";
+  "absolute z-10 cursor-pointer border-0 bg-transparent hover:bg-transparent no-underline outline-none focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-[#f0c14b]";
 
 const QUICK_SEARCHES = [
   { label: "Water Pump Bolero (M663)", q: "M663" },
@@ -155,7 +147,7 @@ export function HomeHero({
             key={link.id}
             href={link.href}
             aria-label={link.ariaLabel}
-            className={`${HERO_HOTSPOT_CLASS}${link.hover ? " hover:bg-white/10" : ""}`}
+            className={HERO_HOTSPOT_CLASS}
             style={{
               left: link.left,
               top: link.top,
