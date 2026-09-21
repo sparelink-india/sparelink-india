@@ -8,6 +8,13 @@ import { getDb } from "@/lib/db";
 
 const REQUEST_TYPES = new Set(["return", "replacement"]);
 const REASONS = new Set(["wrong_part", "damaged", "missing", "other"]);
+const ADMIN_STATUSES = new Set([
+  "submitted",
+  "approved",
+  "rejected",
+  "received",
+  "closed",
+]);
 
 export async function GET() {
   const session = await getServerSession();
@@ -91,7 +98,7 @@ export async function POST(request: Request) {
     session.user.role !== "admin" &&
     buyerOrder.buyerId !== session.user.id
   ) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
   const id = randomUUID();
@@ -121,4 +128,75 @@ export async function POST(request: Request) {
     { success: true, id, requestNumber },
     { status: 201 },
   );
+}
+
+export async function PATCH(request: Request) {
+  const session = await getServerSession();
+  if (!session || session.user.role !== "admin") {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  const body = await request.json().catch(() => null);
+  if (!body || typeof body !== "object") {
+    return NextResponse.json({ error: "Invalid payload" }, { status: 400 });
+  }
+
+  const returnId =
+    typeof body.returnId === "string" ? body.returnId.trim() : "";
+  const status = typeof body.status === "string" ? body.status.trim() : "";
+  const adminNote =
+    typeof body.adminNote === "string" ? body.adminNote.trim() || null : null;
+  const resolutionNote =
+    typeof body.resolutionNote === "string"
+      ? body.resolutionNote.trim() || null
+      : null;
+
+  if (!returnId) {
+    return NextResponse.json({ error: "returnId is required" }, { status: 400 });
+  }
+  if (!ADMIN_STATUSES.has(status)) {
+    return NextResponse.json({ error: "Invalid status" }, { status: 400 });
+  }
+
+  const db = getDb();
+  const existing = await db.query.returnRequest.findFirst({
+    where: eq(returnRequest.id, returnId),
+  });
+  if (!existing) {
+    return NextResponse.json(
+      { error: "Return request not found" },
+      { status: 404 },
+    );
+  }
+
+  const resolved =
+    status === "approved" ||
+    status === "rejected" ||
+    status === "closed" ||
+    status === "received";
+
+  await db
+    .update(returnRequest)
+    .set({
+      status,
+      adminNote: adminNote ?? existing.adminNote,
+      resolutionNote: resolutionNote ?? existing.resolutionNote,
+      resolvedAt: resolved ? new Date() : existing.resolvedAt,
+      resolvedBy: resolved ? session.user.id : existing.resolvedBy,
+      updatedAt: new Date(),
+    })
+    .where(eq(returnRequest.id, returnId));
+
+  await writeAuditLog({
+    actorUserId: session.user.id,
+    action: "return.status_update",
+    entityType: "return_request",
+    entityId: returnId,
+    metadata: {
+      previousStatus: existing.status,
+      status,
+    },
+  });
+
+  return NextResponse.json({ success: true });
 }

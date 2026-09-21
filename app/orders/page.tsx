@@ -24,6 +24,14 @@ type Order = {
     unitPricePaise?: number;
     totalPaise: number;
   }[];
+  firmAllocations?: {
+    id: string;
+    firmId: string;
+    firmName?: string;
+    amountPaise: number;
+    fulfillmentStatus: string;
+    paymentStatus: string;
+  }[];
 };
 
 function statusLabel(status: string) {
@@ -107,7 +115,12 @@ export default function OrdersPage() {
             >
               <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                 <div>
-                  <p className="font-semibold">#{order.orderNumber}</p>
+                  <Link
+                    href={`/orders/${order.id}`}
+                    className="font-semibold hover:text-[#7a1233] hover:underline"
+                  >
+                    #{order.orderNumber}
+                  </Link>
                   <p className="mt-1 text-sm text-zinc-500">
                     Placed{" "}
                     {new Date(order.createdAt).toLocaleDateString("en-IN", {
@@ -116,6 +129,14 @@ export default function OrdersPage() {
                       year: "numeric",
                     })}
                   </p>
+                  {order.firmAllocations && order.firmAllocations.length > 0 ? (
+                    <p className="mt-1 text-xs text-zinc-500">
+                      Fulfilled via{" "}
+                      {order.firmAllocations
+                        .map((a) => a.firmName || a.firmId)
+                        .join(", ")}
+                    </p>
+                  ) : null}
                 </div>
                 <div className="text-left sm:text-right">
                   <span className="rounded-full bg-zinc-100 px-3 py-1 text-xs font-medium">
@@ -203,6 +224,12 @@ export default function OrdersPage() {
                 </p>
 
                 <div className="flex flex-wrap items-center gap-2">
+                  <Link
+                    href={`/orders/${order.id}`}
+                    className="inline-flex items-center gap-1.5 rounded-lg border border-zinc-300 bg-white px-3 py-1.5 text-xs font-bold text-zinc-700 hover:bg-zinc-50"
+                  >
+                    View details
+                  </Link>
                   {order.paymentMethod !== "cash_on_delivery" &&
                     order.paymentStatus !== "paid" && (
                     <Link

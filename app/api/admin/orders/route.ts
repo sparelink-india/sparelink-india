@@ -4,6 +4,10 @@ import { order, orderItem, user } from "@/drizzle/schema";
 import { writeAuditLog } from "@/lib/audit";
 import { getServerSession } from "@/lib/auth-server";
 import { getDb } from "@/lib/db";
+import {
+  restockInventoryForCancelledOrder,
+  shouldRestockOnStatusChange,
+} from "@/lib/order-cancel-restock";
 import { canMutateOrderPaymentStatus } from "@/lib/order-architecture";
 
 const ALLOWED_STATUSES = new Set([
@@ -43,6 +47,7 @@ export async function GET() {
         buyerEmail: user.email,
         status: order.status,
         paymentStatus: order.paymentStatus,
+        paymentMethod: order.paymentMethod,
         totalPaise: order.totalPaise,
         createdAt: order.createdAt,
       })
@@ -135,7 +140,16 @@ export async function PATCH(request: Request) {
   if (status) updates.status = status;
   if (paymentStatus) updates.paymentStatus = paymentStatus;
 
-  await db.update(order).set(updates).where(eq(order.id, orderId));
+  const doRestock = shouldRestockOnStatusChange(existing.status, status);
+
+  let restockedLines = 0;
+  await db.transaction(async (tx) => {
+    await tx.update(order).set(updates).where(eq(order.id, orderId));
+    if (doRestock) {
+      const result = await restockInventoryForCancelledOrder(tx, orderId);
+      restockedLines = result.restockedLines;
+    }
+  });
 
   await writeAuditLog({
     actorUserId: session.user.id,
@@ -147,8 +161,9 @@ export async function PATCH(request: Request) {
       previousPaymentStatus: existing.paymentStatus,
       status,
       paymentStatus,
+      restockedLines: doRestock ? restockedLines : 0,
     },
   });
 
-  return NextResponse.json({ success: true });
+  return NextResponse.json({ success: true, restockedLines });
 }
