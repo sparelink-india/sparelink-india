@@ -47,6 +47,42 @@ export async function requireAdminApi() {
   return { session };
 }
 
+export async function requireDealerApi() {
+  const session = await getServerSession();
+  if (!session?.user) {
+    return {
+      error: NextResponse.json({ error: "Unauthorized" }, { status: 401 }),
+    };
+  }
+  if (session.user.role !== "dealer") {
+    return {
+      error: NextResponse.json({ error: "Unauthorized" }, { status: 401 }),
+    };
+  }
+  const blocked = await denyIfMustChangePassword(session.user.id);
+  if (blocked) return { error: blocked };
+  return { session };
+}
+
+/** Admin or dealer API access (B2B product search, etc.). */
+export async function requireAdminOrDealerApi() {
+  const session = await getServerSession();
+  if (!session?.user) {
+    return {
+      error: NextResponse.json({ error: "Unauthorized" }, { status: 401 }),
+    };
+  }
+  const role = session.user.role as UserRole;
+  if (role !== "admin" && role !== "dealer") {
+    return {
+      error: NextResponse.json({ error: "Unauthorized" }, { status: 401 }),
+    };
+  }
+  const blocked = await denyIfMustChangePassword(session.user.id);
+  if (blocked) return { error: blocked };
+  return { session };
+}
+
 export async function requireRole(allowedRoles: UserRole[]) {
   const session = await getServerSession();
 

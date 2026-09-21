@@ -981,6 +981,253 @@ export const auditLog = pgTable(
   ],
 );
 
+/** Phase 6: supplier master (admin-managed; no invented legal IDs). */
+export const supplier = pgTable(
+  "supplier",
+  {
+    id: text("id").primaryKey(),
+    name: text("name").notNull(),
+    contactName: text("contact_name"),
+    phone: text("phone"),
+    email: text("email"),
+    address: text("address"),
+    city: text("city"),
+    state: text("state"),
+    pincode: text("pincode"),
+    gstin: text("gstin"),
+    pan: text("pan"),
+    paymentTerms: text("payment_terms"),
+    firmId: text("firm_id").references(() => firm.id, {
+      onDelete: "set null",
+    }),
+    isActive: boolean("is_active").default(true).notNull(),
+    notes: text("notes"),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+    updatedAt: timestamp("updated_at")
+      .defaultNow()
+      .$onUpdate(() => new Date())
+      .notNull(),
+  },
+  (table) => [
+    index("supplier_firm_idx").on(table.firmId),
+    index("supplier_active_idx").on(table.isActive),
+  ],
+);
+
+/** Phase 6: stock adjustment ledger (never silent stock changes). */
+export const stockAdjustment = pgTable(
+  "stock_adjustment",
+  {
+    id: text("id").primaryKey(),
+    inventoryId: text("inventory_id")
+      .notNull()
+      .references(() => inventory.id, { onDelete: "restrict" }),
+    dealerListingId: text("dealer_listing_id")
+      .notNull()
+      .references(() => dealerListing.id, { onDelete: "restrict" }),
+    actorUserId: text("actor_user_id").references(() => user.id, {
+      onDelete: "set null",
+    }),
+    previousQuantity: integer("previous_quantity").notNull(),
+    newQuantity: integer("new_quantity").notNull(),
+    delta: integer("delta").notNull(),
+    reason: text("reason").notNull(),
+    warehouseCode: text("warehouse_code").default("MAIN").notNull(),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+  },
+  (table) => [
+    index("stock_adjustment_inventory_idx").on(table.inventoryId),
+    index("stock_adjustment_listing_idx").on(table.dealerListingId),
+    index("stock_adjustment_created_idx").on(table.createdAt),
+  ],
+);
+
+/** Phase 6: business sales order (separate from retail checkout order). */
+export const salesOrder = pgTable(
+  "sales_order",
+  {
+    id: text("id").primaryKey(),
+    soNumber: text("so_number").notNull().unique(),
+    status: text("status").default("draft").notNull(),
+    firmId: text("firm_id").references(() => firm.id, {
+      onDelete: "restrict",
+    }),
+    dealerId: text("dealer_id").references(() => dealer.id, {
+      onDelete: "set null",
+    }),
+    buyerUserId: text("buyer_user_id").references(() => user.id, {
+      onDelete: "set null",
+    }),
+    partyName: text("party_name").notNull(),
+    partyPhone: text("party_phone"),
+    deliveryAddress: text("delivery_address"),
+    notes: text("notes"),
+    subtotalPaise: integer("subtotal_paise").default(0).notNull(),
+    gstPaise: integer("gst_paise").default(0).notNull(),
+    totalPaise: integer("total_paise").default(0).notNull(),
+    createdByUserId: text("created_by_user_id").references(() => user.id, {
+      onDelete: "set null",
+    }),
+    convertedOrderId: text("converted_order_id").references(() => order.id, {
+      onDelete: "set null",
+    }),
+    quotationId: text("quotation_id"),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+    updatedAt: timestamp("updated_at")
+      .defaultNow()
+      .$onUpdate(() => new Date())
+      .notNull(),
+  },
+  (table) => [
+    index("sales_order_status_idx").on(table.status),
+    index("sales_order_firm_idx").on(table.firmId),
+    index("sales_order_dealer_idx").on(table.dealerId),
+  ],
+);
+
+export const salesOrderItem = pgTable(
+  "sales_order_item",
+  {
+    id: text("id").primaryKey(),
+    salesOrderId: text("sales_order_id")
+      .notNull()
+      .references(() => salesOrder.id, { onDelete: "cascade" }),
+    dealerListingId: text("dealer_listing_id").references(() => dealerListing.id, {
+      onDelete: "set null",
+    }),
+    partId: text("part_id").references(() => part.id, { onDelete: "set null" }),
+    partNumber: text("part_number").notNull(),
+    partName: text("part_name").notNull(),
+    sku: text("sku"),
+    quantity: integer("quantity").notNull(),
+    unitPricePaise: integer("unit_price_paise").notNull(),
+    gstRate: integer("gst_rate").default(18).notNull(),
+    lineGstPaise: integer("line_gst_paise").default(0).notNull(),
+    lineTotalPaise: integer("line_total_paise").notNull(),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+  },
+  (table) => [index("sales_order_item_so_idx").on(table.salesOrderId)],
+);
+
+/** Phase 6: purchase order (stock does not increase until goods receipt). */
+export const purchaseOrder = pgTable(
+  "purchase_order",
+  {
+    id: text("id").primaryKey(),
+    poNumber: text("po_number").notNull().unique(),
+    status: text("status").default("draft").notNull(),
+    supplierId: text("supplier_id")
+      .notNull()
+      .references(() => supplier.id, { onDelete: "restrict" }),
+    firmId: text("firm_id").references(() => firm.id, {
+      onDelete: "restrict",
+    }),
+    warehouseCode: text("warehouse_code").default("MAIN").notNull(),
+    expectedDeliveryDate: timestamp("expected_delivery_date"),
+    notes: text("notes"),
+    subtotalPaise: integer("subtotal_paise").default(0).notNull(),
+    gstPaise: integer("gst_paise").default(0).notNull(),
+    totalPaise: integer("total_paise").default(0).notNull(),
+    createdByUserId: text("created_by_user_id").references(() => user.id, {
+      onDelete: "set null",
+    }),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+    updatedAt: timestamp("updated_at")
+      .defaultNow()
+      .$onUpdate(() => new Date())
+      .notNull(),
+  },
+  (table) => [
+    index("purchase_order_status_idx").on(table.status),
+    index("purchase_order_supplier_idx").on(table.supplierId),
+    index("purchase_order_firm_idx").on(table.firmId),
+  ],
+);
+
+export const purchaseOrderItem = pgTable(
+  "purchase_order_item",
+  {
+    id: text("id").primaryKey(),
+    purchaseOrderId: text("purchase_order_id")
+      .notNull()
+      .references(() => purchaseOrder.id, { onDelete: "cascade" }),
+    dealerListingId: text("dealer_listing_id").references(() => dealerListing.id, {
+      onDelete: "set null",
+    }),
+    partId: text("part_id").references(() => part.id, { onDelete: "set null" }),
+    partNumber: text("part_number").notNull(),
+    partName: text("part_name").notNull(),
+    sku: text("sku"),
+    quantity: integer("quantity").notNull(),
+    unitCostPaise: integer("unit_cost_paise").notNull(),
+    gstRate: integer("gst_rate").default(18).notNull(),
+    lineGstPaise: integer("line_gst_paise").default(0).notNull(),
+    lineTotalPaise: integer("line_total_paise").notNull(),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+  },
+  (table) => [index("purchase_order_item_po_idx").on(table.purchaseOrderId)],
+);
+
+/** Phase 6: quotation foundation (convertible to sales order). */
+export const quotation = pgTable(
+  "quotation",
+  {
+    id: text("id").primaryKey(),
+    quotationNumber: text("quotation_number").notNull().unique(),
+    status: text("status").default("draft").notNull(),
+    firmId: text("firm_id").references(() => firm.id, {
+      onDelete: "restrict",
+    }),
+    dealerId: text("dealer_id").references(() => dealer.id, {
+      onDelete: "set null",
+    }),
+    partyName: text("party_name").notNull(),
+    partyPhone: text("party_phone"),
+    validUntil: timestamp("valid_until"),
+    notes: text("notes"),
+    subtotalPaise: integer("subtotal_paise").default(0).notNull(),
+    gstPaise: integer("gst_paise").default(0).notNull(),
+    totalPaise: integer("total_paise").default(0).notNull(),
+    createdByUserId: text("created_by_user_id").references(() => user.id, {
+      onDelete: "set null",
+    }),
+    convertedSalesOrderId: text("converted_sales_order_id"),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+    updatedAt: timestamp("updated_at")
+      .defaultNow()
+      .$onUpdate(() => new Date())
+      .notNull(),
+  },
+  (table) => [
+    index("quotation_status_idx").on(table.status),
+    index("quotation_dealer_idx").on(table.dealerId),
+  ],
+);
+
+export const quotationItem = pgTable(
+  "quotation_item",
+  {
+    id: text("id").primaryKey(),
+    quotationId: text("quotation_id")
+      .notNull()
+      .references(() => quotation.id, { onDelete: "cascade" }),
+    dealerListingId: text("dealer_listing_id").references(() => dealerListing.id, {
+      onDelete: "set null",
+    }),
+    partId: text("part_id").references(() => part.id, { onDelete: "set null" }),
+    partNumber: text("part_number").notNull(),
+    partName: text("part_name").notNull(),
+    sku: text("sku"),
+    quantity: integer("quantity").notNull(),
+    unitPricePaise: integer("unit_price_paise").notNull(),
+    gstRate: integer("gst_rate").default(18).notNull(),
+    lineGstPaise: integer("line_gst_paise").default(0).notNull(),
+    lineTotalPaise: integer("line_total_paise").notNull(),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+  },
+  (table) => [index("quotation_item_quotation_idx").on(table.quotationId)],
+);
+
 /** Order shipping / tracking fields extension via separate table. */
 export const orderShipment = pgTable(
   "order_shipment",
