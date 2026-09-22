@@ -370,7 +370,7 @@ export function ProductDetailModal({
                       >
                         {/* eslint-disable-next-line @next/next/no-img-element */}
                         <img
-                          src={thumbUrls[index] || src}
+                          src={thumbUrls[index] || mediumUrls[index] || "/images/products/placeholder.svg"}
                           alt=""
                           draggable={false}
                           loading={index === 0 ? "eager" : "lazy"}
@@ -528,7 +528,7 @@ export function ProductDetailModal({
                         >
                           {/* eslint-disable-next-line @next/next/no-img-element */}
                           <img
-                            src={thumbUrls[index] || src}
+                            src={thumbUrls[index] || mediumUrls[index] || "/images/products/placeholder.svg"}
                             alt=""
                             draggable={false}
                             loading="lazy"
