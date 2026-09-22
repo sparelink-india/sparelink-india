@@ -1,10 +1,11 @@
 import { randomUUID } from "node:crypto";
-import { desc, eq } from "drizzle-orm";
+import { and, desc, eq } from "drizzle-orm";
 import { NextResponse } from "next/server";
-import { order, returnRequest } from "@/drizzle/schema";
+import { order, orderItem, returnRequest } from "@/drizzle/schema";
 import { generateTicketNumber, writeAuditLog } from "@/lib/audit";
 import { getServerSession } from "@/lib/auth-server";
 import { getDb } from "@/lib/db";
+import { denyIfMustChangePassword } from "@/lib/require-role";
 
 const REQUEST_TYPES = new Set(["return", "replacement"]);
 const REASONS = new Set(["wrong_part", "damaged", "missing", "other"]);
@@ -16,11 +17,29 @@ const ADMIN_STATUSES = new Set([
   "closed",
 ]);
 
+const BUYER_RETURN_COLUMNS = {
+  id: returnRequest.id,
+  requestNumber: returnRequest.requestNumber,
+  orderId: returnRequest.orderId,
+  orderItemId: returnRequest.orderItemId,
+  requestType: returnRequest.requestType,
+  reason: returnRequest.reason,
+  description: returnRequest.description,
+  status: returnRequest.status,
+  resolutionNote: returnRequest.resolutionNote,
+  createdAt: returnRequest.createdAt,
+  updatedAt: returnRequest.updatedAt,
+  resolvedAt: returnRequest.resolvedAt,
+};
+
 export async function GET() {
   const session = await getServerSession();
   if (!session) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
+
+  const blocked = await denyIfMustChangePassword(session.user.id);
+  if (blocked) return blocked;
 
   const db = getDb();
   const isAdmin = session.user.role === "admin";
@@ -32,7 +51,7 @@ export async function GET() {
           .from(returnRequest)
           .orderBy(desc(returnRequest.createdAt))
       : await db
-          .select()
+          .select(BUYER_RETURN_COLUMNS)
           .from(returnRequest)
           .where(eq(returnRequest.buyerId, session.user.id))
           .orderBy(desc(returnRequest.createdAt));
@@ -52,6 +71,9 @@ export async function POST(request: Request) {
   if (!session) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
+
+  const blocked = await denyIfMustChangePassword(session.user.id);
+  if (blocked) return blocked;
 
   const body = await request.json().catch(() => null);
   if (!body || typeof body !== "object") {
@@ -99,6 +121,19 @@ export async function POST(request: Request) {
     buyerOrder.buyerId !== session.user.id
   ) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
+
+  if (orderItemId) {
+    const line = await db.query.orderItem.findFirst({
+      where: and(eq(orderItem.id, orderItemId), eq(orderItem.orderId, orderId)),
+      columns: { id: true },
+    });
+    if (!line) {
+      return NextResponse.json(
+        { error: "orderItemId does not belong to this order" },
+        { status: 400 },
+      );
+    }
   }
 
   const id = randomUUID();

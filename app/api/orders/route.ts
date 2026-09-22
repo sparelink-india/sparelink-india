@@ -326,16 +326,21 @@ export async function POST(request: Request) {
   }
 
   if (paymentMethod === "online_payment") {
-    const hasOnlineCapableFirm = cartItems.some(
-      (item) =>
-        typeof item.firmId === "string" &&
-        isCashfreeConfiguredForFirm(item.firmId),
-    );
-    if (!hasOnlineCapableFirm) {
+    const firmIds = [
+      ...new Set(
+        cartItems
+          .map((item) => item.firmId)
+          .filter((id): id is string => typeof id === "string"),
+      ),
+    ];
+    const allOnlineCapable =
+      firmIds.length > 0 &&
+      firmIds.every((firmId) => isCashfreeConfiguredForFirm(firmId));
+    if (!allOnlineCapable) {
       return NextResponse.json(
         {
           error:
-            "Online payment is not available for these firms yet. Please choose Cash on Delivery.",
+            "Online payment is not available for every firm in your cart. Please choose Cash on Delivery, or remove items from firms that cannot take online payment.",
         },
         { status: 400 },
       );
@@ -403,8 +408,19 @@ export async function POST(request: Request) {
       }
 
       const liveCartItems = await tx
-        .select({ id: cartItem.id })
+        .select({
+          id: cartItem.id,
+          quantity: cartItem.quantity,
+          dealerListingId: dealerListing.id,
+          listingStatus: dealerListing.status,
+          firmId: dealerListing.firmId,
+          stock: inventory.quantity,
+          partName: part.name,
+        })
         .from(cartItem)
+        .innerJoin(dealerListing, eq(cartItem.dealerListingId, dealerListing.id))
+        .innerJoin(part, eq(dealerListing.partId, part.id))
+        .leftJoin(inventory, eq(inventory.dealerListingId, dealerListing.id))
         .where(eq(cartItem.cartId, buyerCart.id))
         .for("update");
       if (!liveCartItems.length) {
@@ -412,6 +428,21 @@ export async function POST(request: Request) {
       }
       if (liveCartItems.length !== cartItems.length) {
         throw new Error("Your cart changed. Please review and try again.");
+      }
+
+      const liveById = new Map(liveCartItems.map((row) => [row.id, row]));
+      for (const item of cartItems) {
+        const live = liveById.get(item.id);
+        if (
+          !live ||
+          live.quantity !== item.quantity ||
+          live.dealerListingId !== item.dealerListingId ||
+          live.listingStatus !== "active" ||
+          !live.firmId ||
+          !isAllowedFirmId(live.firmId)
+        ) {
+          throw new Error("Your cart changed. Please review and try again.");
+        }
       }
 
       // Existing checkout decrements live stock in this transaction.

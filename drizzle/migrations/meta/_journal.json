@@ -162,6 +162,13 @@
       "when": 1789565000000,
       "tag": "0023_phase6_erp_completion",
       "breakpoints": true
+    },
+    {
+      "idx": 23,
+      "version": "7",
+      "when": 1789610000000,
+      "tag": "0024_phase7_ai_ci_sync",
+      "breakpoints": true
     }
   ]
 }

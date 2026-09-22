@@ -95,4 +95,19 @@ describe("search intent", () => {
     assert.equal(isPartNumberRelevant("M-856", "1856"), false);
     assert.equal(isPartNumberRelevant("1856", "M-1856"), true);
   });
+
+  it("preserves exact regressions for known catalogue part numbers", () => {
+    for (const q of ["856", "M-856", "1856", "M-865", "M-854", "101", "103", "113"]) {
+      const intent = parseSearchIntent(q);
+      assert.equal(intent.isPartNumberQuery, true, q);
+      assert.equal(intent.typesenseQuery, q);
+      assert.equal(intent.naturalLanguage, null);
+    }
+  });
+
+  it("keeps brand-style queries non-inventive", () => {
+    const pensol = parseSearchIntent("Pensol");
+    assert.equal(pensol.isPartNumberQuery, false);
+    assert.ok(pensol.typesenseQuery.toLowerCase().includes("pensol"));
+  });
 });

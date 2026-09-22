@@ -1,10 +1,11 @@
 import { randomUUID } from "node:crypto";
 import { desc, eq } from "drizzle-orm";
 import { NextResponse } from "next/server";
-import { supportTicket } from "@/drizzle/schema";
+import { order, supportTicket } from "@/drizzle/schema";
 import { generateTicketNumber, writeAuditLog } from "@/lib/audit";
 import { getServerSession } from "@/lib/auth-server";
 import { getDb } from "@/lib/db";
+import { denyIfMustChangePassword } from "@/lib/require-role";
 
 const CATEGORIES = new Set([
   "wrong_part",
@@ -21,6 +22,9 @@ export async function GET() {
   if (!session) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
+
+  const blocked = await denyIfMustChangePassword(session.user.id);
+  if (blocked) return blocked;
 
   const db = getDb();
   const isAdmin = session.user.role === "admin";
@@ -53,6 +57,9 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
+  const blocked = await denyIfMustChangePassword(session.user.id);
+  if (blocked) return blocked;
+
   const body = await request.json().catch(() => null);
   if (!body || typeof body !== "object") {
     return NextResponse.json({ error: "Invalid payload" }, { status: 400 });
@@ -81,6 +88,20 @@ export async function POST(request: Request) {
   }
 
   const db = getDb();
+
+  if (orderId && session.user.role !== "admin") {
+    const owned = await db.query.order.findFirst({
+      where: eq(order.id, orderId),
+      columns: { id: true, buyerId: true },
+    });
+    if (!owned || owned.buyerId !== session.user.id) {
+      return NextResponse.json(
+        { error: "orderId must refer to one of your orders" },
+        { status: 400 },
+      );
+    }
+  }
+
   const id = randomUUID();
   const ticketNumber = generateTicketNumber("SUP");
 

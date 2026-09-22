@@ -1,3 +1,9 @@
+import {
+  looksLikeNaturalLanguageQuery,
+  parseNaturalLanguageIntent,
+  type NaturalLanguageIntent,
+} from "./nl-search";
+
 export type IntentGroup = {
   key: string;
   synonyms: string[];
@@ -10,6 +16,8 @@ export type SearchIntent = {
   groups: IntentGroup[];
   isPartNumberQuery: boolean;
   hasProductIntent: boolean;
+  /** Present when deterministic NL / Hinglish normalization ran. */
+  naturalLanguage: NaturalLanguageIntent | null;
 };
 
 const PART_NUMBER_QUERY =
@@ -128,10 +136,16 @@ export function parseSearchIntent(query: string): SearchIntent {
       groups: [],
       isPartNumberQuery: true,
       hasProductIntent: false,
+      naturalLanguage: null,
     };
   }
 
-  const tokens = tokenize(originalQuery);
+  const naturalLanguage = looksLikeNaturalLanguageQuery(originalQuery)
+    ? parseNaturalLanguageIntent(originalQuery)
+    : null;
+  const workingQuery = naturalLanguage?.normalizedQuery || originalQuery;
+
+  const tokens = tokenize(workingQuery);
   const groups: IntentGroup[] = [];
   const typesenseParts: string[] = [];
   const seen = new Set<string>();
@@ -162,12 +176,45 @@ export function parseSearchIntent(query: string): SearchIntent {
     typesenseParts.push(token);
   }
 
+  // Promote multi-word product hints (door handle, water pump, …) as product groups.
+  if (naturalLanguage) {
+    for (const hint of naturalLanguage.productHints) {
+      const key = hint.toLowerCase();
+      if (seen.has(key)) continue;
+      seen.add(key);
+      groups.push({
+        key,
+        synonyms: [key, ...key.split(/\s+/)],
+        kind: "product",
+      });
+    }
+    if (naturalLanguage.side) {
+      const sideKey = naturalLanguage.side;
+      const sideSynonyms =
+        sideKey === "left" ? ["left", "lh", "left hand"] : ["right", "rh", "right hand"];
+      if (!seen.has(sideKey)) {
+        seen.add(sideKey);
+        groups.push({ key: sideKey, synonyms: sideSynonyms, kind: "product" });
+      }
+    }
+    if (naturalLanguage.position) {
+      const posKey = naturalLanguage.position;
+      const posSynonyms =
+        posKey === "front" ? ["front", "fr", "frt"] : ["rear", "rr", "back"];
+      if (!seen.has(posKey)) {
+        seen.add(posKey);
+        groups.push({ key: posKey, synonyms: posSynonyms, kind: "product" });
+      }
+    }
+  }
+
   return {
     originalQuery,
     typesenseQuery: typesenseParts.join(" ").trim() || originalQuery,
     groups,
     isPartNumberQuery: false,
     hasProductIntent: groups.some((group) => group.kind === "product"),
+    naturalLanguage,
   };
 }
 
@@ -226,6 +273,22 @@ export function scoreSearchDocument(
     productGroups.every((group) => groupMatches(titleHaystack, group));
 
   if (strict) score += 100;
+
+  // Verified-field boosts from NL hints (catalogue text only — never invent fitment).
+  const nl = intent.naturalLanguage;
+  if (nl) {
+    for (const brand of nl.brandHints) {
+      if (hasWholeToken(titleHaystack, brand)) score += 40;
+    }
+    for (const vehicle of nl.vehicleHints) {
+      if (hasWholeToken(titleHaystack, vehicle) || hasWholeToken(descriptionHaystack, vehicle)) {
+        score += 25;
+      }
+    }
+    for (const viscosity of nl.viscosityHints) {
+      if (hasWholeToken(titleHaystack, viscosity.toLowerCase())) score += 35;
+    }
+  }
 
   return {
     score,

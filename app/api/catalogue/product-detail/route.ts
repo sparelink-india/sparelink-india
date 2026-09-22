@@ -33,6 +33,7 @@ import {
   uniqueNonEmpty,
 } from "@/lib/product-detail-fields";
 import { getCustomerCatalogueImageUrl } from "@/lib/source-catalogue";
+import { isCustomerVisibleProduct } from "@/lib/ci-sync/types";
 
 type PartSpec = Record<string, unknown>;
 
@@ -110,6 +111,7 @@ export async function GET(request: NextRequest) {
         specifications: part.specifications,
         categoryName: partCategory.name,
         isPublished: part.isPublished,
+        approvalStatus: part.approvalStatus,
       })
       .from(part)
       .leftJoin(partCategory, eq(part.categoryId, partCategory.id))
@@ -121,12 +123,19 @@ export async function GET(request: NextRequest) {
       .limit(1);
 
     const dbPart = rows[0];
-    if (!dbPart || dbPart.isPublished === false) {
+    const session = await getServerSession();
+    const isAdmin = session?.user?.role === "admin";
+    if (
+      !dbPart ||
+      (!isAdmin &&
+        !isCustomerVisibleProduct({
+          isPublished: dbPart.isPublished,
+          approvalStatus: dbPart.approvalStatus,
+        }))
+    ) {
       return NextResponse.json({ error: "Product not found" }, { status: 404 });
     }
 
-    const session = await getServerSession();
-    const isAdmin = session?.user?.role === "admin";
     const pricing = await resolveStorefrontPricing(session);
     const revealPensolRates = session?.user?.role === "buyer";
     const pensolConfigs = await resolvePensolConfigsForUser(

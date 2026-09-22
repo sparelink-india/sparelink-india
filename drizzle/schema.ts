@@ -194,6 +194,8 @@ export const part = pgTable(
     seoTitle: text("seo_title"),
     seoDescription: text("seo_description"),
     isPublished: boolean("is_published").default(true).notNull(),
+    /** APPROVED | PENDING_ADMIN_APPROVAL | REJECTED — existing rows default APPROVED. */
+    approvalStatus: text("approval_status").default("APPROVED").notNull(),
     createdAt: timestamp("created_at").defaultNow().notNull(),
     updatedAt: timestamp("updated_at")
       .defaultNow()
@@ -205,6 +207,7 @@ export const part = pgTable(
     index("part_category_idx").on(table.categoryId),
     index("part_oem_number_idx").on(table.oemNumber),
     index("part_product_type_idx").on(table.productType),
+    index("part_approval_status_idx").on(table.approvalStatus),
   ],
 );
 
@@ -1439,5 +1442,79 @@ export const goodsReceiptItem = pgTable(
   (table) => [
     index("goods_receipt_item_receipt_idx").on(table.goodsReceiptId),
     index("goods_receipt_item_po_item_idx").on(table.purchaseOrderItemId),
+  ],
+);
+
+/**
+ * CI / manufacturer source catalogue rows — commercial SpareLink price lives on dealer_listing.
+ * Source price must never overwrite customer selling price.
+ */
+export const catalogueSourceItem = pgTable(
+  "catalogue_source_item",
+  {
+    id: text("id").primaryKey(),
+    sourceKey: text("source_key").notNull(),
+    sourceSku: text("source_sku").notNull(),
+    sourceId: text("source_id"),
+    name: text("name"),
+    manufacturer: text("manufacturer").default("ci").notNull(),
+    brand: text("brand"),
+    categoryName: text("category_name"),
+    oeCode: text("oe_code"),
+    sourcePricePaise: integer("source_price_paise"),
+    sourceImageUrl: text("source_image_url"),
+    sourceUrl: text("source_url"),
+    sourceHash: text("source_hash"),
+    sourceStatus: text("source_status").default("LIVE").notNull(),
+    approvalStatus: text("approval_status")
+      .default("PENDING_ADMIN_APPROVAL")
+      .notNull(),
+    partId: text("part_id").references(() => part.id, { onDelete: "set null" }),
+    lastSeenAt: timestamp("last_seen_at"),
+    sourcePriceChangedAt: timestamp("source_price_changed_at"),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+    updatedAt: timestamp("updated_at")
+      .defaultNow()
+      .$onUpdate(() => new Date())
+      .notNull(),
+  },
+  (table) => [
+    uniqueIndex("catalogue_source_item_source_sku_uidx").on(
+      table.sourceKey,
+      table.manufacturer,
+      table.sourceSku,
+    ),
+    index("catalogue_source_item_part_idx").on(table.partId),
+    index("catalogue_source_item_status_idx").on(table.sourceStatus),
+    index("catalogue_source_item_approval_idx").on(table.approvalStatus),
+  ],
+);
+
+/** Traceable CI sync runs — never interpret failed fetches as full catalogue deletion. */
+export const catalogueSyncRun = pgTable(
+  "catalogue_sync_run",
+  {
+    id: text("id").primaryKey(),
+    sourceKey: text("source_key").notNull(),
+    status: text("status").default("RUNNING").notNull(),
+    dryRun: boolean("dry_run").default(false).notNull(),
+    fetchComplete: boolean("fetch_complete").default(false).notNull(),
+    fetchedCount: integer("fetched_count").default(0).notNull(),
+    newCount: integer("new_count").default(0).notNull(),
+    updatedCount: integer("updated_count").default(0).notNull(),
+    unchangedCount: integer("unchanged_count").default(0).notNull(),
+    sourceRemovedCount: integer("source_removed_count").default(0).notNull(),
+    approvalPendingCount: integer("approval_pending_count").default(0).notNull(),
+    failedCount: integer("failed_count").default(0).notNull(),
+    errorSummary: text("error_summary"),
+    startedAt: timestamp("started_at").defaultNow().notNull(),
+    finishedAt: timestamp("finished_at"),
+    triggeredBy: text("triggered_by"),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+  },
+  (table) => [
+    index("catalogue_sync_run_source_idx").on(table.sourceKey),
+    index("catalogue_sync_run_status_idx").on(table.status),
+    index("catalogue_sync_run_started_idx").on(table.startedAt),
   ],
 );

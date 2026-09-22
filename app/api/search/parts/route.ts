@@ -6,6 +6,7 @@ import {
   partNumberDigits,
   rankSearchHits,
 } from "@/lib/search-intent";
+import { isCustomerVisibleProduct } from "@/lib/ci-sync/types";
 import { typesense } from "@/lib/typesense";
 import { getDb } from "@/lib/db";
 import { getServerSession } from "@/lib/auth-server";
@@ -364,8 +365,88 @@ export async function GET(request: NextRequest) {
 
     if (suggest) {
       const suggested = filterAutocompleteHits(intent, hits, documentFromHit, perPage);
+      const suggestSession = await getServerSession();
+      const suggestIsAdmin = suggestSession?.user?.role === "admin";
+
+      if (suggestIsAdmin) {
+        return NextResponse.json({
+          results: suggested.map((hit, index) => {
+            const doc = documentFromHit(hit);
+            return {
+              document: {
+                id: String((hit.document as PartDocument | undefined)?.id || doc.part_number || index),
+                part_number: doc.part_number,
+                name: doc.name,
+                brand: doc.brand,
+                category: doc.category,
+              },
+            };
+          }),
+          found: suggested.length,
+          page,
+          perPage,
+          mode: "suggest",
+          intent: intent.naturalLanguage
+            ? {
+                normalizedQuery: intent.typesenseQuery,
+                side: intent.naturalLanguage.side,
+                position: intent.naturalLanguage.position,
+                brandHints: intent.naturalLanguage.brandHints,
+                vehicleHints: intent.naturalLanguage.vehicleHints,
+                productHints: intent.naturalLanguage.productHints,
+              }
+            : null,
+        });
+      }
+
+      const suggestDocs = suggested.map(documentFromHit);
+      const suggestIds = [
+        ...new Set(
+          suggestDocs.map((doc) => doc.id).filter((id): id is string => Boolean(id)),
+        ),
+      ];
+      const suggestPartNumbers = [
+        ...new Set(
+          suggestDocs
+            .map((doc) => doc.part_number?.trim())
+            .filter((value): value is string => Boolean(value)),
+        ),
+      ];
+      const suggestConditions = [];
+      if (suggestIds.length) suggestConditions.push(inArray(part.id, suggestIds));
+      if (suggestPartNumbers.length) {
+        suggestConditions.push(inArray(part.partNumber, suggestPartNumbers));
+      }
+      const suggestDbParts = suggestConditions.length
+        ? await db
+            .select({
+              id: part.id,
+              partNumber: part.partNumber,
+              isPublished: part.isPublished,
+              approvalStatus: part.approvalStatus,
+            })
+            .from(part)
+            .where(or(...suggestConditions))
+        : [];
+      const suggestById = new Map(suggestDbParts.map((row) => [row.id, row]));
+      const suggestByNumber = new Map(
+        suggestDbParts.map((row) => [row.partNumber, row]),
+      );
+
+      const visibleSuggested = suggested.filter((hit) => {
+        const doc = documentFromHit(hit);
+        const row =
+          (doc.id ? suggestById.get(doc.id) : undefined) ||
+          (doc.part_number ? suggestByNumber.get(doc.part_number) : undefined);
+        if (!row) return false;
+        return isCustomerVisibleProduct({
+          isPublished: row.isPublished,
+          approvalStatus: row.approvalStatus,
+        });
+      });
+
       return NextResponse.json({
-        results: suggested.map((hit, index) => {
+        results: visibleSuggested.map((hit, index) => {
           const doc = documentFromHit(hit);
           return {
             document: {
@@ -377,10 +458,20 @@ export async function GET(request: NextRequest) {
             },
           };
         }),
-        found: suggested.length,
+        found: visibleSuggested.length,
         page,
         perPage,
         mode: "suggest",
+        intent: intent.naturalLanguage
+          ? {
+              normalizedQuery: intent.typesenseQuery,
+              side: intent.naturalLanguage.side,
+              position: intent.naturalLanguage.position,
+              brandHints: intent.naturalLanguage.brandHints,
+              vehicleHints: intent.naturalLanguage.vehicleHints,
+              productHints: intent.naturalLanguage.productHints,
+            }
+          : null,
       });
     }
 
@@ -419,6 +510,7 @@ export async function GET(request: NextRequest) {
             brand: part.brand,
             specifications: part.specifications,
             isPublished: part.isPublished,
+            approvalStatus: part.approvalStatus,
           })
           .from(part)
           .where(or(...partConditions))
@@ -438,7 +530,16 @@ export async function GET(request: NextRequest) {
       ...new Set(
         documents
           .map((doc) => resolveDbPart(doc)?.id)
-          .filter((id): id is string => Boolean(id)),
+          .filter((id): id is string => Boolean(id))
+          .filter((id) => {
+            if (isAdmin) return true;
+            const row = dbPartById.get(id);
+            if (!row) return false;
+            return isCustomerVisibleProduct({
+              isPublished: row.isPublished,
+              approvalStatus: row.approvalStatus,
+            });
+          }),
       ),
     ];
 
@@ -517,8 +618,19 @@ export async function GET(request: NextRequest) {
     const results = rankedHits
       .filter((hit) => {
         const doc = (hit.document as PartDocument | undefined) ?? {};
-        if (!compatibleIdSet) return true;
         const dbPart = resolveDbPart(doc);
+        if (!isAdmin) {
+          if (!dbPart) return false;
+          if (
+            !isCustomerVisibleProduct({
+              isPublished: dbPart.isPublished,
+              approvalStatus: dbPart.approvalStatus,
+            })
+          ) {
+            return false;
+          }
+        }
+        if (!compatibleIdSet) return true;
         return dbPart ? compatibleIdSet.has(dbPart.id) : false;
       })
       .map((hit) => {
