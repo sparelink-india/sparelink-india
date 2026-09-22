@@ -1036,6 +1036,10 @@ export const stockAdjustment = pgTable(
     delta: integer("delta").notNull(),
     reason: text("reason").notNull(),
     warehouseCode: text("warehouse_code").default("MAIN").notNull(),
+    goodsReceiptId: text("goods_receipt_id"),
+    goodsReceiptItemId: text("goods_receipt_item_id"),
+    referenceType: text("reference_type"),
+    referenceId: text("reference_id"),
     createdAt: timestamp("created_at").defaultNow().notNull(),
   },
   (table) => [
@@ -1162,6 +1166,8 @@ export const purchaseOrderItem = pgTable(
     partName: text("part_name").notNull(),
     sku: text("sku"),
     quantity: integer("quantity").notNull(),
+    /** Cumulative confirmed goods-receipt quantity. PO create leaves this at 0. */
+    receivedQuantity: integer("received_quantity").default(0).notNull(),
     unitCostPaise: integer("unit_cost_paise").notNull(),
     gstRate: integer("gst_rate").default(18).notNull(),
     lineGstPaise: integer("line_gst_paise").default(0).notNull(),
@@ -1259,6 +1265,183 @@ export const orderShipment = pgTable(
   (table) => [
     index("order_shipment_order_idx").on(table.orderId),
     index("order_shipment_tracking_idx").on(table.trackingNumber),
+  ],
+);
+
+/**
+ * Admin-configurable pricing categories (dealer/customer groups).
+ * Codes may align with dealer.price_group; no commercial % invented here.
+ */
+export const pricingCategory = pgTable(
+  "pricing_category",
+  {
+    id: text("id").primaryKey(),
+    code: text("code").notNull().unique(),
+    name: text("name").notNull(),
+    description: text("description"),
+    isActive: boolean("is_active").default(true).notNull(),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+    updatedAt: timestamp("updated_at")
+      .defaultNow()
+      .$onUpdate(() => new Date())
+      .notNull(),
+  },
+  (table) => [index("pricing_category_active_idx").on(table.isActive)],
+);
+
+/**
+ * Configurable pricing rules. discount_percent is null until admin sets it.
+ * Hierarchy (highest first): customer → dealer → pricing_category → listing.
+ */
+export const pricingRule = pgTable(
+  "pricing_rule",
+  {
+    id: text("id").primaryKey(),
+    name: text("name").notNull(),
+    scope: text("scope").notNull(),
+    pricingCategoryId: text("pricing_category_id").references(
+      () => pricingCategory.id,
+      { onDelete: "set null" },
+    ),
+    customerUserId: text("customer_user_id").references(() => user.id, {
+      onDelete: "cascade",
+    }),
+    dealerId: text("dealer_id").references(() => dealer.id, {
+      onDelete: "cascade",
+    }),
+    discountPercent: integer("discount_percent"),
+    isActive: boolean("is_active").default(true).notNull(),
+    validFrom: timestamp("valid_from"),
+    validUntil: timestamp("valid_until"),
+    notes: text("notes"),
+    createdByUserId: text("created_by_user_id").references(() => user.id, {
+      onDelete: "set null",
+    }),
+    updatedByUserId: text("updated_by_user_id").references(() => user.id, {
+      onDelete: "set null",
+    }),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+    updatedAt: timestamp("updated_at")
+      .defaultNow()
+      .$onUpdate(() => new Date())
+      .notNull(),
+  },
+  (table) => [
+    index("pricing_rule_scope_idx").on(table.scope),
+    index("pricing_rule_customer_idx").on(table.customerUserId),
+    index("pricing_rule_dealer_idx").on(table.dealerId),
+    index("pricing_rule_category_idx").on(table.pricingCategoryId),
+    index("pricing_rule_active_idx").on(table.isActive),
+  ],
+);
+
+export const pricingRuleAudit = pgTable(
+  "pricing_rule_audit",
+  {
+    id: text("id").primaryKey(),
+    pricingRuleId: text("pricing_rule_id")
+      .notNull()
+      .references(() => pricingRule.id, { onDelete: "cascade" }),
+    actorUserId: text("actor_user_id").references(() => user.id, {
+      onDelete: "set null",
+    }),
+    action: text("action").notNull(),
+    oldValues: text("old_values"),
+    newValues: text("new_values"),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+  },
+  (table) => [index("pricing_rule_audit_rule_idx").on(table.pricingRuleId)],
+);
+
+/**
+ * Immutable dealer AR ledger. Outstanding is derived from entries.
+ * Existing dealers start with zero ledger rows (neutral), never invented balances.
+ */
+export const partyLedgerEntry = pgTable(
+  "party_ledger_entry",
+  {
+    id: text("id").primaryKey(),
+    dealerId: text("dealer_id")
+      .notNull()
+      .references(() => dealer.id, { onDelete: "restrict" }),
+    entryType: text("entry_type").notNull(),
+    amountPaise: integer("amount_paise").notNull(),
+    balanceAfterPaise: integer("balance_after_paise").notNull(),
+    referenceType: text("reference_type"),
+    referenceId: text("reference_id"),
+    externalReference: text("external_reference"),
+    notes: text("notes"),
+    idempotencyKey: text("idempotency_key").unique(),
+    createdByUserId: text("created_by_user_id").references(() => user.id, {
+      onDelete: "set null",
+    }),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+  },
+  (table) => [
+    index("party_ledger_dealer_idx").on(table.dealerId),
+    index("party_ledger_created_idx").on(table.createdAt),
+    index("party_ledger_ref_idx").on(table.referenceType, table.referenceId),
+  ],
+);
+
+/** Confirmed goods receipt against a purchase order (stock increases here). */
+export const goodsReceipt = pgTable(
+  "goods_receipt",
+  {
+    id: text("id").primaryKey(),
+    receiptNumber: text("receipt_number").notNull().unique(),
+    purchaseOrderId: text("purchase_order_id")
+      .notNull()
+      .references(() => purchaseOrder.id, { onDelete: "restrict" }),
+    supplierId: text("supplier_id")
+      .notNull()
+      .references(() => supplier.id, { onDelete: "restrict" }),
+    warehouseCode: text("warehouse_code").default("MAIN").notNull(),
+    status: text("status").default("confirmed").notNull(),
+    idempotencyKey: text("idempotency_key").unique(),
+    notes: text("notes"),
+    receivedByUserId: text("received_by_user_id").references(() => user.id, {
+      onDelete: "set null",
+    }),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+    updatedAt: timestamp("updated_at")
+      .defaultNow()
+      .$onUpdate(() => new Date())
+      .notNull(),
+  },
+  (table) => [
+    index("goods_receipt_po_idx").on(table.purchaseOrderId),
+    index("goods_receipt_supplier_idx").on(table.supplierId),
+    index("goods_receipt_status_idx").on(table.status),
+  ],
+);
+
+export const goodsReceiptItem = pgTable(
+  "goods_receipt_item",
+  {
+    id: text("id").primaryKey(),
+    goodsReceiptId: text("goods_receipt_id")
+      .notNull()
+      .references(() => goodsReceipt.id, { onDelete: "cascade" }),
+    purchaseOrderItemId: text("purchase_order_item_id")
+      .notNull()
+      .references(() => purchaseOrderItem.id, { onDelete: "restrict" }),
+    dealerListingId: text("dealer_listing_id").references(() => dealerListing.id, {
+      onDelete: "set null",
+    }),
+    partId: text("part_id").references(() => part.id, { onDelete: "set null" }),
+    partNumber: text("part_number").notNull(),
+    partName: text("part_name").notNull(),
+    quantityReceived: integer("quantity_received").notNull(),
+    stockAdjustmentId: text("stock_adjustment_id").references(
+      () => stockAdjustment.id,
+      { onDelete: "set null" },
+    ),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+  },
+  (table) => [
+    index("goods_receipt_item_receipt_idx").on(table.goodsReceiptId),
+    index("goods_receipt_item_po_item_idx").on(table.purchaseOrderItemId),
   ],
 );
 

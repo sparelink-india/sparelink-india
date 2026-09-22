@@ -101,10 +101,16 @@ export async function loadActiveListingsByPartNumbers(partNumbers: string[]) {
 export function resolveSalesLineFromListing(
   listing: NonNullable<Awaited<ReturnType<typeof loadActiveListingById>>>,
   quantity: number,
+  unitInclusiveOverridePaise?: number,
 ): ResolvedListingLine {
   const gstRate = extractGSTRate(listing.partDescription);
+  const unit =
+    typeof unitInclusiveOverridePaise === "number" &&
+    Number.isFinite(unitInclusiveOverridePaise)
+      ? Math.max(0, Math.round(unitInclusiveOverridePaise))
+      : listing.pricePaise;
   const priced = computeInclusiveLine({
-    unitInclusivePaise: listing.pricePaise,
+    unitInclusivePaise: unit,
     quantity,
     gstRate,
   });

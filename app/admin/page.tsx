@@ -233,6 +233,42 @@ export default function AdminDashboard() {
                 </Link>
 
                 <Link
+                  href="/admin/goods-receipts"
+                  className="rounded-lg border border-zinc-300 bg-white p-6 hover:bg-zinc-100"
+                >
+                  <p className="text-sm font-semibold text-zinc-900">
+                    Goods Receipts
+                  </p>
+                  <p className="mt-1 text-xs text-zinc-600">
+                    Receive PO lines into MAIN stock
+                  </p>
+                </Link>
+
+                <Link
+                  href="/admin/pricing-rules"
+                  className="rounded-lg border border-zinc-300 bg-white p-6 hover:bg-zinc-100"
+                >
+                  <p className="text-sm font-semibold text-zinc-900">
+                    Pricing Rules
+                  </p>
+                  <p className="mt-1 text-xs text-zinc-600">
+                    Categories and dealer/customer rules
+                  </p>
+                </Link>
+
+                <Link
+                  href="/admin/credit"
+                  className="rounded-lg border border-zinc-300 bg-white p-6 hover:bg-zinc-100"
+                >
+                  <p className="text-sm font-semibold text-zinc-900">
+                    Credit Ledger
+                  </p>
+                  <p className="mt-1 text-xs text-zinc-600">
+                    Limits, outstanding, payments
+                  </p>
+                </Link>
+
+                <Link
                   href="/admin/quotations"
                   className="rounded-lg border border-zinc-300 bg-white p-6 hover:bg-zinc-100"
                 >
