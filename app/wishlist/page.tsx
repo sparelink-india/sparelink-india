@@ -20,6 +20,8 @@ type WishlistItem = {
   discountPercent?: number | null;
   gstRate?: number | null;
   imageUrl?: string | null;
+  thumbUrl?: string | null;
+  mediumUrl?: string | null;
 };
 
 export default function WishlistPage() {
@@ -118,11 +120,20 @@ export default function WishlistPage() {
               <div className="aspect-[4/3] overflow-hidden rounded-xl bg-slate-100">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
-                  src={item.imageUrl || "/images/products/placeholder.svg"}
+                  src={item.thumbUrl || item.imageUrl || "/images/products/placeholder.svg"}
                   alt={item.partName || "Part"}
+                  width={640}
+                  height={480}
+                  loading="lazy"
+                  decoding="async"
                   className="h-full w-full object-cover"
                   onError={(event) => {
-                    (event.currentTarget as HTMLImageElement).src = "/images/products/placeholder.svg";
+                    const el = event.currentTarget as HTMLImageElement;
+                    if (item.imageUrl && el.src !== item.imageUrl) {
+                      el.src = item.imageUrl;
+                      return;
+                    }
+                    el.src = "/images/products/placeholder.svg";
                   }}
                 />
               </div>

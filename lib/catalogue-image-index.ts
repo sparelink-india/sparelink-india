@@ -18,6 +18,21 @@ function withCatalogueImageOrigin(publicPath: string): string {
 }
 
 let cachedIndex: Record<string, string> | null = null;
+let cachedDerivatives: Record<string, CatalogueDerivativeRecord> | null = null;
+
+type CatalogueDerivativeRecord = {
+  thumb?: boolean;
+  medium?: boolean;
+  ext?: string;
+};
+
+export type CatalogueImageUrls = {
+  imageUrl: string;
+  /** ~400px WebP when generated; null when no derivative exists (use imageUrl). */
+  thumbUrl: string | null;
+  /** ~1200px WebP when generated; null when no derivative exists (use imageUrl). */
+  mediumUrl: string | null;
+};
 
 function loadCatalogueImageIndex(): Record<string, string> {
   if (cachedIndex) return cachedIndex;
@@ -31,6 +46,20 @@ function loadCatalogueImageIndex(): Record<string, string> {
     cachedIndex = {};
   }
   return cachedIndex;
+}
+
+function loadCatalogueDerivatives(): Record<string, CatalogueDerivativeRecord> {
+  if (cachedDerivatives) return cachedDerivatives;
+  try {
+    const raw = readFileSync(
+      path.join(process.cwd(), "data", "catalogue-image-derivatives.json"),
+      "utf8",
+    );
+    cachedDerivatives = JSON.parse(raw) as Record<string, CatalogueDerivativeRecord>;
+  } catch {
+    cachedDerivatives = {};
+  }
+  return cachedDerivatives;
 }
 
 function indexExt(key: string): string | null {
@@ -96,26 +125,71 @@ export function catalogueImagePublicPath(sku: string): string | null {
   );
 }
 
+function derivativePublicPath(
+  key: string,
+  variant: "thumb" | "medium",
+): string | null {
+  const record = loadCatalogueDerivatives()[key];
+  if (!record) return null;
+  if (variant === "thumb" && !record.thumb) return null;
+  if (variant === "medium" && !record.medium) return null;
+  const folder = variant === "thumb" ? "thumbs" : "medium";
+  const ext =
+    typeof record.ext === "string" && record.ext.startsWith(".") ? record.ext : ".webp";
+  return withCatalogueImageOrigin(
+    `/catalogue-images/${folder}/${encodeURIComponent(key)}${ext}`,
+  );
+}
+
+/** ~400px listing derivative when generated; otherwise null. */
+export function catalogueThumbPublicPath(sku: string): string | null {
+  const key = resolveCatalogueImageKey(sku);
+  if (!key) return null;
+  return derivativePublicPath(key, "thumb");
+}
+
+/** ~1200px detail derivative when generated; otherwise null. */
+export function catalogueMediumPublicPath(sku: string): string | null {
+  const key = resolveCatalogueImageKey(sku);
+  if (!key) return null;
+  return derivativePublicPath(key, "medium");
+}
+
+/** Original + optional thumb/medium URLs for a single catalogue key. */
+export function catalogueImageUrls(sku: string): CatalogueImageUrls | null {
+  const imageUrl = catalogueImagePublicPath(sku);
+  if (!imageUrl) return null;
+  return {
+    imageUrl,
+    thumbUrl: catalogueThumbPublicPath(sku),
+    mediumUrl: catalogueMediumPublicPath(sku),
+  };
+}
+
 function escapeRegExp(value: string): string {
   return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
 
-/** Additional official images stored as SKU.2, SKU.3, … beside the primary SKU file. */
-export function catalogueGalleryPublicPaths(sku: string): string[] {
+function galleryKeysForSku(sku: string): string[] {
   const safe = resolveCatalogueImageKey(sku);
   if (!safe) return [];
   const index = loadCatalogueImageIndex();
   const extra = new RegExp(`^${escapeRegExp(safe)}(?:\\.\\d+|_\\d+)$`, "i");
-  const keys = Object.keys(index)
+  return Object.keys(index)
     .filter((key) => key === safe || extra.test(key))
     .sort((a, b) => {
       if (a === safe) return -1;
       if (b === safe) return 1;
       return a.localeCompare(b, undefined, { numeric: true });
     });
+}
+
+/** Additional official images stored as SKU.2, SKU.3, … beside the primary SKU file. */
+export function catalogueGalleryPublicPaths(sku: string): string[] {
+  const index = loadCatalogueImageIndex();
   const urls: string[] = [];
   const seen = new Set<string>();
-  for (const key of keys) {
+  for (const key of galleryKeysForSku(sku)) {
     const ext = index[key];
     if (typeof ext !== "string" || !ext.startsWith(".")) continue;
     const url = withCatalogueImageOrigin(
@@ -126,4 +200,26 @@ export function catalogueGalleryPublicPaths(sku: string): string[] {
     urls.push(url);
   }
   return urls;
+}
+
+/** Gallery originals with matching thumb/medium URLs when derivatives exist. */
+export function catalogueGalleryImageUrls(sku: string): CatalogueImageUrls[] {
+  const index = loadCatalogueImageIndex();
+  const out: CatalogueImageUrls[] = [];
+  const seen = new Set<string>();
+  for (const key of galleryKeysForSku(sku)) {
+    const ext = index[key];
+    if (typeof ext !== "string" || !ext.startsWith(".")) continue;
+    const imageUrl = withCatalogueImageOrigin(
+      `/catalogue-images/${encodeURIComponent(key)}${ext}`,
+    );
+    if (seen.has(imageUrl)) continue;
+    seen.add(imageUrl);
+    out.push({
+      imageUrl,
+      thumbUrl: derivativePublicPath(key, "thumb"),
+      mediumUrl: derivativePublicPath(key, "medium"),
+    });
+  }
+  return out;
 }

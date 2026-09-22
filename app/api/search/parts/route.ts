@@ -10,7 +10,8 @@ import { isCustomerVisibleProduct } from "@/lib/ci-sync/types";
 import { typesense } from "@/lib/typesense";
 import { getDb } from "@/lib/db";
 import { getServerSession } from "@/lib/auth-server";
-import { getCustomerCatalogueImageUrl, loadSourceCatalogue } from "@/lib/source-catalogue";
+import { catalogueImageUrls } from "@/lib/catalogue-image-index";
+import { loadSourceCatalogue } from "@/lib/source-catalogue";
 import { extractGSTRate } from "@/lib/gst";
 import { resolveStorefrontPricing } from "@/lib/customer-discount";
 import { publicListingPrice } from "@/lib/party-pricing";
@@ -77,11 +78,11 @@ function parsePartSpec(raw: string | null | undefined): PartSpec {
   }
 }
 
-function resolveImageUrl(...candidates: Array<string | null | undefined>): string | null {
+function resolveImageUrls(...candidates: Array<string | null | undefined>) {
   for (const candidate of candidates) {
     if (!candidate) continue;
-    const url = getCustomerCatalogueImageUrl(candidate);
-    if (url) return url;
+    const urls = catalogueImageUrls(candidate);
+    if (urls) return urls;
   }
   return null;
 }
@@ -648,7 +649,7 @@ export async function GET(request: NextRequest) {
           gstFromSpec != null && !Number.isNaN(gstFromSpec)
             ? gstFromSpec
             : extractGSTRate(dbPart?.description || doc.description);
-        const imageUrl = resolveImageUrl(
+        const imageUrls = resolveImageUrls(
           partListings[0]?.sku,
           dbPart?.partNumber,
           doc.part_number,
@@ -664,8 +665,15 @@ export async function GET(request: NextRequest) {
             description: dbPart?.description || doc.description,
             brand: dbPart?.brand || doc.brand,
           },
-          imageUrl,
+          imageUrl: imageUrls?.imageUrl ?? null,
+          thumbUrl: imageUrls?.thumbUrl ?? null,
+          mediumUrl: imageUrls?.mediumUrl ?? null,
           listings: partListings.map((listing) => {
+            const listingImages = resolveImageUrls(
+              listing.sku,
+              dbPart?.partNumber,
+              doc.part_number,
+            );
             const pensol = isPensolProduct({
               brand: dbPart?.brand || doc.brand,
               name: dbPart?.name || doc.name,
@@ -737,11 +745,9 @@ export async function GET(request: NextRequest) {
             moq: spec.moq ?? null,
             uom: spec.uom ?? null,
             hsn: spec.hsn ?? null,
-            imageUrl: resolveImageUrl(
-              listing.sku,
-              dbPart?.partNumber,
-              doc.part_number,
-            ),
+            imageUrl: listingImages?.imageUrl ?? null,
+            thumbUrl: listingImages?.thumbUrl ?? null,
+            mediumUrl: listingImages?.mediumUrl ?? null,
           };
           }),
           compatibleVehicles: dbPart

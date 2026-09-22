@@ -20,11 +20,22 @@ function stockLabel(
   return t("product.inStock", { count: String(stock) });
 }
 
+function listingImageSrc(hit: SearchHit, listing: SearchListing | undefined) {
+  return (
+    hit.thumbUrl ||
+    listing?.thumbUrl ||
+    hit.imageUrl ||
+    listing?.imageUrl ||
+    "/images/products/placeholder.svg"
+  );
+}
+
 export function SearchProductCard({
   hit,
   query,
   addingId,
   layout = "grid",
+  index = 0,
   onOpen,
   onAddToCart,
 }: {
@@ -32,6 +43,8 @@ export function SearchProductCard({
   query: string;
   addingId: string;
   layout?: "grid" | "list";
+  /** Card index in the current page; first few stay eager for first paint. */
+  index?: number;
   onOpen: () => void;
   onAddToCart: (listingId: string, name: string) => void;
 }) {
@@ -46,8 +59,10 @@ export function SearchProductCard({
   );
   const canAdd =
     Boolean(listing) && listing?.status === "active" && (listing?.stock ?? 0) > 0 && priced;
-  const image = hit.imageUrl || listing?.imageUrl || "/images/products/placeholder.svg";
+  const image = listingImageSrc(hit, listing);
   const stock = stockLabel(listing, priced, t);
+  const eager = index < 4;
+  const loading = eager ? "eager" : "lazy";
 
   const priceBlock = listing ? (
     listing.isPensol ? (
@@ -75,7 +90,24 @@ export function SearchProductCard({
       <article className="flex min-w-0 flex-col gap-3 border-b border-slate-100 bg-white px-3 py-3 sm:flex-row sm:px-4">
         <button type="button" className="h-20 w-20 shrink-0 overflow-hidden rounded-lg bg-slate-50" onClick={onOpen}>
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={image} alt="" className="h-full w-full object-contain p-1" />
+          <img
+            src={image}
+            alt=""
+            width={80}
+            height={80}
+            loading={loading}
+            decoding="async"
+            className="h-full w-full object-contain p-1"
+            onError={(event) => {
+              const el = event.currentTarget as HTMLImageElement;
+              const original = hit.imageUrl || listing?.imageUrl;
+              if (original && el.src !== original) {
+                el.src = original;
+                return;
+              }
+              el.src = "/images/products/placeholder.svg";
+            }}
+          />
         </button>
         <div className="min-w-0 flex-1">
           <button type="button" className="block w-full text-left text-sm font-bold text-slate-950 hover:text-[#7a1233]" onClick={onOpen}>
@@ -112,7 +144,24 @@ export function SearchProductCard({
     <article className="flex h-full flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition hover:shadow-md">
       <button type="button" className="relative aspect-square w-full bg-slate-50" onClick={onOpen} aria-label={title}>
         {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src={image} alt="" className="h-full w-full object-contain p-3" />
+        <img
+          src={image}
+          alt=""
+          width={400}
+          height={400}
+          loading={loading}
+          decoding="async"
+          className="h-full w-full object-contain p-3"
+          onError={(event) => {
+            const el = event.currentTarget as HTMLImageElement;
+            const original = hit.imageUrl || listing?.imageUrl;
+            if (original && el.src !== original) {
+              el.src = original;
+              return;
+            }
+            el.src = "/images/products/placeholder.svg";
+          }}
+        />
       </button>
       <div className="flex flex-1 flex-col p-3">
         <button

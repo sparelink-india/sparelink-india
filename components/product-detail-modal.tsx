@@ -40,6 +40,8 @@ type DetailPayload = {
   };
   brandLogo: string | null;
   images: string[];
+  thumbUrls?: Array<string | null>;
+  mediumUrls?: Array<string | null>;
   has360: boolean;
   cards: Array<{ label: string; value: string }>;
   oemNumbers?: string[];
@@ -188,7 +190,13 @@ export function ProductDetailModal({
   const stock = listing?.stock ?? 0;
   const canAdd = Boolean(listing) && listing?.status === "active" && stock > 0 && priced;
   const images = payload?.images?.length ? payload.images : ["/images/products/placeholder.svg"];
-  const mainSrc = view360 ? images[frame] || images[0] : images[imageIndex] || images[0];
+  const thumbUrls = payload?.thumbUrls?.length === images.length ? payload.thumbUrls : images.map(() => null);
+  const mediumUrls =
+    payload?.mediumUrls?.length === images.length ? payload.mediumUrls : images.map(() => null);
+  const activeIndex = view360 ? frame : imageIndex;
+  const mainOriginal = images[activeIndex] || images[0];
+  const mainMedium = mediumUrls[activeIndex] || images[activeIndex] || images[0];
+  const mainSrc = mainMedium || mainOriginal;
   const titleId = "product-detail-title";
   const stockUi = stockState(listing, t);
   const whatsappHref = useMemo(() => {
@@ -362,10 +370,13 @@ export function ProductDetailModal({
                       >
                         {/* eslint-disable-next-line @next/next/no-img-element */}
                         <img
-                          src={src}
+                          src={thumbUrls[index] || src}
                           alt=""
                           draggable={false}
                           loading={index === 0 ? "eager" : "lazy"}
+                          decoding="async"
+                          width={92}
+                          height={92}
                           className="h-full w-full object-contain p-1"
                         />
                       </button>
@@ -404,10 +415,15 @@ export function ProductDetailModal({
                       alt={payload.part.title}
                       draggable={false}
                       loading="eager"
+                      decoding="async"
                       className="h-full max-h-[42vh] w-full select-none object-contain p-6 md:max-h-none"
                       onError={(event) => {
-                        (event.currentTarget as HTMLImageElement).src =
-                          "/images/products/placeholder.svg";
+                        const el = event.currentTarget as HTMLImageElement;
+                        if (mainOriginal && el.src !== mainOriginal) {
+                          el.src = mainOriginal;
+                          return;
+                        }
+                        el.src = "/images/products/placeholder.svg";
                       }}
                     />
 
@@ -511,7 +527,16 @@ export function ProductDetailModal({
                           }`}
                         >
                           {/* eslint-disable-next-line @next/next/no-img-element */}
-                          <img src={src} alt="" draggable={false} className="h-full w-full object-contain p-1" />
+                          <img
+                            src={thumbUrls[index] || src}
+                            alt=""
+                            draggable={false}
+                            loading="lazy"
+                            decoding="async"
+                            width={56}
+                            height={56}
+                            className="h-full w-full object-contain p-1"
+                          />
                         </button>
                       ))}
                     </div>
@@ -761,7 +786,7 @@ export function ProductDetailModal({
           >
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
-              src={mainSrc}
+              src={mainOriginal || mainSrc}
               alt={payload?.part.title || ""}
               className="max-h-full max-w-full object-contain"
             />

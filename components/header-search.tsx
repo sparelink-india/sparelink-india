@@ -25,6 +25,8 @@ type Listing = {
   listInclusivePaise?: number;
   netInclusivePaise?: number;
   imageUrl?: string | null;
+  thumbUrl?: string | null;
+  mediumUrl?: string | null;
 };
 
 export type HeaderSearchProduct = {
@@ -34,6 +36,8 @@ export type HeaderSearchProduct = {
   brand: string;
   category: string;
   imageUrl: string | null;
+  thumbUrl: string | null;
+  mediumUrl: string | null;
   listing?: Listing;
 };
 
@@ -102,6 +106,8 @@ function mapHits(results: unknown, fallbackName: string): HeaderSearchProduct[] 
     const row = (hit ?? {}) as {
       document?: Record<string, unknown>;
       imageUrl?: string | null;
+      thumbUrl?: string | null;
+      mediumUrl?: string | null;
       listings?: Listing[];
     };
     const doc = row.document ?? {};
@@ -117,6 +123,14 @@ function mapHits(results: unknown, fallbackName: string): HeaderSearchProduct[] 
       imageUrl:
         (typeof row.imageUrl === "string" && row.imageUrl) ||
         (typeof listing?.imageUrl === "string" && listing.imageUrl) ||
+        null,
+      thumbUrl:
+        (typeof row.thumbUrl === "string" && row.thumbUrl) ||
+        (typeof listing?.thumbUrl === "string" && listing.thumbUrl) ||
+        null,
+      mediumUrl:
+        (typeof row.mediumUrl === "string" && row.mediumUrl) ||
+        (typeof listing?.mediumUrl === "string" && listing.mediumUrl) ||
         null,
       listing,
     };
@@ -604,7 +618,11 @@ export function HeaderSearchField({
                         >
                           <span className="relative h-16 w-16 shrink-0 overflow-hidden rounded-xl border border-slate-200 bg-slate-50 sm:h-[88px] sm:w-[88px]">
                             <Image
-                              src={item.imageUrl || "/images/products/placeholder.svg"}
+                              src={
+                                item.thumbUrl ||
+                                item.imageUrl ||
+                                "/images/products/placeholder.svg"
+                              }
                               alt=""
                               fill
                               sizes="88px"

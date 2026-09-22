@@ -20,6 +20,8 @@ type Listing = {
   gstRate?: number | null;
   stock: number | null;
   imageUrl?: string | null;
+  thumbUrl?: string | null;
+  mediumUrl?: string | null;
   sku?: string | null;
 };
 
@@ -32,6 +34,8 @@ type SearchHit = {
     category?: string;
   };
   imageUrl?: string | null;
+  thumbUrl?: string | null;
+  mediumUrl?: string | null;
   listings?: Listing[];
 };
 
@@ -234,12 +238,27 @@ export function CategoryResults({
                       {/* eslint-disable-next-line @next/next/no-img-element */}
                       <img
                         src={
+                          hit.thumbUrl ||
+                          listing?.thumbUrl ||
                           hit.imageUrl ||
                           listing?.imageUrl ||
                           "/images/products/placeholder.svg"
                         }
                         alt={partData.name || t("product.partFallback")}
+                        width={250}
+                        height={240}
+                        loading={index < 4 ? "eager" : "lazy"}
+                        decoding="async"
                         className="h-full w-full object-contain p-2"
+                        onError={(event) => {
+                          const el = event.currentTarget as HTMLImageElement;
+                          const original = hit.imageUrl || listing?.imageUrl;
+                          if (original && el.src !== original) {
+                            el.src = original;
+                            return;
+                          }
+                          el.src = "/images/products/placeholder.svg";
+                        }}
                       />
                     </button>
                     <div className="min-w-0 flex-1 overflow-hidden">

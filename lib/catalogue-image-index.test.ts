@@ -1,7 +1,13 @@
 import assert from "node:assert/strict";
 import { afterEach, describe, it } from "node:test";
 
-import { catalogueGalleryPublicPaths, catalogueImagePublicPath } from "./catalogue-image-index";
+import {
+  catalogueGalleryPublicPaths,
+  catalogueImagePublicPath,
+  catalogueImageUrls,
+  catalogueMediumPublicPath,
+  catalogueThumbPublicPath,
+} from "./catalogue-image-index";
 import { getCustomerCatalogueImageUrl } from "./source-catalogue";
 
 const ORIGIN_KEY = "CATALOGUE_IMAGE_ORIGIN";
@@ -136,5 +142,31 @@ describe("catalogue image urls", () => {
     assert.match(g856[0] || "", /\/catalogue-images\/M-856\./);
     assert.match(g848[0] || "", /\/catalogue-images\/M-848\./);
     assert.doesNotMatch(g865.join(" "), /M-865_A/);
+  });
+
+  it("exposes thumb/medium urls only when derivatives are indexed", () => {
+    delete process.env[ORIGIN_KEY];
+    const urls = catalogueImageUrls("M-648");
+    if (!urls) return;
+    assert.match(urls.imageUrl, /\/catalogue-images\/M-648\.png$/);
+    if (urls.thumbUrl) {
+      assert.match(urls.thumbUrl, /\/catalogue-images\/thumbs\/M-648\.webp$/);
+      assert.equal(urls.thumbUrl, catalogueThumbPublicPath("M-648"));
+    }
+    if (urls.mediumUrl) {
+      assert.match(urls.mediumUrl, /\/catalogue-images\/medium\/M-648\.webp$/);
+      assert.equal(urls.mediumUrl, catalogueMediumPublicPath("M-648"));
+    }
+  });
+
+  it("keeps imageUrl unchanged when a derivative exists", () => {
+    process.env[ORIGIN_KEY] = "https://assets.sparelinkindia.com";
+    const urls = catalogueImageUrls("M-648");
+    if (!urls?.thumbUrl) return;
+    assert.match(urls.imageUrl, /^https:\/\/assets\.sparelinkindia\.com\/catalogue-images\/M-648\.png$/);
+    assert.match(
+      urls.thumbUrl,
+      /^https:\/\/assets\.sparelinkindia\.com\/catalogue-images\/thumbs\/M-648\.webp$/,
+    );
   });
 });

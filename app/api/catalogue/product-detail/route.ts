@@ -13,7 +13,7 @@ import {
 } from "@/drizzle/schema";
 import { getServerSession } from "@/lib/auth-server";
 import { getBrandLogo } from "@/lib/brand-logo";
-import { catalogueGalleryPublicPaths } from "@/lib/catalogue-image-index";
+import { catalogueGalleryImageUrls } from "@/lib/catalogue-image-index";
 import { resolveStorefrontPricing } from "@/lib/customer-discount";
 import { getDb } from "@/lib/db";
 import { extractGSTRate } from "@/lib/gst";
@@ -32,7 +32,6 @@ import {
   shouldShowDescription,
   uniqueNonEmpty,
 } from "@/lib/product-detail-fields";
-import { getCustomerCatalogueImageUrl } from "@/lib/source-catalogue";
 import { isCustomerVisibleProduct } from "@/lib/ci-sync/types";
 
 type PartSpec = Record<string, unknown>;
@@ -69,18 +68,17 @@ function specList(spec: PartSpec, key: string): string[] {
   return [];
 }
 
-function resolveImages(...candidates: Array<string | null | undefined>): string[] {
-  const urls: string[] = [];
+function resolveGallery(...candidates: Array<string | null | undefined>) {
+  const urls: Array<{ imageUrl: string; thumbUrl: string | null; mediumUrl: string | null }> =
+    [];
   const seen = new Set<string>();
   for (const candidate of candidates) {
     if (!candidate) continue;
     if (/^https?:/i.test(candidate)) continue;
-    const fromIndex = catalogueGalleryPublicPaths(candidate);
-    const fallback = getCustomerCatalogueImageUrl(candidate);
-    for (const url of [...fromIndex, fallback].filter((item): item is string => Boolean(item))) {
-      if (seen.has(url)) continue;
-      seen.add(url);
-      urls.push(url);
+    for (const item of catalogueGalleryImageUrls(candidate)) {
+      if (seen.has(item.imageUrl)) continue;
+      seen.add(item.imageUrl);
+      urls.push(item);
     }
   }
   return urls;
@@ -256,10 +254,14 @@ export async function GET(request: NextRequest) {
     const galleryKeys = specList(spec, "gallery_images").map((file) =>
       file.replace(/\.[a-z0-9]+$/i, ""),
     );
-    const images = uniqueNonEmpty([
-      ...resolveImages(listingRows[0]?.sku, dbPart.partNumber),
-      ...resolveImages(...galleryKeys),
-    ]);
+    const gallery = resolveGallery(
+      listingRows[0]?.sku,
+      dbPart.partNumber,
+      ...galleryKeys,
+    );
+    const images = gallery.map((item) => item.imageUrl);
+    const thumbUrls = gallery.map((item) => item.thumbUrl);
+    const mediumUrls = gallery.map((item) => item.mediumUrl);
     const title = displayProductTitle(dbPart.name, dbPart.partNumber);
     const description = dbPart.description;
     const vehicleLabels = uniqueNonEmpty(
@@ -327,6 +329,8 @@ export async function GET(request: NextRequest) {
       },
       brandLogo,
       images,
+      thumbUrls,
+      mediumUrls,
       has360: Boolean(spec.has_360) || isGenuine360Sequence(images),
       cards,
       oemNumbers,

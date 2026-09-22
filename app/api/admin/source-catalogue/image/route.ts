@@ -1,6 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "@/lib/auth-server";
-import { catalogueImagePublicPath } from "@/lib/catalogue-image-index";
+import {
+  catalogueImagePublicPath,
+  catalogueMediumPublicPath,
+  catalogueThumbPublicPath,
+} from "@/lib/catalogue-image-index";
 
 export const dynamic = "force-dynamic";
 
@@ -15,7 +19,19 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: "sku is required" }, { status: 400 });
   }
 
-  const publicPath = catalogueImagePublicPath(sku);
+  const variant = String(request.nextUrl.searchParams.get("variant") || "thumb")
+    .trim()
+    .toLowerCase();
+
+  let publicPath: string | null = null;
+  if (variant === "original" || variant === "full") {
+    publicPath = catalogueImagePublicPath(sku);
+  } else if (variant === "medium") {
+    publicPath = catalogueMediumPublicPath(sku) || catalogueImagePublicPath(sku);
+  } else {
+    publicPath = catalogueThumbPublicPath(sku) || catalogueImagePublicPath(sku);
+  }
+
   if (!publicPath) {
     return NextResponse.json({ error: "Image not found" }, { status: 404 });
   }

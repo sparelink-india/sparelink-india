@@ -12,6 +12,8 @@ type Offer = {
   partNumber?: string;
   name?: string;
   imageUrl?: string | null;
+  thumbUrl?: string | null;
+  mediumUrl?: string | null;
   regularPricePaise?: number | null;
   offerPricePaise?: number | null;
   listingId?: string | null;
@@ -80,11 +82,20 @@ export default function OffersPage() {
                   <div className="aspect-[4/3] overflow-hidden rounded-xl bg-slate-100">
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img
-                      src={offer.imageUrl || "/images/products/placeholder.svg"}
+                      src={offer.thumbUrl || offer.imageUrl || "/images/products/placeholder.svg"}
                       alt={offer.name || "Offer product"}
+                      width={640}
+                      height={480}
+                      loading="lazy"
+                      decoding="async"
                       className="h-full w-full object-cover"
                       onError={(event) => {
-                        (event.currentTarget as HTMLImageElement).src = "/images/products/placeholder.svg";
+                        const el = event.currentTarget as HTMLImageElement;
+                        if (offer.imageUrl && el.src !== offer.imageUrl) {
+                          el.src = offer.imageUrl;
+                          return;
+                        }
+                        el.src = "/images/products/placeholder.svg";
                       }}
                     />
                   </div>

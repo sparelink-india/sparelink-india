@@ -27,6 +27,8 @@ type CartItem = {
   stock: number | null;
   listingStatus: string;
   imageUrl?: string | null;
+  thumbUrl?: string | null;
+  mediumUrl?: string | null;
   gstRate?: number;
   listInclusivePaise?: number;
   netInclusivePaise?: number;
@@ -432,6 +434,7 @@ export default function CartPage() {
                           setLightboxImage({
                             src:
                               item.imageUrl ||
+                              item.thumbUrl ||
                               "/images/products/placeholder.svg",
                             alt: item.partName || "Automotive part",
                             name: item.partName || "Automotive Spare Part",
@@ -444,6 +447,7 @@ export default function CartPage() {
                             setLightboxImage({
                               src:
                                 item.imageUrl ||
+                                item.thumbUrl ||
                                 "/images/products/placeholder.svg",
                               alt: item.partName || "Automotive part",
                               name: item.partName || "Automotive Spare Part",
@@ -457,14 +461,23 @@ export default function CartPage() {
                         {/* eslint-disable-next-line @next/next/no-img-element */}
                         <img
                           src={
+                            item.thumbUrl ||
                             item.imageUrl ||
                             "/images/products/placeholder.svg"
                           }
                           alt={item.partName || "Automotive part"}
+                          width={112}
+                          height={84}
+                          loading="lazy"
+                          decoding="async"
                           className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
                           onError={(e) => {
-                            (e.currentTarget as HTMLImageElement).src =
-                              "/images/products/placeholder.svg";
+                            const el = e.currentTarget as HTMLImageElement;
+                            if (item.imageUrl && el.src !== item.imageUrl) {
+                              el.src = item.imageUrl;
+                              return;
+                            }
+                            el.src = "/images/products/placeholder.svg";
                           }}
                         />
                         {item.partBrand && (
