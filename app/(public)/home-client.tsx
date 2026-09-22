@@ -532,7 +532,7 @@ export function HomePageContent({
                       }
                     >
                       <span>{t("hero.explore")}</span>
-                      <span>ΓåÆ</span>
+                      <span>→</span>
                     </span>
                   </div>
                 </Link>

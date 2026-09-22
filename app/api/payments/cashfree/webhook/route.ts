@@ -147,15 +147,15 @@ export async function POST(request: NextRequest) {
             firmCode: credentials.firmCode,
             expectedPaise: lockedPayment.amountPaise,
           });
-          return;
+          throw new Error("WEBHOOK_AMOUNT");
         }
 
-        if (extracted.currency && extracted.currency !== "INR") {
+        if (extracted.currency && extracted.currency.toUpperCase() !== "INR") {
           console.error("Cashfree webhook currency rejected", {
             paymentId: lockedPayment.id,
             firmCode: credentials.firmCode,
           });
-          return;
+          throw new Error("WEBHOOK_CURRENCY");
         }
 
         await tx
@@ -229,6 +229,16 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     if (error instanceof Error && error.message === "WEBHOOK_GUARD") {
       return NextResponse.json({ error: "Invalid webhook." }, { status: 409 });
+    }
+
+    if (
+      error instanceof Error &&
+      (error.message === "WEBHOOK_AMOUNT" || error.message === "WEBHOOK_CURRENCY")
+    ) {
+      return NextResponse.json(
+        { error: "Payment validation failed." },
+        { status: 422 },
+      );
     }
 
     console.error("Cashfree webhook processing failed", {

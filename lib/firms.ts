@@ -112,6 +112,19 @@ export type AllocationPaymentMethod =
   | "online_coming_soon";
 
 /**
+ * Parent checkout order may use `online_payment` only when every firm in the
+ * cart can take Cashfree on its own merchant account. Mixed carts with any
+ * unconfigured firm must use COD or bank transfer — no Easy Split / cross-firm charge.
+ */
+export function cartSupportsParentOnlinePayment(
+  cartFirmIds: readonly string[],
+  isFirmOnlineCapable: (firmId: string) => boolean,
+): boolean {
+  if (cartFirmIds.length === 0) return false;
+  return cartFirmIds.every((firmId) => isFirmOnlineCapable(firmId));
+}
+
+/**
  * Map the customer's parent payment choice onto one firm allocation.
  * Online checkout only lands on Ambaji when that firm can take Cashfree later.
  * Hind Motors and India Sales stay COD (online coming soon).

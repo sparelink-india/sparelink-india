@@ -19,7 +19,7 @@ import { isCodEnabledForFirm } from "@/lib/bank-payment-config";
 import { getDb } from "@/lib/db";
 import { extractGSTRate } from "@/lib/gst";
 import { isCashfreeConfiguredForFirm } from "@/lib/cashfree";
-import { SPARELINK_FIRMS, isAllowedFirmId } from "@/lib/firms";
+import { SPARELINK_FIRMS, cartSupportsParentOnlinePayment, isAllowedFirmId } from "@/lib/firms";
 import {
   splitLinesByFirm,
   validateAvailableStock,
@@ -333,14 +333,11 @@ export async function POST(request: Request) {
           .filter((id): id is string => typeof id === "string"),
       ),
     ];
-    const allOnlineCapable =
-      firmIds.length > 0 &&
-      firmIds.every((firmId) => isCashfreeConfiguredForFirm(firmId));
-    if (!allOnlineCapable) {
+    if (!cartSupportsParentOnlinePayment(firmIds, isCashfreeConfiguredForFirm)) {
       return NextResponse.json(
         {
           error:
-            "Online payment is not available for every firm in your cart. Please choose Cash on Delivery, or remove items from firms that cannot take online payment.",
+            "Online payment is only available when every firm in your cart can accept Cashfree. Please choose Cash on Delivery or bank transfer, or remove items from firms that cannot take online payment.",
         },
         { status: 400 },
       );

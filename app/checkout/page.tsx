@@ -185,7 +185,7 @@ export default function CheckoutPage() {
       return;
     }
 
-    if (effectivePaymentMethod === "online_payment" && !hasOnlineCapableFirm) {
+    if (effectivePaymentMethod === "online_payment" && !cartSupportsOnlinePayment) {
       setError(
         t("checkout.onlineUnavailable"),
       );
@@ -284,11 +284,17 @@ export default function CheckoutPage() {
         : cart?.pensolCashTotalPaise ?? cart?.totalPaise ?? 0
       : cart?.totalPaise ?? itemsSubtotalPaise + gstPaise + shippingPaise;
   const onlineCapableSet = new Set(onlineCapableFirmIds);
-  const hasOnlineCapableFirm = Boolean(
-    cart?.items.some(
-      (item) => item.firmId && onlineCapableSet.has(item.firmId),
+  const cartFirmIds = [
+    ...new Set(
+      (cart?.items ?? [])
+        .map((item) => item.firmId)
+        .filter((id): id is string => Boolean(id)),
     ),
-  );
+  ];
+  /** Same rule as POST /api/orders: every cart firm must have Cashfree (no Easy Split). */
+  const cartSupportsOnlinePayment =
+    cartFirmIds.length > 0 &&
+    cartFirmIds.every((firmId) => onlineCapableSet.has(firmId));
   const firmBreakdown = useMemo(() => {
     const groups = new Map<
       string,
@@ -314,7 +320,7 @@ export default function CheckoutPage() {
     return [...groups.values()];
   }, [cart?.items]);
   const effectivePaymentMethod =
-    paymentMethod === "online_payment" && !hasOnlineCapableFirm
+    paymentMethod === "online_payment" && !cartSupportsOnlinePayment
       ? "cash_on_delivery"
       : paymentMethod;
 
@@ -786,7 +792,7 @@ export default function CheckoutPage() {
                     </div>
                   </label>
 
-                  {hasOnlineCapableFirm ? (
+                  {cartSupportsOnlinePayment ? (
                     <label className="flex min-h-11 cursor-pointer items-start gap-3 rounded-xl border border-slate-200 p-3.5 transition-colors hover:bg-slate-50 has-checked:border-slate-950 has-checked:bg-slate-50/50 sm:gap-3.5 sm:p-4">
                       <input
                         type="radio"
@@ -811,7 +817,7 @@ export default function CheckoutPage() {
                         {t("checkout.comingSoon")}
                       </span>
                       <span className="mt-0.5 block text-xs leading-snug text-slate-500">
-                        {t("checkout.onlineHint")}
+                        {t("checkout.onlineUnavailable")}
                       </span>
                     </div>
                   )}

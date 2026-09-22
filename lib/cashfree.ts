@@ -218,10 +218,18 @@ export function paiseToCashfreeAmount(paise: number): number {
 
 /** Convert Cashfree INR amount back to paise. Returns null if unsafe. */
 export function cashfreeAmountToPaise(amount: unknown): number | null {
-  if (typeof amount !== "number" || !Number.isFinite(amount) || amount <= 0) {
+  let value: number;
+  if (typeof amount === "number") {
+    value = amount;
+  } else if (typeof amount === "string" && amount.trim() !== "") {
+    value = Number(amount);
+  } else {
     return null;
   }
-  const paise = Math.round(amount * 100);
+  if (!Number.isFinite(value) || value <= 0) {
+    return null;
+  }
+  const paise = Math.round(value * 100);
   if (!Number.isSafeInteger(paise) || paise <= 0) {
     return null;
   }

@@ -19,6 +19,8 @@ type CartItem = {
   partNumber: string | null;
   partName: string | null;
   partBrand: string | null;
+  imageUrl?: string | null;
+  thumbUrl?: string | null;
   dealerId: string | null;
   dealerName: string | null;
   firmId: string | null;
@@ -436,9 +438,7 @@ export default function CartPage() {
                         tabIndex={0}
                         onClick={() =>
                           setLightboxImage({
-                            src: item.partNumber
-                              ? `/images/products/${item.partNumber}.svg`
-                              : "/images/products/placeholder.svg",
+                            src: item.imageUrl || "/images/products/placeholder.svg",
                             alt: item.partName || "Automotive part",
                             name: item.partName || "Automotive Spare Part",
                             partNumber: item.partNumber,
@@ -448,9 +448,7 @@ export default function CartPage() {
                           if (e.key === "Enter" || e.key === " ") {
                             e.preventDefault();
                             setLightboxImage({
-                              src: item.partNumber
-                                ? `/images/products/${item.partNumber}.svg`
-                                : "/images/products/placeholder.svg",
+                              src: item.imageUrl || "/images/products/placeholder.svg",
                               alt: item.partName || "Automotive part",
                               name: item.partName || "Automotive Spare Part",
                               partNumber: item.partNumber,
@@ -462,13 +460,9 @@ export default function CartPage() {
                       >
                         {/* eslint-disable-next-line @next/next/no-img-element */}
                         <img
-                          src={
-                            item.partNumber
-                              ? `/images/products/${item.partNumber}.svg`
-                              : "/images/products/placeholder.svg"
-                          }
+                          src={item.imageUrl || "/images/products/placeholder.svg"}
                           alt={item.partName || "Automotive part"}
-                          className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+                          className="h-full w-full object-contain p-1.5 transition-transform duration-300 group-hover:scale-105"
                           onError={(e) => {
                             (e.currentTarget as HTMLImageElement).src =
                               "/images/products/placeholder.svg";
@@ -517,7 +511,7 @@ export default function CartPage() {
                                   clipRule="evenodd"
                                 />
                               </svg>
-                              Fulfilled by {item.firmName}
+                              {t("product.fulfilledBy", { firm: item.firmName })}
                             </span>
                           )}
 
@@ -705,7 +699,7 @@ export default function CartPage() {
                     <span className="inline-flex items-center gap-1">
                       <span>{t("cart.gst")}</span>
                       <span className="rounded bg-emerald-50 px-1.5 py-0.2 text-[10px] font-bold text-emerald-700 border border-emerald-200/60">
-                        Itemized
+                        {t("cart.itemized")}
                       </span>
                     </span>
                     <span className="font-semibold text-emerald-700">
