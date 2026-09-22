@@ -21,6 +21,8 @@ export type SearchListing = {
   discountPercent?: number;
   isPensol?: boolean;
   imageUrl?: string | null;
+  thumbUrl?: string | null;
+  mediumUrl?: string | null;
 };
 
 export type SearchHit = {
@@ -32,6 +34,8 @@ export type SearchHit = {
     category?: string;
   };
   imageUrl?: string | null;
+  thumbUrl?: string | null;
+  mediumUrl?: string | null;
   listings?: SearchListing[];
 };
 
@@ -433,6 +437,7 @@ export function SearchExperience({
                       query={query}
                       addingId={addingId}
                       layout="grid"
+                      index={index}
                       onOpen={() => onOpenProduct(hit)}
                       onAddToCart={onAddToCart}
                     />
@@ -447,6 +452,7 @@ export function SearchExperience({
                       query={query}
                       addingId={addingId}
                       layout="list"
+                      index={index}
                       onOpen={() => onOpenProduct(hit)}
                       onAddToCart={onAddToCart}
                     />
