@@ -14,25 +14,26 @@ import {
   orderItem,
   part,
 } from "@/drizzle/schema";
+import { getServerSession } from "@/lib/auth-server";
+import { isCodEnabledForFirm } from "@/lib/bank-payment-config";
 import { getDb } from "@/lib/db";
 import { extractGSTRate } from "@/lib/gst";
 import { isCashfreeConfiguredForFirm } from "@/lib/cashfree";
-import { requireBuyerApi } from "@/lib/require-role";
+import { SPARELINK_FIRMS, isAllowedFirmId } from "@/lib/firms";
+import {
+  splitLinesByFirm,
+  validateAvailableStock,
+  validateCartQuantity,
+} from "@/lib/order-architecture";
+import { denyIfMustChangePassword } from "@/lib/require-role";
 import { resolveStorefrontPricing } from "@/lib/customer-discount";
-import { ignoreCheckoutClientOverrides } from "@/lib/party-pricing";
+import { ignoreClientPricing } from "@/lib/party-pricing";
 import { resolvePensolConfigsForUser } from "@/lib/pensol-discount";
 import {
   authorizedPensolSettlement,
   priceStorefrontLines,
 } from "@/lib/storefront-line-price";
-import {
-  buildParentOrderPlan,
-  CheckoutError,
-  isUniqueConstraintError,
-  parseCheckoutIdempotencyKey,
-  type CheckoutCartLine,
-} from "@/lib/checkout-order";
-import type { ParentPaymentMethod } from "@/lib/firms";
+import { isAuthoritativeSellingPricePaise } from "@/lib/storefront-price-display";
 
 type ShippingAddress = {
   name: string;
@@ -86,33 +87,14 @@ function parseShippingAddress(value: unknown): ShippingAddress | null {
   };
 }
 
-function checkoutErrorResponse(error: unknown) {
-  if (error instanceof CheckoutError) {
-    return NextResponse.json({ error: error.message }, { status: error.status });
-  }
-  const known =
-    error instanceof Error &&
-    (error.message.endsWith("is no longer available.") ||
-      error.message.endsWith("requested quantity.") ||
-      error.message === "This listing is not assigned to a fulfillment firm." ||
-      error.message.endsWith("fulfillment firm.") ||
-      error.message === "Your cart is empty." ||
-      error.message === "Your cart changed. Please review and try again.");
-  console.error("Checkout failed");
-  return NextResponse.json(
-    {
-      error: known
-        ? error.message
-        : "Unable to place your order. Please try again.",
-    },
-    { status: 409 },
-  );
-}
-
 export async function GET() {
-  const auth = await requireBuyerApi();
-  if (auth.error) return auth.error;
-  const session = auth.session;
+  const session = await getServerSession();
+  if (!session || session.user.role !== "buyer") {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  const blocked = await denyIfMustChangePassword(session.user.id);
+  if (blocked) return blocked;
 
   const db = getDb();
   const orders = await db
@@ -123,7 +105,6 @@ export async function GET() {
       paymentStatus: order.paymentStatus,
       paymentMethod: order.paymentMethod,
       subtotalPaise: order.subtotalPaise,
-      gstPaise: order.gstPaise,
       shippingPaise: order.shippingPaise,
       totalPaise: order.totalPaise,
       createdAt: order.createdAt,
@@ -137,23 +118,6 @@ export async function GET() {
   }
 
   const orderIds = orders.map((item) => item.id);
-  const items = await db
-    .select({
-      orderId: orderItem.orderId,
-      id: orderItem.id,
-      partName: orderItem.partName,
-      partNumber: orderItem.partNumber,
-      partBrand: orderItem.partBrand,
-      sku: orderItem.sku,
-      firmId: orderItem.firmId,
-      quantity: orderItem.quantity,
-      unitPricePaise: orderItem.unitPricePaise,
-      gstRate: orderItem.gstRate,
-      gstPaise: orderItem.lineGstPaise,
-      totalPaise: orderItem.totalPaise,
-    })
-    .from(orderItem)
-    .where(inArray(orderItem.orderId, orderIds));
 
   const allocations = await db
     .select({
@@ -163,73 +127,65 @@ export async function GET() {
       firmName: firm.name,
       firmCode: firm.code,
       allocationNumber: firmOrder.allocationNumber,
-      subtotalPaise: firmOrder.subtotalPaise,
-      gstPaise: firmOrder.gstPaise,
-      totalPaise: firmOrder.amountPaise,
+      amountPaise: firmOrder.amountPaise,
       fulfillmentStatus: firmOrder.fulfillmentStatus,
       paymentStatus: firmOrder.paymentStatus,
-      paymentMethod: firmOrder.paymentMethod,
-      invoiceReference: firmOrder.invoiceReference,
-      paymentReference: firmOrder.paymentAccountingReference,
     })
     .from(firmOrder)
     .innerJoin(firm, eq(firmOrder.firmId, firm.id))
     .where(inArray(firmOrder.orderId, orderIds));
 
-  const allocationItemRows = allocations.length
-    ? await db
-        .select({
-          firmOrderId: firmOrderItem.firmOrderId,
-          orderItemId: firmOrderItem.orderItemId,
-        })
-        .from(firmOrderItem)
-        .where(
-          inArray(
-            firmOrderItem.firmOrderId,
-            allocations.map((item) => item.id),
-          ),
-        )
-    : [];
+  const items = await db
+    .select({
+      orderId: orderItem.orderId,
+      id: orderItem.id,
+      partName: orderItem.partName,
+      partNumber: orderItem.partNumber,
+      quantity: orderItem.quantity,
+      unitPricePaise: orderItem.unitPricePaise,
+      totalPaise: orderItem.totalPaise,
+    })
+    .from(orderItem)
+    .where(
+      inArray(
+        orderItem.orderId,
+        orderIds,
+      ),
+    );
 
   return NextResponse.json({
     orders: orders.map((item) => {
-      const gstPaise =
-        item.gstPaise ||
-        Math.max(
-          0,
-          item.totalPaise - item.subtotalPaise - (item.shippingPaise ?? 0),
-        );
-      const orderAllocations = allocations.filter(
-        (allocation) => allocation.orderId === item.id,
+      const gstPaise = Math.max(
+        0,
+        item.totalPaise - item.subtotalPaise - (item.shippingPaise ?? 0),
       );
       return {
         ...item,
         gstPaise,
-        items: items.filter((orderLine) => orderLine.orderId === item.id),
-        allocations: orderAllocations.map((allocation) => ({
-          ...allocation,
-          itemIds: allocationItemRows
-            .filter((row) => row.firmOrderId === allocation.id)
-            .map((row) => row.orderItemId),
-        })),
+        items: items.filter((orderItem) => orderItem.orderId === item.id),
+        firmAllocations: allocations.filter(
+          (allocation) => allocation.orderId === item.id,
+        ),
       };
     }),
   });
 }
 
 export async function POST(request: Request) {
-  const auth = await requireBuyerApi();
-  if (auth.error) return auth.error;
-  const session = auth.session;
+  const session = await getServerSession();
+
+  if (!session || session.user.role !== "buyer") {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  const blocked = await denyIfMustChangePassword(session.user.id);
+  if (blocked) return blocked;
 
   const rawBody = await request.json().catch(() => null);
-  const body = ignoreCheckoutClientOverrides(
-    (rawBody && typeof rawBody !== "object"
-      ? {}
-      : ((rawBody as Record<string, unknown> | null) ?? {})) as Record<
-      string,
-      unknown
-    >,
+  const body = ignoreClientPricing(
+    (rawBody && typeof rawBody === "object"
+      ? (rawBody as Record<string, unknown>)
+      : {}) as Record<string, unknown>,
   );
   const shippingAddress = parseShippingAddress(body?.shippingAddress);
   const paymentMethod = body?.paymentMethod;
@@ -241,9 +197,6 @@ export async function POST(request: Request) {
     typeof body?.buyerBusinessName === "string" && body.buyerBusinessName.trim()
       ? body.buyerBusinessName.trim()
       : undefined;
-  const idempotencyKey = parseCheckoutIdempotencyKey(
-    request.headers.get("idempotency-key") ?? body?.idempotencyKey,
-  );
 
   if (!shippingAddress) {
     return NextResponse.json(
@@ -271,40 +224,127 @@ export async function POST(request: Request) {
       { status: 400 },
     );
   }
-  const parentPaymentMethod = paymentMethod as ParentPaymentMethod;
 
   const db = getDb();
-
-  if (idempotencyKey) {
-    const existing = await db.query.order.findFirst({
-      where: and(
-        eq(order.buyerId, session.user.id),
-        eq(order.checkoutIdempotencyKey, idempotencyKey),
-      ),
-    });
-    if (existing) {
-      return NextResponse.json(
-        {
-          id: existing.id,
-          orderNumber: existing.orderNumber,
-          subtotalPaise: existing.subtotalPaise,
-          gstPaise: existing.gstPaise,
-          shippingPaise: existing.shippingPaise,
-          totalPaise: existing.totalPaise,
-          status: existing.status,
-          duplicate: true,
-        },
-        { status: 200 },
-      );
-    }
-  }
-
   const buyerCart = await db.query.cart.findFirst({
     where: eq(cart.buyerId, session.user.id),
   });
 
   if (!buyerCart) {
     return NextResponse.json({ error: "Your cart is empty." }, { status: 400 });
+  }
+
+  const cartItems = await db
+    .select({
+      id: cartItem.id,
+      dealerListingId: dealerListing.id,
+      dealerId: dealerListing.dealerId,
+      firmId: dealerListing.firmId,
+      quantity: cartItem.quantity,
+      pricePaise: dealerListing.pricePaise,
+      listingStatus: dealerListing.status,
+      stock: inventory.quantity,
+      partId: part.id,
+      partNumber: part.partNumber,
+      partName: part.name,
+      partDescription: part.description,
+      partBrand: part.brand,
+      partSpecifications: part.specifications,
+      sku: dealerListing.sku,
+    })
+    .from(cartItem)
+    .innerJoin(dealerListing, eq(cartItem.dealerListingId, dealerListing.id))
+    .innerJoin(part, eq(dealerListing.partId, part.id))
+    .leftJoin(inventory, eq(inventory.dealerListingId, dealerListing.id))
+    .where(eq(cartItem.cartId, buyerCart.id));
+
+  if (!cartItems.length) {
+    return NextResponse.json({ error: "Your cart is empty." }, { status: 400 });
+  }
+
+  const invalidQuantity = cartItems.find(
+    (item) => !validateCartQuantity(item.quantity).ok,
+  );
+  if (invalidQuantity) {
+    return NextResponse.json(
+      { error: `${invalidQuantity.partName} has an invalid quantity.` },
+      { status: 400 },
+    );
+  }
+
+  const unavailableItem = cartItems.find(
+    (item) =>
+      item.listingStatus !== "active" ||
+      !item.firmId ||
+      !isAllowedFirmId(item.firmId) ||
+      !validateAvailableStock(item.quantity, item.stock).ok,
+  );
+
+  if (unavailableItem) {
+    return NextResponse.json(
+      {
+        error: `${unavailableItem.partName} is no longer available in the requested quantity.`,
+      },
+      { status: 409 },
+    );
+  }
+
+  const unpricedItem = cartItems.find(
+    (item) => !isAuthoritativeSellingPricePaise(item.pricePaise),
+  );
+  if (unpricedItem) {
+    return NextResponse.json(
+      {
+        error: `${unpricedItem.partName} is available on request and cannot be purchased online.`,
+      },
+      { status: 400 },
+    );
+  }
+
+  if (paymentMethod === "cash_on_delivery") {
+    const firmMeta = new Map(
+      SPARELINK_FIRMS.map((row) => [row.id, row] as const),
+    );
+    const codBlocked = cartItems.find((item) => {
+      if (typeof item.firmId !== "string") return true;
+      const meta = firmMeta.get(item.firmId);
+      if (!meta) return true;
+      return !isCodEnabledForFirm(meta.id, meta.name, meta.code);
+    });
+    if (codBlocked) {
+      const meta =
+        typeof codBlocked.firmId === "string"
+          ? firmMeta.get(codBlocked.firmId)
+          : undefined;
+      return NextResponse.json(
+        {
+          error: `Cash on delivery is not available for ${meta?.name ?? "one of the firms"} in your cart.`,
+        },
+        { status: 400 },
+      );
+    }
+  }
+
+  if (paymentMethod === "online_payment") {
+    const firmIds = [
+      ...new Set(
+        cartItems
+          .map((item) => item.firmId)
+          .filter((id): id is string => typeof id === "string"),
+      ),
+    ];
+    const allOnlineCapable =
+      firmIds.length > 0 &&
+      firmIds.every((firmId) => isCashfreeConfiguredForFirm(firmId));
+    if (!allOnlineCapable) {
+      return NextResponse.json(
+        {
+          error:
+            "Online payment is not available for every firm in your cart. Please choose Cash on Delivery, or remove items from firms that cannot take online payment.",
+        },
+        { status: 400 },
+      );
+    }
   }
 
   const settlementResult = authorizedPensolSettlement(body.pensolSettlement);
@@ -314,32 +354,47 @@ export async function POST(request: Request) {
 
   const pricing = await resolveStorefrontPricing(session);
   const pensolConfigs = await resolvePensolConfigsForUser(session.user.id);
+  const storefront = priceStorefrontLines(
+    cartItems.map((item) => ({
+      product: {
+        brand: item.partBrand,
+        name: item.partName,
+        sku: item.sku,
+        uom: item.partSpecifications,
+        specifications: item.partSpecifications,
+      },
+      listInclusivePaise: item.pricePaise,
+      quantity: item.quantity,
+      gstRate: extractGSTRate(item.partDescription),
+    })),
+    pricing.effectiveDiscountPercent,
+    settlementResult.settlement,
+    pensolConfigs.commonConfig,
+    pensolConfigs.customerConfig,
+  );
+  const pricedLines = cartItems.map((item, index) => ({
+    item,
+    gstRate: storefront.priced[index].gstRate,
+    priced: storefront.priced[index],
+  }));
+  const totals = storefront.totals;
+
+  const firmSplit = splitLinesByFirm(
+    pricedLines.map(({ item, priced }) => ({
+      listingId: item.dealerListingId,
+      firmId: item.firmId as string,
+      quantity: item.quantity,
+      unitNetInclusivePaise: priced.netInclusivePaise,
+      lineNetInclusivePaise: priced.lineNetPaise,
+      lineGstPaise: priced.lineGstPaise,
+    })),
+  );
+  if (!firmSplit.ok) {
+    return NextResponse.json({ error: firmSplit.error }, { status: 400 });
+  }
 
   const orderId = randomUUID();
   const orderNumber = `SL-${Date.now().toString(36).toUpperCase()}-${orderId.slice(0, 6).toUpperCase()}`;
-
-  const requestedShippingMethod =
-    typeof body.shippingMethod === "string" ? body.shippingMethod : "";
-  const shippingMethod = ["self_pickup", "transport", "courier"].includes(
-    requestedShippingMethod,
-  )
-    ? requestedShippingMethod
-    : "courier";
-  const transportName =
-    typeof body?.transportName === "string" ? body.transportName.trim() : null;
-  const transportPhone =
-    typeof body?.transportPhone === "string" ? body.transportPhone.trim() : null;
-  const transportGstin =
-    typeof body?.transportGstin === "string"
-      ? body.transportGstin.trim().toUpperCase()
-      : null;
-
-  let createdTotals = {
-    subtotalPaise: 0,
-    gstPaise: 0,
-    shippingPaise: 0,
-    totalPaise: 0,
-  };
 
   try {
     await db.transaction(async (tx) => {
@@ -349,120 +404,50 @@ export async function POST(request: Request) {
         .where(eq(cart.id, buyerCart.id))
         .for("update");
       if (!lockedCart.length) {
-        throw new CheckoutError("Your cart is empty.", 400);
+        throw new Error("Your cart is empty.");
       }
-
-      const lockedItems = await tx
-        .select({
-          id: cartItem.id,
-          dealerListingId: cartItem.dealerListingId,
-        })
-        .from(cartItem)
-        .where(eq(cartItem.cartId, buyerCart.id))
-        .for("update");
-
-      if (!lockedItems.length) {
-        throw new CheckoutError("Your cart is empty.", 400);
-      }
-
-      const listingIds = lockedItems.map((item) => item.dealerListingId);
-      await tx
-        .select({ id: inventory.id })
-        .from(inventory)
-        .where(inArray(inventory.dealerListingId, listingIds))
-        .for("update");
 
       const liveCartItems = await tx
         .select({
           id: cartItem.id,
-          dealerListingId: dealerListing.id,
-          dealerId: dealerListing.dealerId,
-          firmId: dealerListing.firmId,
           quantity: cartItem.quantity,
-          pricePaise: dealerListing.pricePaise,
+          dealerListingId: dealerListing.id,
           listingStatus: dealerListing.status,
+          firmId: dealerListing.firmId,
           stock: inventory.quantity,
-          partId: part.id,
-          partNumber: part.partNumber,
           partName: part.name,
-          partBrand: part.brand,
-          sku: dealerListing.sku,
-          partDescription: part.description,
-          partSpecifications: part.specifications,
         })
         .from(cartItem)
         .innerJoin(dealerListing, eq(cartItem.dealerListingId, dealerListing.id))
         .innerJoin(part, eq(dealerListing.partId, part.id))
         .leftJoin(inventory, eq(inventory.dealerListingId, dealerListing.id))
-        .where(eq(cartItem.cartId, buyerCart.id));
+        .where(eq(cartItem.cartId, buyerCart.id))
+        .for("update");
+      if (!liveCartItems.length) {
+        throw new Error("Your cart is empty.");
+      }
+      if (liveCartItems.length !== cartItems.length) {
+        throw new Error("Your cart changed. Please review and try again.");
+      }
 
-      const cartLines: CheckoutCartLine[] = liveCartItems.map((item) => ({
-        dealerListingId: item.dealerListingId,
-        dealerId: item.dealerId,
-        firmId: item.firmId,
-        quantity: item.quantity,
-        pricePaise: item.pricePaise,
-        listingStatus: item.listingStatus,
-        stock: item.stock,
-        partId: item.partId,
-        partNumber: item.partNumber,
-        partName: item.partName,
-        partBrand: item.partBrand,
-        sku: item.sku,
-      }));
-
-      if (parentPaymentMethod === "online_payment") {
-        const hasOnlineCapableFirm = cartLines.some(
-          (item) =>
-            typeof item.firmId === "string" &&
-            isCashfreeConfiguredForFirm(item.firmId),
-        );
-        if (!hasOnlineCapableFirm) {
-          throw new CheckoutError(
-            "Online payment is not available for these firms yet. Please choose Cash on Delivery.",
-            400,
-          );
+      const liveById = new Map(liveCartItems.map((row) => [row.id, row]));
+      for (const item of cartItems) {
+        const live = liveById.get(item.id);
+        if (
+          !live ||
+          live.quantity !== item.quantity ||
+          live.dealerListingId !== item.dealerListingId ||
+          live.listingStatus !== "active" ||
+          !live.firmId ||
+          !isAllowedFirmId(live.firmId)
+        ) {
+          throw new Error("Your cart changed. Please review and try again.");
         }
       }
 
-      const storefront = priceStorefrontLines(
-        liveCartItems.map((item) => ({
-          product: {
-            brand: item.partBrand,
-            name: item.partName,
-            sku: item.sku,
-            uom: item.partSpecifications,
-            specifications: item.partSpecifications,
-          },
-          listInclusivePaise: item.pricePaise,
-          quantity: item.quantity,
-          gstRate: extractGSTRate(item.partDescription),
-        })),
-        pricing.effectiveDiscountPercent,
-        settlementResult.settlement,
-        pensolConfigs.commonConfig,
-        pensolConfigs.customerConfig,
-      );
-
-      const plan = buildParentOrderPlan(
-        cartLines.map((line, index) => ({
-          line,
-          gstRate: storefront.priced[index].gstRate,
-          priced: storefront.priced[index],
-        })),
-        parentPaymentMethod,
-        orderNumber,
-        storefront.totals.shippingPaise,
-      );
-
-      createdTotals = {
-        subtotalPaise: plan.subtotalPaise,
-        gstPaise: plan.gstPaise,
-        shippingPaise: plan.shippingPaise,
-        totalPaise: plan.totalPaise,
-      };
-
-      for (const item of cartLines) {
+      // Existing checkout decrements live stock in this transaction.
+      // This is not a separate reservation system; do not invent one here.
+      for (const item of cartItems) {
         const updated = await tx
           .update(inventory)
           .set({
@@ -478,21 +463,31 @@ export async function POST(request: Request) {
           .returning({ id: inventory.id });
 
         if (!updated.length) {
-          throw new CheckoutError(`${item.partName} is no longer available.`, 409);
+          throw new Error(`${item.partName} is no longer available.`);
         }
       }
+
+      const requestedShippingMethod =
+        typeof body.shippingMethod === "string" ? body.shippingMethod : "";
+      const shippingMethod = ["self_pickup", "transport", "courier"].includes(
+        requestedShippingMethod,
+      )
+        ? requestedShippingMethod
+        : "courier";
+      const transportName = typeof body?.transportName === "string" ? body.transportName.trim() : null;
+      const transportPhone = typeof body?.transportPhone === "string" ? body.transportPhone.trim() : null;
+      const transportGstin = typeof body?.transportGstin === "string" ? body.transportGstin.trim().toUpperCase() : null;
 
       await tx.insert(order).values({
         id: orderId,
         orderNumber,
         buyerId: session.user.id,
         status: "placed",
-        paymentMethod: parentPaymentMethod,
-        subtotalPaise: plan.subtotalPaise,
-        gstPaise: plan.gstPaise,
-        shippingPaise: plan.shippingPaise,
-        totalPaise: plan.totalPaise,
-        checkoutIdempotencyKey: idempotencyKey,
+        paymentStatus: "pending",
+        paymentMethod,
+        subtotalPaise: totals.subtotalPaise,
+        shippingPaise: totals.shippingPaise,
+        totalPaise: totals.totalPaise,
         shippingName: buyerBusinessName
           ? `${shippingAddress.name} (${buyerBusinessName})`
           : shippingAddress.name,
@@ -516,8 +511,8 @@ export async function POST(request: Request) {
         billingPincode: shippingAddress.pincode,
       });
 
-      const createdItems = plan.allocations.flatMap((allocation) =>
-        allocation.items.map((item) => ({
+      const createdItems = pricedLines.map(({ item, priced }) => {
+        return {
           id: randomUUID(),
           orderId,
           dealerListingId: item.dealerListingId,
@@ -525,26 +520,26 @@ export async function POST(request: Request) {
           partId: item.partId,
           partNumber: item.partNumber,
           partName: item.partName,
-          partBrand: item.partBrand,
-          sku: item.sku,
-          firmId: item.firmId,
           quantity: item.quantity,
-          listInclusivePaise: item.listInclusivePaise,
-          discountPercent: item.discountPercent,
-          discountPaise: item.discountPaise,
-          unitPricePaise: item.unitPricePaise,
-          gstRate: item.gstRate,
-          basePaise: item.basePaise,
-          gstPaise: item.gstPaise,
-          lineDiscountPaise: item.lineDiscountPaise,
-          lineBasePaise: item.lineBasePaise,
-          lineGstPaise: item.lineGstPaise,
-          totalPaise: item.totalPaise,
-        })),
-      );
+          unitPricePaise: priced.netInclusivePaise,
+          totalPaise: priced.lineNetPaise,
+        };
+      });
       await tx.insert(orderItem).values(createdItems);
 
-      for (const allocation of plan.allocations) {
+      const createdByListing = new Map(
+        createdItems.map((item) => [item.dealerListingId, item]),
+      );
+      for (const allocation of firmSplit.allocations) {
+        const items = allocation.items.map((line) => {
+          const created = createdByListing.get(line.listingId);
+          if (!created) {
+            throw new Error(
+              "This listing is not assigned to a fulfillment firm.",
+            );
+          }
+          return created;
+        });
         const firmOrderId = randomUUID();
         const allocationNumber = `SLA-${orderNumber}-${allocation.firmId.slice(0, 6).toUpperCase()}`;
         await tx.insert(firmOrder).values({
@@ -552,21 +547,16 @@ export async function POST(request: Request) {
           orderId,
           firmId: allocation.firmId,
           allocationNumber,
-          amountPaise: allocation.totalPaise,
-          subtotalPaise: allocation.subtotalPaise,
-          gstPaise: allocation.gstPaise,
-          paymentMethod: allocation.paymentMethod,
-          invoiceReference: allocation.invoiceReference,
+          amountPaise: allocation.amountPaise,
+          fulfillmentStatus: "pending",
+          paymentStatus: "unpaid",
           paymentAccountingReference: `SPL-${orderNumber}-${allocation.firmId.slice(0, 8).toUpperCase()}`,
         });
-        const allocationItemIds = createdItems
-          .filter((item) => item.firmId === allocation.firmId)
-          .map((item) => item.id);
         await tx.insert(firmOrderItem).values(
-          allocationItemIds.map((orderItemId) => ({
+          items.map((item) => ({
             id: randomUUID(),
             firmOrderId,
-            orderItemId,
+            orderItemId: item.id,
           })),
         );
       }
@@ -574,41 +564,40 @@ export async function POST(request: Request) {
       await tx.delete(cartItem).where(eq(cartItem.cartId, buyerCart.id));
     });
   } catch (error) {
-    if (idempotencyKey && isUniqueConstraintError(error)) {
-      const existing = await db.query.order.findFirst({
-        where: and(
-          eq(order.buyerId, session.user.id),
-          eq(order.checkoutIdempotencyKey, idempotencyKey),
-        ),
-      });
-      if (existing) {
-        return NextResponse.json(
-          {
-            id: existing.id,
-            orderNumber: existing.orderNumber,
-            subtotalPaise: existing.subtotalPaise,
-            gstPaise: existing.gstPaise,
-            shippingPaise: existing.shippingPaise,
-            totalPaise: existing.totalPaise,
-            status: existing.status,
-            duplicate: true,
-          },
-          { status: 200 },
-        );
-      }
-    }
-    return checkoutErrorResponse(error);
+    console.error("Checkout failed");
+    const known =
+      error instanceof Error &&
+      (error.message.endsWith("is no longer available.") ||
+        error.message === "This listing is not assigned to a fulfillment firm." ||
+        error.message === "Your cart is empty." ||
+        error.message === "Your cart changed. Please review and try again.");
+    return NextResponse.json(
+      {
+        error: known
+          ? error.message
+          : "Unable to place your order. Please try again.",
+      },
+      { status: 409 },
+    );
   }
 
   return NextResponse.json(
     {
       id: orderId,
       orderNumber,
-      subtotalPaise: createdTotals.subtotalPaise,
-      gstPaise: createdTotals.gstPaise,
-      shippingPaise: createdTotals.shippingPaise,
-      totalPaise: createdTotals.totalPaise,
+      subtotalPaise: totals.subtotalPaise,
+      gstPaise: totals.gstPaise,
+      shippingPaise: totals.shippingPaise,
+      totalPaise: totals.totalPaise,
       status: "placed",
+      paymentStatus: "pending",
+      firmAllocations: firmSplit.allocations.map((allocation) => ({
+        firmId: allocation.firmId,
+        firmName: allocation.firmName,
+        amountPaise: allocation.amountPaise,
+        gstPaise: allocation.gstPaise,
+        itemCount: allocation.items.length,
+      })),
     },
     { status: 201 },
   );

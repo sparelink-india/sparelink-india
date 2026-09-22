@@ -16,6 +16,7 @@ import {
 } from "@/lib/bank-payment-config";
 import { isCashfreeConfiguredForFirm } from "@/lib/cashfree";
 import { isAllowedFirmId } from "@/lib/firms";
+import { canAccessCustomerOrder } from "@/lib/order-architecture";
 
 export async function GET(
   request: NextRequest,
@@ -38,7 +39,12 @@ export async function GET(
     return NextResponse.json({ error: "Order not found" }, { status: 404 });
   }
 
-  if (session.user.role !== "admin" && orderRecord.buyerId !== session.user.id) {
+  if (
+    !canAccessCustomerOrder(
+      { role: session.user.role, id: session.user.id },
+      orderRecord.buyerId,
+    )
+  ) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
@@ -111,6 +117,13 @@ export async function GET(
       paymentStatus: orderRecord.paymentStatus,
       paymentMethod: orderRecord.paymentMethod,
       createdAt: orderRecord.createdAt,
+      shippingName: orderRecord.shippingName,
+      shippingPhone: orderRecord.shippingPhone,
+      shippingAddressLine1: orderRecord.shippingAddressLine1,
+      shippingAddressLine2: orderRecord.shippingAddressLine2,
+      shippingCity: orderRecord.shippingCity,
+      shippingState: orderRecord.shippingState,
+      shippingPincode: orderRecord.shippingPincode,
       items,
     },
     bankConfig: getBankPaymentConfig(),
@@ -141,7 +154,12 @@ export async function POST(
     return NextResponse.json({ error: "Order not found" }, { status: 404 });
   }
 
-  if (session.user.role !== "admin" && orderRecord.buyerId !== session.user.id) {
+  if (
+    !canAccessCustomerOrder(
+      { role: session.user.role, id: session.user.id },
+      orderRecord.buyerId,
+    )
+  ) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 

@@ -92,6 +92,20 @@ export default function DealerPage() {
         )}
         {data && (
           <>
+            <div className="mt-6 flex flex-wrap gap-3 text-sm">
+              <Link
+                href="/dealer/orders"
+                className="rounded border bg-white px-3 py-2 hover:bg-zinc-100"
+              >
+                Retail order lines
+              </Link>
+              <Link
+                href="/dealer/sales-orders"
+                className="rounded border bg-white px-3 py-2 hover:bg-zinc-100"
+              >
+                B2B sales orders
+              </Link>
+            </div>
             <section className="mt-8">
               <h2 className="text-xl font-semibold">Your listings</h2>
               <div className="mt-4 space-y-3">

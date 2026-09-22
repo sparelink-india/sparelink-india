@@ -1,44 +1,8 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
-function hasSessionCookie(request: NextRequest) {
-  return request.cookies
-    .getAll()
-    .some(
-      (cookie) =>
-        cookie.name.includes("session_token") ||
-        cookie.name.includes("better-auth.session"),
-    );
-}
-
-function isAdminPath(pathname: string) {
-  return pathname.startsWith("/admin") || pathname.startsWith("/api/admin");
-}
-
-function isDealerPath(pathname: string) {
-  return pathname.startsWith("/dealer") || pathname.startsWith("/api/dealer");
-}
-
 export async function middleware(request: NextRequest) {
-  const { pathname } = request.nextUrl;
   const cookie = request.headers.get("cookie");
-  const sessionCookie = hasSessionCookie(request);
-
-  if ((isAdminPath(pathname) || isDealerPath(pathname)) && !sessionCookie) {
-    if (pathname.startsWith("/api/")) {
-      return NextResponse.json(
-        { error: "Authentication required." },
-        { status: 401 },
-      );
-    }
-    const login = new URL(
-      isDealerPath(pathname) ? "/login/dealer" : "/login",
-      request.nextUrl.origin,
-    );
-    login.searchParams.set("next", pathname);
-    return NextResponse.redirect(login);
-  }
-
   if (!cookie) {
     return NextResponse.next();
   }
@@ -78,9 +42,7 @@ export async function middleware(request: NextRequest) {
 
 export const config = {
   matcher: [
-    "/admin",
     "/admin/:path*",
-    "/dealer",
     "/dealer/:path*",
     "/cart/:path*",
     "/checkout/:path*",
@@ -95,5 +57,10 @@ export const config = {
     "/api/wishlist/:path*",
     "/api/enquiries/:path*",
     "/api/garage/:path*",
+    "/api/returns/:path*",
+    "/api/warranty/:path*",
+    "/api/payments/:path*",
+    "/api/b2b/:path*",
+    "/api/support/:path*",
   ],
 };

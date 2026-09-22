@@ -23,6 +23,7 @@ import {
   type ParsedImportData,
 } from "@/lib/import-utils";
 import { typesense } from "@/lib/typesense";
+import { partNumberSearchText } from "@/lib/search-intent";
 
 // Store previews in memory (in production, use a cache like Redis)
 const previewCache = new Map<string, ParsedImportData>();
@@ -253,6 +254,7 @@ export async function POST(request: NextRequest) {
             docs.push({
               id: partId,
               part_number: data.part_number!,
+              part_number_search: partNumberSearchText(data.part_number!),
               name: data.part_name!,
               description: data.description || "",
               brand: data.brand || "",

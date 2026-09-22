@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
 import { eq } from "drizzle-orm";
-import { gateOrderAccess } from "@/lib/access-control";
 import { getServerSession } from "@/lib/auth-server";
 import { getDb } from "@/lib/db";
 import {
@@ -11,6 +10,7 @@ import {
   part,
 } from "@/drizzle/schema";
 import { extractGSTRate } from "@/lib/gst";
+import { canAccessCustomerOrder } from "@/lib/order-architecture";
 import { splitInclusiveGst } from "@/lib/party-pricing";
 import * as XLSX from "xlsx";
 
@@ -34,9 +34,13 @@ export async function GET(
     return NextResponse.json({ error: "Order not found" }, { status: 404 });
   }
 
-  const access = gateOrderAccess(session, orderRecord.buyerId);
-  if (!access.ok) {
-    return NextResponse.json({ error: access.error }, { status: access.status });
+  if (
+    !canAccessCustomerOrder(
+      { role: session.user.role, id: session.user.id },
+      orderRecord.buyerId,
+    )
+  ) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
   // Fetch items

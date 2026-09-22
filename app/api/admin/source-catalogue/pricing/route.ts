@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { requireAdminApi } from "@/lib/require-role";
 
+import { getServerSession } from "@/lib/auth-server";
 import {
   loadAdminOverlay,
   loadSourceCatalogue,
@@ -12,9 +12,10 @@ import {
 export const dynamic = "force-dynamic";
 
 export async function POST(request: NextRequest) {
-  const auth = await requireAdminApi();
-  if (auth.error) return auth.error;
-  const session = auth.session;
+  const session = await getServerSession();
+  if (!session || session.user.role !== "admin") {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
 
   const body = (await request.json()) as {
     keys?: string[];

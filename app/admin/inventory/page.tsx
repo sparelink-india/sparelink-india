@@ -15,23 +15,53 @@ export default function InventoryPage() {
   const [inventory, setInventory] = useState<InventoryItem[]>([]);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(true);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [qty, setQty] = useState(0);
+  const [reason, setReason] = useState("");
+  const [saving, setSaving] = useState(false);
+
+  const load = async () => {
+    try {
+      const r = await fetch("/api/admin/inventory", { cache: "no-store" });
+      const d = await r.json();
+      if (!r.ok) throw new Error(d.error);
+      setInventory(d.inventory);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Unable to load inventory.");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    const load = async () => {
-      try {
-        const r = await fetch("/api/admin/inventory", { cache: "no-store" });
-        const d = await r.json();
-        if (!r.ok) throw new Error(d.error);
-        setInventory(d.inventory);
-      } catch (e) {
-        setError(e instanceof Error ? e.message : "Unable to load inventory.");
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    void load();
+    const timeout = window.setTimeout(() => void load(), 0);
+    return () => window.clearTimeout(timeout);
   }, []);
+
+  const save = async (inventoryId: string) => {
+    setSaving(true);
+    setError("");
+    try {
+      const r = await fetch("/api/admin/inventory", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          inventoryId,
+          quantity: qty,
+          reason,
+        }),
+      });
+      const d = await r.json();
+      if (!r.ok) throw new Error(d.error);
+      setEditingId(null);
+      setReason("");
+      await load();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Adjust failed");
+    } finally {
+      setSaving(false);
+    }
+  };
 
   return (
     <main className="min-h-screen bg-zinc-50 text-zinc-950">
@@ -75,6 +105,7 @@ export default function InventoryPage() {
                   <th className="px-4 py-3 font-semibold">Quantity</th>
                   <th className="px-4 py-3 font-semibold">Price</th>
                   <th className="px-4 py-3 font-semibold">Last Updated</th>
+                  <th className="px-4 py-3 font-semibold">Adjust</th>
                 </tr>
               </thead>
               <tbody className="divide-y">
@@ -98,6 +129,55 @@ export default function InventoryPage() {
                     </td>
                     <td className="px-4 py-3 text-xs text-zinc-600">
                       {new Date(item.lastUpdated).toLocaleDateString("en-IN")}
+                    </td>
+                    <td className="px-4 py-3">
+                      {editingId === item.id ? (
+                        <div className="flex flex-col gap-2">
+                          <input
+                            type="number"
+                            min={0}
+                            value={qty}
+                            onChange={(e) => setQty(Number(e.target.value))}
+                            className="w-24 rounded border px-2 py-1"
+                          />
+                          <input
+                            required
+                            value={reason}
+                            onChange={(e) => setReason(e.target.value)}
+                            placeholder="Reason *"
+                            className="w-48 rounded border px-2 py-1"
+                          />
+                          <div className="flex gap-2">
+                            <button
+                              type="button"
+                              disabled={saving || !reason.trim()}
+                              onClick={() => void save(item.id)}
+                              className="rounded bg-zinc-950 px-2 py-1 text-xs text-white disabled:opacity-50"
+                            >
+                              Save
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => setEditingId(null)}
+                              className="text-xs text-zinc-600"
+                            >
+                              Cancel
+                            </button>
+                          </div>
+                        </div>
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setEditingId(item.id);
+                            setQty(item.quantity);
+                            setReason("");
+                          }}
+                          className="text-xs text-blue-600 hover:underline"
+                        >
+                          Adjust
+                        </button>
+                      )}
                     </td>
                   </tr>
                 ))}

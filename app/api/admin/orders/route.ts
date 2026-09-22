@@ -1,9 +1,14 @@
 import { NextResponse } from "next/server";
-import { requireAdminApi } from "@/lib/require-role";
-import { count, desc, eq, inArray } from "drizzle-orm";
-import { firm, firmOrder, order, orderItem, user } from "@/drizzle/schema";
+import { and, count, desc, eq, ne, sql } from "drizzle-orm";
+import { order, orderItem, user } from "@/drizzle/schema";
 import { writeAuditLog } from "@/lib/audit";
+import { getServerSession } from "@/lib/auth-server";
 import { getDb } from "@/lib/db";
+import {
+  restockInventoryForCancelledOrder,
+  shouldRestockOnStatusChange,
+} from "@/lib/order-cancel-restock";
+import { canMutateOrderPaymentStatus } from "@/lib/order-architecture";
 
 const ALLOWED_STATUSES = new Set([
   "pending",
@@ -14,11 +19,23 @@ const ALLOWED_STATUSES = new Set([
   "cancelled",
   "returned",
   "placed",
+  "processing",
+  "completed",
+]);
+
+const ALLOWED_PAYMENT_STATUSES = new Set([
+  "pending",
+  "paid",
+  "failed",
+  "unpaid",
 ]);
 
 export async function GET() {
-  const auth = await requireAdminApi();
-  if (auth.error) return auth.error;
+  const session = await getServerSession();
+
+  if (!session || session.user.role !== "admin") {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
 
   const db = getDb();
 
@@ -30,6 +47,7 @@ export async function GET() {
         buyerEmail: user.email,
         status: order.status,
         paymentStatus: order.paymentStatus,
+        paymentMethod: order.paymentMethod,
         totalPaise: order.totalPaise,
         createdAt: order.createdAt,
       })
@@ -37,45 +55,18 @@ export async function GET() {
       .innerJoin(user, eq(order.buyerId, user.id))
       .orderBy(desc(order.createdAt));
 
-    const orderIds = ordersData.map((o) => o.id);
-    const itemCounts = orderIds.length
-      ? await db
-          .select({
-            orderId: orderItem.orderId,
-            count: count(),
-          })
+    const orderWithCounts = await Promise.all(
+      ordersData.map(async (o) => {
+        const itemResult = await db
+          .select({ count: count() })
           .from(orderItem)
-          .where(inArray(orderItem.orderId, orderIds))
-          .groupBy(orderItem.orderId)
-      : [];
-    const allocations = orderIds.length
-      ? await db
-          .select({
-            orderId: firmOrder.orderId,
-            id: firmOrder.id,
-            firmId: firmOrder.firmId,
-            firmName: firm.name,
-            allocationNumber: firmOrder.allocationNumber,
-            subtotalPaise: firmOrder.subtotalPaise,
-            gstPaise: firmOrder.gstPaise,
-            totalPaise: firmOrder.amountPaise,
-            fulfillmentStatus: firmOrder.fulfillmentStatus,
-            paymentStatus: firmOrder.paymentStatus,
-            paymentMethod: firmOrder.paymentMethod,
-            invoiceReference: firmOrder.invoiceReference,
-          })
-          .from(firmOrder)
-          .innerJoin(firm, eq(firmOrder.firmId, firm.id))
-          .where(inArray(firmOrder.orderId, orderIds))
-      : [];
-    const countByOrder = new Map(
-      itemCounts.map((row) => [row.orderId, row.count]),
+          .where(eq(orderItem.orderId, o.id));
+        return {
+          ...o,
+          itemCount: itemResult[0]?.count ?? 0,
+        };
+      }),
     );
-    const orderWithCounts = ordersData.map((o) => ({
-      ...o,
-      itemCount: countByOrder.get(o.id) ?? 0,
-      allocations: allocations.filter((row) => row.orderId === o.id),
-    }));
 
     return NextResponse.json({ orders: orderWithCounts });
   } catch (error) {
@@ -88,9 +79,11 @@ export async function GET() {
 }
 
 export async function PATCH(request: Request) {
-  const auth = await requireAdminApi();
-  if (auth.error) return auth.error;
-  const session = auth.session;
+  const session = await getServerSession();
+
+  if (!session || session.user.role !== "admin") {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
 
   const body = await request.json().catch(() => null);
   if (!body || typeof body !== "object") {
@@ -117,15 +110,19 @@ export async function PATCH(request: Request) {
   if (status && !ALLOWED_STATUSES.has(status)) {
     return NextResponse.json({ error: "Invalid status" }, { status: 400 });
   }
+  if (paymentStatus) {
+    if (!canMutateOrderPaymentStatus(session.user.role)) {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    }
+    if (!ALLOWED_PAYMENT_STATUSES.has(paymentStatus)) {
+      return NextResponse.json(
+        { error: "Invalid payment status" },
+        { status: 400 },
+      );
+    }
+  }
 
   const db = getDb();
-  const existing = await db.query.order.findFirst({
-    where: eq(order.id, orderId),
-  });
-
-  if (!existing) {
-    return NextResponse.json({ error: "Order not found" }, { status: 404 });
-  }
 
   const updates: {
     status?: string;
@@ -136,7 +133,67 @@ export async function PATCH(request: Request) {
   if (status) updates.status = status;
   if (paymentStatus) updates.paymentStatus = paymentStatus;
 
-  await db.update(order).set(updates).where(eq(order.id, orderId));
+  let restockedLines = 0;
+  let previousStatus = "";
+  let previousPaymentStatus = "";
+  let didRestock = false;
+
+  try {
+    await db.transaction(async (tx) => {
+      const locked = await tx
+        .select({
+          id: order.id,
+          status: order.status,
+          paymentStatus: order.paymentStatus,
+        })
+        .from(order)
+        .where(eq(order.id, orderId))
+        .for("update");
+
+      const existing = locked[0];
+      if (!existing) {
+        throw new Error("ORDER_NOT_FOUND");
+      }
+
+      previousStatus = existing.status;
+      previousPaymentStatus = existing.paymentStatus;
+      const doRestock = shouldRestockOnStatusChange(existing.status, status);
+      didRestock = doRestock;
+
+      if (status === "cancelled" && doRestock) {
+        // Conditional update: only the first cancel wins restock under concurrency.
+        const cancelled = await tx
+          .update(order)
+          .set(updates)
+          .where(
+            and(
+              eq(order.id, orderId),
+              ne(order.status, "cancelled"),
+              sql`${order.status} IN ('placed','pending','confirmed','processing','packed')`,
+            ),
+          )
+          .returning({ id: order.id });
+
+        if (!cancelled.length) {
+          // Already cancelled or not restockable — still apply non-restock updates if needed.
+          await tx.update(order).set(updates).where(eq(order.id, orderId));
+          didRestock = false;
+          return;
+        }
+
+        const result = await restockInventoryForCancelledOrder(tx, orderId);
+        restockedLines = result.restockedLines;
+        return;
+      }
+
+      await tx.update(order).set(updates).where(eq(order.id, orderId));
+    });
+  } catch (error) {
+    if (error instanceof Error && error.message === "ORDER_NOT_FOUND") {
+      return NextResponse.json({ error: "Order not found" }, { status: 404 });
+    }
+    throw error;
+  }
 
   await writeAuditLog({
     actorUserId: session.user.id,
@@ -144,12 +201,13 @@ export async function PATCH(request: Request) {
     entityType: "order",
     entityId: orderId,
     metadata: {
-      previousStatus: existing.status,
-      previousPaymentStatus: existing.paymentStatus,
+      previousStatus,
+      previousPaymentStatus,
       status,
       paymentStatus,
+      restockedLines: didRestock ? restockedLines : 0,
     },
   });
 
-  return NextResponse.json({ success: true });
+  return NextResponse.json({ success: true, restockedLines: didRestock ? restockedLines : 0 });
 }

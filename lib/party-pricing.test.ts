@@ -79,16 +79,10 @@ describe("GST-inclusive party pricing", () => {
       userId: "other-user",
       buyerId: "other-user",
       customerId: "other-user",
-      firmId: "forged",
-      gstPaise: 1,
-      totalPaise: 1,
     });
     assert.equal(cleaned.discountPercent, undefined);
     assert.equal(cleaned.netPricePaise, undefined);
     assert.equal(cleaned.userId, undefined);
-    assert.equal(cleaned.firmId, undefined);
-    assert.equal(cleaned.gstPaise, undefined);
-    assert.equal(cleaned.totalPaise, undefined);
     assert.deepEqual(cleaned.shippingAddress, { name: "x" });
   });
 

@@ -6,7 +6,29 @@ export type PublicBrand = {
   logo: string;
   relationship: PublicBrandRelationship;
   searchQuery: string;
+  tagline?: string;
 };
+
+/**
+ * Customer-facing brand identities to hide from filters/lists.
+ * Exact brand-name match only — does not strip "CE" from specs/certifications.
+ */
+export const CUSTOMER_HIDDEN_BRAND_NAMES = ["CE", "OAE"] as const;
+
+function normalizeBrandKey(value: string): string {
+  return value.trim().toLowerCase();
+}
+
+const HIDDEN_BRAND_KEYS = new Set(
+  CUSTOMER_HIDDEN_BRAND_NAMES.map((name) => normalizeBrandKey(name)),
+);
+
+export function isCustomerVisibleCatalogueBrand(brand: string | null | undefined): boolean {
+  if (!brand) return false;
+  const key = normalizeBrandKey(brand);
+  if (!key) return false;
+  return !HIDDEN_BRAND_KEYS.has(key);
+}
 
 /**
  * Official public Brands presentation only.
@@ -21,11 +43,20 @@ export const PUBLIC_BRANDS: readonly PublicBrand[] = [
     searchQuery: "CI AUTOMOTIVE LLP",
   },
   {
-    id: "02",
-    name: "CE",
-    logo: "/images/brands/02.png",
+    id: "meko",
+    name: "MEKO",
+    logo: "/images/brands/meko.jpg",
     relationship: "distributor",
-    searchQuery: "CE",
+    searchQuery: "MEKO",
+    tagline: "Distributor",
+  },
+  {
+    id: "starlinks",
+    name: "STARLINKS",
+    logo: "/images/brands/starlinks.png",
+    relationship: "distributor",
+    searchQuery: "STARLINKS",
+    tagline: "Authorised Distributor",
   },
   {
     id: "03",

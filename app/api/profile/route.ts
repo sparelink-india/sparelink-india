@@ -5,7 +5,6 @@ import { getServerSession } from "@/lib/auth-server";
 import { getDb } from "@/lib/db";
 import { customerProfile, user } from "@/drizzle/schema";
 import { validateGSTIN } from "@/lib/gst";
-import { stripPrivilegedIdentityFields } from "@/lib/access-control";
 import { denyIfMustChangePassword } from "@/lib/require-role";
 
 export async function GET() {
@@ -66,13 +65,10 @@ export async function PATCH(request: Request) {
   const blocked = await denyIfMustChangePassword(session.user.id);
   if (blocked) return blocked;
 
-  const rawBody = await request.json().catch(() => null);
-  if (!rawBody || typeof rawBody !== "object") {
+  const body = await request.json().catch(() => null);
+  if (!body || typeof body !== "object") {
     return NextResponse.json({ error: "Invalid payload" }, { status: 400 });
   }
-  const body = stripPrivilegedIdentityFields(
-    rawBody as Record<string, unknown>,
-  );
 
   const db = getDb();
 
@@ -89,10 +85,8 @@ export async function PATCH(request: Request) {
   const shippingCity = typeof body.shippingCity === "string" ? body.shippingCity.trim() : undefined;
   const shippingState = typeof body.shippingState === "string" ? body.shippingState.trim() : undefined;
   const shippingPincode = typeof body.shippingPincode === "string" ? body.shippingPincode.trim() : undefined;
-  const shippingPreference = ["self_pickup", "transport", "courier"].includes(
-    String(body.shippingPreference ?? ""),
-  )
-    ? String(body.shippingPreference)
+  const shippingPreference = ["self_pickup", "transport", "courier"].includes(body.shippingPreference)
+    ? body.shippingPreference
     : undefined;
   const transportName = typeof body.transportName === "string" ? body.transportName.trim() : undefined;
   const transportPhone = typeof body.transportPhone === "string" ? body.transportPhone.trim() : undefined;

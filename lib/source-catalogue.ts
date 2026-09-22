@@ -649,4 +649,10 @@ export function getCustomerCatalogueImageUrl(sku: string): string | null {
   return catalogueImagePublicPath(sku);
 }
 
+export {
+  catalogueImageUrls,
+  catalogueThumbPublicPath,
+  catalogueMediumPublicPath,
+} from "@/lib/catalogue-image-index";
+
 export { OVERLAY_PATH, ORIGINAL_IMPORT_CSV };

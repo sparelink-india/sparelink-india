@@ -1,13 +1,11 @@
 /* eslint-disable react-hooks/set-state-in-effect */
 "use client";
 
-import { Suspense, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { SiteFooter } from "@/components/site-footer";
 import { StorefrontHeader } from "@/components/storefront-header";
-import { MobileBottomNav } from "@/components/mobile/mobile-bottom-nav";
 import { InclusivePrice } from "@/components/inclusive-price";
-import { CatalogueProductImage } from "@/components/catalogue-product-image";
 import { useI18n } from "@/components/preferences-provider";
 
 type WishlistItem = {
@@ -21,6 +19,9 @@ type WishlistItem = {
   netInclusivePaise?: number | null;
   discountPercent?: number | null;
   gstRate?: number | null;
+  imageUrl?: string | null;
+  thumbUrl?: string | null;
+  mediumUrl?: string | null;
 };
 
 export default function WishlistPage() {
@@ -93,9 +94,9 @@ export default function WishlistPage() {
   }
 
   return (
-    <div className="storefront-mobile-pad flex min-h-screen flex-col bg-slate-50">
+    <div className="flex min-h-screen flex-col bg-slate-50">
       <StorefrontHeader />
-      <main className="mx-auto w-full max-w-5xl flex-1 px-3 py-5 sm:px-4 sm:py-10">
+      <main className="mx-auto w-full max-w-5xl flex-1 px-4 py-10">
         <h1 className="text-2xl font-bold text-slate-900">{t("wishlist.title")}</h1>
         {loading ? <p className="mt-6 text-sm text-slate-500">{t("wishlist.loading")}</p> : null}
         {needsLogin ? (
@@ -113,20 +114,31 @@ export default function WishlistPage() {
             {t("wishlist.empty")}
           </div>
         ) : null}
-        <div className="mt-4 grid gap-3 sm:mt-6 sm:grid-cols-2 sm:gap-4">
+        <div className="mt-6 grid gap-4 sm:grid-cols-2">
           {items.map((item) => (
-            <article key={item.id} className="flex gap-0 overflow-hidden rounded-2xl border border-slate-200 bg-white sm:block sm:p-4">
-              <div className="h-28 w-28 shrink-0 bg-slate-50 p-2 sm:aspect-[4/3] sm:h-auto sm:w-full sm:rounded-xl sm:p-0">
-                <CatalogueProductImage
-                  src={item.partNumber ? `/images/products/${item.partNumber}.svg` : "/images/products/placeholder.svg"}
+            <article key={item.id} className="rounded-2xl border border-slate-200 bg-white p-4">
+              <div className="aspect-[4/3] overflow-hidden rounded-xl bg-slate-100">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={item.thumbUrl || item.imageUrl || "/images/products/placeholder.svg"}
                   alt={item.partName || "Part"}
-                  size="thumb"
-                  className="h-full w-full"
+                  width={640}
+                  height={480}
+                  loading="lazy"
+                  decoding="async"
+                  className="h-full w-full object-cover"
+                  onError={(event) => {
+                    const el = event.currentTarget as HTMLImageElement;
+                    if (item.imageUrl && el.src !== item.imageUrl) {
+                      el.src = item.imageUrl;
+                      return;
+                    }
+                    el.src = "/images/products/placeholder.svg";
+                  }}
                 />
               </div>
-              <div className="min-w-0 flex-1 p-3 sm:p-0 sm:pt-3">
-              {item.partNumber ? <p className="font-mono text-xs text-slate-500">Part #{item.partNumber}</p> : null}
-              <h2 className="mt-1 line-clamp-2 font-semibold">{item.partName || t("product.partFallback")}</h2>
+              {item.partNumber ? <p className="mt-3 font-mono text-xs text-slate-500">Part #{item.partNumber}</p> : null}
+              <h2 className="mt-1 font-semibold">{item.partName || t("product.partFallback")}</h2>
               {item.pricePaise != null && item.pricePaise > 0 ? (
                 <InclusivePrice
                   align="left"
@@ -139,31 +151,27 @@ export default function WishlistPage() {
               ) : (
                 <p className="mt-1 text-sm text-slate-500">{t("product.priceCheckout")}</p>
               )}
-              <div className="mt-3 flex gap-2">
+              <div className="mt-4 flex gap-2">
                 <button
                   type="button"
                   onClick={() => void addToCart(item)}
-                  className="min-h-11 flex-1 rounded-lg bg-slate-950 px-3 py-2 text-sm font-semibold text-white"
+                  className="rounded-lg bg-slate-950 px-3 py-2 text-sm font-semibold text-white"
                 >
                   {t("product.addToCart")}
                 </button>
                 <button
                   type="button"
                   onClick={() => void removeItem(item)}
-                  className="min-h-11 rounded-lg border border-rose-200 px-3 py-2 text-sm font-semibold text-rose-700"
+                  className="rounded-lg border border-rose-200 px-3 py-2 text-sm font-semibold text-rose-700"
                 >
                   {t("cart.remove")}
                 </button>
-              </div>
               </div>
             </article>
           ))}
         </div>
       </main>
       <SiteFooter />
-      <Suspense fallback={null}>
-        <MobileBottomNav />
-      </Suspense>
     </div>
   );
 }

@@ -7,6 +7,7 @@ import {
   gateBuyerApi,
   gateDealerApi,
 } from "@/lib/access-control";
+import { isAdminRole, isDealerRole } from "@/lib/auth-policy";
 import { getServerSession } from "@/lib/auth-server";
 import { isMustChangePassword } from "@/lib/must-change-password";
 
@@ -66,6 +67,25 @@ export async function requireDealerApi() {
   const blocked = await denyIfMustChangePassword(session!.user.id);
   if (blocked) return { error: blocked };
   return { session: session! };
+}
+
+/** Admin or dealer API access (B2B product search, etc.). */
+export async function requireAdminOrDealerApi() {
+  const session = await getServerSession();
+  if (!session?.user) {
+    return {
+      error: NextResponse.json({ error: "Unauthorized" }, { status: 401 }),
+    };
+  }
+  const role = session.user.role as UserRole;
+  if (!isAdminRole(role) && !isDealerRole(role)) {
+    return {
+      error: NextResponse.json({ error: "Forbidden" }, { status: 403 }),
+    };
+  }
+  const blocked = await denyIfMustChangePassword(session.user.id);
+  if (blocked) return { error: blocked };
+  return { session };
 }
 
 export async function requireRole(allowedRoles: UserRole[]) {

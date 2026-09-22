@@ -21,7 +21,7 @@ function MoonIcon({ className }: { className?: string }) {
 function optionClass(active: boolean, compact: boolean) {
   const size = compact
     ? "h-7 min-w-7 px-1.5 text-[10px]"
-    : "h-8 min-w-[4.25rem] px-2.5 text-[11px]";
+    : "h-8 min-w-0 px-2 text-[11px] xl:min-w-[4.25rem] xl:px-2.5";
   if (active) {
     return `${size} inline-flex items-center justify-center gap-1 rounded-full bg-white font-bold text-[var(--brand)] shadow-sm dark:bg-white`;
   }
@@ -49,7 +49,7 @@ export function HeaderPreferenceToggle({ compact = false }: { compact?: boolean 
       className={
         compact
           ? "inline-flex h-8 max-w-[210px] items-center gap-1 rounded-full border border-white/25 bg-white/15 px-1 shadow-sm backdrop-blur-sm"
-          : "inline-flex h-10 max-w-[300px] shrink-0 items-center gap-1 rounded-full border border-slate-200 bg-white px-1 shadow-[0_6px_16px_rgba(122,18,51,0.12)] md:h-11 dark:border-[#2d3545] dark:bg-[#161b24]"
+          : "inline-flex h-10 max-w-full shrink items-center gap-1 rounded-full border border-slate-200 bg-white px-1 shadow-[0_6px_16px_rgba(122,18,51,0.12)] lg:h-11 dark:border-[#2d3545] dark:bg-[#161b24]"
       }
     >
       <div
@@ -76,7 +76,7 @@ export function HeaderPreferenceToggle({ compact = false }: { compact?: boolean 
           onClick={() => setTheme("dark")}
           className={
             theme === "dark"
-              ? `${compact ? "h-7 min-w-7 px-1.5 text-[10px]" : "h-8 min-w-[4.25rem] px-2.5 text-[11px]"} inline-flex items-center justify-center gap-1 rounded-full bg-[color-mix(in_srgb,var(--brand)_72%,black)] font-bold text-white shadow-sm`
+              ? `${compact ? "h-7 min-w-7 px-1.5 text-[10px]" : "h-8 min-w-0 px-2 text-[11px] xl:min-w-[4.25rem] xl:px-2.5"} inline-flex items-center justify-center gap-1 rounded-full bg-[color-mix(in_srgb,var(--brand)_72%,black)] font-bold text-white shadow-sm`
               : optionClass(false, compact)
           }
         >

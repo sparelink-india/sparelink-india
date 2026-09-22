@@ -9,12 +9,13 @@
   "scripts": {
     "dev": "next dev",
     "prepare-catalogue-images": "node scripts/prepare-catalogue-images.mjs",
+    "generate-catalogue-derivatives": "node scripts/generate-catalogue-derivatives.mjs",
     "prebuild": "node scripts/prepare-catalogue-images.mjs",
     "postbuild": "node scripts/strip-catalogue-image-traces.mjs",
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "test": "tsx --test lib/*.test.ts",
+    "test": "tsx --test \"lib/**/*.test.ts\"",
     "typecheck": "next typegen && tsc --noEmit",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
@@ -48,6 +49,7 @@
     "eslint": "^9",
     "eslint-config-next": "16.3.5",
     "prettier": "^3.6.2",
+    "sharp": "^0.35.4",
     "tailwindcss": "^4",
     "tsx": "^4.23.13",
     "typescript": "^5"

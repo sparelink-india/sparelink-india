@@ -3,12 +3,15 @@ import { and, eq, inArray, or } from "drizzle-orm";
 import {
   filterAutocompleteHits,
   parseSearchIntent,
+  partNumberDigits,
   rankSearchHits,
 } from "@/lib/search-intent";
+import { isCustomerVisibleProduct } from "@/lib/ci-sync/types";
 import { typesense } from "@/lib/typesense";
 import { getDb } from "@/lib/db";
 import { getServerSession } from "@/lib/auth-server";
-import { getCustomerCatalogueImageUrl, loadSourceCatalogue } from "@/lib/source-catalogue";
+import { catalogueImageUrls } from "@/lib/catalogue-image-index";
+import { loadSourceCatalogue } from "@/lib/source-catalogue";
 import { extractGSTRate } from "@/lib/gst";
 import { resolveStorefrontPricing } from "@/lib/customer-discount";
 import { publicListingPrice } from "@/lib/party-pricing";
@@ -35,6 +38,7 @@ import {
   groupVehiclesByBrand,
   matchVehiclesForQuery,
 } from "@/lib/vehicle-fitment";
+import { isCustomerVisibleCatalogueBrand } from "@/lib/public-brands";
 import {
   findStorefrontCategory,
   typesenseCategoryFilter,
@@ -74,11 +78,11 @@ function parsePartSpec(raw: string | null | undefined): PartSpec {
   }
 }
 
-function resolveImageUrl(...candidates: Array<string | null | undefined>): string | null {
+function resolveImageUrls(...candidates: Array<string | null | undefined>) {
   for (const candidate of candidates) {
     if (!candidate) continue;
-    const url = getCustomerCatalogueImageUrl(candidate);
-    if (url) return url;
+    const urls = catalogueImageUrls(candidate);
+    if (urls) return urls;
   }
   return null;
 }
@@ -94,6 +98,7 @@ function typesenseIdFilter(ids: string[]): string {
 
 export async function GET(request: NextRequest) {
   const query = request.nextUrl.searchParams.get("q")?.trim() ?? "";
+  const brandParam = request.nextUrl.searchParams.get("brand")?.trim() ?? "";
   const categoryNameParam = request.nextUrl.searchParams.get("categoryName")?.trim() ?? "";
   const nameContains = request.nextUrl.searchParams.get("nameContains")?.trim() ?? "";
   const otherType = request.nextUrl.searchParams.get("otherType")?.trim() ?? "";
@@ -254,9 +259,13 @@ export async function GET(request: NextRequest) {
     }
 
     const categoryFilter = typesenseCategoryFilter(categoryNames);
+    const brandFilter = brandParam
+      ? `brand:=\`${brandParam.replace(/[`\\]/g, "")}\``
+      : null;
     const filterClauses = [
       scopedPartIds ? typesenseIdFilter(scopedPartIds) : null,
       categoryFilter,
+      brandFilter,
     ].filter((item): item is string => Boolean(item));
 
     const usePostFilter = Boolean(segmentParam || otherType);
@@ -269,25 +278,85 @@ export async function GET(request: NextRequest) {
           ? parseSearchIntent(browseQuery).typesenseQuery
           : "*";
     const suggestFetchSize = Math.min(50, Math.max(perPage, 24));
-    const searchResults = await typesense
-      .collections("parts")
-      .documents()
-      .search({
-        q: typesenseQuery,
-        query_by: "part_number,name,description,brand,category",
-        query_by_weights: "6,5,1,3,2",
-        filter_by: filterClauses.length ? filterClauses.join(" && ") : undefined,
-        page: useVehicleFilter || usePostFilter ? 1 : page,
-        per_page: useVehicleFilter || usePostFilter
-          ? Math.min(250, Math.max(scopedPartIds?.length ?? 24, perPage))
-          : suggest
-            ? suggestFetchSize
-            : perPage,
-        prefix: true,
-        num_typos: intent.isPartNumberQuery ? 0 : 1,
-        prioritize_exact_match: true,
-        prioritize_token_position: true,
-      });
+    const partNumberFetchSize = suggest
+      ? suggestFetchSize
+      : Math.min(250, Math.max(perPage, 100));
+    const filterBy = filterClauses.length ? filterClauses.join(" && ") : undefined;
+    const searchPage = useVehicleFilter || usePostFilter || intent.isPartNumberQuery ? 1 : page;
+    const searchPerPage = useVehicleFilter || usePostFilter
+      ? Math.min(250, Math.max(scopedPartIds?.length ?? 24, perPage))
+      : intent.isPartNumberQuery
+        ? partNumberFetchSize
+        : suggest
+          ? suggestFetchSize
+          : perPage;
+
+    const defaultSearchParams = {
+      q: typesenseQuery,
+      query_by: "part_number,name,description,brand,category",
+      query_by_weights: "6,5,1,3,2",
+      filter_by: filterBy,
+      page: searchPage,
+      per_page: searchPerPage,
+      prefix: true,
+      num_typos: intent.isPartNumberQuery ? 0 : 1,
+      prioritize_exact_match: true,
+      prioritize_token_position: true,
+      facet_by: "brand,category",
+      max_facet_values: 24,
+    };
+
+    async function searchTypesense(params: Record<string, unknown>) {
+      return typesense!.collections("parts").documents().search(params as never);
+    }
+
+    async function searchPartNumberQueries(queries: string[]) {
+      const uniqueQueries = [...new Set(queries.map((item) => item.trim()).filter(Boolean))];
+      const merged: NonNullable<Awaited<ReturnType<typeof searchTypesense>>["hits"]> = [];
+      const seen = new Set<string>();
+      let found = 0;
+      let facetCounts: unknown = [];
+      for (const q of uniqueQueries) {
+        let result;
+        try {
+          result = await searchTypesense({
+            ...defaultSearchParams,
+            q,
+            query_by: "part_number,part_number_search",
+            query_by_weights: "8,6",
+            infix: "off,always",
+            num_typos: 0,
+            drop_tokens_threshold: 0,
+          });
+        } catch {
+          result = await searchTypesense({ ...defaultSearchParams, q });
+        }
+        found += typeof result.found === "number" ? result.found : result.hits?.length ?? 0;
+        if (!Array.isArray(facetCounts) || facetCounts.length === 0) {
+          facetCounts = (result as { facet_counts?: unknown }).facet_counts ?? [];
+        }
+        for (const hit of result.hits ?? []) {
+          const doc = (hit.document as PartDocument | undefined) ?? {};
+          const key = String(doc.id || doc.part_number || "");
+          if (!key || seen.has(key)) continue;
+          seen.add(key);
+          merged.push(hit);
+        }
+      }
+      return { hits: merged, found: Math.max(found, merged.length), facet_counts: facetCounts };
+    }
+
+    let searchResults;
+    if (intent.isPartNumberQuery && typesenseQuery !== "*") {
+      const digitQuery = partNumberDigits(intent.originalQuery);
+      const pnQueries = [intent.originalQuery];
+      if (digitQuery && digitQuery.toLowerCase() !== intent.originalQuery.toLowerCase()) {
+        pnQueries.push(digitQuery);
+      }
+      searchResults = await searchPartNumberQueries(pnQueries);
+    } else {
+      searchResults = await searchTypesense(defaultSearchParams);
+    }
 
     const hits = searchResults.hits ?? [];
     const typesenseFound =
@@ -297,8 +366,88 @@ export async function GET(request: NextRequest) {
 
     if (suggest) {
       const suggested = filterAutocompleteHits(intent, hits, documentFromHit, perPage);
+      const suggestSession = await getServerSession();
+      const suggestIsAdmin = suggestSession?.user?.role === "admin";
+
+      if (suggestIsAdmin) {
+        return NextResponse.json({
+          results: suggested.map((hit, index) => {
+            const doc = documentFromHit(hit);
+            return {
+              document: {
+                id: String((hit.document as PartDocument | undefined)?.id || doc.part_number || index),
+                part_number: doc.part_number,
+                name: doc.name,
+                brand: doc.brand,
+                category: doc.category,
+              },
+            };
+          }),
+          found: suggested.length,
+          page,
+          perPage,
+          mode: "suggest",
+          intent: intent.naturalLanguage
+            ? {
+                normalizedQuery: intent.typesenseQuery,
+                side: intent.naturalLanguage.side,
+                position: intent.naturalLanguage.position,
+                brandHints: intent.naturalLanguage.brandHints,
+                vehicleHints: intent.naturalLanguage.vehicleHints,
+                productHints: intent.naturalLanguage.productHints,
+              }
+            : null,
+        });
+      }
+
+      const suggestDocs = suggested.map(documentFromHit);
+      const suggestIds = [
+        ...new Set(
+          suggestDocs.map((doc) => doc.id).filter((id): id is string => Boolean(id)),
+        ),
+      ];
+      const suggestPartNumbers = [
+        ...new Set(
+          suggestDocs
+            .map((doc) => doc.part_number?.trim())
+            .filter((value): value is string => Boolean(value)),
+        ),
+      ];
+      const suggestConditions = [];
+      if (suggestIds.length) suggestConditions.push(inArray(part.id, suggestIds));
+      if (suggestPartNumbers.length) {
+        suggestConditions.push(inArray(part.partNumber, suggestPartNumbers));
+      }
+      const suggestDbParts = suggestConditions.length
+        ? await db
+            .select({
+              id: part.id,
+              partNumber: part.partNumber,
+              isPublished: part.isPublished,
+              approvalStatus: part.approvalStatus,
+            })
+            .from(part)
+            .where(or(...suggestConditions))
+        : [];
+      const suggestById = new Map(suggestDbParts.map((row) => [row.id, row]));
+      const suggestByNumber = new Map(
+        suggestDbParts.map((row) => [row.partNumber, row]),
+      );
+
+      const visibleSuggested = suggested.filter((hit) => {
+        const doc = documentFromHit(hit);
+        const row =
+          (doc.id ? suggestById.get(doc.id) : undefined) ||
+          (doc.part_number ? suggestByNumber.get(doc.part_number) : undefined);
+        if (!row) return false;
+        return isCustomerVisibleProduct({
+          isPublished: row.isPublished,
+          approvalStatus: row.approvalStatus,
+        });
+      });
+
       return NextResponse.json({
-        results: suggested.map((hit, index) => {
+        results: visibleSuggested.map((hit, index) => {
           const doc = documentFromHit(hit);
           return {
             document: {
@@ -310,10 +459,20 @@ export async function GET(request: NextRequest) {
             },
           };
         }),
-        found: suggested.length,
+        found: visibleSuggested.length,
         page,
         perPage,
         mode: "suggest",
+        intent: intent.naturalLanguage
+          ? {
+              normalizedQuery: intent.typesenseQuery,
+              side: intent.naturalLanguage.side,
+              position: intent.naturalLanguage.position,
+              brandHints: intent.naturalLanguage.brandHints,
+              vehicleHints: intent.naturalLanguage.vehicleHints,
+              productHints: intent.naturalLanguage.productHints,
+            }
+          : null,
       });
     }
 
@@ -352,6 +511,7 @@ export async function GET(request: NextRequest) {
             brand: part.brand,
             specifications: part.specifications,
             isPublished: part.isPublished,
+            approvalStatus: part.approvalStatus,
           })
           .from(part)
           .where(or(...partConditions))
@@ -371,7 +531,16 @@ export async function GET(request: NextRequest) {
       ...new Set(
         documents
           .map((doc) => resolveDbPart(doc)?.id)
-          .filter((id): id is string => Boolean(id)),
+          .filter((id): id is string => Boolean(id))
+          .filter((id) => {
+            if (isAdmin) return true;
+            const row = dbPartById.get(id);
+            if (!row) return false;
+            return isCustomerVisibleProduct({
+              isPublished: row.isPublished,
+              approvalStatus: row.approvalStatus,
+            });
+          }),
       ),
     ];
 
@@ -450,8 +619,19 @@ export async function GET(request: NextRequest) {
     const results = rankedHits
       .filter((hit) => {
         const doc = (hit.document as PartDocument | undefined) ?? {};
-        if (!compatibleIdSet) return true;
         const dbPart = resolveDbPart(doc);
+        if (!isAdmin) {
+          if (!dbPart) return false;
+          if (
+            !isCustomerVisibleProduct({
+              isPublished: dbPart.isPublished,
+              approvalStatus: dbPart.approvalStatus,
+            })
+          ) {
+            return false;
+          }
+        }
+        if (!compatibleIdSet) return true;
         return dbPart ? compatibleIdSet.has(dbPart.id) : false;
       })
       .map((hit) => {
@@ -469,7 +649,7 @@ export async function GET(request: NextRequest) {
           gstFromSpec != null && !Number.isNaN(gstFromSpec)
             ? gstFromSpec
             : extractGSTRate(dbPart?.description || doc.description);
-        const imageUrl = resolveImageUrl(
+        const imageUrls = resolveImageUrls(
           partListings[0]?.sku,
           dbPart?.partNumber,
           doc.part_number,
@@ -485,8 +665,15 @@ export async function GET(request: NextRequest) {
             description: dbPart?.description || doc.description,
             brand: dbPart?.brand || doc.brand,
           },
-          imageUrl,
+          imageUrl: imageUrls?.imageUrl ?? null,
+          thumbUrl: imageUrls?.thumbUrl ?? null,
+          mediumUrl: imageUrls?.mediumUrl ?? null,
           listings: partListings.map((listing) => {
+            const listingImages = resolveImageUrls(
+              listing.sku,
+              dbPart?.partNumber,
+              doc.part_number,
+            );
             const pensol = isPensolProduct({
               brand: dbPart?.brand || doc.brand,
               name: dbPart?.name || doc.name,
@@ -558,11 +745,9 @@ export async function GET(request: NextRequest) {
             moq: spec.moq ?? null,
             uom: spec.uom ?? null,
             hsn: spec.hsn ?? null,
-            imageUrl: resolveImageUrl(
-              listing.sku,
-              dbPart?.partNumber,
-              doc.part_number,
-            ),
+            imageUrl: listingImages?.imageUrl ?? null,
+            thumbUrl: listingImages?.thumbUrl ?? null,
+            mediumUrl: listingImages?.mediumUrl ?? null,
           };
           }),
           compatibleVehicles: dbPart
@@ -596,17 +781,61 @@ export async function GET(request: NextRequest) {
       });
     }
 
-    const shouldPage = useVehicleFilter || usePostFilter;
+    const shouldPage = useVehicleFilter || usePostFilter || intent.isPartNumberQuery;
     const pagedResults = shouldPage
       ? filteredResults.slice((page - 1) * perPage, page * perPage)
       : filteredResults;
     const found = shouldPage ? filteredResults.length : typesenseFound;
+
+    type FacetCount = { field_name?: string; counts?: Array<{ value?: string; count?: number }> };
+    const facetPayload = (searchResults as { facet_counts?: FacetCount[] }).facet_counts ?? [];
+    const brands: Array<{ value: string; count: number }> = [];
+    const categories: Array<{ value: string; count: number }> = [];
+    for (const facet of facetPayload) {
+      const rows = (facet.counts ?? [])
+        .map((row) => ({
+          value: String(row.value || "").trim(),
+          count: Number(row.count || 0),
+        }))
+        .filter((row) => row.value && row.count > 0);
+      if (facet.field_name === "brand") {
+        brands.push(...rows.filter((row) => isCustomerVisibleCatalogueBrand(row.value)));
+      }
+      if (facet.field_name === "category") categories.push(...rows);
+    }
+
+    let vehicles: Array<{ make: string; model: string; count: number }> = [];
+    if (!suggest && query && !intent.isPartNumberQuery) {
+      const catalogVehicles = await db
+        .select({
+          id: vehicle.id,
+          make: vehicle.make,
+          model: vehicle.model,
+          variant: vehicle.variant,
+        })
+        .from(vehicle);
+      const matchedVehicles = matchVehiclesForQuery(query, catalogVehicles);
+      if (matchedVehicles?.vehicleIds.length) {
+        const idSet = new Set(matchedVehicles.vehicleIds);
+        const grouped = new Map<string, { make: string; model: string; count: number }>();
+        for (const row of catalogVehicles) {
+          if (!idSet.has(row.id)) continue;
+          const key = `${row.make}\0${row.model}`;
+          const existing = grouped.get(key);
+          if (existing) existing.count += 1;
+          else grouped.set(key, { make: row.make, model: row.model, count: 1 });
+        }
+        vehicles = [...grouped.values()];
+      }
+    }
 
     return NextResponse.json({
       results: pagedResults,
       found,
       page,
       perPage,
+      facets: { brands, categories },
+      vehicles,
       pricing: {
         effectiveDiscountPercent: pricing.effectiveDiscountPercent,
         source: pricing.source,

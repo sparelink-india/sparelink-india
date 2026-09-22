@@ -4,8 +4,8 @@ import { NextResponse } from "next/server";
 
 import { getDb } from "@/lib/db";
 import { getServerSession } from "@/lib/auth-server";
+import { isBuyerRole } from "@/lib/auth-policy";
 import { denyIfMustChangePassword } from "@/lib/require-role";
-import { gateBuyerApi } from "@/lib/access-control";
 import {
   cart,
   cartItem,
@@ -16,48 +16,52 @@ import {
   part,
 } from "@/drizzle/schema";
 import { extractGSTRate } from "@/lib/gst";
-import { isAllowedFirmId } from "@/lib/firms";
 import { resolveStorefrontPricing } from "@/lib/customer-discount";
 import { resolvePensolConfigsForUser } from "@/lib/pensol-discount";
+import { isAllowedFirmId } from "@/lib/firms";
+import {
+  validateAvailableStock,
+  validateCartQuantity,
+} from "@/lib/order-architecture";
 import { ignoreClientPricing } from "@/lib/party-pricing";
 import { priceStorefrontLines } from "@/lib/storefront-line-price";
 import { isAuthoritativeSellingPricePaise } from "@/lib/storefront-price-display";
+import { catalogueImagePublicPath } from "@/lib/catalogue-image-index";
 
-async function resolveBuyerCart(options?: { anonymousGet?: boolean }) {
+function resolveCartImageUrl(
+  ...candidates: Array<string | null | undefined>
+): string | null {
+  for (const candidate of candidates) {
+    if (!candidate) continue;
+    const url = catalogueImagePublicPath(candidate);
+    if (url) return url;
+  }
+  return null;
+}
+
+async function getBuyerSession() {
   const session = await getServerSession();
+
   if (!session) {
-    if (options?.anonymousGet) {
-      return { session: null, blocked: null as NextResponse | null };
-    }
-    return {
-      session: null,
-      blocked: NextResponse.json(
-        { error: "Authentication required." },
-        { status: 401 },
-      ),
-    };
+    return null;
   }
 
-  const buyerGate = gateBuyerApi(session);
-  if (!buyerGate.ok) {
-    if (options?.anonymousGet) {
-      return { session: null, blocked: null };
-    }
-    return {
-      session: null,
-      blocked: NextResponse.json(
-        { error: buyerGate.error },
-        { status: buyerGate.status },
-      ),
-    };
+  if (!isBuyerRole(session.user.role)) {
+    return null;
   }
 
+  return session;
+}
+
+async function rejectUnreadyBuyer() {
+  const session = await getBuyerSession();
+  if (!session) return { session: null as Awaited<ReturnType<typeof getBuyerSession>>, blocked: null };
   const blocked = await denyIfMustChangePassword(session.user.id);
   return { session: blocked ? null : session, blocked };
 }
 
 export async function GET() {
-  const { session, blocked } = await resolveBuyerCart({ anonymousGet: true });
+  const { session, blocked } = await rejectUnreadyBuyer();
   if (blocked) return blocked;
 
   if (!session) {
@@ -155,6 +159,7 @@ export async function GET() {
     const creditLine = credit.priced[index];
     return {
       ...item,
+      imageUrl: resolveCartImageUrl(item.sku, item.partNumber),
       gstRate: line.gstRate,
       listInclusivePaise: line.listInclusivePaise,
       netInclusivePaise: line.netInclusivePaise,
@@ -194,7 +199,7 @@ export async function GET() {
 }
 
 export async function POST(request: Request) {
-  const { session, blocked } = await resolveBuyerCart();
+  const { session, blocked } = await rejectUnreadyBuyer();
   if (blocked) return blocked;
 
   if (!session) {
@@ -206,20 +211,15 @@ export async function POST(request: Request) {
   );
 
   const dealerListingId = body?.dealerListingId;
-  const quantity = body?.quantity;
+  const quantityResult = validateCartQuantity(body?.quantity);
 
-  if (
-    typeof dealerListingId !== "string" ||
-    !dealerListingId ||
-    typeof quantity !== "number" ||
-    !Number.isInteger(quantity) ||
-    quantity <= 0
-  ) {
+  if (typeof dealerListingId !== "string" || !dealerListingId || !quantityResult.ok) {
     return NextResponse.json(
       { error: "dealerListingId and positive integer quantity are required" },
       { status: 400 },
     );
   }
+  const quantity = quantityResult.quantity;
 
   const db = getDb();
 
@@ -265,13 +265,9 @@ export async function POST(request: Request) {
     );
   }
 
-  const stock = selectedListing.stock ?? 0;
-
-  if (quantity > stock) {
-    return NextResponse.json(
-      { error: `Requested quantity (${quantity}) exceeds available stock (${stock})` },
-      { status: 400 },
-    );
+  const stockCheck = validateAvailableStock(quantity, selectedListing.stock);
+  if (!stockCheck.ok) {
+    return NextResponse.json({ error: stockCheck.error }, { status: 400 });
   }
 
   let existingCart = await db.query.cart.findFirst({
@@ -299,11 +295,9 @@ export async function POST(request: Request) {
   if (existingItem) {
     const newQuantity = existingItem.quantity + quantity;
 
-    if (newQuantity > stock) {
-      return NextResponse.json(
-        { error: `Total cart quantity (${newQuantity}) exceeds available stock (${stock})` },
-        { status: 400 },
-      );
+    const combinedStock = validateAvailableStock(newQuantity, selectedListing.stock);
+    if (!combinedStock.ok) {
+      return NextResponse.json({ error: combinedStock.error }, { status: 400 });
     }
 
     await db
@@ -338,7 +332,7 @@ export async function POST(request: Request) {
 }
 
 export async function PATCH(request: Request) {
-  const { session, blocked } = await resolveBuyerCart();
+  const { session, blocked } = await rejectUnreadyBuyer();
   if (blocked) return blocked;
 
   if (!session) {
@@ -349,26 +343,19 @@ export async function PATCH(request: Request) {
     ((await request.json().catch(() => null)) as Record<string, unknown> | null) ?? {},
   );
   const cartItemId = body?.cartItemId || body?.id;
-  const quantity = body?.quantity;
+  const quantityResult = validateCartQuantity(body?.quantity);
 
-  if (
-    typeof cartItemId !== "string" ||
-    !cartItemId ||
-    typeof quantity !== "number" ||
-    !Number.isInteger(quantity)
-  ) {
+  if (typeof cartItemId !== "string" || !cartItemId || !quantityResult.ok) {
     return NextResponse.json(
-      { error: "cartItemId and integer quantity are required" },
+      {
+        error: quantityResult.ok
+          ? "cartItemId and integer quantity are required"
+          : quantityResult.error,
+      },
       { status: 400 },
     );
   }
-
-  if (quantity < 1) {
-    return NextResponse.json(
-      { error: "Quantity must be at least 1. Use remove to delete item." },
-      { status: 400 },
-    );
-  }
+  const quantity = quantityResult.quantity;
 
   const db = getDb();
 
@@ -425,12 +412,12 @@ export async function PATCH(request: Request) {
     );
   }
 
-  const stock = target.stock ?? 0;
-  if (quantity > stock) {
+  const stockCheck = validateAvailableStock(quantity, target.stock);
+  if (!stockCheck.ok) {
     return NextResponse.json(
       {
-        error: `Only ${stock} unit${stock === 1 ? "" : "s"} available in stock for ${target.partName || "this item"}.`,
-        availableStock: stock,
+        error: `Only ${target.stock ?? 0} unit${(target.stock ?? 0) === 1 ? "" : "s"} available in stock for ${target.partName || "this item"}.`,
+        availableStock: target.stock ?? 0,
       },
       { status: 400 },
     );
@@ -454,7 +441,7 @@ export async function PATCH(request: Request) {
 }
 
 export async function DELETE(request: Request) {
-  const { session, blocked } = await resolveBuyerCart();
+  const { session, blocked } = await rejectUnreadyBuyer();
   if (blocked) return blocked;
 
   if (!session) {

@@ -5,7 +5,34 @@ function sanitizeCatalogueImageKey(sku: string): string {
   return sku.replace(/[^A-Za-z0-9._-]+/g, "_");
 }
 
+/** Public CDN origin for catalogue rasters (no trailing slash). Empty = same-origin relative paths. */
+function catalogueImageOrigin(): string {
+  return String(process.env.CATALOGUE_IMAGE_ORIGIN || "")
+    .trim()
+    .replace(/\/+$/, "");
+}
+
+function withCatalogueImageOrigin(publicPath: string): string {
+  const origin = catalogueImageOrigin();
+  return origin ? `${origin}${publicPath}` : publicPath;
+}
+
 let cachedIndex: Record<string, string> | null = null;
+let cachedDerivatives: Record<string, CatalogueDerivativeRecord> | null = null;
+
+type CatalogueDerivativeRecord = {
+  thumb?: boolean;
+  medium?: boolean;
+  ext?: string;
+};
+
+export type CatalogueImageUrls = {
+  imageUrl: string;
+  /** ~400px WebP when generated; null when no derivative exists (use imageUrl). */
+  thumbUrl: string | null;
+  /** ~1200px WebP when generated; null when no derivative exists (use imageUrl). */
+  mediumUrl: string | null;
+};
 
 function loadCatalogueImageIndex(): Record<string, string> {
   if (cachedIndex) return cachedIndex;
@@ -21,39 +48,178 @@ function loadCatalogueImageIndex(): Record<string, string> {
   return cachedIndex;
 }
 
-export function getCatalogueImageExt(sku: string): string | null {
-  const safe = sanitizeCatalogueImageKey(sku.trim());
-  if (!safe) return null;
-  const ext = loadCatalogueImageIndex()[safe];
+function loadCatalogueDerivatives(): Record<string, CatalogueDerivativeRecord> {
+  if (cachedDerivatives) return cachedDerivatives;
+  try {
+    const raw = readFileSync(
+      path.join(process.cwd(), "data", "catalogue-image-derivatives.json"),
+      "utf8",
+    );
+    cachedDerivatives = JSON.parse(raw) as Record<string, CatalogueDerivativeRecord>;
+  } catch {
+    cachedDerivatives = {};
+  }
+  return cachedDerivatives;
+}
+
+function indexExt(key: string): string | null {
+  const ext = loadCatalogueImageIndex()[key];
   return typeof ext === "string" && ext.startsWith(".") ? ext : null;
 }
 
+/**
+ * Resolve the catalogue-image-index key for a SKU.
+ * Exact sanitized key wins. Narrow fallbacks only when that key is absent:
+ * 1) strip a trailing letter suffix separated by whitespace/underscore
+ * 2) first token before `/`
+ * Never invent keys that are not already in the index.
+ */
+function resolveCatalogueImageKey(sku: string): string | null {
+  const trimmed = sku.trim();
+  if (!trimmed) return null;
+
+  const exact = sanitizeCatalogueImageKey(trimmed);
+  if (exact && indexExt(exact)) return exact;
+
+  // Trailing letter suffix: "M-644 A" / "M-644_A" → "M-644" (not "00110L")
+  const letterStripped = trimmed.replace(/[\s_]+[A-Za-z]$/u, "").trim();
+  if (letterStripped && letterStripped !== trimmed) {
+    const key = sanitizeCatalogueImageKey(letterStripped);
+    if (key && indexExt(key)) return key;
+  }
+  if (/_[A-Za-z]$/.test(exact)) {
+    const key = exact.replace(/_[A-Za-z]$/, "");
+    if (key && indexExt(key)) return key;
+  }
+
+  // Compound SKU: "M-650 / M-603 A" → try "M-650" (then letter-strip on that token)
+  if (trimmed.includes("/")) {
+    const first = trimmed.split("/")[0]?.trim() || "";
+    if (first) {
+      const firstExact = sanitizeCatalogueImageKey(first);
+      if (firstExact && indexExt(firstExact)) return firstExact;
+      const firstLetterStripped = first.replace(/[\s_]+[A-Za-z]$/u, "").trim();
+      if (firstLetterStripped && firstLetterStripped !== first) {
+        const key = sanitizeCatalogueImageKey(firstLetterStripped);
+        if (key && indexExt(key)) return key;
+      }
+    }
+  }
+
+  return null;
+}
+
+export function getCatalogueImageExt(sku: string): string | null {
+  const key = resolveCatalogueImageKey(sku);
+  if (!key) return null;
+  return indexExt(key);
+}
+
 export function catalogueImagePublicPath(sku: string): string | null {
-  const safe = sanitizeCatalogueImageKey(sku.trim());
-  const ext = getCatalogueImageExt(sku);
-  if (!safe || !ext) return null;
-  return `/catalogue-images/${encodeURIComponent(safe)}${ext}`;
+  const key = resolveCatalogueImageKey(sku);
+  if (!key) return null;
+  const ext = indexExt(key);
+  if (!ext) return null;
+  return withCatalogueImageOrigin(
+    `/catalogue-images/${encodeURIComponent(key)}${ext}`,
+  );
+}
+
+function derivativePublicPath(
+  key: string,
+  variant: "thumb" | "medium",
+): string | null {
+  const record = loadCatalogueDerivatives()[key];
+  if (!record) return null;
+  if (variant === "thumb" && !record.thumb) return null;
+  if (variant === "medium" && !record.medium) return null;
+  const folder = variant === "thumb" ? "thumbs" : "medium";
+  const ext =
+    typeof record.ext === "string" && record.ext.startsWith(".") ? record.ext : ".webp";
+  return withCatalogueImageOrigin(
+    `/catalogue-images/${folder}/${encodeURIComponent(key)}${ext}`,
+  );
+}
+
+/** ~400px listing derivative when generated; otherwise null. */
+export function catalogueThumbPublicPath(sku: string): string | null {
+  const key = resolveCatalogueImageKey(sku);
+  if (!key) return null;
+  return derivativePublicPath(key, "thumb");
+}
+
+/** ~1200px detail derivative when generated; otherwise null. */
+export function catalogueMediumPublicPath(sku: string): string | null {
+  const key = resolveCatalogueImageKey(sku);
+  if (!key) return null;
+  return derivativePublicPath(key, "medium");
+}
+
+/** Original + optional thumb/medium URLs for a single catalogue key. */
+export function catalogueImageUrls(sku: string): CatalogueImageUrls | null {
+  const imageUrl = catalogueImagePublicPath(sku);
+  if (!imageUrl) return null;
+  return {
+    imageUrl,
+    thumbUrl: catalogueThumbPublicPath(sku),
+    mediumUrl: catalogueMediumPublicPath(sku),
+  };
+}
+
+function escapeRegExp(value: string): string {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+function galleryKeysForSku(sku: string): string[] {
+  const safe = resolveCatalogueImageKey(sku);
+  if (!safe) return [];
+  const index = loadCatalogueImageIndex();
+  const extra = new RegExp(`^${escapeRegExp(safe)}(?:\\.\\d+|_\\d+)$`, "i");
+  return Object.keys(index)
+    .filter((key) => key === safe || extra.test(key))
+    .sort((a, b) => {
+      if (a === safe) return -1;
+      if (b === safe) return 1;
+      return a.localeCompare(b, undefined, { numeric: true });
+    });
 }
 
 /** Additional official images stored as SKU.2, SKU.3, … beside the primary SKU file. */
 export function catalogueGalleryPublicPaths(sku: string): string[] {
-  const safe = sanitizeCatalogueImageKey(sku.trim());
-  if (!safe) return [];
   const index = loadCatalogueImageIndex();
   const urls: string[] = [];
   const seen = new Set<string>();
-  const add = (key: string) => {
+  for (const key of galleryKeysForSku(sku)) {
     const ext = index[key];
-    if (typeof ext !== "string" || !ext.startsWith(".")) return;
-    const url = `/catalogue-images/${encodeURIComponent(key)}${ext}`;
-    if (seen.has(url)) return;
+    if (typeof ext !== "string" || !ext.startsWith(".")) continue;
+    const url = withCatalogueImageOrigin(
+      `/catalogue-images/${encodeURIComponent(key)}${ext}`,
+    );
+    if (seen.has(url)) continue;
     seen.add(url);
     urls.push(url);
-  };
-  add(safe);
-  for (let i = 2; i <= 12; i += 1) {
-    add(`${safe}.${i}`);
-    add(`${safe}_${i}`);
   }
   return urls;
+}
+
+/** Gallery originals with matching thumb/medium URLs when derivatives exist. */
+export function catalogueGalleryImageUrls(sku: string): CatalogueImageUrls[] {
+  const index = loadCatalogueImageIndex();
+  const out: CatalogueImageUrls[] = [];
+  const seen = new Set<string>();
+  for (const key of galleryKeysForSku(sku)) {
+    const ext = index[key];
+    if (typeof ext !== "string" || !ext.startsWith(".")) continue;
+    const imageUrl = withCatalogueImageOrigin(
+      `/catalogue-images/${encodeURIComponent(key)}${ext}`,
+    );
+    if (seen.has(imageUrl)) continue;
+    seen.add(imageUrl);
+    out.push({
+      imageUrl,
+      thumbUrl: derivativePublicPath(key, "thumb"),
+      mediumUrl: derivativePublicPath(key, "medium"),
+    });
+  }
+  return out;
 }

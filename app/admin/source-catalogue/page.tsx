@@ -548,13 +548,27 @@ export default function SourceCatalogueReviewPage() {
                           {item.hasImage && item.sku ? (
                             // eslint-disable-next-line @next/next/no-img-element
                             <img
-                              src={`/api/admin/source-catalogue/image?sku=${encodeURIComponent(item.sku)}`}
+                              src={`/api/admin/source-catalogue/image?sku=${encodeURIComponent(item.sku)}&variant=thumb`}
                               alt=""
+                              width={64}
+                              height={64}
+                              loading="lazy"
+                              decoding="async"
                               className="h-16 w-16 rounded border object-contain"
                             />
                           ) : (
                             <span className="text-xs text-zinc-400">IMAGE REVIEW</span>
                           )}
+                          {item.hasImage && item.sku ? (
+                            <a
+                              href={`/api/admin/source-catalogue/image?sku=${encodeURIComponent(item.sku)}&variant=original`}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="mt-1 block text-[10px] font-semibold text-[#7a1233] hover:underline"
+                            >
+                              Open original
+                            </a>
+                          ) : null}
                           <p className="mt-1 max-w-[9rem] truncate text-[10px] text-zinc-400" title={item.localImagePath || ""}>
                             {item.localImagePath || "no local file"}
                           </p>

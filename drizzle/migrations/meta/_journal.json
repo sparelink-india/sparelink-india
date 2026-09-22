@@ -155,6 +155,27 @@
       "when": 1789557000000,
       "tag": "0021_multi_firm_order_snapshots",
       "breakpoints": true
+    },
+    {
+      "idx": 22,
+      "version": "7",
+      "when": 1789559000000,
+      "tag": "0022_phase6_b2b_erp",
+      "breakpoints": true
+    },
+    {
+      "idx": 23,
+      "version": "7",
+      "when": 1789565000000,
+      "tag": "0023_phase6_erp_completion",
+      "breakpoints": true
+    },
+    {
+      "idx": 24,
+      "version": "7",
+      "when": 1789610000000,
+      "tag": "0024_phase7_ai_ci_sync",
+      "breakpoints": true
     }
   ]
 }

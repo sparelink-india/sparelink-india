@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
-import { requireAdminApi } from "@/lib/require-role";
+
+import { getServerSession } from "@/lib/auth-server";
 
 export const dynamic = "force-dynamic";
 
@@ -16,13 +17,17 @@ function blocked() {
 }
 
 export async function GET() {
-  const auth = await requireAdminApi();
-  if (auth.error) return auth.error;
+  const session = await getServerSession();
+  if (!session || session.user.role !== "admin") {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
   return blocked();
 }
 
 export async function POST() {
-  const auth = await requireAdminApi();
-  if (auth.error) return auth.error;
+  const session = await getServerSession();
+  if (!session || session.user.role !== "admin") {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
   return blocked();
 }

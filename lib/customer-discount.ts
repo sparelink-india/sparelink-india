@@ -115,6 +115,33 @@ export async function resolveStorefrontPricing(
   const commonCustomerDiscountPercent = await getCommonCustomerDiscountPercent();
   if (session?.user?.role === "buyer") {
     const customerDiscountPercent = await getCustomerDiscountPercent(session.user.id);
+
+    // Prefer first-class pricing_rule when configured; otherwise preserve verification discounts.
+    try {
+      const { resolvePartyEffectivePrice } = await import(
+        "@/lib/pricing-rules-service"
+      );
+      const sample = await resolvePartyEffectivePrice({
+        listInclusivePaise: 10000,
+        customerUserId: session.user.id,
+        applyVerificationFallback: true,
+      });
+      if (
+        sample.source === "customer_rule" ||
+        sample.source === "dealer_rule" ||
+        sample.source === "category_rule"
+      ) {
+        return {
+          commonCustomerDiscountPercent,
+          customerDiscountPercent,
+          effectiveDiscountPercent: sample.discountPercent,
+          source: "specific",
+        };
+      }
+    } catch {
+      // DB/schema may not yet include pricing_rule in some environments — fall through.
+    }
+
     const resolved = resolveEffectiveDiscountPercent(
       commonCustomerDiscountPercent,
       customerDiscountPercent,

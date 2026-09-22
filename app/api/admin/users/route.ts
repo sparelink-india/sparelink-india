@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
+import { getServerSession } from "@/lib/auth-server";
 import { getDb } from "@/lib/db";
-import { user, order, customerProfile } from "@/drizzle/schema";
+import { user, order, customerProfile, dealer } from "@/drizzle/schema";
 import { count, desc, eq } from "drizzle-orm";
 import { applyInclusiveDiscount, parseDiscountPercentInput } from "@/lib/party-pricing";
 import {
@@ -14,12 +15,17 @@ import {
   setCustomerPensolConfig,
 } from "@/lib/pensol-discount";
 import { normalizePensolConfig } from "@/lib/pensol-pricing";
-import { requireAdminApi } from "@/lib/require-role";
+import { denyIfMustChangePassword } from "@/lib/require-role";
 
 export async function GET() {
-  const auth = await requireAdminApi();
-  if (auth.error) return auth.error;
-  const session = auth.session;
+  const session = await getServerSession();
+
+  if (!session || session.user.role !== "admin") {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  const blocked = await denyIfMustChangePassword(session.user.id);
+  if (blocked) return blocked;
 
   const db = getDb();
 
@@ -98,8 +104,14 @@ export async function GET() {
 }
 
 export async function PATCH(request: Request) {
-  const auth = await requireAdminApi();
-  if (auth.error) return auth.error;
+  const session = await getServerSession();
+
+  if (!session || session.user.role !== "admin") {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  const blocked = await denyIfMustChangePassword(session.user.id);
+  if (blocked) return blocked;
 
   const body = await request.json().catch(() => null);
   const userId = body?.userId;
@@ -196,7 +208,21 @@ export async function PATCH(request: Request) {
     );
   }
 
-  const newRole = action === "suspend" ? "suspended" : "buyer";
+  let newRole: string;
+  if (action === "suspend") {
+    newRole = "suspended";
+  } else {
+    // Reactivate: restore dealer when a dealer profile exists; otherwise buyer.
+    const dealerProfile = await db.query.dealer.findFirst({
+      where: eq(dealer.userId, userId),
+      columns: { id: true },
+    });
+    if (targetUser.role === "dealer" || dealerProfile) {
+      newRole = "dealer";
+    } else {
+      newRole = "buyer";
+    }
+  }
 
   await db
     .update(user)

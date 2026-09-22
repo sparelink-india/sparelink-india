@@ -6,7 +6,8 @@ import { useState } from "react";
 import { BrandLogo } from "@/components/brand-logo";
 import { CategoriesMenu } from "@/components/categories-menu";
 import { HeaderPreferenceToggle } from "@/components/header-preference-toggle";
-import { HeaderSearchField, type HeaderSearchProductPick } from "@/components/header-search";
+import { HeaderSearchField, type HeaderSearchProduct } from "@/components/header-search";
+import { ProductDetailModal } from "@/components/product-detail-modal";
 import { useI18n } from "@/components/preferences-provider";
 import { WhatsAppCta } from "@/components/whatsapp-cta";
 import { UTILITY_STRIP } from "@/lib/brand";
@@ -18,9 +19,7 @@ type StorefrontHeaderProps = {
   query?: string;
   onQueryChange?: (value: string) => void;
   onSearch?: (query?: string) => void;
-  onSelectProduct?: (item: HeaderSearchProductPick) => void;
   searchLoading?: boolean;
-  committedQuery?: string;
   mobileMenuOpen?: boolean;
   onMobileMenuToggle?: () => void;
 };
@@ -97,9 +96,7 @@ export function StorefrontHeader({
   query = "",
   onQueryChange,
   onSearch,
-  onSelectProduct,
   searchLoading = false,
-  committedQuery = "",
   mobileMenuOpen,
   onMobileMenuToggle,
 }: StorefrontHeaderProps) {
@@ -107,6 +104,12 @@ export function StorefrontHeader({
   const whatsappHref = getWhatsAppChatUrl();
   const [internalMenuOpen, setInternalMenuOpen] = useState(false);
   const [localQuery, setLocalQuery] = useState(query);
+  const [detailTarget, setDetailTarget] = useState<{ partId?: string; sku?: string } | null>(
+    null,
+  );
+  const [cartBump, setCartBump] = useState(0);
+  const [wishBump, setWishBump] = useState(0);
+  const [panelHost, setPanelHost] = useState<HTMLDivElement | null>(null);
   const menuOpen = onMobileMenuToggle ? Boolean(mobileMenuOpen) : internalMenuOpen;
   const toggleMenu =
     onMobileMenuToggle ?? (() => setInternalMenuOpen((open) => !open));
@@ -126,15 +129,34 @@ export function StorefrontHeader({
     window.location.assign(resolved ? `/?q=${encodeURIComponent(resolved)}` : "/");
   }
 
+  function openProduct(product: HeaderSearchProduct) {
+    setDetailTarget({
+      partId: product.id,
+      sku: product.listing?.sku || product.partNumber,
+    });
+  }
+
   function renderSearchField() {
     return (
       <HeaderSearchField
         value={searchValue}
         onChange={(value) => (onQueryChange ? onQueryChange(value) : setLocalQuery(value))}
         onSubmitSearch={submitSearch}
-        onSelectProduct={onSelectProduct}
         searchLoading={searchLoading}
-        committedQuery={committedQuery}
+        onOpenProduct={openProduct}
+        onAddToCart={async (listingId) => {
+          const response = await fetch("/api/cart", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ dealerListingId: listingId, quantity: 1 }),
+          });
+          if (response.status === 401) {
+            window.location.assign("/login");
+            return;
+          }
+          if (response.ok) setCartBump((count) => count + 1);
+        }}
+        panelHost={panelHost}
       />
     );
   }
@@ -149,10 +171,13 @@ export function StorefrontHeader({
   );
 
   return (
-    <header className="sticky top-0 z-40 bg-white text-slate-900 shadow-sm pt-[env(safe-area-inset-top,0px)]">
-      <div className="hidden bg-[#7a1233] px-4 py-[7px] text-[12px] font-medium text-white sm:px-6 md:block">
+    <header className="sticky top-0 z-40 overflow-visible bg-white text-slate-900 shadow-sm">
+      <div className="bg-[#7a1233] px-4 py-[7px] text-[12px] font-medium text-white sm:px-6">
         <div className="mx-auto flex max-w-[1688px] items-center justify-between gap-3">
           <p className="min-w-0 truncate">{UTILITY_STRIP}</p>
+          <div className="shrink-0 lg:hidden">
+            <HeaderPreferenceToggle compact />
+          </div>
           <nav className="hidden items-center gap-3 whitespace-nowrap lg:flex">
             <span className="inline-flex items-center gap-1.5">
               <PeopleIcon />
@@ -176,10 +201,11 @@ export function StorefrontHeader({
         </div>
       </div>
 
-      <div className="mx-auto grid max-w-[1688px] grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-x-2 gap-y-2 px-3 py-2 md:flex md:gap-5 md:px-6 md:py-3">
+      <div ref={setPanelHost} className="relative z-30 mx-auto w-full max-w-[1688px]">
+      <div className="grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-x-2 gap-y-2 px-3 py-2.5 lg:flex lg:min-w-0 lg:flex-wrap lg:gap-x-5 lg:gap-y-2 lg:px-6 lg:py-3">
         <button
           type="button"
-          className="touch-target inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-slate-300 md:hidden"
+          className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-md border border-slate-300 lg:hidden"
           aria-label={t("nav.menu")}
           aria-expanded={menuOpen}
           onClick={toggleMenu}
@@ -188,21 +214,19 @@ export function StorefrontHeader({
             {menuOpen ? "×" : "☰"}
           </span>
         </button>
-        <div className="min-w-0 justify-self-center md:justify-self-auto md:shrink-0">
+        <div className="min-w-0 justify-self-center lg:justify-self-auto lg:shrink-0">
           <BrandLogo />
         </div>
         <Link
           href="/cart"
-          className="relative inline-flex h-11 w-11 items-center justify-center md:hidden"
+          className="relative inline-flex h-10 w-10 items-center justify-center lg:hidden"
           aria-label={t("nav.cart")}
         >
           <CartIcon />
-          <CountBadge count={cartCount} />
+          <CountBadge count={cartCount + cartBump} />
         </Link>
-        <div className="col-span-3 min-w-0 w-full md:col-auto md:flex-1" data-storefront-search>
-          {renderSearchField()}
-        </div>
-        <div className="hidden shrink-0 items-center justify-end gap-5 text-[13px] font-semibold text-slate-800 md:flex">
+        <div className="col-span-3 min-w-0 w-full lg:order-3 lg:basis-full xl:order-none xl:min-w-[16rem] xl:flex-1 xl:basis-0">{renderSearchField()}</div>
+        <div className="hidden min-w-0 shrink items-center justify-end gap-x-3 gap-y-2 text-[13px] font-semibold text-slate-800 lg:flex lg:flex-wrap xl:gap-5">
           <Link href="/login" className="inline-flex min-h-11 items-center gap-1.5 hover:text-[#7a1233]">
             <UserIcon />
             {t("nav.loginRegister")}
@@ -210,23 +234,24 @@ export function StorefrontHeader({
           <Link href="/cart" className="relative inline-flex min-h-11 items-center gap-1.5 pr-1 hover:text-[#7a1233]">
             <span className="relative inline-flex">
               <CartIcon />
-              <CountBadge count={cartCount} />
+              <CountBadge count={cartCount + cartBump} />
             </span>
             {t("nav.cart")}
           </Link>
           <Link href="/wishlist" className="relative inline-flex min-h-11 items-center gap-1.5 pr-1 hover:text-[#7a1233]">
             <span className="relative inline-flex">
               <HeartIcon />
-              <CountBadge count={wishlistCount} />
+              <CountBadge count={wishlistCount + wishBump} />
             </span>
             {t("nav.wishlist")}
           </Link>
           <HeaderPreferenceToggle />
         </div>
       </div>
+      </div>
 
-      <nav className="hidden border-t border-slate-200 bg-white md:block">
-        <div className="mx-auto flex max-w-[1688px] items-center gap-1 px-6 py-2 text-[13px] font-semibold">
+      <nav className="hidden border-t border-slate-200 bg-white lg:block">
+        <div className="mx-auto flex max-w-[1688px] min-w-0 items-center gap-1 overflow-x-auto px-4 py-2 text-[13px] font-semibold xl:px-6">
           <CategoriesMenu />
           {navLink("/", t("nav.home"))}
           {navLink("/brands", t("nav.brands"))}
@@ -238,27 +263,30 @@ export function StorefrontHeader({
         </div>
       </nav>
 
+      <ProductDetailModal
+        open={Boolean(detailTarget)}
+        partId={detailTarget?.partId}
+        sku={detailTarget?.sku}
+        onClose={() => setDetailTarget(null)}
+        onAddedToCart={() => setCartBump((count) => count + 1)}
+        onWishlistChange={() => setWishBump((count) => count + 1)}
+      />
+
       {menuOpen ? (
-        <div className="border-t border-slate-200 bg-white px-4 py-3 md:hidden">
-          <div className="flex flex-col gap-1 text-sm font-semibold">
-            <div className="mb-2 flex items-center justify-between">
-              <span className="text-xs font-bold uppercase tracking-wide text-slate-500">{t("nav.menu")}</span>
-              <HeaderPreferenceToggle compact />
-            </div>
+        <div className="border-t border-slate-200 bg-white px-4 py-3 lg:hidden">
+          <div className="flex flex-col gap-3 text-sm font-semibold">
             <CategoriesMenu />
-            <Link className="min-h-11 py-2.5" href="/">{t("nav.home")}</Link>
-            <Link className="min-h-11 py-2.5" href="/brands">{t("nav.brands")}</Link>
-            <Link className="min-h-11 py-2.5" href="/vehicle-fitment">{t("nav.fitment")}</Link>
-            <Link className="min-h-11 py-2.5" href="/offers">{t("nav.offers")}</Link>
-            <Link className="min-h-11 py-2.5" href="/orders">{t("nav.orders")}</Link>
-            <Link className="min-h-11 py-2.5" href="/profile">{t("mobile.account")}</Link>
-            <Link className="min-h-11 py-2.5" href="/about-us">{t("nav.about")}</Link>
-            <Link className="min-h-11 py-2.5" href="/contact-us">{t("nav.contact")}</Link>
-            <Link className="min-h-11 py-2.5" href="/login">{t("nav.loginRegister")}</Link>
-            <Link className="min-h-11 py-2.5" href="/wishlist">{t("nav.wishlist")}</Link>
-            <Link className="min-h-11 py-2.5" href="/track-order">{t("nav.track")}</Link>
-            <Link className="min-h-11 py-2.5" href="/help-support">{t("nav.help")}</Link>
-            <Link className="min-h-11 py-2.5" href="/login/dealer">{t("nav.dealer")}</Link>
+            <Link href="/">{t("nav.home")}</Link>
+            <Link href="/brands">{t("nav.brands")}</Link>
+            <Link href="/vehicle-fitment">{t("nav.fitment")}</Link>
+            <Link href="/offers">{t("nav.offers")}</Link>
+            <Link href="/about-us">{t("nav.about")}</Link>
+            <Link href="/contact-us">{t("nav.contact")}</Link>
+            <Link href="/login">{t("nav.loginRegister")}</Link>
+            <Link href="/wishlist">{t("nav.wishlist")}</Link>
+            <Link href="/track-order">{t("nav.track")}</Link>
+            <Link href="/help-support">{t("nav.help")}</Link>
+            <Link href="/login/dealer">{t("nav.dealer")}</Link>
             <WhatsAppCta href={whatsappHref} />
           </div>
         </div>

@@ -29,9 +29,6 @@ export type InvoicePDFData = {
     unitPricePaise: number;
     totalPaise: number;
     partDescription?: string | null;
-    gstRate?: number | null;
-    lineGstPaise?: number | null;
-    lineBasePaise?: number | null;
   }>;
   allocations: Array<{
     allocationNumber: string;
@@ -135,19 +132,9 @@ export async function generateInvoicePDFBuffer(
       let totalCalculatedTaxPaise = 0;
 
       data.items.forEach((item, index) => {
-        const gstRate =
-          typeof item.gstRate === "number" && Number.isFinite(item.gstRate)
-            ? item.gstRate
-            : extractGSTRate(item.partDescription);
+        const gstRate = extractGSTRate(item.partDescription);
         const inclusiveTotal = item.totalPaise;
-        const tax =
-          typeof item.lineBasePaise === "number" &&
-          typeof item.lineGstPaise === "number"
-            ? {
-                basePaise: item.lineBasePaise,
-                gstPaise: item.lineGstPaise,
-              }
-            : splitInclusiveGst(inclusiveTotal, gstRate);
+        const tax = splitInclusiveGst(inclusiveTotal, gstRate);
         totalCalculatedTaxPaise += tax.gstPaise;
 
         let hsn = "87089900";

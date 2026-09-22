@@ -38,6 +38,7 @@
                 ],
     "exclude":  [
                     "node_modules",
-                    "sparelink-pre-master-backup-20260915-190600"
+                    "sparelink-pre-master-backup-20260915-190600",
+                    "sparelink-safety-backups"
                 ]
 }

@@ -3,7 +3,9 @@ import { describe, it } from "node:test";
 
 import {
   filterAutocompleteHits,
+  isPartNumberRelevant,
   parseSearchIntent,
+  scorePartNumberMatch,
   scoreSearchDocument,
 } from "./search-intent";
 
@@ -73,5 +75,39 @@ describe("search intent", () => {
     const intent = parseSearchIntent("TATA ALTROZ");
     const hits = filterAutocompleteHits(intent, [mirror, filter, rh], (doc) => doc);
     assert.equal(hits.length, 3);
+  });
+
+  it("matches hyphenated, prefix, and digit-infix part numbers without description hits", () => {
+    const hits = [
+      { part_number: "856", name: "EXACT", brand: "CI", description: "" },
+      { part_number: "M-856", name: "HYPHEN", brand: "CI", description: "" },
+      { part_number: "1856", name: "INFIX", brand: "CI", description: "" },
+      { part_number: "M-1856", name: "PREFIX INFIX", brand: "CI", description: "" },
+      { part_number: "9999", name: "Contains 856 in description", brand: "CI", description: "OEM 856 adapter" },
+    ];
+    const ranked = filterAutocompleteHits(parseSearchIntent("856"), hits, (doc) => doc, 12);
+    assert.deepEqual(
+      ranked.map((hit) => hit.part_number),
+      ["856", "M-856", "1856", "M-1856"],
+    );
+    assert.ok(scorePartNumberMatch("856", "856") > scorePartNumberMatch("856", "1856"));
+    assert.equal(isPartNumberRelevant("M-856", "856"), true);
+    assert.equal(isPartNumberRelevant("M-856", "1856"), false);
+    assert.equal(isPartNumberRelevant("1856", "M-1856"), true);
+  });
+
+  it("preserves exact regressions for known catalogue part numbers", () => {
+    for (const q of ["856", "M-856", "1856", "M-865", "M-854", "101", "103", "113"]) {
+      const intent = parseSearchIntent(q);
+      assert.equal(intent.isPartNumberQuery, true, q);
+      assert.equal(intent.typesenseQuery, q);
+      assert.equal(intent.naturalLanguage, null);
+    }
+  });
+
+  it("keeps brand-style queries non-inventive", () => {
+    const pensol = parseSearchIntent("Pensol");
+    assert.equal(pensol.isPartNumberQuery, false);
+    assert.ok(pensol.typesenseQuery.toLowerCase().includes("pensol"));
   });
 });

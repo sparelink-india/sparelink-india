@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
+import { getServerSession } from "@/lib/auth-server";
 import { getDb } from "@/lib/db";
-import { requireAdminApi } from "@/lib/require-role";
+import { denyIfMustChangePassword } from "@/lib/require-role";
 import {
   firm,
   dealer,
@@ -11,9 +12,18 @@ import {
 import { count, eq } from "drizzle-orm";
 
 export async function GET() {
-  const auth = await requireAdminApi();
-  if (auth.error) return auth.error;
-  const session = auth.session;
+  const session = await getServerSession();
+
+  if (!session) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  if (session.user.role !== "admin") {
+    return NextResponse.json({ error: "Admin access required" }, { status: 403 });
+  }
+
+  const blocked = await denyIfMustChangePassword(session.user.id);
+  if (blocked) return blocked;
 
   const db = getDb();
 

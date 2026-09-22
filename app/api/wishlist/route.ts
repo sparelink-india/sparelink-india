@@ -9,6 +9,18 @@ import { denyIfMustChangePassword } from "@/lib/require-role";
 import { resolveStorefrontPricing } from "@/lib/customer-discount";
 import { publicListingPrice } from "@/lib/party-pricing";
 import { isPensolProduct } from "@/lib/pensol-pricing";
+import { catalogueImageUrls } from "@/lib/catalogue-image-index";
+
+function resolveWishlistImages(
+  ...candidates: Array<string | null | undefined>
+) {
+  for (const candidate of candidates) {
+    if (!candidate) continue;
+    const urls = catalogueImageUrls(candidate);
+    if (urls) return urls;
+  }
+  return null;
+}
 
 export async function GET() {
   const session = await getServerSession();
@@ -76,6 +88,7 @@ export async function GET() {
             pensol ? 0 : pricing.effectiveDiscountPercent,
           )
         : null;
+      const images = resolveWishlistImages(listing?.sku, item.partNumber);
       return {
         id: item.id,
         partId: item.partId,
@@ -90,6 +103,9 @@ export async function GET() {
         netInclusivePaise: priced?.netInclusivePaise ?? null,
         discountPercent: priced?.discountPercent ?? null,
         gstRate: priced?.gstRate ?? gstRate,
+        imageUrl: images?.imageUrl ?? null,
+        thumbUrl: images?.thumbUrl ?? null,
+        mediumUrl: images?.mediumUrl ?? null,
       };
     }),
   });

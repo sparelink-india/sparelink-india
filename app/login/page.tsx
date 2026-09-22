@@ -1,13 +1,13 @@
 ﻿"use client";
 
-import { FormEvent, useEffect, useState } from "react";
+import { FormEvent, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { BrandLogo } from "@/components/brand-logo";
+import { GoogleSignInButton } from "@/components/google-sign-in-button";
 import { SiteFooter } from "@/components/site-footer";
 import { StorefrontHeader } from "@/components/storefront-header";
 import { useI18n } from "@/components/preferences-provider";
-import { authClient } from "@/lib/auth-client";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -16,15 +16,7 @@ export default function LoginPage() {
   const [password, setPassword] = useState("");
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
-  const [googleConfigured, setGoogleConfigured] = useState(false);
   const [busy, setBusy] = useState(false);
-
-  useEffect(() => {
-    void fetch("/api/auth/login-options")
-      .then((response) => response.json())
-      .then((data) => setGoogleConfigured(Boolean(data.googleConfigured)))
-      .catch(() => setGoogleConfigured(false));
-  }, []);
 
   async function handlePasswordLogin(event: FormEvent) {
     event.preventDefault();
@@ -50,15 +42,6 @@ export default function LoginPage() {
     } finally {
       setBusy(false);
     }
-  }
-
-  async function handleGoogle() {
-    setError("");
-    if (!googleConfigured) {
-      setError(t("login.googleNeeded"));
-      return;
-    }
-    await authClient.signIn.social({ provider: "google", callbackURL: "/" });
   }
 
   return (
@@ -104,16 +87,7 @@ export default function LoginPage() {
           </form>
 
           <div className="mt-6">
-            <button
-              type="button"
-              onClick={() => void handleGoogle()}
-              className="h-12 w-full rounded-xl border border-zinc-300 font-medium text-zinc-800 hover:bg-zinc-50"
-            >
-              {t("login.google")}
-            </button>
-            {!googleConfigured ? (
-              <p className="mt-2 text-center text-xs text-zinc-500">{t("login.googleNeeded")}</p>
-            ) : null}
+            <GoogleSignInButton />
           </div>
 
           <div className="pt-4 text-center text-xs text-zinc-500">
@@ -128,10 +102,10 @@ export default function LoginPage() {
           </div>
 
           {message ? (
-            <p className="mt-5 rounded-xl bg-green-50 p-3 text-sm text-green-700">{message}</p>
+            <p className="mt-4 rounded-xl bg-emerald-50 p-3 text-sm text-emerald-800">{message}</p>
           ) : null}
           {error ? (
-            <p className="mt-5 rounded-xl bg-red-50 p-3 text-sm text-red-700">{error}</p>
+            <p className="mt-4 rounded-xl bg-red-50 p-3 text-sm text-red-700">{error}</p>
           ) : null}
         </div>
       </main>

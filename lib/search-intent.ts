@@ -1,3 +1,9 @@
+import {
+  looksLikeNaturalLanguageQuery,
+  parseNaturalLanguageIntent,
+  type NaturalLanguageIntent,
+} from "./nl-search";
+
 export type IntentGroup = {
   key: string;
   synonyms: string[];
@@ -10,6 +16,8 @@ export type SearchIntent = {
   groups: IntentGroup[];
   isPartNumberQuery: boolean;
   hasProductIntent: boolean;
+  /** Present when deterministic NL / Hinglish normalization ran. */
+  naturalLanguage: NaturalLanguageIntent | null;
 };
 
 const PART_NUMBER_QUERY =
@@ -37,6 +45,66 @@ function tokenize(query: string): string[] {
 export function looksLikePartNumberQuery(query: string): boolean {
   const trimmed = query.trim();
   return PART_NUMBER_QUERY.test(trimmed) && /\d/.test(trimmed);
+}
+
+export function compactPartNumber(value: string): string {
+  return value.toLowerCase().replace(/[^a-z0-9]+/g, "");
+}
+
+export function partNumberDigits(value: string): string {
+  return value.replace(/\D+/g, "");
+}
+
+/** Search-only tokens. Never change the displayed/canonical part number. */
+export function partNumberSearchText(partNumber: string): string {
+  const original = partNumber.trim();
+  if (!original) return "";
+  const compact = compactPartNumber(original);
+  const digits = partNumberDigits(original);
+  const tokens = [original, compact, digits].filter(Boolean);
+  return [...new Set(tokens.map((token) => token.toLowerCase()))].join(" ");
+}
+
+export function isPartNumberRelevant(
+  query: string,
+  partNumber: string | null | undefined,
+): boolean {
+  const pn = (partNumber || "").trim();
+  if (!pn) return false;
+  const qCompact = compactPartNumber(query);
+  const qDigits = partNumberDigits(query);
+  const pCompact = compactPartNumber(pn);
+  const pDigits = partNumberDigits(pn);
+  if (!qCompact || !pCompact) return false;
+  if (pCompact === qCompact) return true;
+  if (pCompact.startsWith(qCompact) || qCompact.startsWith(pCompact)) return true;
+
+  const queryHasLetters = /[a-z]/.test(qCompact);
+  if (!queryHasLetters) {
+    return Boolean(qDigits) && pDigits.includes(qDigits);
+  }
+
+  if (pCompact.includes(qCompact) || qCompact.includes(pCompact)) return true;
+  return Boolean(qDigits) && pDigits === qDigits;
+}
+
+export function scorePartNumberMatch(
+  query: string,
+  partNumber: string | null | undefined,
+): number {
+  const pn = (partNumber || "").trim();
+  if (!pn || !isPartNumberRelevant(query, pn)) return 0;
+  const q = query.trim();
+  if (pn.toLowerCase() === q.toLowerCase()) return 400;
+  const qCompact = compactPartNumber(q);
+  const pCompact = compactPartNumber(pn);
+  const qDigits = partNumberDigits(q);
+  const pDigits = partNumberDigits(pn);
+  if (pCompact === qCompact) return 350;
+  if (qDigits && pDigits === qDigits) return 300;
+  if (pCompact.startsWith(qCompact) || (qDigits && pDigits.startsWith(qDigits))) return 220;
+  if (pCompact.includes(qCompact) || (qDigits && pDigits.includes(qDigits))) return 180;
+  return 50;
 }
 
 export function normalizeSearchText(value: string): string {
@@ -68,10 +136,16 @@ export function parseSearchIntent(query: string): SearchIntent {
       groups: [],
       isPartNumberQuery: true,
       hasProductIntent: false,
+      naturalLanguage: null,
     };
   }
 
-  const tokens = tokenize(originalQuery);
+  const naturalLanguage = looksLikeNaturalLanguageQuery(originalQuery)
+    ? parseNaturalLanguageIntent(originalQuery)
+    : null;
+  const workingQuery = naturalLanguage?.normalizedQuery || originalQuery;
+
+  const tokens = tokenize(workingQuery);
   const groups: IntentGroup[] = [];
   const typesenseParts: string[] = [];
   const seen = new Set<string>();
@@ -102,12 +176,45 @@ export function parseSearchIntent(query: string): SearchIntent {
     typesenseParts.push(token);
   }
 
+  // Promote multi-word product hints (door handle, water pump, …) as product groups.
+  if (naturalLanguage) {
+    for (const hint of naturalLanguage.productHints) {
+      const key = hint.toLowerCase();
+      if (seen.has(key)) continue;
+      seen.add(key);
+      groups.push({
+        key,
+        synonyms: [key, ...key.split(/\s+/)],
+        kind: "product",
+      });
+    }
+    if (naturalLanguage.side) {
+      const sideKey = naturalLanguage.side;
+      const sideSynonyms =
+        sideKey === "left" ? ["left", "lh", "left hand"] : ["right", "rh", "right hand"];
+      if (!seen.has(sideKey)) {
+        seen.add(sideKey);
+        groups.push({ key: sideKey, synonyms: sideSynonyms, kind: "product" });
+      }
+    }
+    if (naturalLanguage.position) {
+      const posKey = naturalLanguage.position;
+      const posSynonyms =
+        posKey === "front" ? ["front", "fr", "frt"] : ["rear", "rr", "back"];
+      if (!seen.has(posKey)) {
+        seen.add(posKey);
+        groups.push({ key: posKey, synonyms: posSynonyms, kind: "product" });
+      }
+    }
+  }
+
   return {
     originalQuery,
     typesenseQuery: typesenseParts.join(" ").trim() || originalQuery,
     groups,
     isPartNumberQuery: false,
     hasProductIntent: groups.some((group) => group.kind === "product"),
+    naturalLanguage,
   };
 }
 
@@ -167,6 +274,22 @@ export function scoreSearchDocument(
 
   if (strict) score += 100;
 
+  // Verified-field boosts from NL hints (catalogue text only — never invent fitment).
+  const nl = intent.naturalLanguage;
+  if (nl) {
+    for (const brand of nl.brandHints) {
+      if (hasWholeToken(titleHaystack, brand)) score += 40;
+    }
+    for (const vehicle of nl.vehicleHints) {
+      if (hasWholeToken(titleHaystack, vehicle) || hasWholeToken(descriptionHaystack, vehicle)) {
+        score += 25;
+      }
+    }
+    for (const viscosity of nl.viscosityHints) {
+      if (hasWholeToken(titleHaystack, viscosity.toLowerCase())) score += 35;
+    }
+  }
+
   return {
     score,
     matchedGroups,
@@ -184,7 +307,10 @@ export function filterAutocompleteHits<T>(
   limit = 12,
 ): T[] {
   if (!hits.length) return [];
-  if (intent.isPartNumberQuery || intent.groups.length === 0) {
+  if (intent.isPartNumberQuery) {
+    return rankPartNumberHits(intent.originalQuery, hits, getDocument).slice(0, limit);
+  }
+  if (intent.groups.length === 0) {
     return hits.slice(0, limit);
   }
 
@@ -220,12 +346,31 @@ export function filterAutocompleteHits<T>(
   return ranked.slice(0, limit).map((row) => row.hit);
 }
 
+function rankPartNumberHits<T>(
+  query: string,
+  hits: T[],
+  getDocument: (hit: T) => RankedDocument,
+): T[] {
+  return hits
+    .map((hit, index) => ({
+      hit,
+      index,
+      score: scorePartNumberMatch(query, getDocument(hit).part_number),
+    }))
+    .filter((row) => row.score > 0)
+    .sort((left, right) => right.score - left.score || left.index - right.index)
+    .map((row) => row.hit);
+}
+
 export function rankSearchHits<T>(
   intent: SearchIntent,
   hits: T[],
   getDocument: (hit: T) => RankedDocument,
 ): T[] {
-  if (intent.isPartNumberQuery || intent.groups.length === 0) return hits;
+  if (intent.isPartNumberQuery) {
+    return rankPartNumberHits(intent.originalQuery, hits, getDocument);
+  }
+  if (intent.groups.length === 0) return hits;
   return [...hits].sort((left, right) => {
     const leftScore = scoreSearchDocument(intent, getDocument(left)).score;
     const rightScore = scoreSearchDocument(intent, getDocument(right)).score;

@@ -1,7 +1,7 @@
 "use client";
 
-import Link from "next/link";
 import { useState } from "react";
+import Link from "next/link";
 
 const LOGO_SRC = "/images/brand/sparelink-india-logo.svg?v=2";
 
@@ -16,13 +16,13 @@ export function BrandLogo({
 
   const imgClass = compact
     ? "h-11 w-auto max-w-[150px] object-contain object-left"
-    : "h-11 w-auto max-w-[150px] object-contain object-left md:h-[80px] md:max-w-[250px] lg:h-[88px] lg:max-w-[280px]";
+    : "h-11 w-auto max-w-[min(150px,40vw)] object-contain object-left lg:h-[72px] lg:max-w-[220px] xl:h-[88px] xl:max-w-[280px]";
 
   return (
     <Link
       href="/"
-      className="flex items-center rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#7a1233]"
       aria-label="SpareLink India home"
+      className="inline-flex items-center rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#7a1233]"
     >
       {failed ? (
         <span

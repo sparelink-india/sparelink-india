@@ -18,6 +18,7 @@ const schema = {
   name: "parts",
   fields: [
     { name: "part_number", type: "string" as const },
+    { name: "part_number_search", type: "string" as const, optional: true, infix: true },
     { name: "name", type: "string" as const },
     { name: "description", type: "string" as const, optional: true },
     { name: "brand", type: "string" as const, facet: true, optional: true },

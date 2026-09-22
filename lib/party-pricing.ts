@@ -203,6 +203,41 @@ export function publicListingPrice(
   };
 }
 
+export function ignoreClientPricing<T extends Record<string, unknown>>(body: T): T {
+  const next = { ...body };
+  delete next.discountPercent;
+  delete next.netPrice;
+  delete next.netPricePaise;
+  delete next.listPrice;
+  delete next.listPricePaise;
+  delete next.pricePaise;
+  delete next.customerId;
+  delete next.userId;
+  delete next.buyerId;
+  delete next.pensolCashDiscountPaisePerUnit;
+  delete next.pensolCreditDiscountPaisePerUnit;
+  delete next.cashDiscount;
+  delete next.creditDiscount;
+  delete next.discountPaise;
+  delete next.mrpPaise;
+  delete next.dlpPaise;
+  delete next.listInclusivePaise;
+  delete next.netInclusivePaise;
+  delete next.billableUnits;
+  delete next.firmId;
+  delete next.dealerId;
+  delete next.totalPaise;
+  delete next.subtotalPaise;
+  delete next.gstPaise;
+  delete next.shippingPaise;
+  delete next.amountPaise;
+  delete next.paymentStatus;
+  delete next.fulfillmentStatus;
+  delete next.orderStatus;
+  delete next.status;
+  return next;
+}
+
 const CLIENT_PRICING_KEYS = [
   "discountPercent",
   "netPrice",
@@ -246,15 +281,6 @@ const CHECKOUT_CLIENT_OVERRIDE_KEYS = [
   "fulfillmentStatus",
 ] as const;
 
-export function ignoreClientPricing<T extends Record<string, unknown>>(body: T): T {
-  const next = { ...body };
-  for (const key of CLIENT_PRICING_KEYS) {
-    delete next[key];
-  }
-  return next;
-}
-
-/** Order POST: never trust client money, firm, stock, identity, or line items. */
 export function ignoreCheckoutClientOverrides<T extends Record<string, unknown>>(
   body: T,
 ): T {

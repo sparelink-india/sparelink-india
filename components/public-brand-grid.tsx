@@ -6,10 +6,11 @@ import Link from "next/link";
 import { useI18n } from "@/components/preferences-provider";
 import { PUBLIC_BRANDS, type PublicBrand } from "@/lib/public-brands";
 
-function relationshipLabel(
+function cardTagline(
   t: (key: "brands.distributor" | "brands.trader") => string,
   brand: PublicBrand,
 ) {
+  if (brand.tagline) return brand.tagline;
   return brand.relationship === "trader" ? t("brands.trader") : t("brands.distributor");
 }
 
@@ -24,13 +25,14 @@ export function PublicBrandGrid({
     <ul className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4 sm:gap-4">
       {PUBLIC_BRANDS.map((brand) => {
         const href = `/?q=${encodeURIComponent(brand.searchQuery)}`;
-        const label = `${brand.name}, ${relationshipLabel(t, brand)}`;
+        const tagline = cardTagline(t, brand);
+        const label = `${brand.name}, ${tagline}`;
         const className =
           "group flex h-full min-h-[11.5rem] flex-col rounded-2xl border border-slate-200 bg-white p-4 text-center shadow-xs outline-none transition hover:border-[#7a1233]/40 hover:shadow-md focus-visible:ring-2 focus-visible:ring-[#7a1233] focus-visible:ring-offset-2";
 
         const inner = (
           <>
-            <div className="relative mx-auto h-24 w-full">
+            <div className="relative mx-auto h-28 w-full">
               <Image
                 src={brand.logo}
                 alt={`${brand.name} logo`}
@@ -42,7 +44,7 @@ export function PublicBrandGrid({
             </div>
             <p className="mt-3 text-sm font-semibold leading-snug text-slate-900">{brand.name}</p>
             <p className="mt-1 text-[11px] font-semibold uppercase tracking-[0.14em] text-[#7a1233]">
-              {relationshipLabel(t, brand)}
+              {tagline}
             </p>
           </>
         );
