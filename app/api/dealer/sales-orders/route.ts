@@ -19,6 +19,7 @@ import {
 } from "@/lib/b2b-listings";
 import { getDb } from "@/lib/db";
 import { isAllowedFirmId } from "@/lib/firms";
+import { resolvePartyEffectivePrice } from "@/lib/pricing-rules-service";
 import { requireDealerApi } from "@/lib/require-role";
 
 export async function GET() {
@@ -98,7 +99,15 @@ export async function POST(request: Request) {
         { status: 400 },
       );
     }
-    resolved.push(resolveSalesLineFromListing(listing, quantity));
+    const priced = await resolvePartyEffectivePrice({
+      listInclusivePaise: listing.pricePaise,
+      dealerId: profile.id,
+      customerUserId: auth.session.user.id,
+      applyVerificationFallback: false,
+    });
+    resolved.push(
+      resolveSalesLineFromListing(listing, quantity, priced.netInclusivePaise),
+    );
   }
 
   const firmId =
