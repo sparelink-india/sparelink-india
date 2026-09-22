@@ -9,25 +9,13 @@ import {
   orderItem,
   part,
 } from "@/drizzle/schema";
-import { getServerSession } from "@/lib/auth-server";
+import { requireDealerApi } from "@/lib/require-role";
 import { getDb } from "@/lib/db";
 
 async function getDealerId() {
-  const session = await getServerSession();
-  if (!session?.user)
-    return {
-      error: NextResponse.json(
-        { error: "Authentication required" },
-        { status: 401 },
-      ),
-    };
-  if (session.user.role !== "dealer")
-    return {
-      error: NextResponse.json(
-        { error: "Dealer access required" },
-        { status: 403 },
-      ),
-    };
+  const auth = await requireDealerApi();
+  if (auth.error) return { error: auth.error };
+  const session = auth.session;
   const profile = await getDb().query.dealer.findFirst({
     where: eq(dealer.userId, session.user.id),
   });

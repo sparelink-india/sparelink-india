@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
+import { requireAdminApi } from "@/lib/require-role";
 import { randomUUID } from "crypto";
 import { eq } from "drizzle-orm";
-import { getServerSession } from "@/lib/auth-server";
 import { getDb } from "@/lib/db";
 import {
   part,
@@ -9,12 +9,10 @@ import {
   dealer,
   firm,
   dealerListing,
-  inventory,
 } from "@/drizzle/schema";
 import {
   parseCSV,
   parseExcel,
-  normalizeHeader,
   createHeaderMap,
   detectImportType,
   parseImportRows,
@@ -23,7 +21,6 @@ import {
   generatePreview,
   type ValidationContext,
   type ParsedImportData,
-  type ImportRow,
 } from "@/lib/import-utils";
 import { typesense } from "@/lib/typesense";
 
@@ -72,11 +69,9 @@ async function getValidationContext(): Promise<ValidationContext> {
 }
 
 export async function POST(request: NextRequest) {
-  const session = await getServerSession();
-
-  if (!session || session.user.role !== "admin") {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+  const auth = await requireAdminApi();
+  if (auth.error) return auth.error;
+  const session = auth.session;
 
   try {
     const formData = await request.formData();

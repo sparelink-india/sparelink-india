@@ -1,0 +1,147 @@
+{
+  "1": {
+    "type": "cover",
+    "products": false
+  },
+  "2": {
+    "type": "ceo_letter",
+    "products": false
+  },
+  "3": {
+    "type": "precautions_marketing",
+    "products": false
+  },
+  "4": {
+    "type": "company_address_warranty",
+    "products": false
+  },
+  "5": {
+    "type": "index",
+    "products": false
+  },
+  "6": {
+    "type": "product",
+    "products": true
+  },
+  "7": {
+    "type": "product",
+    "products": true
+  },
+  "8": {
+    "type": "product",
+    "products": true
+  },
+  "9": {
+    "type": "product",
+    "products": true
+  },
+  "10": {
+    "type": "product",
+    "products": true
+  },
+  "11": {
+    "type": "product",
+    "products": true
+  },
+  "12": {
+    "type": "already_text_extracted",
+    "products": false,
+    "note": "existing 89, not modified"
+  },
+  "13": {
+    "type": "already_text_extracted",
+    "products": false
+  },
+  "14": {
+    "type": "already_text_extracted",
+    "products": false
+  },
+  "15": {
+    "type": "already_text_extracted",
+    "products": false
+  },
+  "16": {
+    "type": "already_text_extracted",
+    "products": false
+  },
+  "17": {
+    "type": "already_text_extracted",
+    "products": false
+  },
+  "18": {
+    "type": "already_text_extracted",
+    "products": false
+  },
+  "19": {
+    "type": "already_text_extracted",
+    "products": false
+  },
+  "20": {
+    "type": "product",
+    "products": true
+  },
+  "21": {
+    "type": "product",
+    "products": true
+  },
+  "22": {
+    "type": "product",
+    "products": true
+  },
+  "23": {
+    "type": "product",
+    "products": true
+  },
+  "24": {
+    "type": "product",
+    "products": true
+  },
+  "25": {
+    "type": "product",
+    "products": true
+  },
+  "26": {
+    "type": "product",
+    "products": true
+  },
+  "27": {
+    "type": "product",
+    "products": true
+  },
+  "28": {
+    "type": "product",
+    "products": true
+  },
+  "29": {
+    "type": "product",
+    "products": true
+  },
+  "30": {
+    "type": "product",
+    "products": true
+  },
+  "31": {
+    "type": "product",
+    "products": true
+  },
+  "32": {
+    "type": "product",
+    "products": true
+  },
+  "33": {
+    "type": "product",
+    "products": true
+  },
+  "34": {
+    "type": "product",
+    "products": true
+  },
+  "35": {
+    "type": "notes_blank",
+    "products": false
+  },
+  "36": {
+    "type": "notes_blank",
+    "products": false
+  }
+}

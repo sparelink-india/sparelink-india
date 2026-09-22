@@ -55,4 +55,5 @@ export const env = {
   DATABASE_URL: readOptional("DATABASE_URL"),
   NEXT_PUBLIC_APP_URL:
     readOptional("NEXT_PUBLIC_APP_URL") ?? "http://localhost:3000",
+  OTP_REQUIRED: readOptional("OTP_REQUIRED") === "true",
 } as const;

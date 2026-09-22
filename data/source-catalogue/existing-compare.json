@@ -1,0 +1,8 @@
+{
+  "comparedAt": "2026-09-16T13:12:00.000Z",
+  "method": "Local sample SKUs only. Production/TEST databases were not queried.",
+  "localSampleSkus": ["113", "M663", "M662", "M862"],
+  "sourceMatches": [],
+  "existingProductsAffected": 0,
+  "note": "Full part-number/OEM duplicate detection against SpareLink inventory must run in admin CSV import preview. No import was executed."
+}

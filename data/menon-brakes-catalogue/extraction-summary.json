@@ -1,0 +1,28 @@
+{
+  "manufacturer": "MENON BRAKES LIMITED",
+  "brand": "Menon",
+  "pdfTextExtractable": false,
+  "pdfProducer": "Microsoft: Print To PDF",
+  "structuredSource": "companion xlsx files saved 3 minutes after the PDFs",
+  "pdfs": [
+    {
+      "file": "REGULAR HCV.pdf",
+      "pagesFromPdfDict": 4,
+      "rows": 77
+    },
+    {
+      "file": "REGULAR LCV.pdf",
+      "pagesFromPdfDict": 1,
+      "rows": 36
+    }
+  ],
+  "productRows": 113,
+  "uniquePartNumbers": 113,
+  "duplicateGeneratedPartNumbers": [],
+  "reviewRows": 0,
+  "importedToDatabase": true,
+  "importedAt": "2026-09-18T15:40:00.000Z",
+  "importedFirm": "Hind Motors",
+  "sellingPriceImported": false,
+  "stockImported": false
+}

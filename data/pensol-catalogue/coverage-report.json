@@ -1,0 +1,228 @@
+{
+  "officialSource": "https://pensol.com",
+  "crawlPages": 107,
+  "categoriesDiscovered": [
+    {
+      "file": "MOTORBIKE_OILS.html",
+      "url": "https://pensol.com/MOTORBIKE_OILS.html",
+      "title": "Motorbike Oils",
+      "segment": "Automotive"
+    },
+    {
+      "file": "PASSENGER_CAR_ENGINE_OILS.html",
+      "url": "https://pensol.com/PASSENGER_CAR_ENGINE_OILS.html",
+      "title": "Passenger Car Engine Oils",
+      "segment": "Automotive"
+    },
+    {
+      "file": "MINI_CV_ENGINE_OIL.html",
+      "url": "https://pensol.com/MINI_CV_ENGINE_OIL.html",
+      "title": "Mini CV Engine Oils",
+      "segment": "Automotive"
+    },
+    {
+      "file": "DIESEL_ENGINE_OILS.html",
+      "url": "https://pensol.com/DIESEL_ENGINE_OILS.html",
+      "title": "Diesel Engine Oils",
+      "segment": "Automotive"
+    },
+    {
+      "file": "GEAR_OILS.html",
+      "url": "https://pensol.com/GEAR_OILS.html",
+      "title": "Gear Oils",
+      "segment": "Automotive"
+    },
+    {
+      "file": "CNG_ENGINE_OILS.html",
+      "url": "https://pensol.com/CNG_ENGINE_OILS.html",
+      "title": "CNG Engine Oils",
+      "segment": "Automotive"
+    },
+    {
+      "file": "AGRICULTURE_&_TRACTOR_OILS.html",
+      "url": "https://pensol.com/AGRICULTURE_&_TRACTOR_OILS.html",
+      "title": "Agriculture & Tractor Oils",
+      "segment": "Automotive"
+    },
+    {
+      "file": "GREASES.html",
+      "url": "https://pensol.com/GREASES.html",
+      "title": "GREASES",
+      "segment": "Automotive"
+    },
+    {
+      "file": "BRAKE_FLUID.html",
+      "url": "https://pensol.com/BRAKE_FLUID.html",
+      "title": "Brake Fluid",
+      "segment": "Automotive"
+    },
+    {
+      "file": "COOLANTS.html",
+      "url": "https://pensol.com/COOLANTS.html",
+      "title": "COOLANT",
+      "segment": "Automotive"
+    },
+    {
+      "file": "HYDRAULIC_OIL.html",
+      "url": "https://pensol.com/HYDRAULIC_OIL.html",
+      "title": "HYDRAULIC OIL",
+      "segment": "Automotive"
+    },
+    {
+      "file": "DIESEL_EXHAUST_FLUID.html",
+      "url": "https://pensol.com/DIESEL_EXHAUST_FLUID.html",
+      "title": "Diesel Exhaust Fluid",
+      "segment": "Automotive"
+    },
+    {
+      "file": "INDUSTRIAL.html",
+      "url": "https://pensol.com/INDUSTRIAL.html",
+      "title": "INDUSTRIAL",
+      "segment": "Industrial"
+    },
+    {
+      "file": "INDUSTRIAL_HYDRAULIC_OIL.html",
+      "url": "https://pensol.com/INDUSTRIAL_HYDRAULIC_OIL.html",
+      "title": "HYDRAULIC OIL",
+      "segment": "Industrial"
+    },
+    {
+      "file": "INDUSTRIAL_GEAR_OIL.html",
+      "url": "https://pensol.com/INDUSTRIAL_GEAR_OIL.html",
+      "title": "GEAR OIL",
+      "segment": "Industrial"
+    },
+    {
+      "file": "COMPRESSOR_OIL.html",
+      "url": "https://pensol.com/COMPRESSOR_OIL.html",
+      "title": "COMPRESSOR OIL",
+      "segment": "Industrial"
+    },
+    {
+      "file": "REFRIGERATION_OIL.html",
+      "url": "https://pensol.com/REFRIGERATION_OIL.html",
+      "title": "REFRIGERATION OIL",
+      "segment": "Industrial"
+    },
+    {
+      "file": "CIRCULATING_OIL.html",
+      "url": "https://pensol.com/CIRCULATING_OIL.html",
+      "title": "CIRCULATING OIL",
+      "segment": "Industrial"
+    },
+    {
+      "file": "INDUSTRIAL_GREASES.html",
+      "url": "https://pensol.com/INDUSTRIAL_GREASES.html",
+      "title": "GREASES",
+      "segment": "Industrial"
+    },
+    {
+      "file": "METAL_WORKING_FLUID.html",
+      "url": "https://pensol.com/METAL_WORKING_FLUID.html",
+      "title": "METAL WORKING FLUID",
+      "segment": "Industrial"
+    },
+    {
+      "file": "QUENCHING_OIL.html",
+      "url": "https://pensol.com/QUENCHING_OIL.html",
+      "title": "QUENCHING OIL",
+      "segment": "Industrial"
+    },
+    {
+      "file": "THERMIC_FLUID.html",
+      "url": "https://pensol.com/THERMIC_FLUID.html",
+      "title": "THERMIC FLUID",
+      "segment": "Industrial"
+    },
+    {
+      "file": "SPECIAL_GRADE_MACHINERY_OIL.html",
+      "url": "https://pensol.com/SPECIAL_GRADE_MACHINERY_OIL.html",
+      "title": "SPECIAL GRADE MACHINERY OIL",
+      "segment": "Industrial"
+    },
+    {
+      "file": "RUST_PREVENTIVE_OIL.html",
+      "url": "https://pensol.com/RUST_PREVENTIVE_OIL.html",
+      "title": "RUST PREVENTIVE OIL",
+      "segment": "Industrial"
+    },
+    {
+      "file": "ROCK_DRILL_OIL.html",
+      "url": "https://pensol.com/ROCK_DRILL_OIL.html",
+      "title": "ROCK DRILL OIL",
+      "segment": "Industrial"
+    },
+    {
+      "file": "INDUSTRIAL_DIESEL_ENGINE_OIL.html",
+      "url": "https://pensol.com/INDUSTRIAL_DIESEL_ENGINE_OIL.html",
+      "title": "DIESEL ENGINE OIL",
+      "segment": "Industrial"
+    },
+    {
+      "file": "AXLE_&_TRANSMISSION_OIL.html",
+      "url": "https://pensol.com/AXLE_&_TRANSMISSION_OIL.html",
+      "title": "AXLE & TRANSMISSION OIL",
+      "segment": "Industrial"
+    },
+    {
+      "file": "SPINNING_OIL.html",
+      "url": "https://pensol.com/SPINNING_OIL.html",
+      "title": "SPINNING OIL",
+      "segment": "Industrial"
+    },
+    {
+      "file": "OTHERS.html",
+      "url": "https://pensol.com/OTHERS.html",
+      "title": "OTHERS",
+      "segment": "Industrial"
+    },
+    {
+      "file": "PXT_PRIME.html",
+      "url": "https://pensol.com/PXT_PRIME.html",
+      "title": "PXT PRIME",
+      "segment": "Automotive"
+    }
+  ],
+  "categoryCount": 30,
+  "productPages": 77,
+  "notes": [
+    "Extracted only from https://pensol.com/",
+    "No MRP or DLP was present on official product pages; both left blank.",
+    "No product code/SKU field was present on official pages; product_code left blank.",
+    "Pack variants split only from explicit Pack Size lists on the product page.",
+    "Viscosity grades were stored as specifications, not as invented SKUs.",
+    "No database import performed."
+  ],
+  "totals": {
+    "totalProductRecords": 286,
+    "uniqueProducts": 77,
+    "packVariants": 286,
+    "extraPackVariantRows": 209,
+    "automotiveRecords": 251,
+    "industrialRecords": 35,
+    "productCategories": 26,
+    "recordsWithMrp": 0,
+    "recordsWithDlp": 0,
+    "recordsWithoutMrp": 286,
+    "recordsWithoutDlp": 286,
+    "imagesFound": 77,
+    "imagesDownloaded": 48,
+    "imageFailures": 0,
+    "imagesMissing": 0,
+    "duplicateImageUrls": 29,
+    "REVIEW": 33,
+    "DUPLICATE": 0,
+    "CONFLICT": 0,
+    "READY": 253,
+    "inventedSku": 0,
+    "inventedMrp": 0,
+    "inventedDlp": 0,
+    "uomCounts": {
+      "KG": 62,
+      "LTR/L": 191,
+      "PCS/other": 0,
+      "blank": 33,
+      "Ambiguous": 0
+    }
+  }
+}

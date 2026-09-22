@@ -1,0 +1,15 @@
+{
+  "READY": 526,
+  "UPDATE": 79,
+  "DUPLICATE": 0,
+  "CONFLICT": 1,
+  "REVIEW": 0,
+  "conflicts": [
+    {
+      "partNumber": "M-663",
+      "existingPartNumber": "M663",
+      "reason": "part_number_owned_by_non_meko_part"
+    }
+  ],
+  "reviews": []
+}

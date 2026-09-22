@@ -1,0 +1,3752 @@
+[
+  {
+    "partNumber": "M-1532",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-1533",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-1538",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-1524 / M-1608",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-1519 / M-1545",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-556",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-701 U",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-6524",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-642",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-611",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-654",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-644 A",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-656 A",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-505 / M-855",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-505 H / M-855 H",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-536 / M-856",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-514 / M-854",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-548 / M-848",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-501 / M-851",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-517 / M-857",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-549 / M-849",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-517 A / M-857 A",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-520 / M-870",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-520 A",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-535 / M-845",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-534 / M-845 A",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-845 B",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-821",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-608",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-532 B",
+    "reason": "conflicting_gst_hsn_across_applications",
+    "vehicleGroups": [
+      "heavy-trucks-and-buses",
+      "dg-gensets"
+    ],
+    "gstOptions": [
+      "18% / 87089100",
+      "18% / 87089900"
+    ]
+  },
+  {
+    "partNumber": "M-821 MD",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-538",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-822 CA",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-826 MD",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-824",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-824 CA",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-617 CA",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-824 A",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-867 CA",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-507 H / M-836 H",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-507 H MD / M-836 H MD",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-507 HA / M-836 HA",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-507 HA MD / M-836 HA MD",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-507 CA / M-836 CA",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-507 CA MD / M-836 CA MD",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-523 H / M-838 H",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-523 HA / M-838 HA",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-523 CA / M-838 CA",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-523 CA MD / M-838 CA MD",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-643",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-1508",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-675",
+    "reason": "conflicting_gst_hsn_across_applications",
+    "vehicleGroups": [
+      "light-trucks-and-buses",
+      "tractors"
+    ],
+    "gstOptions": [
+      "18% / 87089900",
+      "5% / 87089100"
+    ]
+  },
+  {
+    "partNumber": "M-825 / M-841",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-844 / M-613",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-862 A",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-862",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-661",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-661 A / M-669 A",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-661 B",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-808 A",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-808 B",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-816 A / M-816 B",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-832 A / M-871 B",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-832 B / M-871 C",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-842 A / M-858 A",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-850",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-829 A",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-829 B",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-1501 / M-1851",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-1505 / M-1855",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-1514 / M-1854",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-1520 / M-1870",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-1534 / M-1845 A / M-1845 B",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-1535 / M-1845",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-1665",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-1650 / M-1664",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-1603",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-1822",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-1822 A",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-1821",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-1821 A",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-1836",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-1836 A",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-1838",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-1838 A",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-1554",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-1801 B",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-1803",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-1803 A",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-1803 B",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-1804 / M-1805",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-1804 A / M-1805 A",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-1808 / M-1809",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-1808 B / M-1809 B",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-1810",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-1810 A",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-1810 B",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-1814",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-1811 / M-1817",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-1815 / M-1816 / M-1827",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-1820",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-1820 A",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-1820 B",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-1830",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-1828 / M-1832",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-1850",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-6505 A / M-6855 A",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-6514 / M-6854",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-6520 / M-6870",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-6534 / M-6845 A / M-6845 B",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-6535 / M-6845",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-6508",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-6532",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-6533",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-6538",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-6513 / M-6824 / M-6511 / M-6826",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-6513 A / M-6824 A / M-6511 A / M-6826 A",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-6510 / M-6822",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-6510 A / M-6822 A",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-6506 / M-6821",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-6507 / M-6836",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-6523 / M-6838",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-6554",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-6801",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-6801 B",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-6803",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-6803 B",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-6804 / M-6805",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-6804 B / M-6805 B",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-6808 A / M-6809 A",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-6808 B / M-6809 B",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-6810",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-6810 B",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-6814",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-6837 / M-6626",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-6811 / M-6817",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-6819",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-6812",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-6815 / M-6816",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-6820 A",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-6820 B",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-6830",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-6850",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-2505 / M-2855",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-2514 / M-2854",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-5514",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-2520 / M-2870",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-2535 / M-2845",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-4508",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-2603",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-2650",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-2665",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-3505 / M-3855",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-3603",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-3514 / M-3854",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-3510 / M-3822",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-3507 / M-3836",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-3523 / M-3838",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-705 U",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-707",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-708",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-712 U",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-714 U",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-702 U",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-706 R",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-50101 / M-85101",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-52001 / M-87001",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-50801",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-53201",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-53301",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-52401 / M-60801",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-60301",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-65001",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-51001 / M-82201",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-51301 / M-82401",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-50701 / M-83601",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-52301 / M-83801",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-80901",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-82001",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-80401 A",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-50102 / M-85102",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-50502 ( C ) / M-85502 ( C )",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-50601 / M-82101",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-50502",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-50502 A / M-85502 A",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-50502 B / M-85502 B",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-51402 / M-85402 / M-50402 / M-54002",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-51702 / M-85702",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-50802",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-53202 ( 75 MM )",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-53202 ( 85 MM )",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-53302",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-53802",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-2855",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-60302",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-65002 / M-66402",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-66502",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-50602 / M-82102",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-50602 A / M-82102 A",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-51002 / M-82202",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-51002 A / M-82202 A",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-51302 / M-82402",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-51302 A / M-82402 A",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-50702 / M-83602",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-50702 A / M-83602 A",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-52302 / M-83802",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-52302 A / M-83802 A",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-81102 / M-81302",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-80102",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-80102 A",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-80102 B",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-80302(C) / M-80402(C) / M-80502(C)",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-80302 A / M-80402 A / M-80502 A",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-1535",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-80302 B / M-80402 B / M-80502 B",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-80802 / M-80902",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-80802 A / M-80902 A",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-80802 B / M-80902 B",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-81002 ( C )",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-81002 A",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-81002 B",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-81402",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-81802",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-507 H",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-81502",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-82002",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-82002 A",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-82002 B",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-2803 / M-2809 / M-2820",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-80909",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-751",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-752",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-505",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-505 H",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-536",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-514",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-514 H",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-548",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-514 A",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-854 A",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-501",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-517",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-517 H",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-549",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-517 A",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-857 A",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-870",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-535",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-534",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-826",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-507 H MD",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-836 H MD",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-507 HA",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-507 HA MD",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-836 HA MD",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-507 CA",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-2514",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-507 CA MD",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-836 CA MD",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-523 H",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-523 H MD",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-838 H MD",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-523 HA",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-523 HA MD",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-838 HA MD",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-523 CA",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-523 CA MD",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-838 CA MD",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-841",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-613",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-1845",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-661 A",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-669 A",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-816 B",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-871 B",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-871 C",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-1650",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-858 A",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-858 B",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-1501",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-1851",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-1505",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-1855",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-1505 A",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-1855 A",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-1845 B",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-1505 B",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-1855 B",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-1514",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-1854",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-1517",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-1857",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-1520",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-1870",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-1534",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-1845 A",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-1664",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-1524",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-1608",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-1519",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-1545",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-1824",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-1826",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-1824 A",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-1826 A",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-1804",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-1805",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-1804 A",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-1805 A",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-1804 B",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-1805 B",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-1808",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-1809",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-1808 A",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-1809 A",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-1808 B",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-1809 B",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-1837",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-1839",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-1811",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-1817",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-1818",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-1840",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-1865",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-1815",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-1816",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-1827",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-1828",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-1832",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-6505",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-6855",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-6505 A",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-6855 A",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-6505 B",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-6855 B",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-6514",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-6845",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-6854",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-6517",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-6857",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-6520",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-6870",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-6534",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-6845 A",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-6845 B",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-6535",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-6608",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-6519",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-6545",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-6513",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-6824",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-6511",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-6826",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-6513 A",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-6824 A",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-6511 A",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-6826 A",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-6510",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-6822",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-6510 A",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-6822 A",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-6506",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-6821",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-6506 A",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-6821 A",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-6507",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-6836",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-2854",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-6507 A",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-6836 A",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-6523",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-6838",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-6523 A",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-6838 A",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-6804",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-6805",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-6804 A",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-6805 A",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-6804 B",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-6805 B",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-6808",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-6809",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-6808 A",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-6809 A",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-6808 B",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-6809 B",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-6837",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-6626",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-6811",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-6817",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-6818",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-6840",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-6865",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-6815",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-6816",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-6828",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-6827",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-2505",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-2517",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-2857",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-2520",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-2870",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-2534",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-2845 A",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-2845 B",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-2535",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-2845",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-3505",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-3855",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-3514",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-3854",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-3517",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-3857",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-3506",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-3821",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-3510",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-3822",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-3513",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-3824",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-3507",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-3836",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-3523",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-3838",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-50101",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-85101",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-50501",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-85501",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-52001",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-87001",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-52401",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-60801",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-53501",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-84501",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-53401",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-84501 A",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-84501 B",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-50601",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-82101",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-51001",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-82201",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-51301",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-82401",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-50701",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-83601",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-52301",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-83801",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-50102",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-85102",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-50502 A",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-85502 A",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-50502 B",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-85502 B",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-51402",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-85402",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-50402",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-54002",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-51702",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-85702",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-65002",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-66402",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-50602",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-82102",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-50602 A",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-82102 A",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-51002",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-82202",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-51002 A",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-82202 A",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-51302",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-82402",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-51302 A",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-82402 A",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-50702",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-83602",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-50702 A",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-83602 A",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-52302",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-83802",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-52302 A",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-83802 A",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-81102",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-81302",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-80302 A",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-80402 A",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-80502 A",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-80302 B",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-80402 B",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-80502 B",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-80802",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-80902",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-80802 A",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-80902 A",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-80802 B",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-80902 B",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-2803",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-2809",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-2820",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-409",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-538 A",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-537",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-516",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-839 J",
+    "reason": "conflicting_gst_hsn_across_applications",
+    "vehicleGroups": [
+      "earthmovers",
+      "tractors"
+    ],
+    "gstOptions": [
+      "18% / 84314990",
+      "5% / 87089100"
+    ]
+  },
+  {
+    "partNumber": "M-649",
+    "reason": "conflicting_gst_hsn_across_applications",
+    "vehicleGroups": [
+      "earthmovers",
+      "tractors"
+    ],
+    "gstOptions": [
+      "18% / 84314990",
+      "5% / 87089100"
+    ]
+  },
+  {
+    "partNumber": "M-859",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-541",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-1096",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-527",
+    "reason": "conflicting_gst_hsn_across_applications",
+    "vehicleGroups": [
+      "dg-gensets",
+      "earthmovers"
+    ],
+    "gstOptions": [
+      "18% / 87089900",
+      "18% / 84314990"
+    ]
+  },
+  {
+    "partNumber": "M-552 H",
+    "reason": "conflicting_gst_hsn_across_applications",
+    "vehicleGroups": [
+      "dg-gensets",
+      "earthmovers"
+    ],
+    "gstOptions": [
+      "18% / 87089900",
+      "18% / 84314990"
+    ]
+  },
+  {
+    "partNumber": "M-553 H",
+    "reason": "conflicting_gst_hsn_across_applications",
+    "vehicleGroups": [
+      "dg-gensets",
+      "earthmovers"
+    ],
+    "gstOptions": [
+      "18% / 87089900",
+      "18% / 84314990"
+    ]
+  },
+  {
+    "partNumber": "M-873",
+    "reason": "conflicting_gst_hsn_across_applications",
+    "vehicleGroups": [
+      "earthmovers",
+      "tractors"
+    ],
+    "gstOptions": [
+      "18% / 84314990",
+      "5% / 87089100"
+    ]
+  },
+  {
+    "partNumber": "M-873 A",
+    "reason": "conflicting_gst_hsn_across_applications",
+    "vehicleGroups": [
+      "earthmovers",
+      "tractors"
+    ],
+    "gstOptions": [
+      "18% / 84314990",
+      "5% / 87089100"
+    ]
+  },
+  {
+    "partNumber": "M-635 B",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-1066",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-1067",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-401",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-410",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-411",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-412",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-402",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-403",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-404",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-405",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-406",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-407",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-408",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-545 / M-1012",
+    "reason": "conflicting_gst_hsn_across_applications",
+    "vehicleGroups": [
+      "earthmovers",
+      "tractors"
+    ],
+    "gstOptions": [
+      "18% / 84314990",
+      "5% / 87089100"
+    ]
+  },
+  {
+    "partNumber": "M-649 A",
+    "reason": "conflicting_gst_hsn_across_applications",
+    "vehicleGroups": [
+      "earthmovers",
+      "tractors"
+    ],
+    "gstOptions": [
+      "18% / 84314990",
+      "5% / 87089100"
+    ]
+  },
+  {
+    "partNumber": "M-630 B",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-542",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-1030",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-1030 A",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-1030 B",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-1033",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-669",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-672 D",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-854 BIG SINGLE BRG.",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-857 BIG SINGLE BRG.",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-1095",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-1026",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-528",
+    "reason": "conflicting_gst_hsn_across_applications",
+    "vehicleGroups": [
+      "dg-gensets",
+      "earthmovers"
+    ],
+    "gstOptions": [
+      "18% / 87089900",
+      "18% / 84314990"
+    ]
+  },
+  {
+    "partNumber": "M-840",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-413",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-845",
+    "reason": "conflicting_gst_hsn_across_applications",
+    "vehicleGroups": [
+      "heavy-trucks-and-buses",
+      "dg-gensets"
+    ],
+    "gstOptions": [
+      "18% / 87089100",
+      "18% / 87089900"
+    ]
+  },
+  {
+    "partNumber": "M-519 / M-1011",
+    "reason": "conflicting_gst_hsn_across_applications",
+    "vehicleGroups": [
+      "earthmovers",
+      "tractors"
+    ],
+    "gstOptions": [
+      "18% / 84314990",
+      "5% / 87089100"
+    ]
+  },
+  {
+    "partNumber": "M-655",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-1006",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-657 H",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-602",
+    "reason": "conflicting_gst_hsn_across_applications",
+    "vehicleGroups": [
+      "light-trucks-and-buses",
+      "tractors"
+    ],
+    "gstOptions": [
+      "18% / 87089900",
+      "5% / 87089100"
+    ]
+  },
+  {
+    "partNumber": "M-602 B",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-601",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-514 A / M-854 A",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-1824 A / M-1826 A",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-519",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-545",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-650 / M-603 A",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-518",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-845 J",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-704 H",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-514 H / M-854 H",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-517 H / M-857 H",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-822",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-822 MD",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-511 / M-826",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-824 MD",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-867",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-523 H MD / M-838 H MD",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-1801",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-523 HA MD / M-838 HA MD",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-675 A",
+    "reason": "conflicting_gst_hsn_across_applications",
+    "vehicleGroups": [
+      "light-trucks-and-buses",
+      "tractors"
+    ],
+    "gstOptions": [
+      "18% / 87089900",
+      "5% / 87089100"
+    ]
+  },
+  {
+    "partNumber": "M-842 B / M-858 B",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-1505 A / M-1855 A",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-1505 B / M-1855 B",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-1517 / M-1857",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-1824 / M-1826",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-53501 / M-84501",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-1801 A",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-1804 B / M-1805 B",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-1808 A / M-1809 A",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-1837 / M-1839",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-1818 / M-1840 / M-1865",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-1819",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-1812",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-1862",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-6505 / M-6855",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-6505 B / M-6855 B",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-6517 / M-6857",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-6608 / M-6524",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-6519 / M-6545",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-6506 A / M-6821 A",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-6507 A / M-6836 A",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-6523 A / M-6838 A",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-6801 A",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-6803 A",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-6804 A / M-6805 A",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-6808 / M-6809",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-6810 A",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-6818 / M-6840 / M-6865",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-6820",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-6828 / M-6827",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-6862",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-2517 / M-2857",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-2534 / M-2845 A / M-2845 B",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-3517 / M-3857",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-3506 / M-3821",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-3513 / M-3824",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-716",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-70452",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-50501 / M-85501",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  },
+  {
+    "partNumber": "M-53401 / M-84501 A / M-84501 B",
+    "reason": "no_official_tax_category",
+    "vehicleGroups": [],
+    "gstOptions": []
+  }
+]

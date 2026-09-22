@@ -1,0 +1,27 @@
+{
+  "exportedAt": null,
+  "originalFilesUntouched": [
+    "full-catalogue.json",
+    "full-catalogue.csv",
+    "import-ready.csv",
+    "ci-automotive-extract.csv"
+  ],
+  "databaseWrites": 0,
+  "imported": false,
+  "typesenseReindex": false,
+  "note": "Placeholder package. Use /admin/source-catalogue Import preview then Export Import File after explicit firm and SpareLink price assignment. No firms or prices were auto-assigned.",
+  "counts": {
+    "sourceTotal": 8182,
+    "READY": 7993,
+    "REVIEW": 189,
+    "validForImport": 0,
+    "missingFirm": 8182,
+    "missingPrice": 8182,
+    "imageReview": 710
+  },
+  "files": {
+    "ready": "data/source-catalogue/admin-import-ready.csv",
+    "review": "data/source-catalogue/admin-import-review.csv",
+    "validation": "data/source-catalogue/admin-import-validation.json"
+  }
+}

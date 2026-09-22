@@ -1,0 +1,28 @@
+{
+  "backupDir": "T:\\sparelink-safety-backups\\ready-import-2026-09-16T19-07-16-729Z",
+  "dealerUsed": {
+    "id": "dealer-test-001",
+    "businessName": "SpareLink Test Dealer"
+  },
+  "firmUsed": {
+    "id": "firm-ambaji-traders",
+    "name": "Ambaji Traders"
+  },
+  "insertedParts": 7993,
+  "insertedListings": 7993,
+  "insertedInventory": 7993,
+  "actualImported": 7993,
+  "actualAmbaji": 7993,
+  "actualPositive": 7780,
+  "actualBlank": 213,
+  "actualMrp": 0,
+  "reviewImported": 0,
+  "totalPartsInDatabase": 8003,
+  "preexistingParts": 10,
+  "categoriesCreated": 5,
+  "typesenseIndexed": 7993,
+  "typesenseError": null,
+  "databaseWrites": true,
+  "migrations": false,
+  "productionDeploy": false
+}

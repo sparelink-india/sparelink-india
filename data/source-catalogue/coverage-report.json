@@ -1,0 +1,444 @@
+{
+  "source": "https://onlineautohandles.com/b2b",
+  "api": "https://onlineautohandles.com/api/b2b/products",
+  "categoriesApi": "https://onlineautohandles.com/api/b2b/categories",
+  "claimedTotal": 8182,
+  "extractedRaw": 8182,
+  "extractedUnique": 8182,
+  "categoryCount": 85,
+  "categories": [
+    {
+      "id": "cat-accelerator-pedal",
+      "name": "ACCELERATOR PEDAL",
+      "count": 21
+    },
+    {
+      "id": "cat-arm-rest-handle",
+      "name": "ARM REST HANDLE",
+      "count": 23
+    },
+    {
+      "id": "cat-battery-terminals",
+      "name": "BATTERY TERMINALS",
+      "count": 17
+    },
+    {
+      "id": "cat-bonnet-handle",
+      "name": "BONNET HANDLE",
+      "count": 12
+    },
+    {
+      "id": "cat-bonnet-hinges",
+      "name": "BONNET HINGES",
+      "count": 27
+    },
+    {
+      "id": "cat-bonnet-lock",
+      "name": "BONNET LOCK",
+      "count": 74
+    },
+    {
+      "id": "cat-bonnet-opener",
+      "name": "BONNET OPENER",
+      "count": 15
+    },
+    {
+      "id": "cat-brake-linings",
+      "name": "BRAKE LININGS",
+      "count": 20
+    },
+    {
+      "id": "cat-brake-shoes",
+      "name": "BRAKE SHOES",
+      "count": 64
+    },
+    {
+      "id": "cat-bumper-brackets",
+      "name": "BUMPER BRACKETS",
+      "count": 59
+    },
+    {
+      "id": "cat-bumper-corners",
+      "name": "BUMPER CORNERS",
+      "count": 7
+    },
+    {
+      "id": "cat-cables-wires",
+      "name": "CABLES / WIRES",
+      "count": 176
+    },
+    {
+      "id": "cat-channels-guide-rails",
+      "name": "CHANNELS / GUIDE RAILS",
+      "count": 48
+    },
+    {
+      "id": "cat-clamps",
+      "name": "CLAMPS",
+      "count": 19
+    },
+    {
+      "id": "cat-connector",
+      "name": "CONNECTOR",
+      "count": 25
+    },
+    {
+      "id": "cat-dala-handles",
+      "name": "DALA HANDLES",
+      "count": 32
+    },
+    {
+      "id": "cat-dickey-trunklid-locks",
+      "name": "DICKEY / TRUNKLID LOCKS",
+      "count": 20
+    },
+    {
+      "id": "cat-dickey-shocker-gas-springs",
+      "name": "DICKEY SHOCKER / GAS SPRINGS",
+      "count": 61
+    },
+    {
+      "id": "cat-door-hinges",
+      "name": "DOOR HINGES",
+      "count": 89
+    },
+    {
+      "id": "cat-door-latch-assy",
+      "name": "DOOR LATCH ASSY.",
+      "count": 281
+    },
+    {
+      "id": "cat-door-lock",
+      "name": "DOOR LOCK",
+      "count": 12
+    },
+    {
+      "id": "cat-door-lock-kit",
+      "name": "DOOR LOCK KIT",
+      "count": 37
+    },
+    {
+      "id": "cat-door-lock-knob",
+      "name": "DOOR LOCK KNOB",
+      "count": 37
+    },
+    {
+      "id": "cat-door-lock-w-keys",
+      "name": "DOOR LOCK W/KEYS",
+      "count": 66
+    },
+    {
+      "id": "cat-door-stopper",
+      "name": "DOOR STOPPER",
+      "count": 37
+    },
+    {
+      "id": "cat-door-striker",
+      "name": "DOOR STRIKER",
+      "count": 84
+    },
+    {
+      "id": "cat-fan",
+      "name": "FAN",
+      "count": 2
+    },
+    {
+      "id": "cat-fender-linings",
+      "name": "FENDER LININGS",
+      "count": 19
+    },
+    {
+      "id": "cat-filters",
+      "name": "FILTERS",
+      "count": 235
+    },
+    {
+      "id": "cat-fog-lamp",
+      "name": "FOG LAMP",
+      "count": 3
+    },
+    {
+      "id": "cat-fog-lamp-cover",
+      "name": "FOG LAMP COVER",
+      "count": 30
+    },
+    {
+      "id": "cat-foot-step",
+      "name": "FOOT STEP",
+      "count": 4
+    },
+    {
+      "id": "cat-front-grills",
+      "name": "FRONT GRILLS",
+      "count": 67
+    },
+    {
+      "id": "cat-fuel-tank-cap",
+      "name": "FUEL TANK CAP",
+      "count": 114
+    },
+    {
+      "id": "cat-fuel-tank-locks",
+      "name": "FUEL TANK LOCKS",
+      "count": 47
+    },
+    {
+      "id": "cat-fuel-tank-neck",
+      "name": "FUEL TANK NECK",
+      "count": 30
+    },
+    {
+      "id": "cat-gear-lever-boot",
+      "name": "GEAR LEVER BOOT",
+      "count": 18
+    },
+    {
+      "id": "cat-gear-lever-knobs",
+      "name": "GEAR LEVER KNOBS",
+      "count": 50
+    },
+    {
+      "id": "cat-glove-box-dash-board-locks",
+      "name": "GLOVE BOX / DASH BOARD LOCKS",
+      "count": 67
+    },
+    {
+      "id": "cat-grab-handle",
+      "name": "GRAB HANDLE",
+      "count": 19
+    },
+    {
+      "id": "cat-hand-throttle",
+      "name": "HAND THROTTLE",
+      "count": 5
+    },
+    {
+      "id": "cat-head-light-bezel",
+      "name": "HEAD LIGHT BEZEL",
+      "count": 14
+    },
+    {
+      "id": "cat-head-lights",
+      "name": "HEAD LIGHTS",
+      "count": 4
+    },
+    {
+      "id": "cat-horns",
+      "name": "HORNS",
+      "count": 14
+    },
+    {
+      "id": "cat-ignition-steering-locks",
+      "name": "IGNITION / STEERING LOCKS",
+      "count": 118
+    },
+    {
+      "id": "cat-inner-pull-handle",
+      "name": "INNER PULL HANDLE",
+      "count": 5
+    },
+    {
+      "id": "cat-inside-door-handle",
+      "name": "INSIDE DOOR HANDLE",
+      "count": 388
+    },
+    {
+      "id": "cat-inside-mirror",
+      "name": "INSIDE MIRROR",
+      "count": 14
+    },
+    {
+      "id": "cat-license-number-plates",
+      "name": "LICENSE NUMBER PLATES",
+      "count": 13
+    },
+    {
+      "id": "cat-linkage-rod",
+      "name": "LINKAGE ROD",
+      "count": 16
+    },
+    {
+      "id": "cat-meter",
+      "name": "METER",
+      "count": 6
+    },
+    {
+      "id": "cat-motors",
+      "name": "MOTORS",
+      "count": 17
+    },
+    {
+      "id": "cat-mud-guard-flap",
+      "name": "MUD GUARD FLAP",
+      "count": 8
+    },
+    {
+      "id": "cat-outside-door-handle",
+      "name": "OUTSIDE DOOR HANDLE",
+      "count": 636
+    },
+    {
+      "id": "cat-power-window-switches",
+      "name": "POWER WINDOW SWITCHES",
+      "count": 69
+    },
+    {
+      "id": "cat-quarter-glass-frame",
+      "name": "QUARTER GLASS FRAME",
+      "count": 12
+    },
+    {
+      "id": "cat-radiator-cap",
+      "name": "RADIATOR CAP",
+      "count": 6
+    },
+    {
+      "id": "cat-ratchet-tie-down",
+      "name": "RATCHET TIE DOWN",
+      "count": 25
+    },
+    {
+      "id": "cat-relay",
+      "name": "RELAY",
+      "count": 15
+    },
+    {
+      "id": "cat-rods",
+      "name": "RODS",
+      "count": 105
+    },
+    {
+      "id": "cat-roof-handle",
+      "name": "ROOF HANDLE",
+      "count": 39
+    },
+    {
+      "id": "cat-sash",
+      "name": "SASH",
+      "count": 16
+    },
+    {
+      "id": "cat-seat-belts",
+      "name": "SEAT BELTS",
+      "count": 40
+    },
+    {
+      "id": "cat-seat-recliners",
+      "name": "SEAT RECLINERS",
+      "count": 39
+    },
+    {
+      "id": "cat-sensor",
+      "name": "SENSOR",
+      "count": 30
+    },
+    {
+      "id": "cat-shock-absorbers-shockers",
+      "name": "SHOCK ABSORBERS / SHOCKERS",
+      "count": 116
+    },
+    {
+      "id": "cat-side-mirror-bracket",
+      "name": "SIDE MIRROR BRACKET",
+      "count": 19
+    },
+    {
+      "id": "cat-side-mirror-rods",
+      "name": "SIDE MIRROR RODS",
+      "count": 2
+    },
+    {
+      "id": "cat-side-view-mirror",
+      "name": "SIDE VIEW MIRROR",
+      "count": 447
+    },
+    {
+      "id": "cat-springs",
+      "name": "SPRINGS",
+      "count": 20
+    },
+    {
+      "id": "cat-steering-wheels",
+      "name": "STEERING WHEELS",
+      "count": 8
+    },
+    {
+      "id": "cat-stepney-brackets",
+      "name": "STEPNEY BRACKETS",
+      "count": 21
+    },
+    {
+      "id": "cat-sub-mirror",
+      "name": "SUB MIRROR",
+      "count": 136
+    },
+    {
+      "id": "cat-sunshade-bracket",
+      "name": "SUNSHADE BRACKET",
+      "count": 2
+    },
+    {
+      "id": "cat-sunvisor",
+      "name": "SUNVISOR",
+      "count": 4
+    },
+    {
+      "id": "cat-switches",
+      "name": "SWITCHES",
+      "count": 70
+    },
+    {
+      "id": "cat-urea-adblue-tank-cap",
+      "name": "UREA / ADBLUE TANK CAP",
+      "count": 6
+    },
+    {
+      "id": "cat-uncategorized",
+      "name": "Uncategorized",
+      "count": 2814
+    },
+    {
+      "id": "cat-wheel-cap",
+      "name": "WHEEL CAP",
+      "count": 47
+    },
+    {
+      "id": "cat-window-lock",
+      "name": "WINDOW LOCK",
+      "count": 69
+    },
+    {
+      "id": "cat-window-regulator-assy",
+      "name": "WINDOW REGULATOR ASSY",
+      "count": 547
+    },
+    {
+      "id": "cat-window-regulator-handles",
+      "name": "WINDOW REGULATOR HANDLES",
+      "count": 86
+    },
+    {
+      "id": "cat-wiper-arm",
+      "name": "WIPER ARM",
+      "count": 3
+    },
+    {
+      "id": "cat-wiper-blade",
+      "name": "WIPER BLADE",
+      "count": 16
+    },
+    {
+      "id": "cat-wiper-linkage",
+      "name": "WIPER LINKAGE",
+      "count": 27
+    }
+  ],
+  "remaining": 0,
+  "notes": [
+    "Enumerated via public GET /api/b2b/products pagination (offset/limit).",
+    "Source UI category dropdown showed All Categories (8182).",
+    "Source prices stored as sourcePrice only; not copied into SpareLink selling_price.",
+    "Firm assignment left null for admin.",
+    "Not imported to SpareLink database."
+  ]
+}

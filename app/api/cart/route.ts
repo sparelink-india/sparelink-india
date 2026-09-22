@@ -4,6 +4,8 @@ import { NextResponse } from "next/server";
 
 import { getDb } from "@/lib/db";
 import { getServerSession } from "@/lib/auth-server";
+import { denyIfMustChangePassword } from "@/lib/require-role";
+import { gateBuyerApi } from "@/lib/access-control";
 import {
   cart,
   cartItem,
@@ -13,27 +15,62 @@ import {
   inventory,
   part,
 } from "@/drizzle/schema";
-import { calculateLineItemGST, calculateCartTotals } from "@/lib/gst";
+import { extractGSTRate } from "@/lib/gst";
+import { isAllowedFirmId } from "@/lib/firms";
+import { resolveStorefrontPricing } from "@/lib/customer-discount";
+import { resolvePensolConfigsForUser } from "@/lib/pensol-discount";
+import { ignoreClientPricing } from "@/lib/party-pricing";
+import { priceStorefrontLines } from "@/lib/storefront-line-price";
+import { isAuthoritativeSellingPricePaise } from "@/lib/storefront-price-display";
 
-async function getBuyerSession() {
+async function resolveBuyerCart(options?: { anonymousGet?: boolean }) {
   const session = await getServerSession();
-
   if (!session) {
-    return null;
+    if (options?.anonymousGet) {
+      return { session: null, blocked: null as NextResponse | null };
+    }
+    return {
+      session: null,
+      blocked: NextResponse.json(
+        { error: "Authentication required." },
+        { status: 401 },
+      ),
+    };
   }
 
-  if (session.user.role !== "buyer") {
-    return null;
+  const buyerGate = gateBuyerApi(session);
+  if (!buyerGate.ok) {
+    if (options?.anonymousGet) {
+      return { session: null, blocked: null };
+    }
+    return {
+      session: null,
+      blocked: NextResponse.json(
+        { error: buyerGate.error },
+        { status: buyerGate.status },
+      ),
+    };
   }
 
-  return session;
+  const blocked = await denyIfMustChangePassword(session.user.id);
+  return { session: blocked ? null : session, blocked };
 }
 
 export async function GET() {
-  const session = await getBuyerSession();
+  const { session, blocked } = await resolveBuyerCart({ anonymousGet: true });
+  if (blocked) return blocked;
 
   if (!session) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    return NextResponse.json({
+      id: null,
+      items: [],
+      subtotalPaise: 0,
+      gstPaise: 0,
+      shippingPaise: 0,
+      totalPaise: 0,
+      itemCount: 0,
+      requiresLogin: true,
+    });
   }
 
   const db = getDb();
@@ -65,6 +102,8 @@ export async function GET() {
       partName: part.name,
       partDescription: part.description,
       partBrand: part.brand,
+      partSpecifications: part.specifications,
+      sku: dealerListing.sku,
       dealerId: dealer.id,
       dealerName: dealer.businessName,
       firmId: firm.id,
@@ -82,29 +121,58 @@ export async function GET() {
     .leftJoin(inventory, eq(inventory.dealerListingId, dealerListing.id))
     .where(eq(cartItem.cartId, existingCart.id));
 
-  const items = rawItems.map((item) => {
-    const tax = calculateLineItemGST(
-      item.pricePaise,
-      item.quantity,
-      item.partDescription,
-    );
+  const pricing = await resolveStorefrontPricing(session);
+  const pensolConfigs = await resolvePensolConfigsForUser(session.user.id);
+  const lineRefs = rawItems.map((item) => ({
+    product: {
+      brand: item.partBrand,
+      name: item.partName,
+      sku: item.sku,
+      uom: item.partSpecifications,
+      specifications: item.partSpecifications,
+    },
+    listInclusivePaise: item.pricePaise,
+    quantity: item.quantity,
+    gstRate: extractGSTRate(item.partDescription),
+  }));
+  const cash = priceStorefrontLines(
+    lineRefs,
+    pricing.effectiveDiscountPercent,
+    "cash",
+    pensolConfigs.commonConfig,
+    pensolConfigs.customerConfig,
+  );
+  const credit = priceStorefrontLines(
+    lineRefs,
+    pricing.effectiveDiscountPercent,
+    "credit",
+    pensolConfigs.commonConfig,
+    pensolConfigs.customerConfig,
+  );
+  const totals = cash.totals;
+  const items = rawItems.map((item, index) => {
+    const line = cash.priced[index];
+    const creditLine = credit.priced[index];
     return {
       ...item,
-      gstRate: tax.gstRate,
-      itemSubtotalPaise: tax.itemSubtotalPaise,
-      itemGstPaise: tax.itemGstPaise,
-      itemTotalPaise: tax.itemTotalPaise,
+      gstRate: line.gstRate,
+      listInclusivePaise: line.listInclusivePaise,
+      netInclusivePaise: line.netInclusivePaise,
+      discountPercent: line.discountPercent,
+      discountPaise: line.discountPaise,
+      itemSubtotalPaise: line.lineBasePaise,
+      itemGstPaise: line.lineGstPaise,
+      itemTotalPaise: line.lineNetPaise,
+      isPensol: line.pensol,
+      pensolCategory: line.resolved.category,
+      pensolUnit: line.resolved.unit,
+      pensolPackUnits: line.resolved.packUnits,
+      pensolCashDiscountPaisePerUnit: line.resolved.cashDiscountPaisePerUnit,
+      pensolCreditDiscountPaisePerUnit: line.resolved.creditDiscountPaisePerUnit,
+      pensolCashNetInclusivePaise: line.netInclusivePaise,
+      pensolCreditNetInclusivePaise: creditLine.netInclusivePaise,
     };
   });
-
-  const totals = calculateCartTotals(
-    rawItems.map((i) => ({
-      pricePaise: i.pricePaise,
-      quantity: i.quantity,
-      partDescription: i.partDescription,
-    })),
-    0,
-  );
 
   const itemCount = items.reduce((sum, item) => sum + item.quantity, 0);
 
@@ -115,18 +183,27 @@ export async function GET() {
     gstPaise: totals.gstPaise,
     shippingPaise: totals.shippingPaise,
     totalPaise: totals.totalPaise,
+    listPaise: totals.listPaise,
+    discountPaise: totals.discountPaise,
+    discountPercent: pricing.effectiveDiscountPercent,
     itemCount,
+    hasPensol: cash.hasPensol,
+    pensolCashTotalPaise: cash.totals.totalPaise,
+    pensolCreditTotalPaise: credit.totals.totalPaise,
   });
 }
 
 export async function POST(request: Request) {
-  const session = await getBuyerSession();
+  const { session, blocked } = await resolveBuyerCart();
+  if (blocked) return blocked;
 
   if (!session) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const body = await request.json().catch(() => null);
+  const body = ignoreClientPricing(
+    ((await request.json().catch(() => null)) as Record<string, unknown> | null) ?? {},
+  );
 
   const dealerListingId = body?.dealerListingId;
   const quantity = body?.quantity;
@@ -134,6 +211,7 @@ export async function POST(request: Request) {
   if (
     typeof dealerListingId !== "string" ||
     !dealerListingId ||
+    typeof quantity !== "number" ||
     !Number.isInteger(quantity) ||
     quantity <= 0
   ) {
@@ -163,7 +241,8 @@ export async function POST(request: Request) {
   if (
     !selectedListing ||
     selectedListing.status !== "active" ||
-    !selectedListing.firmId
+    !selectedListing.firmId ||
+    !isAllowedFirmId(selectedListing.firmId)
   ) {
     return NextResponse.json(
       {
@@ -173,6 +252,16 @@ export async function POST(request: Request) {
             : "This listing is not assigned to a fulfillment partner. Please select another option.",
       },
       { status: 404 },
+    );
+  }
+
+  if (!isAuthoritativeSellingPricePaise(selectedListing.pricePaise)) {
+    return NextResponse.json(
+      {
+        error:
+          "This product is available on request and cannot be added to the cart.",
+      },
+      { status: 400 },
     );
   }
 
@@ -249,19 +338,23 @@ export async function POST(request: Request) {
 }
 
 export async function PATCH(request: Request) {
-  const session = await getBuyerSession();
+  const { session, blocked } = await resolveBuyerCart();
+  if (blocked) return blocked;
 
   if (!session) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const body = await request.json().catch(() => null);
+  const body = ignoreClientPricing(
+    ((await request.json().catch(() => null)) as Record<string, unknown> | null) ?? {},
+  );
   const cartItemId = body?.cartItemId || body?.id;
   const quantity = body?.quantity;
 
   if (
     typeof cartItemId !== "string" ||
     !cartItemId ||
+    typeof quantity !== "number" ||
     !Number.isInteger(quantity)
   ) {
     return NextResponse.json(
@@ -311,9 +404,23 @@ export async function PATCH(request: Request) {
     return NextResponse.json({ error: "Cart item not found" }, { status: 404 });
   }
 
-  if (target.listingStatus !== "active" || !target.firmId) {
+  if (
+    target.listingStatus !== "active" ||
+    !target.firmId ||
+    !isAllowedFirmId(target.firmId)
+  ) {
     return NextResponse.json(
       { error: "This item is no longer available." },
+      { status: 400 },
+    );
+  }
+
+  if (!isAuthoritativeSellingPricePaise(target.listingPricePaise)) {
+    return NextResponse.json(
+      {
+        error:
+          "This product is available on request and cannot be purchased online.",
+      },
       { status: 400 },
     );
   }
@@ -347,7 +454,8 @@ export async function PATCH(request: Request) {
 }
 
 export async function DELETE(request: Request) {
-  const session = await getBuyerSession();
+  const { session, blocked } = await resolveBuyerCart();
+  if (blocked) return blocked;
 
   if (!session) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });

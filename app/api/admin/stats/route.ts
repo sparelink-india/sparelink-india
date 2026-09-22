@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
-import { getServerSession } from "@/lib/auth-server";
 import { getDb } from "@/lib/db";
+import { requireAdminApi } from "@/lib/require-role";
 import {
   firm,
   dealer,
@@ -11,15 +11,9 @@ import {
 import { count, eq } from "drizzle-orm";
 
 export async function GET() {
-  const session = await getServerSession();
-
-  if (!session) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
-
-  if (session.user.role !== "admin") {
-    return NextResponse.json({ error: "Admin access required" }, { status: 403 });
-  }
+  const auth = await requireAdminApi();
+  if (auth.error) return auth.error;
+  const session = auth.session;
 
   const db = getDb();
 
@@ -30,7 +24,6 @@ export async function GET() {
       partStats,
       listingStats,
       orderStats,
-      revenueStats,
     ] = await Promise.all([
       db.select({ value: count() }).from(firm),
       db.select({ value: count() }).from(dealer),
@@ -40,12 +33,6 @@ export async function GET() {
         .from(dealerListing)
         .where(eq(dealerListing.status, "active")),
       db.select({ value: count() }).from(order),
-      db
-        .select({
-          total: count(),
-          revenue: count(), // Will calculate from order totals
-        })
-        .from(order),
     ]);
 
     // Get total revenue

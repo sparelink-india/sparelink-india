@@ -1,0 +1,87 @@
+{
+  "productionChanged": false,
+  "deployed": false,
+  "migrations": false,
+  "unrelatedRecordsModified": 0,
+  "mekoBefore": 945,
+  "mekoAfter": 945,
+  "gstMapped": 336,
+  "hsnMapped": 336,
+  "review": 609,
+  "duplicates": 0,
+  "gst18": 174,
+  "gst5": 162,
+  "categoryCounts": {
+    "Heavy Trucks And Buses": 47,
+    "Combine Harvesters": 5,
+    "D.G. Gensets": 20,
+    "EarthMovers": 10,
+    "Light Trucks And Buses": 97,
+    "Mini Trucks And Passenger Vehicles": 1,
+    "Car": 1,
+    "Tractors": 162,
+    "Mini-Tractors": 8
+  },
+  "reviewReasons": {
+    "no_official_tax_category": 593,
+    "conflicting_gst_hsn_across_applications": 16
+  },
+  "typesenseIndexed": 945,
+  "typesenseError": null,
+  "taxMasterUsedExactly": [
+    {
+      "slug": "heavy-trucks-and-buses",
+      "label": "Heavy Trucks And Buses",
+      "gst": 18,
+      "hsn": "87089100"
+    },
+    {
+      "slug": "combine-harvesters",
+      "label": "Combine Harvesters",
+      "gst": 5,
+      "hsn": "87089100"
+    },
+    {
+      "slug": "dg-gensets",
+      "label": "D.G. Gensets",
+      "gst": 18,
+      "hsn": "87089900"
+    },
+    {
+      "slug": "earthmovers",
+      "label": "EarthMovers",
+      "gst": 18,
+      "hsn": "84314990"
+    },
+    {
+      "slug": "light-trucks-and-buses",
+      "label": "Light Trucks And Buses",
+      "gst": 18,
+      "hsn": "87089900"
+    },
+    {
+      "slug": "mini-trucks-and-passenger-vehicles",
+      "label": "Mini Trucks And Passenger Vehicles",
+      "gst": 18,
+      "hsn": "87089900"
+    },
+    {
+      "slug": "car",
+      "label": "Car",
+      "gst": 18,
+      "hsn": "87089900"
+    },
+    {
+      "slug": "tractors",
+      "label": "Tractors",
+      "gst": 5,
+      "hsn": "87089100"
+    },
+    {
+      "slug": "mini-tractors",
+      "label": "Mini-Tractors",
+      "gst": 5,
+      "hsn": "87089100"
+    }
+  ]
+}

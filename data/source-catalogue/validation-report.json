@@ -1,0 +1,31 @@
+{
+  "extractedAt": "2026-09-16T13:10:20.079Z",
+  "source": "https://onlineautohandles.com/b2b",
+  "counts": {
+    "sourceTotalClaimed": 8182,
+    "pagesFetched": 69,
+    "rawRecords": 8182,
+    "uniqueProducts": 8182,
+    "READY": 7993,
+    "REVIEW": 189,
+    "DUPLICATE": 0,
+    "CONFLICT": 0,
+    "imagesDiscovered": 7472,
+    "imagesDownloaded": 7462,
+    "imagesDuplicateUrl": 10,
+    "imagesMissing": 710,
+    "imagesFailed": 0,
+    "imported": 0,
+    "categories": 85
+  },
+  "reviewReasonCounts": {
+    "status_not_live": 189
+  },
+  "notes": [
+    "Enumerated via public GET /api/b2b/products pagination (offset/limit).",
+    "Source UI category dropdown showed All Categories (8182).",
+    "Source prices stored as sourcePrice only; not copied into SpareLink selling_price.",
+    "Firm assignment left null for admin.",
+    "Not imported to SpareLink database."
+  ]
+}

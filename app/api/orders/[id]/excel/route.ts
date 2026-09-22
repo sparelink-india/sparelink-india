@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { eq } from "drizzle-orm";
+import { gateOrderAccess } from "@/lib/access-control";
 import { getServerSession } from "@/lib/auth-server";
 import { getDb } from "@/lib/db";
 import {
@@ -8,9 +9,9 @@ import {
   firmOrder,
   firm,
   part,
-  user,
 } from "@/drizzle/schema";
 import { extractGSTRate } from "@/lib/gst";
+import { splitInclusiveGst } from "@/lib/party-pricing";
 import * as XLSX from "xlsx";
 
 export async function GET(
@@ -33,9 +34,9 @@ export async function GET(
     return NextResponse.json({ error: "Order not found" }, { status: 404 });
   }
 
-  // Ownership verification
-  if (session.user.role !== "admin" && orderRecord.buyerId !== session.user.id) {
-    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  const access = gateOrderAccess(session, orderRecord.buyerId);
+  if (!access.ok) {
+    return NextResponse.json({ error: access.error }, { status: access.status });
   }
 
   // Fetch items
@@ -103,8 +104,7 @@ export async function GET(
   const primaryFirmName = allocations[0]?.firmName || "Ambaji Traders";
   const itemRows = items.map((item) => {
     const gstRate = extractGSTRate(item.partDescription);
-    const taxableSubtotal = item.unitPricePaise * item.quantity;
-    const itemGst = Math.round((taxableSubtotal * gstRate) / 100);
+    const tax = splitInclusiveGst(item.totalPaise, gstRate);
 
     return {
       "Part Number": item.partNumber,
@@ -113,9 +113,9 @@ export async function GET(
       Quantity: item.quantity,
       "Unit Price (₹)": (item.unitPricePaise / 100).toFixed(2),
       "GST (%)": `${gstRate}%`,
-      "GST Amount (₹)": (itemGst / 100).toFixed(2),
-      "Subtotal (₹)": (taxableSubtotal / 100).toFixed(2),
-      "Line Total (₹)": ((taxableSubtotal + itemGst) / 100).toFixed(2),
+      "GST Amount (₹)": (tax.gstPaise / 100).toFixed(2),
+      "Subtotal (₹)": (tax.basePaise / 100).toFixed(2),
+      "Line Total (₹)": (item.totalPaise / 100).toFixed(2),
     };
   });
 

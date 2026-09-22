@@ -1,0 +1,104 @@
+{
+  "mappedAt": "2026-09-19T05:58:06.477Z",
+  "evidence": {
+    "sourceFile": "data\\source-catalogue\\full-catalogue.json",
+    "sourceSite": "https://onlineautohandles.com/b2b",
+    "extractScript": "scripts/extract-ci-catalogue.cjs",
+    "importScript": "scripts/import-ready-catalogue.ts",
+    "categoryBoundary": "categoryName/categoryNames FILTERS or categoryId cat-filters",
+    "imageNote": "data/ci-image-cleanup/preview/preview-report.json SKU 21001 = starlinks filter",
+    "manufacturerFieldCopiedAsBrand": "extract-ci-catalogue.cjs brand = manufacturer"
+  },
+  "sourceFilterSkus": 235,
+  "dbMatched": 231,
+  "updated": 231,
+  "alreadyStarlinks": 0,
+  "skippedProtected": [],
+  "skippedOtherBrand": [],
+  "unmatchedSkus": [
+    "21264",
+    "21265",
+    "21266",
+    "21267"
+  ],
+  "filterCategoryId": "cat-filters",
+  "counts": {
+    "mekoBefore": 615,
+    "mekoAfter": 615,
+    "starlinksAfter": 231,
+    "ciAutomotiveAfter": 6927
+  },
+  "typesenseUpdated": 231,
+  "typesenseError": null,
+  "searchChecks": {
+    "101": {
+      "found": 12,
+      "topBrand": "Factory 1"
+    },
+    "21001": {
+      "found": 1,
+      "topBrand": "STARLINKS"
+    },
+    "STARLINKS": {
+      "found": 231,
+      "topBrand": "STARLINKS"
+    },
+    "MEKO": {
+      "found": 615,
+      "topBrand": "MEKO"
+    },
+    "CI AUTOMOTIVE LLP": {
+      "found": 6927,
+      "topBrand": "CI AUTOMOTIVE LLP"
+    },
+    "TATA ALTROZ WR ASSY": {
+      "found": 16,
+      "topBrand": "CI AUTOMOTIVE LLP"
+    },
+    "filter_by brand:=STARLINKS": {
+      "found": 231
+    }
+  },
+  "sampleUpdated": [
+    {
+      "partNumber": "21084",
+      "name": "CABIN FILTER MAHINDRA SCORPIO-N M-HAWK",
+      "brand": "STARLINKS"
+    },
+    {
+      "partNumber": "21172",
+      "name": "AIR FILTER GM-CHEVROLET BEAT/DIESEL",
+      "brand": "STARLINKS"
+    },
+    {
+      "partNumber": "21173",
+      "name": "AIR FILTER SUZUKI VAN,GYPSY,OMNI",
+      "brand": "STARLINKS"
+    },
+    {
+      "partNumber": "21174",
+      "name": "AIR FILTER GM-CHEVROLET TAVERA O/M",
+      "brand": "STARLINKS"
+    },
+    {
+      "partNumber": "21008",
+      "name": "AIR FILTER MARUTI SUZUKI CELERIO 2ND GEN 2021, WAGON-R K-10 2022 MODEL",
+      "brand": "STARLINKS"
+    },
+    {
+      "partNumber": "21009",
+      "name": "FUEL FILTER MARUTI SUZUKI BALENO,IGNIS ,SWIFT,DZIRE N/M,SWIFT N/M 3RD GEN CHEVROLET BEAT SUITABLE FOR DIESEL",
+      "brand": "STARLINKS"
+    },
+    {
+      "partNumber": "21010",
+      "name": "FUEL FILTER MARUTI SUZUKI ERTIGA,DZIRE O/M, SX4, SUPER CARRY,CIAZ SUITABLE FOR DIESEL",
+      "brand": "STARLINKS"
+    },
+    {
+      "partNumber": "21011",
+      "name": "FUEL FILTER MARUTI SUZUKI BREZZA SUITABLE FOR DIESEL",
+      "brand": "STARLINKS"
+    }
+  ]
+}

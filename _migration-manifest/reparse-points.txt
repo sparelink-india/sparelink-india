@@ -1,0 +1,1 @@
+﻿public\catalogue-images	Junction	T:\sparelink-india\data\source-catalogue\images

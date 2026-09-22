@@ -1,0 +1,35 @@
+{
+  "generatedAt": "2026-09-16T18:58:56.401Z",
+  "counts": {
+    "full": 8182,
+    "READY": 7993,
+    "REVIEW": 189,
+    "ambajiTraders": 7993,
+    "hindMotors": 0,
+    "indiaSales": 0,
+    "positiveSellingPrices": 7780,
+    "blankSellingPrices": 213,
+    "positiveSourceRates": 7780,
+    "mrpPopulated": 0
+  },
+  "importReadiness": {
+    "importExecuted": false,
+    "importEndpoint": "disabled / 403",
+    "databaseWrites": 0,
+    "typesenseReindex": false,
+    "currentImportEligibleUnderExistingRules": 0,
+    "blockers": [
+      "MRP remains blank by policy; existing import-eligibility still requires MRP.",
+      "213 READY rows have no explicit source rate > 0, so selling_price is blank and they stay out of a priced import set.",
+      "189 REVIEW rows remain excluded from import-ready.csv."
+    ],
+    "pricedReadyWithFirm": 7780,
+    "blankPriceReviewFile": "data/source-catalogue/blank-selling-price-review.csv"
+  },
+  "safety": {
+    "productIdentityUnchanged": true,
+    "mrpNotFilled": true,
+    "blankPricesNotFilled": true,
+    "reviewExcluded": true
+  }
+}

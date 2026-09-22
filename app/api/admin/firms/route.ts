@@ -1,15 +1,13 @@
 import { NextResponse } from "next/server";
-import { getServerSession } from "@/lib/auth-server";
+import { requireAdminApi } from "@/lib/require-role";
 import { getDb } from "@/lib/db";
 import { firm } from "@/drizzle/schema";
 import { desc } from "drizzle-orm";
 
 export async function GET() {
-  const session = await getServerSession();
-
-  if (!session || session.user.role !== "admin") {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+  const auth = await requireAdminApi();
+  if (auth.error) return auth.error;
+  const session = auth.session;
 
   const db = getDb();
 

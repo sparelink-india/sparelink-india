@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { useI18n } from "@/components/preferences-provider";
 import { authClient } from "@/lib/auth-client";
 
 type SignOutButtonProps = {
@@ -10,6 +11,7 @@ type SignOutButtonProps = {
 
 export function SignOutButton({ className }: SignOutButtonProps) {
   const router = useRouter();
+  const { t } = useI18n();
   const [isSigningOut, setIsSigningOut] = useState(false);
 
   async function handleSignOut() {
@@ -41,7 +43,7 @@ export function SignOutButton({ className }: SignOutButtonProps) {
         "rounded-lg border border-zinc-300 px-3 py-1.5 text-xs font-semibold text-zinc-700 transition-colors hover:bg-zinc-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-950 disabled:cursor-not-allowed disabled:opacity-60"
       }
     >
-      {isSigningOut ? "Signing out..." : "Sign out"}
+      {isSigningOut ? t("signOutBusy") : t("signOut")}
     </button>
   );
 }

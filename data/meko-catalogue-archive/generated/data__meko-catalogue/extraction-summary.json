@@ -1,0 +1,105 @@
+{
+  "source": "https://mekoautoindia.com",
+  "crawledPages": [
+    {
+      "url": "https://mekoautoindia.com/product_spare_detail?limit=100",
+      "pages": 30,
+      "products": 5790,
+      "kind": "product-type"
+    },
+    {
+      "url": "https://mekoautoindia.com/pumpkits?limit=100",
+      "pages": 1,
+      "products": 0,
+      "kind": "product-type"
+    },
+    {
+      "url": "https://mekoautoindia.com/collection/bearing-housing-fan-assembly?limit=100",
+      "pages": 1,
+      "products": 13,
+      "kind": "product-type"
+    },
+    {
+      "url": "https://mekoautoindia.com/collection/heavy-trucks-and-buses?limit=100",
+      "pages": 1,
+      "products": 49,
+      "kind": "collection"
+    },
+    {
+      "url": "https://mekoautoindia.com/collection/combine-harvesters?limit=100",
+      "pages": 1,
+      "products": 5,
+      "kind": "collection"
+    },
+    {
+      "url": "https://mekoautoindia.com/collection/dg-gensets?limit=100",
+      "pages": 1,
+      "products": 26,
+      "kind": "collection"
+    },
+    {
+      "url": "https://mekoautoindia.com/collection/earthmovers?limit=100",
+      "pages": 1,
+      "products": 21,
+      "kind": "collection"
+    },
+    {
+      "url": "https://mekoautoindia.com/collection/light-trucks-and-buses?limit=100",
+      "pages": 1,
+      "products": 100,
+      "kind": "collection"
+    },
+    {
+      "url": "https://mekoautoindia.com/collection/mini-trucks-and-passenger-vehicles?limit=100",
+      "pages": 1,
+      "products": 1,
+      "kind": "collection"
+    },
+    {
+      "url": "https://mekoautoindia.com/collection/car?limit=100",
+      "pages": 1,
+      "products": 1,
+      "kind": "collection"
+    },
+    {
+      "url": "https://mekoautoindia.com/collection/tractors?limit=100",
+      "pages": 2,
+      "products": 172,
+      "kind": "collection"
+    },
+    {
+      "url": "https://mekoautoindia.com/collection/mini-tractors?limit=100",
+      "pages": 1,
+      "products": 8,
+      "kind": "collection"
+    },
+    {
+      "url": "https://mekoautoindia.com/collection/bearing-housing-fan-assembly?limit=100",
+      "pages": 1,
+      "products": 13,
+      "kind": "collection"
+    },
+    {
+      "url": "https://mekoautoindia.com/latest-development?limit=100",
+      "pages": 1,
+      "products": 18,
+      "kind": "search-or-latest"
+    },
+    {
+      "url": "https://mekoautoindia.com/index.php?route=product/search&search=M-&limit=100",
+      "pages": 4,
+      "products": 396,
+      "kind": "search-or-latest"
+    }
+  ],
+  "productDetailPages": 396,
+  "uniquePartNumbers": 396,
+  "READY": 396,
+  "REVIEW": 0,
+  "DUPLICATE": 0,
+  "CONFLICT": 0,
+  "imagesDownloaded": 396,
+  "imagesMissing": 0,
+  "mrpPublished": 0,
+  "generatedAt": "2026-09-18T16:50:30.789Z"
+}

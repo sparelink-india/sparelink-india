@@ -1,0 +1,145 @@
+{
+  "reviews": [],
+  "conflicts": [
+    {
+      "brand": "MEKO",
+      "manufacturer": "Meko Auto Components Inc.",
+      "firm": "India Sales",
+      "partNumber": "M-663",
+      "mekoPartNumbers": [
+        "M-663"
+      ],
+      "name": "MAHINDRA BOLERO (SUITABLE FOR ALL MODELS) BOLERO PICK UP 1ST GEN. / 2ND GEN. 2.5 L / MAXI TRUCK / MAXX PICK UP / PICKUP FB EXTRA LONG (PULLEY GROOVE OD: 112 MM) (M-663)",
+      "description": "MAHINDRA BOLERO (SUITABLE FOR ALL MODELS) BOLERO PICK UP 1ST GEN. / 2ND GEN. 2.5 L / MAXI TRUCK / MAXX PICK UP / PICKUP FB EXTRA LONG (PULLEY GROOVE OD: 112 MM)",
+      "application": "MAHINDRA BOLERO (SUITABLE FOR ALL MODELS) BOLERO PICK UP 1ST GEN. / 2ND GEN. 2.5 L / MAXI TRUCK / MAXX PICK UP / PICKUP FB EXTRA LONG (PULLEY GROOVE OD: 112 MM)",
+      "compatibleWith": "MAHINDRA BOLERO (SUITABLE FOR ALL MODELS) BOLERO PICK UP 1ST GEN. / 2ND GEN. 2.5 L / MAXI TRUCK / MAXX PICK UP / PICKUP FB EXTRA LONG (PULLEY GROOVE OD: 112 MM)",
+      "refNos": [
+        "0304EB0390N 0301BB0970N 0301BB0770N 0301BAB01320N"
+      ],
+      "oem": "0304EB0390N 0301BB0970N 0301BB0770N 0301BAB01320N",
+      "oemUnavailable": false,
+      "category": "Automotive Water Pump Assemblies",
+      "subcategory": "Light Trucks And Buses",
+      "vehicleTypes": [
+        "Light Trucks And Buses"
+      ],
+      "vehicleBrands": [
+        "mahindra"
+      ],
+      "vehicleGroups": [
+        "light-trucks-and-buses"
+      ],
+      "categoriesSeen": [
+        "Automotive Water Pump Assemblies"
+      ],
+      "sourceUrl": "https://mekoautoindia.com/product/m-663",
+      "listingUrls": [
+        "https://mekoautoindia.com/collection/light-trucks-and-buses",
+        "https://mekoautoindia.com/index.php?route=product/search&search=M-&limit=100&page=2",
+        "https://mekoautoindia.com/brand/mahindra"
+      ],
+      "recordKinds": [
+        "product-card"
+      ],
+      "officialImageUrl": "https://mekoautoindia.com/image/catalog/product_images/M-663.png",
+      "imageFile": "M-663.png",
+      "imageBytes": 5044962,
+      "imageWidth": 2512,
+      "imageHeight": 1732,
+      "watermarkProcessed": false,
+      "watermarkNote": "original_kept_watermark_removal_not_applied_to_avoid_product_damage",
+      "sourcePublishedPrice": null,
+      "mrp": null,
+      "sellingPrice": null,
+      "stock": 0,
+      "gst": null,
+      "hsn": null,
+      "specifications": {
+        "manufacturer": "Meko Auto Components Inc.",
+        "source": "https://mekoautoindia.com/product_spare_detail",
+        "source_url": "https://mekoautoindia.com/product/m-663",
+        "official_image_url": "https://mekoautoindia.com/image/catalog/product_images/M-663.png",
+        "catalogue_image": "M-663.png",
+        "application": "MAHINDRA BOLERO (SUITABLE FOR ALL MODELS) BOLERO PICK UP 1ST GEN. / 2ND GEN. 2.5 L / MAXI TRUCK / MAXX PICK UP / PICKUP FB EXTRA LONG (PULLEY GROOVE OD: 112 MM)",
+        "compatible_with": "MAHINDRA BOLERO (SUITABLE FOR ALL MODELS) BOLERO PICK UP 1ST GEN. / 2ND GEN. 2.5 L / MAXI TRUCK / MAXX PICK UP / PICKUP FB EXTRA LONG (PULLEY GROOVE OD: 112 MM)",
+        "reference_nos": [
+          "0304EB0390N 0301BB0970N 0301BB0770N 0301BAB01320N"
+        ],
+        "reference_no": "0304EB0390N 0301BB0970N 0301BB0770N 0301BAB01320N",
+        "oem_unavailable": false,
+        "subcategory": "Light Trucks And Buses",
+        "vehicle_groups": [
+          "light-trucks-and-buses"
+        ],
+        "vehicle_types": [
+          "Light Trucks And Buses"
+        ],
+        "vehicle_brands": [
+          "mahindra"
+        ],
+        "fulfilled_by": "India Sales",
+        "source_published_price_ignored": null
+      },
+      "reviewReasons": [],
+      "error": null,
+      "status": "READY",
+      "importKey": "MEKO-M-663",
+      "classification": "CONFLICT",
+      "reason": "part_number_owned_by_non_meko_part",
+      "existingPartId": "part-water-pump-m663",
+      "existingPartNumber": "M663"
+    }
+  ],
+  "unmatchedExistingMeko": [
+    {
+      "id": "part-meko-m-556",
+      "partNumber": "M-556",
+      "name": "JCB 40 (M-556)"
+    },
+    {
+      "id": "part-meko-m-642",
+      "partNumber": "M-642",
+      "name": "MAZDA PN-11 (M-642)"
+    },
+    {
+      "id": "part-meko-m-611",
+      "partNumber": "M-611",
+      "name": "SIMPSON P-4 LOW POSITION (M-611)"
+    },
+    {
+      "id": "part-meko-m-644-a",
+      "partNumber": "M-644 A",
+      "name": "VIKRAM 4 STAR CNG (M-644 A)"
+    },
+    {
+      "id": "part-meko-m-654",
+      "partNumber": "M-654",
+      "name": "LATEST MODEL ( SIDE PIPE OPEN ) BAJAJ MINIDOR DI (M-654)"
+    },
+    {
+      "id": "part-meko-m-545",
+      "partNumber": "M-545",
+      "name": "S4099237 S-4 HIGH POSITION (M-545)"
+    },
+    {
+      "id": "part-meko-m-650-m-603-a",
+      "partNumber": "M-650 / M-603 A",
+      "name": "TATA 407 / 608 TURBO MODEL / TATA 4 SP / SAFARI DECOR 3.0 (M-650 / M-603 A)"
+    },
+    {
+      "id": "part-meko-m-518",
+      "partNumber": "M-518",
+      "name": "PERKINS P6 / 354 / FARGO MODEL DODGE ROCKET (M-518)"
+    },
+    {
+      "id": "part-meko-m-845-j",
+      "partNumber": "M-845 J",
+      "name": "TATA HITACHI 6 CT CUMMINS ENG. (M-845 J)"
+    },
+    {
+      "id": "part-meko-m-519",
+      "partNumber": "M-519",
+      "name": "QHL / SIMPSON P4 LOW POSITION (M-519)"
+    }
+  ]
+}

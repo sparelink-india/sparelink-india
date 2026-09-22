@@ -36,6 +36,13 @@ yarn-error.log*
 # vercel
 .vercel
 
+# runtime junction/symlink to catalogue image store — do not duplicate 559MB
+/public/catalogue-images
+
+# local catalogue rasters — served via public/catalogue-images junction, never git
+/data/source-catalogue/images/
+/data/catalogue-image-store/
+
 # typescript
 *.tsbuildinfo
 next-env.d.ts
@@ -49,3 +56,6 @@ next-env.d.ts
 *.backup
 bank details.txt
 /sparelink-safety-backups/
+
+# Local tooling dependencies
+scripts/meko-tools/node_modules/

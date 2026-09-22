@@ -2,9 +2,13 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState, useTransition } from "react";
+import { Suspense, useEffect, useState, useTransition } from "react";
 import { SignOutButton } from "@/components/sign-out-button";
 import { SiteFooter } from "@/components/site-footer";
+import { StorefrontHeader } from "@/components/storefront-header";
+import { MobileBottomNav } from "@/components/mobile/mobile-bottom-nav";
+import { useI18n } from "@/components/preferences-provider";
+import { isAuthoritativeSellingPricePaise } from "@/lib/storefront-price-display";
 
 type CartItem = {
   id: string;
@@ -24,8 +28,13 @@ type CartItem = {
   stock: number | null;
   listingStatus: string;
   gstRate?: number;
+  listInclusivePaise?: number;
+  netInclusivePaise?: number;
+  discountPercent?: number;
+  discountPaise?: number;
   itemSubtotalPaise?: number;
   itemGstPaise?: number;
+  itemTotalPaise?: number;
 };
 
 type CartData = {
@@ -36,9 +45,11 @@ type CartData = {
   shippingPaise?: number;
   totalPaise: number;
   itemCount: number;
+  requiresLogin?: boolean;
 };
 
 export default function CartPage() {
+  const { t } = useI18n();
   const [cart, setCart] = useState<CartData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -82,7 +93,7 @@ export default function CartPage() {
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.error || "Unable to load cart.");
+        throw new Error(data.error || t("cart.loadFail"));
       }
 
       setCart(data);
@@ -91,7 +102,7 @@ export default function CartPage() {
       setError(
         cartError instanceof Error
           ? cartError.message
-          : "Unable to load cart.",
+          : t("cart.loadFail"),
       );
     } finally {
       setLoading(false);
@@ -144,7 +155,7 @@ export default function CartPage() {
       if (!response.ok) {
         // Rollback optimistic update
         setCart(previousCart);
-        throw new Error(data.error || "Unable to update quantity.");
+        throw new Error(data.error || t("cart.updateFail"));
       }
 
       startTransition(() => {
@@ -153,7 +164,7 @@ export default function CartPage() {
     } catch (err) {
       console.error(err);
       setError(
-        err instanceof Error ? err.message : "Failed to update item quantity.",
+        err instanceof Error ? err.message : t("cart.updateFailGeneric"),
       );
     } finally {
       setUpdatingIds((prev) => ({ ...prev, [cartItemId]: false }));
@@ -196,11 +207,11 @@ export default function CartPage() {
 
       if (!response.ok) {
         setCart(previousCart);
-        throw new Error(data.error || "Unable to remove item.");
+        throw new Error(data.error || t("cart.removeFail"));
       }
 
       setActionMessage(
-        itemName ? `"${itemName}" was removed from your cart.` : "Item removed.",
+        itemName ? t("cart.removedNamed", { name: itemName }) : t("cart.removed"),
       );
 
       startTransition(() => {
@@ -209,92 +220,50 @@ export default function CartPage() {
     } catch (err) {
       console.error(err);
       setError(
-        err instanceof Error ? err.message : "Failed to remove item from cart.",
+        err instanceof Error ? err.message : t("cart.removeFailGeneric"),
       );
     } finally {
       setUpdatingIds((prev) => ({ ...prev, [cartItemId]: false }));
     }
   }
 
-  const subtotalPaise = cart?.totalPaise ?? 0;
   const isCartEmpty = !cart || cart.items.length === 0;
+  const hasUnpricedItems = Boolean(
+    cart?.items.some(
+      (item) =>
+        !isAuthoritativeSellingPricePaise(
+          item.listInclusivePaise,
+          item.netInclusivePaise,
+          item.pricePaise,
+        ),
+    ),
+  );
 
   return (
-    <div className="min-h-screen bg-slate-50/70 text-slate-900">
-      {/* Header */}
-      <header className="sticky top-0 z-30 border-b border-slate-200/80 bg-white/95 backdrop-blur-md">
-        <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-3.5 sm:px-6">
-          <Link
-            href="/"
-            className="flex items-center gap-2.5 transition-transform hover:opacity-90"
-            aria-label="SpareLink India Home"
-          >
-            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-slate-900 text-white shadow-sm">
-              <svg
-                className="h-5 w-5"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              >
-                <circle cx="12" cy="12" r="3" />
-                <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z" />
-              </svg>
-            </div>
-            <div>
-              <span className="text-lg font-bold tracking-tight text-slate-950">
-                SpareLink
-              </span>
-              <span className="ml-1 text-xs font-semibold uppercase tracking-wider text-emerald-600">
-                India
-              </span>
-            </div>
-          </Link>
-
-          <nav className="flex items-center gap-4">
-            <Link
-              href="/orders"
-              className="text-sm font-medium text-slate-600 transition-colors hover:text-slate-900"
-            >
-              My Orders
-            </Link>
-            <Link
-              href="/"
-              className="inline-flex items-center gap-1.5 rounded-full border border-slate-300 bg-white px-3.5 py-1.5 text-xs font-semibold text-slate-700 shadow-sm transition-all hover:border-slate-400 hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-900"
-            >
-              <svg
-                className="h-3.5 w-3.5"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-                strokeWidth="2"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  d="M10 19l-7-7m0 0l7-7m-7 7h18"
-                />
-              </svg>
-              Continue Shopping
-            </Link>
-            <SignOutButton />
-          </nav>
-        </div>
-      </header>
+    <div
+      className={`min-h-screen bg-slate-50/70 text-slate-900 ${
+        !loading && !isCartEmpty && cart && !hasUnpricedItems
+          ? "pb-[calc(var(--mobile-nav-height)+var(--safe-bottom)+4.75rem)] md:pb-0"
+          : "storefront-mobile-pad"
+      }`}
+    >
+      <StorefrontHeader cartCount={cart?.itemCount ?? 0} />
 
       {/* Main Content */}
-      <main className="mx-auto max-w-6xl px-4 py-8 sm:px-6 lg:py-10">
+      <main className="mx-auto max-w-6xl px-3 py-5 sm:px-6 sm:py-8 lg:py-10">
         {/* Title & Stats */}
         <div className="flex flex-wrap items-baseline justify-between gap-2 border-b border-slate-200 pb-5">
           <div>
             <h1 className="text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl">
-              Shopping Cart
+              {t("cart.title")}
             </h1>
-            <p className="mt-1 text-sm text-slate-500">
-              Verified inventory fulfilled by certified regional distributors
-            </p>
+            <div className="mt-3 flex items-center gap-3">
+              <Link href="/" className="text-xs font-semibold text-[#7a1233] hover:underline">
+                {t("cart.continue")}
+              </Link>
+              <SignOutButton />
+            </div>
+            <p className="mt-1 text-sm text-slate-500">{t("cart.genuine")}</p>
           </div>
           {!loading && !isCartEmpty && (
             <span className="inline-flex items-center rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-700">
@@ -324,9 +293,9 @@ export default function CartPage() {
             <button
               onClick={() => setError("")}
               className="text-xs font-semibold text-rose-600 hover:text-rose-900"
-              aria-label="Dismiss error"
+              aria-label={t("common.dismiss")}
             >
-              ?
+              {t("common.dismiss")}
             </button>
           </div>
         )}
@@ -353,9 +322,9 @@ export default function CartPage() {
             <button
               onClick={() => setActionMessage("")}
               className="text-xs font-semibold text-emerald-700 hover:text-emerald-950"
-              aria-label="Dismiss message"
+              aria-label={t("common.dismiss")}
             >
-              ?
+              {t("common.dismiss")}
             </button>
           </div>
         )}
@@ -400,11 +369,10 @@ export default function CartPage() {
               </svg>
             </div>
             <h2 className="mt-5 text-xl font-bold text-slate-900">
-              Your cart is currently empty
+              {t("cart.emptyTitle")}
             </h2>
             <p className="mx-auto mt-2 max-w-sm text-sm text-slate-500">
-              Explore genuine automotive parts, filters, engine components, and
-              body hardware from verified distributors.
+              {t("cart.emptyBody")}
             </p>
             <div className="mt-7 flex flex-wrap justify-center gap-3">
               <Link
@@ -424,7 +392,7 @@ export default function CartPage() {
                     d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
                   />
                 </svg>
-                Find Spare Parts
+                {t("cart.find")}
               </Link>
             </div>
           </div>
@@ -443,9 +411,15 @@ export default function CartPage() {
                 const maxStock = item.stock ?? 999;
                 const canIncrease = item.quantity < maxStock && !isUpdating;
                 const canDecrease = item.quantity > 1 && !isUpdating;
-                const itemTotalPaise = item.pricePaise * item.quantity;
+                const isPriced = isAuthoritativeSellingPricePaise(
+                  item.listInclusivePaise,
+                  item.netInclusivePaise,
+                  item.pricePaise,
+                );
+                const itemTotalPaise = item.itemTotalPaise ?? item.pricePaise * item.quantity;
                 const itemTotalRupees = itemTotalPaise / 100;
-                const unitPriceRupees = item.pricePaise / 100;
+                const listRupees = (item.listInclusivePaise ?? item.pricePaise) / 100;
+                const unitPriceRupees = (item.netInclusivePaise ?? item.pricePaise) / 100;
                 const mrpRupees = item.mrpPaise ? item.mrpPaise / 100 : null;
 
                 return (
@@ -516,7 +490,7 @@ export default function CartPage() {
                             </h2>
                             {item.partNumber && (
                               <p className="mt-0.5 inline-flex items-center gap-1.5 font-mono text-xs font-semibold text-slate-500">
-                                <span>Part #{item.partNumber}</span>
+                                <span>{t("product.partHash", { number: item.partNumber ?? "" })}</span>
                               </p>
                             )}
                           </div>
@@ -565,7 +539,13 @@ export default function CartPage() {
                         {/* Controls & Pricing Bar */}
                         <div className="mt-4 flex flex-wrap items-center justify-between gap-4 border-t border-slate-100 pt-3.5">
                           {/* Unit price */}
-                          <div className="flex items-baseline gap-2">
+                          <div className="flex flex-col">
+                            {isPriced ? (
+                              <>
+                            <span className="text-[11px] text-slate-500">
+                              List ₹{listRupees.toLocaleString("en-IN")} · Incl. GST
+                            </span>
+                            <div className="flex items-baseline gap-2">
                             <span className="text-sm font-semibold text-slate-800">
                               ₹{unitPriceRupees.toLocaleString("en-IN")}
                             </span>
@@ -574,7 +554,19 @@ export default function CartPage() {
                                 ₹{mrpRupees.toLocaleString("en-IN")}
                               </span>
                             )}
-                            <span className="text-[11px] text-slate-400">/ unit</span>
+                            <span className="text-[11px] text-slate-400">/ unit net</span>
+                            </div>
+                            {(item.discountPercent ?? 0) > 0 ? (
+                              <span className="text-[11px] font-semibold text-[#7a1233]">
+                                {item.discountPercent}% Incl. Tax Discount
+                              </span>
+                            ) : null}
+                              </>
+                            ) : (
+                              <span className="text-sm font-bold text-slate-800">
+                                {t("price.onRequest")}
+                              </span>
+                            )}
                           </div>
 
                           {/* Controls: [ - ] qty [ + ] and Delete */}
@@ -646,7 +638,9 @@ export default function CartPage() {
                             {/* Subtotal (desktop view) */}
                             <div className="hidden min-w-[90px] text-right sm:block">
                               <span className="text-base font-bold text-slate-950">
-                                ₹{itemTotalRupees.toLocaleString("en-IN")}
+                                {isPriced
+                                  ? `₹${itemTotalRupees.toLocaleString("en-IN")}`
+                                  : t("price.onRequest")}
                               </span>
                             </div>
 
@@ -673,7 +667,7 @@ export default function CartPage() {
                                   d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
                                 />
                               </svg>
-                              <span className="hidden sm:inline">Remove</span>
+                              <span className="hidden sm:inline">{t("cart.remove")}</span>
                             </button>
                           </div>
                         </div>
@@ -688,14 +682,14 @@ export default function CartPage() {
             <aside aria-label="Order summary">
               <div className="sticky top-20 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
                 <h2 className="text-lg font-bold text-slate-950">
-                  Order Summary
+                  {t("cart.summary")}
                 </h2>
 
                 <div className="mt-5 space-y-3 text-sm">
                   <div className="flex items-center justify-between text-slate-600">
-                    <span>Items Subtotal ({cart.itemCount})</span>
+                    <span>{t("cart.subtotal", { count: cart.itemCount })}</span>
                     <span className="font-semibold text-slate-900">
-                      ?
+                      ₹
                       {(
                         (cart.subtotalPaise ??
                           cart.items.reduce(
@@ -709,13 +703,13 @@ export default function CartPage() {
 
                   <div className="flex items-center justify-between text-slate-600">
                     <span className="inline-flex items-center gap-1">
-                      <span>GST / Taxes</span>
+                      <span>{t("cart.gst")}</span>
                       <span className="rounded bg-emerald-50 px-1.5 py-0.2 text-[10px] font-bold text-emerald-700 border border-emerald-200/60">
                         Itemized
                       </span>
                     </span>
                     <span className="font-semibold text-emerald-700">
-                      ?
+                      ₹
                       {(
                         (cart.gstPaise ??
                           Math.max(
@@ -733,10 +727,10 @@ export default function CartPage() {
                   </div>
 
                   <div className="flex items-center justify-between text-slate-600">
-                    <span>Fulfillment & Dispatch</span>
+                    <span>{t("cart.fulfill")}</span>
                     <span className="font-semibold text-emerald-600">
                       {(cart.shippingPaise ?? 0) === 0
-                        ? "Free Standard"
+                        ? t("cart.freeStandard")
                         : `₹${((cart.shippingPaise ?? 0) / 100).toLocaleString("en-IN")}`}
                     </span>
                   </div>
@@ -744,14 +738,14 @@ export default function CartPage() {
                   <div className="border-t border-slate-200/80 pt-4">
                     <div className="flex items-baseline justify-between">
                       <span className="text-base font-bold text-slate-950">
-                        Total Amount
+                        {t("cart.total")}
                       </span>
                       <div className="text-right">
                         <span className="text-2xl font-extrabold text-slate-950">
                           ₹{(cart.totalPaise / 100).toLocaleString("en-IN")}
                         </span>
                         <p className="text-[11px] text-slate-400">
-                          Includes itemized GST
+                          {t("cart.includesGst")}
                         </p>
                       </div>
                     </div>
@@ -759,11 +753,16 @@ export default function CartPage() {
                 </div>
 
                 {/* Checkout CTA */}
+                {hasUnpricedItems ? (
+                  <p className="mt-6 rounded-xl border border-amber-200 bg-amber-50 px-3 py-3 text-center text-sm font-semibold text-amber-900">
+                    {t("price.onRequest")}
+                  </p>
+                ) : (
                 <Link
-                  href="/checkout"
-                  className="mt-6 flex w-full items-center justify-center gap-2 rounded-xl bg-slate-950 py-3.5 text-center text-sm font-bold text-white shadow-md transition-all duration-200 hover:bg-slate-800 hover:shadow-lg active:scale-[0.99] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-950 focus-visible:ring-offset-2"
+                  href={cart.requiresLogin ? "/login" : "/checkout"}
+                  className="mt-6 hidden w-full items-center justify-center gap-2 rounded-xl bg-slate-950 py-3.5 text-center text-sm font-bold text-white shadow-md transition-all duration-200 hover:bg-slate-800 hover:shadow-lg active:scale-[0.99] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-950 focus-visible:ring-offset-2 md:flex"
                 >
-                  <span>Proceed to Checkout</span>
+                  <span>{t("cart.checkout")}</span>
                   <svg
                     className="h-4 w-4"
                     fill="none"
@@ -778,6 +777,7 @@ export default function CartPage() {
                     />
                   </svg>
                 </Link>
+                )}
 
                 {/* Trust Badges */}
                 <div className="mt-6 space-y-2.5 border-t border-slate-100 pt-5 text-xs text-slate-500">
@@ -793,7 +793,7 @@ export default function CartPage() {
                         clipRule="evenodd"
                       />
                     </svg>
-                    <span>100% Genuine & Verified Parts</span>
+                    <span>{t("cart.genuine")}</span>
                   </div>
                   <div className="flex items-center gap-2">
                     <svg
@@ -817,7 +817,7 @@ export default function CartPage() {
                     >
                       <path d="M6.5 3c-1.05 0-2.05.4-2.8 1.15A3.98 3.98 0 002.5 7c0 1.9.9 3.5 2.3 4.6l5.2 4.4 5.2-4.4c1.4-1.1 2.3-2.7 2.3-4.6 0-1.1-.4-2.1-1.2-2.85A3.98 3.98 0 0013.5 3c-1.4 0-2.6.7-3.5 1.7A4.6 4.6 0 006.5 3z" />
                     </svg>
-                    <span>Direct Regional Firm Fulfillment</span>
+                    <span>{t("cart.genuine")}</span>
                   </div>
                 </div>
               </div>
@@ -857,7 +857,7 @@ export default function CartPage() {
               <button
                 type="button"
                 onClick={() => setLightboxImage(null)}
-                aria-label="Close image preview"
+                aria-label={t("common.close")}
                 className="flex h-8 w-8 items-center justify-center rounded-lg text-slate-500 transition-colors hover:bg-slate-200 hover:text-slate-900 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-950"
               >
                 <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -882,15 +882,34 @@ export default function CartPage() {
 
             {/* Modal Footer */}
             <div className="flex items-center justify-between border-t border-slate-100 px-5 py-3 text-xs text-slate-500 bg-white">
-              <span>SpareLink India Certified Product Image</span>
-              <span className="hidden sm:inline">
-                Click outside or press <kbd className="rounded border border-slate-300 bg-slate-100 px-1.5 py-0.5 font-mono text-[10px]">Esc</kbd> to close
-              </span>
+              <span>{t("photo.certified")}</span>
+              <span className="hidden sm:inline">{t("photo.closeHint")}</span>
             </div>
           </div>
         </div>
       )}
       <SiteFooter />
+      {!loading && !isCartEmpty && cart && !hasUnpricedItems ? (
+        <div className="fixed inset-x-0 bottom-[calc(var(--mobile-nav-height)+var(--safe-bottom))] z-40 border-t border-slate-200 bg-white/95 px-3 py-2 backdrop-blur md:hidden">
+          <div className="mx-auto flex max-w-lg items-center gap-3">
+            <div className="min-w-0 flex-1">
+              <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">{t("cart.total")}</p>
+              <p className="truncate text-lg font-extrabold text-slate-950">
+                ₹{(cart.totalPaise / 100).toLocaleString("en-IN")}
+              </p>
+            </div>
+            <Link
+              href={cart.requiresLogin ? "/login" : "/checkout"}
+              className="btn-press inline-flex min-h-12 shrink-0 items-center justify-center rounded-xl bg-[#7a1233] px-5 text-sm font-bold text-white"
+            >
+              {t("cart.checkout")}
+            </Link>
+          </div>
+        </div>
+      ) : null}
+      <Suspense fallback={null}>
+        <MobileBottomNav cartCount={cart?.itemCount ?? 0} />
+      </Suspense>
     </div>
   );
 }

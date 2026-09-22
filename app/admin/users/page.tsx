@@ -24,7 +24,41 @@ type UserItem = {
   transportGstin?: string | null;
   orderCount?: number;
   createdAt: string;
+  customerDiscountPercent?: number | null;
+  commonCustomerDiscountPercent?: number;
+  effectiveDiscountPercent?: number;
+  previewNetInclusivePaise?: number;
+  pensol?: {
+    oil: { cashDiscountPaisePerUnit: number; creditDiscountPaisePerUnit: number } | null;
+    grease: { cashDiscountPaisePerUnit: number; creditDiscountPaisePerUnit: number } | null;
+  } | null;
 };
+
+function paiseToRupeeInput(paise?: number | null) {
+  if (paise === null || paise === undefined) return "";
+  return String(paise / 100);
+}
+
+function rupeeFieldsToRate(cash: string, credit: string) {
+  if (cash.trim() === "" && credit.trim() === "") return null;
+  const cashR = Number(cash);
+  const creditR = Number(credit);
+  if (!Number.isInteger(cashR) || !Number.isInteger(creditR) || cashR < 0 || creditR < 0) {
+    throw new Error("Pensol discounts must be whole rupees (0 or more).");
+  }
+  return {
+    cashDiscountPaisePerUnit: cashR * 100,
+    creditDiscountPaisePerUnit: creditR * 100,
+  };
+}
+
+function pensolPayload(oilCash: string, oilCredit: string, greaseCash: string, greaseCredit: string) {
+  return {
+    oil: rupeeFieldsToRate(oilCash, oilCredit),
+    grease: rupeeFieldsToRate(greaseCash, greaseCredit),
+    sku: {},
+  };
+}
 
 export default function UsersPage() {
   const [users, setUsers] = useState<UserItem[]>([]);
@@ -33,6 +67,16 @@ export default function UsersPage() {
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [processingId, setProcessingId] = useState<string | null>(null);
+  const [commonDiscount, setCommonDiscount] = useState("0");
+  const [savingCommon, setSavingCommon] = useState(false);
+  const [draftDiscounts, setDraftDiscounts] = useState<Record<string, string>>({});
+  const [oilCash, setOilCash] = useState("");
+  const [oilCredit, setOilCredit] = useState("");
+  const [greaseCash, setGreaseCash] = useState("");
+  const [greaseCredit, setGreaseCredit] = useState("");
+  const [pensolDrafts, setPensolDrafts] = useState<
+    Record<string, { oilCash: string; oilCredit: string; greaseCash: string; greaseCredit: string }>
+  >({});
 
   const load = async () => {
     try {
@@ -41,6 +85,32 @@ export default function UsersPage() {
       const d = await r.json();
       if (!r.ok) throw new Error(d.error);
       setUsers(d.users);
+      if (typeof d.commonCustomerDiscountPercent === "number") {
+        setCommonDiscount(String(d.commonCustomerDiscountPercent));
+      }
+      const drafts: Record<string, string> = {};
+      for (const item of d.users as UserItem[]) {
+        drafts[item.id] =
+          item.customerDiscountPercent === null || item.customerDiscountPercent === undefined
+            ? ""
+            : String(item.customerDiscountPercent);
+      }
+      setDraftDiscounts(drafts);
+      const commonPensol = d.commonPensol as UserItem["pensol"];
+      setOilCash(paiseToRupeeInput(commonPensol?.oil?.cashDiscountPaisePerUnit));
+      setOilCredit(paiseToRupeeInput(commonPensol?.oil?.creditDiscountPaisePerUnit));
+      setGreaseCash(paiseToRupeeInput(commonPensol?.grease?.cashDiscountPaisePerUnit));
+      setGreaseCredit(paiseToRupeeInput(commonPensol?.grease?.creditDiscountPaisePerUnit));
+      const pensolDraft: Record<string, { oilCash: string; oilCredit: string; greaseCash: string; greaseCredit: string }> = {};
+      for (const item of d.users as UserItem[]) {
+        pensolDraft[item.id] = {
+          oilCash: paiseToRupeeInput(item.pensol?.oil?.cashDiscountPaisePerUnit),
+          oilCredit: paiseToRupeeInput(item.pensol?.oil?.creditDiscountPaisePerUnit),
+          greaseCash: paiseToRupeeInput(item.pensol?.grease?.cashDiscountPaisePerUnit),
+          greaseCredit: paiseToRupeeInput(item.pensol?.grease?.creditDiscountPaisePerUnit),
+        };
+      }
+      setPensolDrafts(pensolDraft);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Unable to load users.");
     } finally {
@@ -84,6 +154,117 @@ export default function UsersPage() {
     }
   };
 
+  const saveCommonDiscount = async () => {
+    setSavingCommon(true);
+    setError("");
+    setSuccessMsg("");
+    try {
+      const res = await fetch("/api/admin/pricing", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          commonCustomerDiscountPercent: Number(commonDiscount),
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Failed to save common discount");
+      setSuccessMsg(
+        `Common customer discount set to ${data.commonCustomerDiscountPercent}% inclusive-tax.`,
+      );
+      await load();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Action failed");
+    } finally {
+      setSavingCommon(false);
+    }
+  };
+
+  const saveCommonPensol = async () => {
+    setSavingCommon(true);
+    setError("");
+    setSuccessMsg("");
+    try {
+      const res = await fetch("/api/admin/pensol-pricing", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          commonPensol: pensolPayload(oilCash, oilCredit, greaseCash, greaseCredit),
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Failed to save Pensol discounts");
+      setSuccessMsg("Common Pensol cash/credit ₹/unit discounts saved.");
+      await load();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Action failed");
+    } finally {
+      setSavingCommon(false);
+    }
+  };
+
+  const saveCustomerPensol = async (userItem: UserItem) => {
+    const draft = pensolDrafts[userItem.id] ?? {
+      oilCash: "",
+      oilCredit: "",
+      greaseCash: "",
+      greaseCredit: "",
+    };
+    setProcessingId(userItem.id);
+    setError("");
+    setSuccessMsg("");
+    try {
+      const res = await fetch("/api/admin/users", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          userId: userItem.id,
+          action: "set-pensol-discount",
+          pensol: pensolPayload(
+            draft.oilCash,
+            draft.oilCredit,
+            draft.greaseCash,
+            draft.greaseCredit,
+          ),
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Failed to save Pensol discount");
+      setSuccessMsg(data.message || "Pensol discount updated.");
+      await load();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Action failed");
+    } finally {
+      setProcessingId(null);
+    }
+  };
+
+  const saveCustomerDiscount = async (userItem: UserItem) => {
+    const raw = draftDiscounts[userItem.id];
+    const discountPercent = raw.trim() === "" ? null : Number(raw);
+    setProcessingId(userItem.id);
+    setError("");
+    setSuccessMsg("");
+    try {
+      const res = await fetch("/api/admin/users", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          userId: userItem.id,
+          action: "set-discount",
+          discountPercent,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Failed to save discount");
+      setSuccessMsg(data.message || "Customer discount updated.");
+      await load();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Action failed");
+    } finally {
+      setProcessingId(null);
+    }
+  };
+
   const filteredUsers = users.filter((u) => {
     const q = searchQuery.toLowerCase().trim();
     if (!q) return true;
@@ -119,7 +300,7 @@ export default function UsersPage() {
               Customer Accounts
             </h1>
             <p className="mt-1 text-sm text-zinc-500">
-              Manage buyer verification, account status, and order history
+              Manage buyer verification, inclusive-tax discounts, account status, and order history
             </p>
           </div>
           <Link
@@ -141,6 +322,76 @@ export default function UsersPage() {
             {successMsg}
           </div>
         )}
+
+        <div className="mt-6 rounded-2xl border border-zinc-200 bg-white p-5 shadow-xs">
+          <h2 className="text-base font-bold">Common Customer Discount</h2>
+          <p className="mt-1 text-sm text-zinc-500">
+            Inclusive-tax discount for self-registered / unassigned buyers and guests. List prices stay unchanged. Example preview uses a ₹100 list price.
+          </p>
+          <div className="mt-4 flex flex-wrap items-end gap-3">
+            <label className="text-sm font-medium text-zinc-700">
+              Percent
+              <input
+                type="number"
+                min={0}
+                max={100}
+                step={1}
+                value={commonDiscount}
+                onChange={(e) => setCommonDiscount(e.target.value)}
+                className="mt-1 h-10 w-28 rounded-xl border border-zinc-300 px-3 text-sm outline-none focus:border-zinc-950"
+              />
+            </label>
+            <button
+              type="button"
+              disabled={savingCommon}
+              onClick={() => void saveCommonDiscount()}
+              className="h-10 rounded-xl bg-zinc-950 px-4 text-sm font-semibold text-white disabled:opacity-50"
+            >
+              {savingCommon ? "Saving..." : "Save common discount"}
+            </button>
+            <p className="text-sm text-zinc-600">
+              ₹100 list → net ₹
+              {(
+                (10000 - Math.round((10000 * (Number(commonDiscount) || 0)) / 100)) /
+                100
+              ).toLocaleString("en-IN")}{" "}
+              incl. GST
+            </p>
+          </div>
+        </div>
+
+        <div className="mt-6 rounded-2xl border border-zinc-200 bg-white p-5 shadow-xs">
+          <h2 className="text-base font-bold">Common Pensol ₹/unit discounts</h2>
+          <p className="mt-1 text-sm text-zinc-500">
+            Fixed rupees per litre/kg for unassigned buyers. Not a percentage. Pack quantity is multiplied from product UOM.
+          </p>
+          <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+            <label className="text-sm font-medium text-zinc-700">
+              Oil cash ₹/LTR
+              <input type="number" min={0} step={1} value={oilCash} onChange={(e) => setOilCash(e.target.value)} className="mt-1 h-10 w-full rounded-xl border border-zinc-300 px-3 text-sm" />
+            </label>
+            <label className="text-sm font-medium text-zinc-700">
+              Oil credit ₹/LTR
+              <input type="number" min={0} step={1} value={oilCredit} onChange={(e) => setOilCredit(e.target.value)} className="mt-1 h-10 w-full rounded-xl border border-zinc-300 px-3 text-sm" />
+            </label>
+            <label className="text-sm font-medium text-zinc-700">
+              Grease cash ₹/KG
+              <input type="number" min={0} step={1} value={greaseCash} onChange={(e) => setGreaseCash(e.target.value)} className="mt-1 h-10 w-full rounded-xl border border-zinc-300 px-3 text-sm" />
+            </label>
+            <label className="text-sm font-medium text-zinc-700">
+              Grease credit ₹/KG
+              <input type="number" min={0} step={1} value={greaseCredit} onChange={(e) => setGreaseCredit(e.target.value)} className="mt-1 h-10 w-full rounded-xl border border-zinc-300 px-3 text-sm" />
+            </label>
+          </div>
+          <button
+            type="button"
+            disabled={savingCommon}
+            onClick={() => void saveCommonPensol()}
+            className="mt-4 h-10 rounded-xl bg-zinc-950 px-4 text-sm font-semibold text-white disabled:opacity-50"
+          >
+            {savingCommon ? "Saving..." : "Save common Pensol discounts"}
+          </button>
+        </div>
 
         {/* Filter bar */}
         <div className="mt-6 flex max-w-md items-center gap-2">
@@ -165,6 +416,9 @@ export default function UsersPage() {
                   <th className="px-4 py-3 font-semibold">Customer / Contact</th>
                   <th className="px-4 py-3 font-semibold">Firm / GSTIN</th>
                   <th className="px-4 py-3 font-semibold">Phone & Location</th>
+                  <th className="px-4 py-3 font-semibold">Discount %</th>
+                  <th className="px-4 py-3 font-semibold">Pensol ₹/unit</th>
+                  <th className="px-4 py-3 font-semibold">Net preview (₹100 list)</th>
                   <th className="px-4 py-3 font-semibold">Fulfillment & Transport</th>
                   <th className="px-4 py-3 font-semibold">Status</th>
                   <th className="px-4 py-3 font-semibold text-center">Orders</th>
@@ -200,6 +454,137 @@ export default function UsersPage() {
                         <p className="font-medium text-zinc-800">{u.phoneNumber || "—"}</p>
                         <p className="text-xs text-zinc-500">
                           {u.shippingCity ? `${u.shippingCity}, ${u.shippingState || ""}` : "No address set"}
+                        </p>
+                      </td>
+
+                      <td className="px-4 py-3.5">
+                        {u.role === "buyer" || u.role === "suspended" ? (
+                          <div className="flex items-center gap-2">
+                            <input
+                              type="number"
+                              min={0}
+                              max={100}
+                              step={1}
+                              placeholder="common"
+                              value={draftDiscounts[u.id] ?? ""}
+                              onChange={(e) =>
+                                setDraftDiscounts((prev) => ({
+                                  ...prev,
+                                  [u.id]: e.target.value,
+                                }))
+                              }
+                              className="h-9 w-20 rounded-lg border border-zinc-300 px-2 text-sm"
+                            />
+                            <button
+                              type="button"
+                              disabled={isProcessing}
+                              onClick={() => void saveCustomerDiscount(u)}
+                              className="rounded-lg border border-zinc-200 px-2 py-1 text-[11px] font-semibold text-zinc-700 hover:bg-zinc-50 disabled:opacity-50"
+                            >
+                              Save
+                            </button>
+                          </div>
+                        ) : (
+                          <span className="text-xs text-zinc-400">—</span>
+                        )}
+                      </td>
+
+                      <td className="px-4 py-3.5">
+                        {u.role === "buyer" || u.role === "suspended" ? (
+                          <div className="space-y-1 text-[11px]">
+                            <div className="flex items-center gap-1">
+                              <span className="w-10 text-zinc-500">Oil</span>
+                              <input
+                                className="h-7 w-14 rounded border px-1"
+                                placeholder="cash"
+                                value={pensolDrafts[u.id]?.oilCash ?? ""}
+                                onChange={(e) =>
+                                  setPensolDrafts((prev) => ({
+                                    ...prev,
+                                    [u.id]: {
+                                      oilCash: e.target.value,
+                                      oilCredit: prev[u.id]?.oilCredit ?? "",
+                                      greaseCash: prev[u.id]?.greaseCash ?? "",
+                                      greaseCredit: prev[u.id]?.greaseCredit ?? "",
+                                    },
+                                  }))
+                                }
+                              />
+                              <input
+                                className="h-7 w-14 rounded border px-1"
+                                placeholder="cr"
+                                value={pensolDrafts[u.id]?.oilCredit ?? ""}
+                                onChange={(e) =>
+                                  setPensolDrafts((prev) => ({
+                                    ...prev,
+                                    [u.id]: {
+                                      oilCash: prev[u.id]?.oilCash ?? "",
+                                      oilCredit: e.target.value,
+                                      greaseCash: prev[u.id]?.greaseCash ?? "",
+                                      greaseCredit: prev[u.id]?.greaseCredit ?? "",
+                                    },
+                                  }))
+                                }
+                              />
+                            </div>
+                            <div className="flex items-center gap-1">
+                              <span className="w-10 text-zinc-500">Grs</span>
+                              <input
+                                className="h-7 w-14 rounded border px-1"
+                                placeholder="cash"
+                                value={pensolDrafts[u.id]?.greaseCash ?? ""}
+                                onChange={(e) =>
+                                  setPensolDrafts((prev) => ({
+                                    ...prev,
+                                    [u.id]: {
+                                      oilCash: prev[u.id]?.oilCash ?? "",
+                                      oilCredit: prev[u.id]?.oilCredit ?? "",
+                                      greaseCash: e.target.value,
+                                      greaseCredit: prev[u.id]?.greaseCredit ?? "",
+                                    },
+                                  }))
+                                }
+                              />
+                              <input
+                                className="h-7 w-14 rounded border px-1"
+                                placeholder="cr"
+                                value={pensolDrafts[u.id]?.greaseCredit ?? ""}
+                                onChange={(e) =>
+                                  setPensolDrafts((prev) => ({
+                                    ...prev,
+                                    [u.id]: {
+                                      oilCash: prev[u.id]?.oilCash ?? "",
+                                      oilCredit: prev[u.id]?.oilCredit ?? "",
+                                      greaseCash: prev[u.id]?.greaseCash ?? "",
+                                      greaseCredit: e.target.value,
+                                    },
+                                  }))
+                                }
+                              />
+                            </div>
+                            <button
+                              type="button"
+                              disabled={isProcessing}
+                              onClick={() => void saveCustomerPensol(u)}
+                              className="rounded border px-2 py-0.5 font-semibold"
+                            >
+                              Save ₹
+                            </button>
+                          </div>
+                        ) : (
+                          <span className="text-xs text-zinc-400">—</span>
+                        )}
+                      </td>
+
+                      <td className="px-4 py-3.5 text-sm">
+                        <p className="font-semibold">
+                          ₹
+                          {((u.previewNetInclusivePaise ?? 10000) / 100).toLocaleString("en-IN")}
+                        </p>
+                        <p className="text-[11px] text-zinc-500">
+                          {u.customerDiscountPercent === null || u.customerDiscountPercent === undefined
+                            ? `Common ${u.effectiveDiscountPercent ?? 0}%`
+                            : `Assigned ${u.customerDiscountPercent}%`}
                         </p>
                       </td>
 

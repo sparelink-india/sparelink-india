@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { eq } from "drizzle-orm";
+import { gateOrderAccess } from "@/lib/access-control";
 import { getServerSession } from "@/lib/auth-server";
 import { getDb } from "@/lib/db";
 import {
@@ -8,7 +9,6 @@ import {
   firmOrder,
   firm,
   part,
-  user,
 } from "@/drizzle/schema";
 import { generateInvoicePDFBuffer } from "@/lib/invoice-pdf";
 
@@ -32,9 +32,9 @@ export async function GET(
     return NextResponse.json({ error: "Order not found" }, { status: 404 });
   }
 
-  // Authorization: Only the buyer who placed the order or an admin can access the invoice
-  if (session.user.role !== "admin" && orderRecord.buyerId !== session.user.id) {
-    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  const access = gateOrderAccess(session, orderRecord.buyerId);
+  if (!access.ok) {
+    return NextResponse.json({ error: access.error }, { status: access.status });
   }
 
   // Fetch order items with part details
@@ -47,6 +47,9 @@ export async function GET(
       quantity: orderItem.quantity,
       unitPricePaise: orderItem.unitPricePaise,
       totalPaise: orderItem.totalPaise,
+      gstRate: orderItem.gstRate,
+      lineGstPaise: orderItem.lineGstPaise,
+      lineBasePaise: orderItem.lineBasePaise,
       partDescription: part.description,
       partBrand: part.brand,
     })

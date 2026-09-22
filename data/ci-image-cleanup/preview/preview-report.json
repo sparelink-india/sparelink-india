@@ -1,0 +1,112 @@
+[
+  {
+    "file": "data/source-catalogue/images/36087_36086L.png",
+    "note": "ref1 watermark+border+pn",
+    "action": "CLEANED_MANUAL_REVIEW",
+    "review": "watermark_overlaps_product",
+    "border": true,
+    "textCount": 1,
+    "watermarkCount": 1,
+    "leftover": 0.0064
+  },
+  {
+    "file": "data/source-catalogue/images/33341_33322L.jpeg",
+    "note": "ref2 border+pn",
+    "action": "CLEANED",
+    "review": null,
+    "border": true,
+    "textCount": 1,
+    "watermarkCount": 0,
+    "leftover": 0.0001
+  },
+  {
+    "file": "data/source-catalogue/images/102.png",
+    "note": "ci handle watermark",
+    "action": "CLEANED_MANUAL_REVIEW",
+    "review": "watermark_overlaps_product",
+    "border": true,
+    "textCount": 1,
+    "watermarkCount": 1,
+    "leftover": 0
+  },
+  {
+    "file": "data/source-catalogue/images/0108_M10.jpg",
+    "note": "black border text physical logo",
+    "action": "CLEANED",
+    "review": null,
+    "border": true,
+    "textCount": 1,
+    "watermarkCount": 0,
+    "leftover": 0.0287
+  },
+  {
+    "file": "data/source-catalogue/images/342.jpg",
+    "note": "cable",
+    "action": "CLEANED_MANUAL_REVIEW",
+    "review": "residual_overlay_text",
+    "border": false,
+    "textCount": 1,
+    "watermarkCount": 0,
+    "leftover": 0.0329
+  },
+  {
+    "file": "data/source-catalogue/images/161.jpg",
+    "note": "lock kit multipart",
+    "action": "CLEANED",
+    "review": null,
+    "border": false,
+    "textCount": 1,
+    "watermarkCount": 0,
+    "leftover": 0.0216
+  },
+  {
+    "file": "data/source-catalogue/images/0281L.jpg",
+    "note": "window regulator",
+    "action": "CLEANED",
+    "review": null,
+    "border": true,
+    "textCount": 1,
+    "watermarkCount": 0,
+    "leftover": 0
+  },
+  {
+    "file": "data/source-catalogue/images/0120L_R.jpg",
+    "note": "small lock",
+    "action": "CLEANED",
+    "review": null,
+    "border": true,
+    "textCount": 1,
+    "watermarkCount": 0,
+    "leftover": 0
+  },
+  {
+    "file": "data/source-catalogue/images/0147L.jpg",
+    "note": "garnish physical logo",
+    "action": "CLEANED",
+    "review": null,
+    "border": true,
+    "textCount": 1,
+    "watermarkCount": 0,
+    "leftover": 0.0001
+  },
+  {
+    "file": "data/source-catalogue/images/0295L_30118_LH.jpg",
+    "note": "mirror light text",
+    "action": "CLEANED",
+    "review": null,
+    "border": false,
+    "textCount": 1,
+    "watermarkCount": 0,
+    "leftover": 0
+  },
+  {
+    "file": "data/source-catalogue/images/21001.png",
+    "note": "starlinks filter",
+    "action": "MANUAL_REVIEW",
+    "review": "repeating_catalogue_watermark_on_product",
+    "border": false,
+    "textCount": 0,
+    "watermarkCount": 1,
+    "leftover": 0
+  }
+]

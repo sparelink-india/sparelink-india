@@ -1,16 +1,14 @@
 import { NextResponse } from "next/server";
+import { requireAdminApi } from "@/lib/require-role";
 import { desc, eq } from "drizzle-orm";
 import { dealer, dealerListing, inventory, part } from "@/drizzle/schema";
 import { writeAuditLog } from "@/lib/audit";
-import { getServerSession } from "@/lib/auth-server";
 import { getDb } from "@/lib/db";
 
 export async function GET() {
-  const session = await getServerSession();
-
-  if (!session || session.user.role !== "admin") {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+  const auth = await requireAdminApi();
+  if (auth.error) return auth.error;
+  const session = auth.session;
 
   const db = getDb();
 
@@ -42,11 +40,9 @@ export async function GET() {
 }
 
 export async function PATCH(request: Request) {
-  const session = await getServerSession();
-
-  if (!session || session.user.role !== "admin") {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+  const auth = await requireAdminApi();
+  if (auth.error) return auth.error;
+  const session = auth.session;
 
   const body = await request.json().catch(() => null);
   if (!body || typeof body !== "object") {

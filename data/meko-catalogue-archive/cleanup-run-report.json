@@ -1,0 +1,34 @@
+{
+  "deletedParts": 856,
+  "deletedListings": 856,
+  "deletedCategories": [
+    "cat-meko-water-pump-repair-kits",
+    "cat-meko-water-pump-repair-kits-with-bearing",
+    "cat-meko-water-pump-seal-kits",
+    "cat-meko-water-pump-seals",
+    "cat-meko-water-pump-shafts",
+    "cat-meko-water-pump-impellers",
+    "cat-meko-ceramics",
+    "cat-meko-automotive-water-pump-assemblies",
+    "cat-meko-bearing-housing-fan-assembly"
+  ],
+  "typesenseBefore": 945,
+  "typesenseDeleted": 856,
+  "typesenseAfter": 89,
+  "typesensePreserved": 89,
+  "removedIndexKeys": 398,
+  "deletedImageFiles": 523,
+  "archivedGenerated": [
+    "data\\meko-catalogue",
+    "CATALOGUE SOURCE\\MEKO\\extracted-text.txt",
+    "CATALOGUE SOURCE\\MEKO\\extracted.csv",
+    "CATALOGUE SOURCE\\MEKO\\extracted.json",
+    "CATALOGUE SOURCE\\MEKO\\extraction-summary.json",
+    "CATALOGUE SOURCE\\MEKO\\import-run-report.json"
+  ],
+  "afterMekoParts": 89,
+  "afterMekoListings": 89,
+  "afterMekoInventory": 89,
+  "indiaSalesStillExists": true,
+  "pdfPreserved": true
+}

@@ -1,7 +1,72 @@
 ﻿import { redirect } from "next/navigation";
+import { NextResponse } from "next/server";
+
+import {
+  type AccessDecision,
+  gateAdminApi,
+  gateBuyerApi,
+  gateDealerApi,
+} from "@/lib/access-control";
 import { getServerSession } from "@/lib/auth-server";
+import { isMustChangePassword } from "@/lib/must-change-password";
 
 export type UserRole = "buyer" | "dealer" | "admin";
+
+function jsonFromGate(gate: AccessDecision) {
+  if (gate.ok) return null;
+  return NextResponse.json({ error: gate.error }, { status: gate.status });
+}
+
+export function passwordChangeRequiredResponse() {
+  return NextResponse.json(
+    {
+      error: "Password change required.",
+      redirectTo: "/account/change-password",
+    },
+    { status: 403 },
+  );
+}
+
+export async function denyIfMustChangePassword(userId: string) {
+  if (await isMustChangePassword(userId)) {
+    return passwordChangeRequiredResponse();
+  }
+  return null;
+}
+
+export async function requirePasswordReadyPage() {
+  const session = await getServerSession();
+  if (session?.user && (await isMustChangePassword(session.user.id))) {
+    redirect("/account/change-password");
+  }
+}
+
+export async function requireAdminApi() {
+  const session = await getServerSession();
+  const denied = jsonFromGate(gateAdminApi(session));
+  if (denied) return { error: denied };
+  const blocked = await denyIfMustChangePassword(session!.user.id);
+  if (blocked) return { error: blocked };
+  return { session: session! };
+}
+
+export async function requireBuyerApi() {
+  const session = await getServerSession();
+  const denied = jsonFromGate(gateBuyerApi(session));
+  if (denied) return { error: denied };
+  const blocked = await denyIfMustChangePassword(session!.user.id);
+  if (blocked) return { error: blocked };
+  return { session: session! };
+}
+
+export async function requireDealerApi() {
+  const session = await getServerSession();
+  const denied = jsonFromGate(gateDealerApi(session));
+  if (denied) return { error: denied };
+  const blocked = await denyIfMustChangePassword(session!.user.id);
+  if (blocked) return { error: blocked };
+  return { session: session! };
+}
 
 export async function requireRole(allowedRoles: UserRole[]) {
   const session = await getServerSession();
@@ -14,6 +79,10 @@ export async function requireRole(allowedRoles: UserRole[]) {
 
   if (!allowedRoles.includes(role)) {
     redirect("/");
+  }
+
+  if (await isMustChangePassword(session.user.id)) {
+    redirect("/account/change-password");
   }
 
   return session;

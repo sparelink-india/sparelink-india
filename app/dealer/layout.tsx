@@ -1,12 +1,23 @@
 import type { ReactNode } from "react";
+import { redirect } from "next/navigation";
 
-import { requireRole } from "@/lib/require-role";
+import { getServerSession } from "@/lib/auth-server";
+import { isMustChangePassword } from "@/lib/must-change-password";
 
 export default async function DealerLayout({
   children,
 }: {
   children: ReactNode;
 }) {
-  await requireRole(["dealer"]);
+  const session = await getServerSession();
+  if (!session?.user) {
+    redirect("/login/dealer");
+  }
+  if (session.user.role !== "dealer") {
+    redirect("/");
+  }
+  if (await isMustChangePassword(session.user.id)) {
+    redirect("/account/change-password");
+  }
   return children;
 }

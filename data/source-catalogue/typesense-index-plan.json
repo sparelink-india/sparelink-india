@@ -1,0 +1,19 @@
+{
+  "status": "prepared_not_indexed",
+  "productionReindex": false,
+  "indexAfter": "admin-approved-import-into-non-production-db",
+  "existingScript": "scripts/index-parts.ts",
+  "collection": "parts",
+  "fieldMapping": {
+    "name": "part.name",
+    "part_number": "part.partNumber",
+    "oem_number": "part.oemNumber (extend index-parts.ts after schema import)",
+    "brand": "part.brand",
+    "category": "partCategory.name",
+    "vehicle_make": "via part_vehicle_compatibility + vehicle.make",
+    "vehicle_model": "via vehicle.model",
+    "variant": "via vehicle.variant",
+    "compatibility": "vehicle_ids currently indexed"
+  },
+  "note": "Do not run scripts/index-parts.ts against Production. Keep the existing Typesense parts collection. Index only after an approved import into a non-production database."
+}

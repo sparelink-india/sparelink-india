@@ -1,15 +1,23 @@
 import { randomUUID } from "node:crypto";
-import { and, desc, eq } from "drizzle-orm";
+import { and, desc, eq, inArray } from "drizzle-orm";
 import { NextResponse } from "next/server";
-import { part, wishlist } from "@/drizzle/schema";
+import { dealerListing, part, wishlist } from "@/drizzle/schema";
 import { getServerSession } from "@/lib/auth-server";
 import { getDb } from "@/lib/db";
+import { extractGSTRate } from "@/lib/gst";
+import { denyIfMustChangePassword } from "@/lib/require-role";
+import { resolveStorefrontPricing } from "@/lib/customer-discount";
+import { publicListingPrice } from "@/lib/party-pricing";
+import { isPensolProduct } from "@/lib/pensol-pricing";
 
 export async function GET() {
   const session = await getServerSession();
   if (!session) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
+
+  const blocked = await denyIfMustChangePassword(session.user.id);
+  if (blocked) return blocked;
 
   const db = getDb();
   const items = await db
@@ -19,6 +27,7 @@ export async function GET() {
       partNumber: part.partNumber,
       partName: part.name,
       brand: part.brand,
+      description: part.description,
       createdAt: wishlist.createdAt,
     })
     .from(wishlist)
@@ -26,7 +35,64 @@ export async function GET() {
     .where(eq(wishlist.userId, session.user.id))
     .orderBy(desc(wishlist.createdAt));
 
-  return NextResponse.json({ items });
+  const partIds = items.map((item) => item.partId);
+  const listings =
+    partIds.length === 0
+      ? []
+      : await db
+          .select({
+            id: dealerListing.id,
+            partId: dealerListing.partId,
+            pricePaise: dealerListing.pricePaise,
+            mrpPaise: dealerListing.mrpPaise,
+            sku: dealerListing.sku,
+          })
+          .from(dealerListing)
+          .where(
+            and(
+              inArray(dealerListing.partId, partIds),
+              eq(dealerListing.status, "active"),
+            ),
+          );
+
+  const listingByPart = new Map<string, (typeof listings)[number]>();
+  for (const listing of listings) {
+    if (!listingByPart.has(listing.partId)) {
+      listingByPart.set(listing.partId, listing);
+    }
+  }
+
+  const pricing = await resolveStorefrontPricing(session);
+
+  return NextResponse.json({
+    items: items.map((item) => {
+      const listing = listingByPart.get(item.partId);
+      const gstRate = extractGSTRate(item.description);
+      const pensol = isPensolProduct({ brand: item.brand, name: item.partName });
+      const priced = listing
+        ? publicListingPrice(
+            listing.pricePaise,
+            gstRate,
+            pensol ? 0 : pricing.effectiveDiscountPercent,
+          )
+        : null;
+      return {
+        id: item.id,
+        partId: item.partId,
+        partNumber: item.partNumber,
+        partName: item.partName,
+        brand: item.brand,
+        createdAt: item.createdAt,
+        listingId: listing?.id ?? null,
+        pricePaise: listing?.pricePaise ?? null,
+        mrpPaise: listing?.mrpPaise ?? null,
+        listInclusivePaise: priced?.listInclusivePaise ?? null,
+        netInclusivePaise: priced?.netInclusivePaise ?? null,
+        discountPercent: priced?.discountPercent ?? null,
+        gstRate: priced?.gstRate ?? gstRate,
+      };
+    }),
+  });
 }
 
 export async function POST(request: Request) {
@@ -34,6 +100,9 @@ export async function POST(request: Request) {
   if (!session) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
+
+  const blocked = await denyIfMustChangePassword(session.user.id);
+  if (blocked) return blocked;
 
   const body = await request.json().catch(() => null);
   const partId = typeof body?.partId === "string" ? body.partId.trim() : "";
@@ -74,6 +143,9 @@ export async function DELETE(request: Request) {
   if (!session) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
+
+  const blocked = await denyIfMustChangePassword(session.user.id);
+  if (blocked) return blocked;
 
   const body = await request.json().catch(() => null);
   const id = typeof body?.id === "string" ? body.id.trim() : "";

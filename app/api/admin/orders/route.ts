@@ -1,8 +1,8 @@
 import { NextResponse } from "next/server";
-import { count, desc, eq } from "drizzle-orm";
-import { order, orderItem, user } from "@/drizzle/schema";
+import { requireAdminApi } from "@/lib/require-role";
+import { count, desc, eq, inArray } from "drizzle-orm";
+import { firm, firmOrder, order, orderItem, user } from "@/drizzle/schema";
 import { writeAuditLog } from "@/lib/audit";
-import { getServerSession } from "@/lib/auth-server";
 import { getDb } from "@/lib/db";
 
 const ALLOWED_STATUSES = new Set([
@@ -17,11 +17,8 @@ const ALLOWED_STATUSES = new Set([
 ]);
 
 export async function GET() {
-  const session = await getServerSession();
-
-  if (!session || session.user.role !== "admin") {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+  const auth = await requireAdminApi();
+  if (auth.error) return auth.error;
 
   const db = getDb();
 
@@ -40,18 +37,45 @@ export async function GET() {
       .innerJoin(user, eq(order.buyerId, user.id))
       .orderBy(desc(order.createdAt));
 
-    const orderWithCounts = await Promise.all(
-      ordersData.map(async (o) => {
-        const itemResult = await db
-          .select({ count: count() })
+    const orderIds = ordersData.map((o) => o.id);
+    const itemCounts = orderIds.length
+      ? await db
+          .select({
+            orderId: orderItem.orderId,
+            count: count(),
+          })
           .from(orderItem)
-          .where(eq(orderItem.orderId, o.id));
-        return {
-          ...o,
-          itemCount: itemResult[0]?.count ?? 0,
-        };
-      }),
+          .where(inArray(orderItem.orderId, orderIds))
+          .groupBy(orderItem.orderId)
+      : [];
+    const allocations = orderIds.length
+      ? await db
+          .select({
+            orderId: firmOrder.orderId,
+            id: firmOrder.id,
+            firmId: firmOrder.firmId,
+            firmName: firm.name,
+            allocationNumber: firmOrder.allocationNumber,
+            subtotalPaise: firmOrder.subtotalPaise,
+            gstPaise: firmOrder.gstPaise,
+            totalPaise: firmOrder.amountPaise,
+            fulfillmentStatus: firmOrder.fulfillmentStatus,
+            paymentStatus: firmOrder.paymentStatus,
+            paymentMethod: firmOrder.paymentMethod,
+            invoiceReference: firmOrder.invoiceReference,
+          })
+          .from(firmOrder)
+          .innerJoin(firm, eq(firmOrder.firmId, firm.id))
+          .where(inArray(firmOrder.orderId, orderIds))
+      : [];
+    const countByOrder = new Map(
+      itemCounts.map((row) => [row.orderId, row.count]),
     );
+    const orderWithCounts = ordersData.map((o) => ({
+      ...o,
+      itemCount: countByOrder.get(o.id) ?? 0,
+      allocations: allocations.filter((row) => row.orderId === o.id),
+    }));
 
     return NextResponse.json({ orders: orderWithCounts });
   } catch (error) {
@@ -64,11 +88,9 @@ export async function GET() {
 }
 
 export async function PATCH(request: Request) {
-  const session = await getServerSession();
-
-  if (!session || session.user.role !== "admin") {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+  const auth = await requireAdminApi();
+  if (auth.error) return auth.error;
+  const session = auth.session;
 
   const body = await request.json().catch(() => null);
   if (!body || typeof body !== "object") {

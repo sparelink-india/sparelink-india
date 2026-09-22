@@ -1,0 +1,152 @@
+{
+  "extractedAt": "2026-09-16T18:45:30.362Z",
+  "source": "https://onlineautohandles.com/b2b",
+  "api": "https://onlineautohandles.com/api/b2b/products",
+  "live": {
+    "total": 8182,
+    "pages": 69,
+    "items": 8182
+  },
+  "stored": {
+    "full": 8182,
+    "READY": 7993,
+    "REVIEW": 189
+  },
+  "match": {
+    "matched": 8182,
+    "unmatched": 0,
+    "rateSame": 8182,
+    "rateUpdated": 0,
+    "mismatches": []
+  },
+  "rates": {
+    "liveRatePresent": 7842,
+    "liveRateZero": 340,
+    "liveRateMissing": 0,
+    "sellingPrepared": 7840,
+    "sellingBlank": 342,
+    "readySellingPrepared": 7780,
+    "readySellingBlank": 213,
+    "readyMrpPopulated": 0,
+    "readyFirmAssigned": 0
+  },
+  "exampleRequiredPresentation": {
+    "Part No": "5240L,M5",
+    "Product Name": "DOOR LOCK ASSY 407 608 ETC LEFT",
+    "MOQ": 1,
+    "OE Number": "",
+    "HSN": "",
+    "Rate": "Rs 504 / Pcs",
+    "selling_price": 504,
+    "mrp": "",
+    "firm": ""
+  },
+  "samplePrepared": [
+    {
+      "partNo": "101",
+      "name": "R.G.HANDLE VAN,CAR,GYPSY,QUALIS,CANTER O/M,DYNA PVC BLACK",
+      "moq": 1,
+      "oeNumber": "",
+      "hsn": "",
+      "source_rate": 25,
+      "selling_price": 25,
+      "mrp": "",
+      "unit": "Pcs",
+      "rateDisplay": "Rs 25 / Pcs"
+    },
+    {
+      "partNo": "102",
+      "name": "R.G.HANDLE VAN,CAR,GYPSY,QUALIS,CANTER O/M,DYNA PVC GREY",
+      "moq": 1,
+      "oeNumber": "",
+      "hsn": "",
+      "source_rate": 29,
+      "selling_price": 29,
+      "mrp": "",
+      "unit": "Pcs",
+      "rateDisplay": "Rs 29 / Pcs"
+    },
+    {
+      "partNo": "103",
+      "name": "R.G.HANDLE VAN,CAR,GYPSY,QUALIS,CANTER O/M,DYNA SUPER PVC BLACK",
+      "moq": 1,
+      "oeNumber": "#8296082100281",
+      "hsn": "",
+      "source_rate": 26,
+      "selling_price": 26,
+      "mrp": "",
+      "unit": "Pcs",
+      "rateDisplay": "Rs 26 / Pcs"
+    },
+    {
+      "partNo": "104",
+      "name": "R.G.HANDLE VAN,CAR,GYPSY,QUALIS,CANTER O/M,DYNA SUPER PVC GREY",
+      "moq": 1,
+      "oeNumber": "#8296082100281",
+      "hsn": "",
+      "source_rate": 29,
+      "selling_price": 29,
+      "mrp": "",
+      "unit": "Pcs",
+      "rateDisplay": "Rs 29 / Pcs"
+    },
+    {
+      "partNo": "105",
+      "name": "R.G. HANDLE METAL ,GREY CANTER ,SUZUKI , TOYOTA ETC.",
+      "moq": 1,
+      "oeNumber": "",
+      "hsn": "",
+      "source_rate": 76,
+      "selling_price": 76,
+      "mrp": "",
+      "unit": "Pcs",
+      "rateDisplay": "Rs 76 / Pcs"
+    },
+    {
+      "partNo": "106",
+      "name": "R.G.HANDLE VAN,CAR,GYPSY,QUALIS,CANTER O/M,DYNA METAL BLACK",
+      "moq": 1,
+      "oeNumber": "",
+      "hsn": "",
+      "source_rate": 76,
+      "selling_price": 76,
+      "mrp": "",
+      "unit": "Pcs",
+      "rateDisplay": "Rs 76 / Pcs"
+    },
+    {
+      "partNo": "107",
+      "name": "RG HANDLE VAN, CAR,CANTER,QUALIS,DYNA,GYPSY WITH METAL CHROME",
+      "moq": 1,
+      "oeNumber": "",
+      "hsn": "",
+      "source_rate": 86,
+      "selling_price": 86,
+      "mrp": "",
+      "unit": "Pcs",
+      "rateDisplay": "Rs 86 / Pcs"
+    },
+    {
+      "partNo": "0108,M10",
+      "name": "DOOR OUTER HANDLE MM-540, VAN, GYPSY ETC",
+      "moq": 1,
+      "oeNumber": "#9082810080102",
+      "hsn": "",
+      "source_rate": 79,
+      "selling_price": 79,
+      "mrp": "",
+      "unit": "Pcs",
+      "rateDisplay": "Rs 79 / Pcs"
+    }
+  ],
+  "notes": [
+    "Live API field used for Rate: items[].price",
+    "source_rate stores that exact numeric price, including 0 when the API sends 0.",
+    "selling_price is copied from source_rate only when the rate is explicit and greater than 0.",
+    "Records with API price 0 keep source_rate 0 and blank selling_price (no invented replacement).",
+    "previousPrice is not treated as MRP.",
+    "Firm remains unassigned.",
+    "REVIEW records excluded from import-ready.csv.",
+    "No database import, Typesense reindex, or identity-field invention."
+  ]
+}

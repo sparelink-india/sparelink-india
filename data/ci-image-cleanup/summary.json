@@ -1,0 +1,29 @@
+{
+  "generatedAt": "2026-09-18T20:39:00.558Z",
+  "totalCiProducts": 7237,
+  "productsWithImages": 6764,
+  "productsWithoutImages": 473,
+  "mainImages": 6755,
+  "galleryImages": 0,
+  "totalImagesScanned": 6755,
+  "watermarkedImages": 1377,
+  "watermarksRemoved": 1252,
+  "borderImages": 3310,
+  "bordersRemoved": 3305,
+  "partNumberOverlaysFound": 6502,
+  "partNumberOverlaysRemoved": 6387,
+  "alreadyClean": 109,
+  "manualReview": 1920,
+  "failed": 49,
+  "cleaned": 6474,
+  "originalsBackedUp": 281,
+  "cleanImagesCreated": 6474,
+  "missing": 473,
+  "actions": {
+    "CLEANED_MANUAL_REVIEW": 1797,
+    "CLEANED": 4677,
+    "MANUAL_REVIEW": 123,
+    "ALREADY_CLEAN": 109,
+    "FAILED": 49
+  }
+}

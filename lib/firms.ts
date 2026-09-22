@@ -52,3 +52,85 @@ export function isAssignableFirmId(
   if (firmId === null) return true;
   return typeof firmId === "string" && isAllowedFirmId(firmId);
 }
+
+export const AMBAJI_TRADERS_FIRM_ID = "firm-ambaji-traders";
+export const HIND_MOTORS_FIRM_ID = "firm-hind-motors";
+export const INDIA_SALES_FIRM_ID = "firm-india-sales";
+
+/**
+ * Per-firm payment capabilities for COD + future independent Cashfree merchants.
+ * No Easy Split. Cashfree credentials stay in env and are not invented here.
+ */
+export type FirmOnlinePaymentCapability = "cashfree" | "coming_soon";
+
+export type FirmPaymentCapability = {
+  firmId: string;
+  firmName: string;
+  cod: true;
+  online: FirmOnlinePaymentCapability;
+};
+
+export const FIRM_PAYMENT_CAPABILITIES: readonly FirmPaymentCapability[] = [
+  {
+    firmId: AMBAJI_TRADERS_FIRM_ID,
+    firmName: "Ambaji Traders",
+    cod: true,
+    online: "cashfree",
+  },
+  {
+    firmId: HIND_MOTORS_FIRM_ID,
+    firmName: "Hind Motors",
+    cod: true,
+    online: "coming_soon",
+  },
+  {
+    firmId: INDIA_SALES_FIRM_ID,
+    firmName: "India Sales",
+    cod: true,
+    online: "coming_soon",
+  },
+] as const;
+
+export function getFirmPaymentCapability(
+  firmId: string,
+): FirmPaymentCapability | null {
+  if (!isAllowedFirmId(firmId)) return null;
+  return (
+    FIRM_PAYMENT_CAPABILITIES.find((item) => item.firmId === firmId) ?? null
+  );
+}
+
+export type ParentPaymentMethod =
+  | "cash_on_delivery"
+  | "bank_transfer"
+  | "online_payment";
+
+export type AllocationPaymentMethod =
+  | "cash_on_delivery"
+  | "bank_transfer"
+  | "online_payment"
+  | "online_coming_soon";
+
+/**
+ * Map the customer's parent payment choice onto one firm allocation.
+ * Online checkout only lands on Ambaji when that firm can take Cashfree later.
+ * Hind Motors and India Sales stay COD (online coming soon).
+ */
+export function resolveAllocationPaymentMethod(
+  parentPaymentMethod: ParentPaymentMethod,
+  firmId: string,
+): AllocationPaymentMethod {
+  const capability = getFirmPaymentCapability(firmId);
+  if (!capability) {
+    return "cash_on_delivery";
+  }
+  if (parentPaymentMethod === "bank_transfer") {
+    return "bank_transfer";
+  }
+  if (parentPaymentMethod === "online_payment") {
+    return capability.online === "cashfree"
+      ? "online_payment"
+      : "online_coming_soon";
+  }
+  return "cash_on_delivery";
+}

@@ -1,0 +1,56 @@
+{
+  "productionChanged": false,
+  "deployed": false,
+  "migrations": false,
+  "xlsxRevalidation": {
+    "products": 113,
+    "missingFiles": [],
+    "mismatches": 0,
+    "mismatchSample": []
+  },
+  "firm": {
+    "id": "firm-hind-motors",
+    "name": "Hind Motors",
+    "code": "HIN"
+  },
+  "dealerUsed": {
+    "id": "dealer-test-001",
+    "businessName": "SpareLink Test Dealer"
+  },
+  "rowsAudited": 113,
+  "READY": 0,
+  "DUPLICATE": 113,
+  "CONFLICT": 0,
+  "REVIEW": 0,
+  "insertedParts": 0,
+  "insertedListings": 0,
+  "insertedInventory": 0,
+  "rowErrors": [],
+  "sellingPriceInvented": 0,
+  "distributorPriceUsedAsSelling": false,
+  "stockInvented": 0,
+  "imagesInvented": 0,
+  "before": {
+    "parts": 8933,
+    "listings": 8930,
+    "inventory": 8930
+  },
+  "after": {
+    "parts": 8993,
+    "listings": 8990,
+    "inventory": 8990
+  },
+  "menonParts": 113,
+  "menonListings": 113,
+  "hindMotorsMenonListings": 113,
+  "duplicatePartNumbers": 0,
+  "menonStockPositive": 0,
+  "menonPriced": 0,
+  "menonUnpriced": 113,
+  "menonWithMrp": 113,
+  "typesenseIndexed": 113,
+  "typesenseBefore": 8873,
+  "typesenseAfter": 8873,
+  "typesenseMenon": 113,
+  "typesenseError": null
+}

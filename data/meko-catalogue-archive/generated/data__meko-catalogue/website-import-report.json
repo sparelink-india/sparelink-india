@@ -1,0 +1,52 @@
+{
+  "productionChanged": false,
+  "deployed": false,
+  "migrations": false,
+  "firm": {
+    "id": "firm-india-sales",
+    "name": "India Sales",
+    "code": "IND"
+  },
+  "dealerUsed": {
+    "id": "dealer-test-001",
+    "businessName": "SpareLink Test Dealer"
+  },
+  "websiteRows": 396,
+  "existingMekoBefore": 927,
+  "READY": 18,
+  "DUPLICATE": 378,
+  "CONFLICT": 0,
+  "REVIEW": 0,
+  "insertedParts": 18,
+  "insertedListings": 18,
+  "insertedInventory": 18,
+  "updatedOfficialFields": 378,
+  "rowErrors": [],
+  "sellingPriceInvented": 0,
+  "mrpInvented": 0,
+  "stockInvented": 0,
+  "imagesInvented": 0,
+  "busyExcelUsed": false,
+  "before": {
+    "parts": 9329,
+    "listings": 9326,
+    "inventory": 9326
+  },
+  "after": {
+    "parts": 9347,
+    "listings": 9344,
+    "inventory": 9344
+  },
+  "mekoParts": 945,
+  "mekoListings": 945,
+  "indiaSalesMekoListings": 945,
+  "mekoStockPositive": 0,
+  "mekoPriced": 0,
+  "mekoUnpriced": 945,
+  "mekoWithMrp": 678,
+  "typesenseIndexed": 945,
+  "typesenseBefore": 9329,
+  "typesenseAfter": 9347,
+  "typesenseMeko": 945,
+  "typesenseError": null
+}

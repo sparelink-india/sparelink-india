@@ -1,0 +1,53 @@
+{
+  "manufacturer": "MEKO",
+  "brand": "MEKO",
+  "firm": "India Sales",
+  "sourcePdf": "T:\\sparelink-india\\catalogue-source\\MEKO\\MEKO Genuine Spares 36-page.pdf",
+  "byteSize": 23106054,
+  "pageCount": 36,
+  "pdfInfo": {
+    "total": 36,
+    "info": {
+      "PDFFormatVersion": "1.7",
+      "Language": null,
+      "EncryptFilterName": null,
+      "IsLinearized": true,
+      "IsAcroFormPresent": false,
+      "IsXFAPresent": false,
+      "IsCollectionPresent": false,
+      "IsSignaturesPresent": false,
+      "Author": "Sparsh Media",
+      "CreationDate": "D:20221108174952+05'00'",
+      "Creator": "CorelDRAW 2020",
+      "ModDate": "D:20221109164914+05'30'",
+      "Producer": "Corel PDF Engine Version 22.0.0.412",
+      "Title": "1. Front Cover & Inside.cdr"
+    },
+    "metadata": {},
+    "fingerprints": [
+      "c004d8ad2039ec4c2382070d6833c804",
+      "2c5b47abf08fd74188b463f94f1e5e47"
+    ],
+    "permission": null,
+    "outline": null,
+    "pages": []
+  },
+  "textChars": 8975,
+  "uniqueMCodesInText": 58,
+  "extractedRows": 89,
+  "uniquePartNumbers": 89,
+  "duplicatePartNumbers": [],
+  "pagesWithText": 8,
+  "readyForReview": 89,
+  "reviewRows": 0,
+  "mrpInvented": 0,
+  "sellingPriceInvented": 0,
+  "stockInvented": 0,
+  "imagesExtracted": 0,
+  "importedToDatabase": true,
+  "notes": [
+    "Photo catalogue; most pages are image-only.",
+    "MRP/DLP/stock left null/0 because price columns are not safely row-paired.",
+    "Do not import BUSY/stock Excel as a substitute."
+  ]
+}

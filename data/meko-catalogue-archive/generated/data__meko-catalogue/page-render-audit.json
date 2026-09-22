@@ -1,0 +1,583 @@
+{
+  "renderedAt": "2026-09-18T16:26:22.833Z",
+  "pages": [
+    {
+      "page": 22,
+      "renderBytes": 640751,
+      "renderPath": "data\\meko-catalogue\\page-renders\\page-22.png",
+      "embeddedImageCount": 11,
+      "embeddedSizes": [
+        {
+          "name": "img_p21_12",
+          "width": 165,
+          "height": 144
+        },
+        {
+          "name": "img_p21_13",
+          "width": 130,
+          "height": 136
+        },
+        {
+          "name": "img_p21_14",
+          "width": 129,
+          "height": 117
+        },
+        {
+          "name": "img_p21_15",
+          "width": 132,
+          "height": 125
+        },
+        {
+          "name": "img_p21_16",
+          "width": 153,
+          "height": 136
+        },
+        {
+          "name": "img_p21_17",
+          "width": 125,
+          "height": 119
+        },
+        {
+          "name": "img_p21_18",
+          "width": 125,
+          "height": 131
+        },
+        {
+          "name": "img_p21_19",
+          "width": 115,
+          "height": 115
+        },
+        {
+          "name": "img_p21_20",
+          "width": 126,
+          "height": 120
+        },
+        {
+          "name": "img_p21_21",
+          "width": 143,
+          "height": 114
+        },
+        {
+          "name": "img_p21_22",
+          "width": 166,
+          "height": 117
+        }
+      ]
+    },
+    {
+      "page": 23,
+      "renderBytes": 792219,
+      "renderPath": "data\\meko-catalogue\\page-renders\\page-23.png",
+      "embeddedImageCount": 12,
+      "embeddedSizes": [
+        {
+          "name": "img_p22_17",
+          "width": 139,
+          "height": 120
+        },
+        {
+          "name": "img_p22_18",
+          "width": 146,
+          "height": 114
+        },
+        {
+          "name": "img_p22_19",
+          "width": 193,
+          "height": 129
+        },
+        {
+          "name": "img_p22_20",
+          "width": 142,
+          "height": 130
+        },
+        {
+          "name": "img_p22_21",
+          "width": 166,
+          "height": 126
+        },
+        {
+          "name": "img_p22_22",
+          "width": 173,
+          "height": 119
+        },
+        {
+          "name": "img_p22_23",
+          "width": 174,
+          "height": 126
+        },
+        {
+          "name": "img_p22_24",
+          "width": 144,
+          "height": 148
+        },
+        {
+          "name": "img_p22_29",
+          "width": 162,
+          "height": 129
+        },
+        {
+          "name": "img_p22_30",
+          "width": 171,
+          "height": 109
+        },
+        {
+          "name": "img_p22_31",
+          "width": 176,
+          "height": 144
+        },
+        {
+          "name": "img_p22_32",
+          "width": 201,
+          "height": 140
+        }
+      ]
+    },
+    {
+      "page": 24,
+      "renderBytes": 643604,
+      "renderPath": "data\\meko-catalogue\\page-renders\\page-24.png",
+      "embeddedImageCount": 12,
+      "embeddedSizes": [
+        {
+          "name": "img_p23_13",
+          "width": 84,
+          "height": 137
+        },
+        {
+          "name": "img_p23_14",
+          "width": 128,
+          "height": 138
+        },
+        {
+          "name": "img_p23_15",
+          "width": 153,
+          "height": 145
+        },
+        {
+          "name": "img_p23_16",
+          "width": 203,
+          "height": 126
+        },
+        {
+          "name": "img_p23_17",
+          "width": 122,
+          "height": 141
+        },
+        {
+          "name": "img_p23_18",
+          "width": 144,
+          "height": 139
+        },
+        {
+          "name": "img_p23_19",
+          "width": 123,
+          "height": 123
+        },
+        {
+          "name": "img_p23_20",
+          "width": 152,
+          "height": 144
+        },
+        {
+          "name": "img_p23_21",
+          "width": 101,
+          "height": 123
+        },
+        {
+          "name": "img_p23_22",
+          "width": 179,
+          "height": 106
+        },
+        {
+          "name": "img_p23_23",
+          "width": 183,
+          "height": 90
+        },
+        {
+          "name": "img_p23_24",
+          "width": 170,
+          "height": 113
+        }
+      ]
+    },
+    {
+      "page": 25,
+      "renderBytes": 620260,
+      "renderPath": "data\\meko-catalogue\\page-renders\\page-25.png",
+      "embeddedImageCount": 12,
+      "embeddedSizes": [
+        {
+          "name": "img_p24_13",
+          "width": 166,
+          "height": 120
+        },
+        {
+          "name": "img_p24_14",
+          "width": 149,
+          "height": 109
+        },
+        {
+          "name": "img_p24_15",
+          "width": 139,
+          "height": 137
+        },
+        {
+          "name": "img_p24_16",
+          "width": 133,
+          "height": 133
+        },
+        {
+          "name": "img_p24_17",
+          "width": 144,
+          "height": 144
+        },
+        {
+          "name": "img_p24_18",
+          "width": 176,
+          "height": 144
+        },
+        {
+          "name": "img_p24_19",
+          "width": 141,
+          "height": 141
+        },
+        {
+          "name": "img_p24_20",
+          "width": 131,
+          "height": 123
+        },
+        {
+          "name": "img_p24_21",
+          "width": 143,
+          "height": 143
+        },
+        {
+          "name": "img_p24_22",
+          "width": 134,
+          "height": 134
+        },
+        {
+          "name": "img_p24_23",
+          "width": 136,
+          "height": 136
+        },
+        {
+          "name": "img_p24_24",
+          "width": 144,
+          "height": 144
+        }
+      ]
+    },
+    {
+      "page": 26,
+      "renderBytes": 725978,
+      "renderPath": "data\\meko-catalogue\\page-renders\\page-26.png",
+      "embeddedImageCount": 12,
+      "embeddedSizes": [
+        {
+          "name": "img_p25_13",
+          "width": 133,
+          "height": 133
+        },
+        {
+          "name": "img_p25_14",
+          "width": 135,
+          "height": 123
+        },
+        {
+          "name": "img_p25_15",
+          "width": 139,
+          "height": 138
+        },
+        {
+          "name": "img_p25_16",
+          "width": 140,
+          "height": 133
+        },
+        {
+          "name": "img_p25_17",
+          "width": 132,
+          "height": 130
+        },
+        {
+          "name": "img_p25_18",
+          "width": 131,
+          "height": 138
+        },
+        {
+          "name": "img_p25_19",
+          "width": 126,
+          "height": 134
+        },
+        {
+          "name": "img_p25_20",
+          "width": 160,
+          "height": 140
+        },
+        {
+          "name": "img_p25_21",
+          "width": 161,
+          "height": 136
+        },
+        {
+          "name": "img_p25_22",
+          "width": 109,
+          "height": 141
+        },
+        {
+          "name": "img_p25_23",
+          "width": 121,
+          "height": 129
+        },
+        {
+          "name": "img_p25_24",
+          "width": 108,
+          "height": 128
+        }
+      ]
+    },
+    {
+      "page": 27,
+      "renderBytes": 703137,
+      "renderPath": "data\\meko-catalogue\\page-renders\\page-27.png",
+      "embeddedImageCount": 12,
+      "embeddedSizes": [
+        {
+          "name": "img_p26_13",
+          "width": 108,
+          "height": 132
+        },
+        {
+          "name": "img_p26_14",
+          "width": 142,
+          "height": 142
+        },
+        {
+          "name": "img_p26_15",
+          "width": 122,
+          "height": 136
+        },
+        {
+          "name": "img_p26_16",
+          "width": 139,
+          "height": 139
+        },
+        {
+          "name": "img_p26_17",
+          "width": 141,
+          "height": 141
+        },
+        {
+          "name": "img_p26_18",
+          "width": 130,
+          "height": 142
+        },
+        {
+          "name": "img_p26_19",
+          "width": 131,
+          "height": 143
+        },
+        {
+          "name": "img_p26_20",
+          "width": 126,
+          "height": 126
+        },
+        {
+          "name": "img_p26_21",
+          "width": 131,
+          "height": 143
+        },
+        {
+          "name": "img_p26_22",
+          "width": 117,
+          "height": 122
+        },
+        {
+          "name": "img_p26_23",
+          "width": 111,
+          "height": 127
+        },
+        {
+          "name": "img_p26_24",
+          "width": 117,
+          "height": 117
+        }
+      ]
+    },
+    {
+      "page": 28,
+      "renderBytes": 728702,
+      "renderPath": "data\\meko-catalogue\\page-renders\\page-28.png",
+      "embeddedImageCount": 12,
+      "embeddedSizes": [
+        {
+          "name": "img_p27_13",
+          "width": 99,
+          "height": 132
+        },
+        {
+          "name": "img_p27_14",
+          "width": 139,
+          "height": 119
+        },
+        {
+          "name": "img_p27_15",
+          "width": 88,
+          "height": 122
+        },
+        {
+          "name": "img_p27_16",
+          "width": 141,
+          "height": 111
+        },
+        {
+          "name": "img_p27_17",
+          "width": 147,
+          "height": 144
+        },
+        {
+          "name": "img_p27_18",
+          "width": 165,
+          "height": 142
+        },
+        {
+          "name": "img_p27_19",
+          "width": 158,
+          "height": 143
+        },
+        {
+          "name": "img_p27_20",
+          "width": 173,
+          "height": 119
+        },
+        {
+          "name": "img_p27_21",
+          "width": 144,
+          "height": 121
+        },
+        {
+          "name": "img_p27_22",
+          "width": 142,
+          "height": 120
+        },
+        {
+          "name": "img_p27_23",
+          "width": 156,
+          "height": 108
+        },
+        {
+          "name": "img_p27_24",
+          "width": 127,
+          "height": 140
+        }
+      ]
+    },
+    {
+      "page": 29,
+      "renderBytes": 573909,
+      "renderPath": "data\\meko-catalogue\\page-renders\\page-29.png",
+      "embeddedImageCount": 10,
+      "embeddedSizes": [
+        {
+          "name": "img_p28_11",
+          "width": 137,
+          "height": 137
+        },
+        {
+          "name": "img_p28_12",
+          "width": 145,
+          "height": 145
+        },
+        {
+          "name": "img_p28_13",
+          "width": 121,
+          "height": 129
+        },
+        {
+          "name": "img_p28_14",
+          "width": 175,
+          "height": 129
+        },
+        {
+          "name": "img_p28_15",
+          "width": 135,
+          "height": 108
+        },
+        {
+          "name": "img_p28_16",
+          "width": 159,
+          "height": 130
+        },
+        {
+          "name": "img_p28_17",
+          "width": 154,
+          "height": 133
+        },
+        {
+          "name": "img_p28_18",
+          "width": 95,
+          "height": 124
+        },
+        {
+          "name": "img_p28_19",
+          "width": 165,
+          "height": 144
+        },
+        {
+          "name": "img_p28_20",
+          "width": 142,
+          "height": 145
+        }
+      ]
+    },
+    {
+      "page": 30,
+      "renderBytes": 780615,
+      "renderPath": "data\\meko-catalogue\\page-renders\\page-30.png",
+      "embeddedImageCount": 0,
+      "embeddedSizes": []
+    },
+    {
+      "page": 31,
+      "renderBytes": 811653,
+      "renderPath": "data\\meko-catalogue\\page-renders\\page-31.png",
+      "embeddedImageCount": 0,
+      "embeddedSizes": []
+    },
+    {
+      "page": 32,
+      "renderBytes": 732188,
+      "renderPath": "data\\meko-catalogue\\page-renders\\page-32.png",
+      "embeddedImageCount": 0,
+      "embeddedSizes": []
+    },
+    {
+      "page": 33,
+      "renderBytes": 590218,
+      "renderPath": "data\\meko-catalogue\\page-renders\\page-33.png",
+      "embeddedImageCount": 0,
+      "embeddedSizes": []
+    },
+    {
+      "page": 34,
+      "renderBytes": 809153,
+      "renderPath": "data\\meko-catalogue\\page-renders\\page-34.png",
+      "embeddedImageCount": 0,
+      "embeddedSizes": []
+    },
+    {
+      "page": 35,
+      "renderBytes": 1407358,
+      "renderPath": "data\\meko-catalogue\\page-renders\\page-35.png",
+      "embeddedImageCount": 0,
+      "embeddedSizes": []
+    },
+    {
+      "page": 36,
+      "renderBytes": 1407358,
+      "renderPath": "data\\meko-catalogue\\page-renders\\page-36.png",
+      "embeddedImageCount": 0,
+      "embeddedSizes": []
+    }
+  ]
+}

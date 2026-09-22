@@ -1,0 +1,95 @@
+{
+  "productionChanged": false,
+  "deployed": false,
+  "migrations": false,
+  "firm": {
+    "id": "firm-india-sales",
+    "name": "India Sales",
+    "code": "IND"
+  },
+  "dealerUsed": {
+    "id": "dealer-test-001",
+    "businessName": "SpareLink Test Dealer"
+  },
+  "officialRows": 606,
+  "existingMekoBefore": 89,
+  "READY": 526,
+  "UPDATE": 79,
+  "DUPLICATE": 0,
+  "CONFLICT": 1,
+  "REVIEW": 0,
+  "insertedParts": 526,
+  "insertedListings": 526,
+  "insertedInventory": 526,
+  "updatedOfficialFields": 79,
+  "unmatchedExistingMeko": 10,
+  "rowErrors": [],
+  "sellingPriceInvented": 0,
+  "mrpInvented": 0,
+  "stockInvented": 0,
+  "imagesInvented": 0,
+  "gstInvented": 0,
+  "hsnInvented": 0,
+  "before": {
+    "parts": 8491,
+    "listings": 8488,
+    "inventory": 8488
+  },
+  "after": {
+    "parts": 9017,
+    "listings": 9014,
+    "inventory": 9014
+  },
+  "mekoParts": 615,
+  "mekoListings": 615,
+  "indiaSalesMekoListings": 615,
+  "mekoStockPositive": 0,
+  "mekoPriced": 0,
+  "mekoUnpriced": 615,
+  "mekoWithMrp": 0,
+  "pensolBefore": 286,
+  "pensolAfter": 286,
+  "menonAfter": 113,
+  "typesenseIndexed": 615,
+  "typesenseBefore": 8491,
+  "typesenseAfter": 9017,
+  "typesenseMeko": 615,
+  "typesenseError": null,
+  "searchChecks": {
+    "101": {
+      "found": 12,
+      "top": "101"
+    },
+    "103": {
+      "found": 13,
+      "top": "103"
+    },
+    "113": {
+      "found": 12,
+      "top": "113"
+    },
+    "M-854": {
+      "found": 3,
+      "top": "M-854"
+    },
+    "M-638": {
+      "found": 5,
+      "top": "M-638"
+    },
+    "M-635 A": {
+      "found": 3,
+      "top": "M-635 A"
+    },
+    "2525 2010 0116": {
+      "found": 2,
+      "top": "M-856"
+    },
+    "TATA ALTROZ WR ASSY": {
+      "found": 16,
+      "top": "1333,9805R"
+    }
+  },
+  "gitCommit": false,
+  "gitPush": false,
+  "heroChanged": false
+}

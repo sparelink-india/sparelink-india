@@ -1,0 +1,52 @@
+{
+  "generatedAt": "2026-09-18T20:39:00.558Z",
+  "ciProducts": {
+    "total": 7237,
+    "withImages": 6764,
+    "withoutImages": 473,
+    "mainImages": 6755,
+    "galleryImages": 0
+  },
+  "imageCleanup": {
+    "totalScanned": 6755,
+    "watermarkedImages": 1377,
+    "watermarksRemoved": 1252,
+    "borderImages": 3310,
+    "bordersRemoved": 3305,
+    "partNumberOverlaysFound": 6502,
+    "partNumberOverlaysRemoved": 6387,
+    "alreadyClean": 109,
+    "manualReview": 1920,
+    "failedBlankMask": 49,
+    "failedRestoredFromBackup": 49,
+    "cleanedWritten": 6474
+  },
+  "backup": {
+    "path": "data/source-catalogue/images/ci/original/",
+    "publicEquivalent": "public/catalogue-images/ci/original/",
+    "originalsBackedUp": 6755
+  },
+  "dataSafety": {
+    "ciPartNumbersPreservedInProductData": "YES",
+    "productDescriptionsPreserved": "YES",
+    "productDataChanged": "NO",
+    "pricingChanged": "NO",
+    "stockChanged": "NO",
+    "gstChanged": "NO",
+    "hsnChanged": "NO",
+    "firmChanged": "NO"
+  },
+  "quality": {
+    "typecheck": "PASS",
+    "lint": "PASS for cleanup script; repo lint still fails on unrelated scripts/extract-hero-debug.js require() error plus existing hook warnings",
+    "build": "PASS",
+    "npmTest": "PASS (52/52)"
+  },
+  "notes": [
+    "Website images are SKU files in data/source-catalogue/images (junctioned to public/catalogue-images). Filenames/URLs were not changed.",
+    "Overlapping CI watermarks on chrome/plastic were not inpainted; those files are CLEANED_MANUAL_REVIEW or MANUAL_REVIEW.",
+    "STARLINKS-style repeating watermarks were left original (MANUAL_REVIEW).",
+    "49 images produced a near-blank mask and were restored to the untouched original.",
+    "Search logic was not modified."
+  ]
+}
