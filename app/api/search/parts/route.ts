@@ -342,9 +342,15 @@ export async function GET(request: NextRequest) {
           seen.add(key);
           merged.push(hit);
         }
+
+        if (merged.length > 0) {
+          break
+        }
       }
       return { hits: merged, found: Math.max(found, merged.length), facet_counts: facetCounts };
     }
+
+    const sessionPromise = getServerSession();
 
     let searchResults;
     if (intent.isPartNumberQuery && typesenseQuery !== "*") {
@@ -479,13 +485,13 @@ export async function GET(request: NextRequest) {
     const rankedHits = rankSearchHits(intent, hits, documentFromHit);
     const documents = rankedHits.map(documentFromHit);
 
-    const session = await getServerSession();
+    const session = await sessionPromise;
     const isAdmin = session?.user?.role === "admin";
-    const pricing = await resolveStorefrontPricing(session);
     const revealPensolRates = session?.user?.role === "buyer";
-    const pensolConfigs = await resolvePensolConfigsForUser(
-      revealPensolRates ? session.user.id : null,
-    );
+    const [pricing, pensolConfigs] = await Promise.all([
+      resolveStorefrontPricing(session),
+      resolvePensolConfigsForUser(revealPensolRates ? session.user.id : null),
+    ]);
     const typesenseIds = [
       ...new Set(documents.map((doc) => doc.id).filter((id): id is string => Boolean(id))),
     ];
@@ -549,57 +555,55 @@ export async function GET(request: NextRequest) {
       ? resolvedPartIds.filter((partId) => compatibleIdSet.has(partId))
       : resolvedPartIds;
 
-    const listings =
+    const [listings, compatibility] =
       matchedPartIds.length > 0
-        ? await db
-            .select({
-              id: dealerListing.id,
-              partId: dealerListing.partId,
-              dealerId: dealerListing.dealerId,
-              dealerName: dealer.businessName,
-              firmId: dealerListing.firmId,
-              firmName: firm.name,
-              firmCode: firm.code,
-              sku: dealerListing.sku,
-              pricePaise: dealerListing.pricePaise,
-              mrpPaise: dealerListing.mrpPaise,
-              status: dealerListing.status,
-              stock: inventory.quantity,
-            })
-            .from(dealerListing)
-            .innerJoin(dealer, eq(dealerListing.dealerId, dealer.id))
-            .leftJoin(firm, eq(dealerListing.firmId, firm.id))
-            .leftJoin(
-              inventory,
-              eq(dealerListing.id, inventory.dealerListingId),
-            )
-            .where(
-              isAdmin
-                ? inArray(dealerListing.partId, matchedPartIds)
-                : and(
-                    inArray(dealerListing.partId, matchedPartIds),
-                    eq(dealerListing.status, "active"),
-                  ),
-            )
-        : [];
-
-    const compatibility =
-      matchedPartIds.length > 0
-        ? await db
-            .select({
-              partId: partVehicleCompatibility.partId,
-              vehicleId: vehicle.id,
-              make: vehicle.make,
-              model: vehicle.model,
-              variant: vehicle.variant,
-            })
-            .from(partVehicleCompatibility)
-            .innerJoin(
-              vehicle,
-              eq(partVehicleCompatibility.vehicleId, vehicle.id),
-            )
-            .where(inArray(partVehicleCompatibility.partId, matchedPartIds))
-        : [];
+        ? await Promise.all([
+            db
+              .select({
+                id: dealerListing.id,
+                partId: dealerListing.partId,
+                dealerId: dealerListing.dealerId,
+                dealerName: dealer.businessName,
+                firmId: dealerListing.firmId,
+                firmName: firm.name,
+                firmCode: firm.code,
+                sku: dealerListing.sku,
+                pricePaise: dealerListing.pricePaise,
+                mrpPaise: dealerListing.mrpPaise,
+                status: dealerListing.status,
+                stock: inventory.quantity,
+              })
+              .from(dealerListing)
+              .innerJoin(dealer, eq(dealerListing.dealerId, dealer.id))
+              .leftJoin(firm, eq(dealerListing.firmId, firm.id))
+              .leftJoin(
+                inventory,
+                eq(dealerListing.id, inventory.dealerListingId),
+              )
+              .where(
+                isAdmin
+                  ? inArray(dealerListing.partId, matchedPartIds)
+                  : and(
+                      inArray(dealerListing.partId, matchedPartIds),
+                      eq(dealerListing.status, "active"),
+                    ),
+              ),
+            db
+              .select({
+                partId: partVehicleCompatibility.partId,
+                vehicleId: vehicle.id,
+                make: vehicle.make,
+                model: vehicle.model,
+                variant: vehicle.variant,
+              })
+              .from(partVehicleCompatibility)
+              .innerJoin(
+                vehicle,
+                eq(partVehicleCompatibility.vehicleId, vehicle.id),
+              )
+              .where(inArray(partVehicleCompatibility.partId, matchedPartIds)),
+          ])
+        : [[], []];
 
     const listingsByPartId = new Map<string, typeof listings>();
     const compatibilityByPartId = new Map<string, typeof compatibility>();
