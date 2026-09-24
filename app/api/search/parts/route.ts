@@ -366,24 +366,25 @@ export async function GET(request: NextRequest) {
           description: part.description,
           brand: part.brand,
           category: partCategory.name,
+          isPublished: part.isPublished,
+          approvalStatus: part.approvalStatus,
         })
         .from(part)
         .leftJoin(partCategory, eq(part.categoryId, partCategory.id))
-        .where(
-          and(
-            sql`${part.specifications}::jsonb ->> 'hsn' = ${hsnQuery}`,
-            hsnIsAdmin
-              ? undefined
-              : and(
-                  eq(part.isPublished, true),
-                  eq(part.approvalStatus, "APPROVED"),
-                ),
-          ),
-        );
+        .where(sql`${part.specifications}::jsonb ->> 'hsn' = ${hsnQuery}`);
 
-      searchResults = hsnParts.length
+      const visibleHsnParts = hsnIsAdmin
+        ? hsnParts
+        : hsnParts.filter((row) =>
+            isCustomerVisibleProduct({
+              isPublished: row.isPublished,
+              approvalStatus: row.approvalStatus,
+            }),
+          );
+
+      searchResults = visibleHsnParts.length
         ? {
-            hits: hsnParts.map((row) => ({
+            hits: visibleHsnParts.map((row) => ({
               document: {
                 id: row.id,
                 part_number: row.partNumber,
@@ -393,7 +394,7 @@ export async function GET(request: NextRequest) {
                 category: row.category ?? undefined,
               },
             })),
-            found: hsnParts.length,
+            found: visibleHsnParts.length,
             facet_counts: [],
           }
         : intent.isPartNumberQuery && typesenseQuery !== "*"

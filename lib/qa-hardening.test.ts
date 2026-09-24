@@ -124,6 +124,13 @@ describe("qa hardening — source/commercial visibility", () => {
       }),
       true,
     );
+    assert.equal(
+      isCustomerVisibleProduct({
+        isPublished: true,
+        approvalStatus: "approved",
+      }),
+      true,
+    );
     const parts = filterSearchPartsForCustomer([
       {
         id: "1",
