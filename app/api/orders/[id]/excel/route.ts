@@ -12,6 +12,7 @@ import {
 import { extractGSTRate } from "@/lib/gst";
 import { canAccessCustomerOrder } from "@/lib/order-architecture";
 import { splitInclusiveGst } from "@/lib/party-pricing";
+import { denyIfMustChangePassword } from "@/lib/require-role";
 import * as XLSX from "xlsx";
 
 export async function GET(
@@ -22,6 +23,9 @@ export async function GET(
   if (!session) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
+
+  const blocked = await denyIfMustChangePassword(session.user.id);
+  if (blocked) return blocked;
 
   const { id: orderId } = await params;
   const db = getDb();

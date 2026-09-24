@@ -54,9 +54,8 @@ async function handleSearch(request: NextRequest, q: string) {
     const partNumber = hitPartNumber(hit);
     const listing = partNumber ? listingMap.get(partNumber) : null;
     // Strip storefront listing payloads; expose only B2B-safe selling fields.
-    const { listings: _drop, ...rest } = hit as SearchHit & {
-      listings?: unknown;
-    };
+    const rest = { ...hit };
+    delete (rest as { listings?: unknown }).listings;
     return {
       ...rest,
       partNumber: partNumber || null,

@@ -4,6 +4,7 @@ import { and, eq, or } from "drizzle-orm";
 import { order, orderItem } from "@/drizzle/schema";
 import { getServerSession } from "@/lib/auth-server";
 import { getDb } from "@/lib/db";
+import { denyIfMustChangePassword } from "@/lib/require-role";
 
 export async function GET(request: NextRequest) {
   const session = await getServerSession();
@@ -16,6 +17,9 @@ export async function GET(request: NextRequest) {
       { status: 403 },
     );
   }
+
+  const blocked = await denyIfMustChangePassword(session.user.id);
+  if (blocked) return blocked;
 
   const q = request.nextUrl.searchParams.get("q")?.trim() || "";
   if (!q) {

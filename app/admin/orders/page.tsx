@@ -1,6 +1,14 @@
 "use client";
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import { InvoiceDownloadLinks } from "@/components/invoice-download-links";
+
+type FirmAllocation = {
+  firmOrderId: string;
+  firmName: string;
+  firmCode?: string;
+  amountPaise?: number;
+};
 
 type OrderItem = {
   id: string;
@@ -11,6 +19,7 @@ type OrderItem = {
   totalPaise: number;
   itemCount: number;
   createdAt: string;
+  firmAllocations?: FirmAllocation[];
 };
 
 export default function OrdersPage() {
@@ -129,14 +138,14 @@ export default function OrdersPage() {
                       {new Date(o.createdAt).toLocaleDateString("en-IN")}
                     </td>
                     <td className="px-4 py-3 text-right">
-                      <a
-                        href={`/api/orders/${o.id}/invoice`}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="inline-flex items-center gap-1 rounded-md border border-zinc-200 bg-white px-2.5 py-1 text-xs font-semibold text-zinc-700 hover:bg-zinc-100"
-                      >
-                        <span>🧾</span> Invoice
-                      </a>
+                      <InvoiceDownloadLinks
+                        orderId={o.id}
+                        allocations={o.firmAllocations ?? []}
+                        className="inline-flex flex-wrap justify-end gap-1.5"
+                        linkClassName="inline-flex items-center gap-1 rounded-md border border-zinc-200 bg-white px-2.5 py-1 text-xs font-semibold text-zinc-700 hover:bg-zinc-100"
+                        singleLabel="🧾 Invoice"
+                        multiLabelPrefix="🧾"
+                      />
                     </td>
                   </tr>
                 ))}

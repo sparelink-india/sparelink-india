@@ -1,5 +1,5 @@
 ﻿import { NextRequest, NextResponse } from "next/server";
-import { desc, eq } from "drizzle-orm";
+import { and, desc, eq, inArray, sql } from "drizzle-orm";
 import { randomUUID } from "node:crypto";
 import { getServerSession } from "@/lib/auth-server";
 import { getDb } from "@/lib/db";
@@ -7,6 +7,7 @@ import {
   order,
   manualPaymentSubmission,
   orderItem,
+  payment,
   firm,
   firmOrder,
 } from "@/drizzle/schema";
@@ -14,9 +15,11 @@ import {
   getBankPaymentConfig,
   getFirmBankPaymentConfig,
 } from "@/lib/bank-payment-config";
-import { isCashfreeConfiguredForFirm } from "@/lib/cashfree";
+import { isCashfreeConfiguredForFirm, ACTIVE_CASHFREE_PAYMENT_STATUSES } from "@/lib/cashfree";
 import { isAllowedFirmId } from "@/lib/firms";
 import { canAccessCustomerOrder } from "@/lib/order-architecture";
+import { denyIfMustChangePassword } from "@/lib/require-role";
+import { isBankTransferPaymentMethod } from "@/lib/payment-security";
 
 export async function GET(
   request: NextRequest,
@@ -27,6 +30,9 @@ export async function GET(
   if (!session) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
+
+  const blocked = await denyIfMustChangePassword(session.user.id);
+  if (blocked) return blocked;
 
   const { id: orderId } = await params;
   const db = getDb();
@@ -88,6 +94,7 @@ export async function GET(
       firmCode: firm.code,
       allocationNumber: firmOrder.allocationNumber,
       amountPaise: firmOrder.amountPaise,
+       paymentMethod: firmOrder.paymentMethod,
       fulfillmentStatus: firmOrder.fulfillmentStatus,
       paymentStatus: firmOrder.paymentStatus,
       paymentAccountingReference: firmOrder.paymentAccountingReference,
@@ -143,6 +150,9 @@ export async function POST(
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
+  const blocked = await denyIfMustChangePassword(session.user.id);
+  if (blocked) return blocked;
+
   const { id: orderId } = await params;
   const db = getDb();
 
@@ -163,17 +173,32 @@ export async function POST(
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
-  if (orderRecord.paymentMethod === "cash_on_delivery") {
+  if (!isBankTransferPaymentMethod(orderRecord.paymentMethod)) {
     return NextResponse.json(
-      { error: "Cash on delivery orders do not use UTR submission." },
+      { error: "UTR submission is only available for bank transfer orders." },
       { status: 400 },
+    );
+  }
+
+  if (
+    orderRecord.status === "cancelled" ||
+    orderRecord.status === "returned" ||
+    orderRecord.paymentStatus === "paid"
+  ) {
+    return NextResponse.json(
+      { error: "This order cannot accept a manual payment submission." },
+      { status: 409 },
     );
   }
 
   try {
     const formData = await request.formData();
     const firmOrderId = formData.get("firmOrderId")?.toString().trim() ?? "";
-    const utrReference = formData.get("utrReference")?.toString().trim();
+    const utrReference = formData
+      .get("utrReference")
+      ?.toString()
+      .replace(/\s+/g, "")
+      .toUpperCase();
     const paymentDateStr = formData.get("paymentDate")?.toString().trim();
 
     if (!firmOrderId) {
@@ -237,21 +262,108 @@ export async function POST(
       );
     }
 
+    if (
+      !isBankTransferPaymentMethod(allocation.paymentMethod) ||
+      allocation.fulfillmentStatus === "cancelled"
+    ) {
+      return NextResponse.json(
+        { error: "This allocation does not accept manual bank transfers." },
+        { status: 409 },
+      );
+    }
+
     const submissionId = randomUUID();
 
-    await db.insert(manualPaymentSubmission).values({
-      id: submissionId,
-      orderId: orderRecord.id,
-      firmOrderId: allocation.id,
-      firmId: allocation.firmId,
-      buyerId: orderRecord.buyerId,
-      amountPaise: allocation.amountPaise,
-      utrReference,
-      paymentDate,
-      proofFileUrl: null,
-      proofFileName: null,
-      proofFileType: null,
-      status: "submitted",
+    await db.transaction(async (tx) => {
+      const orderRows = await tx
+        .select()
+        .from(order)
+        .where(eq(order.id, orderRecord.id))
+        .for("update");
+      const lockedOrder = orderRows[0];
+      if (
+        !lockedOrder ||
+        lockedOrder.paymentMethod !== "bank_transfer" ||
+        lockedOrder.status === "cancelled" ||
+        lockedOrder.status === "returned" ||
+        lockedOrder.paymentStatus === "paid"
+      ) {
+        throw new Error("ORDER_NOT_PAYABLE");
+      }
+
+      const allocationRows = await tx
+        .select()
+        .from(firmOrder)
+        .where(eq(firmOrder.id, allocation.id))
+        .for("update");
+      const lockedAllocation = allocationRows[0];
+      if (
+        !lockedAllocation ||
+        lockedAllocation.orderId !== lockedOrder.id ||
+        lockedAllocation.paymentMethod !== "bank_transfer" ||
+        lockedAllocation.fulfillmentStatus === "cancelled" ||
+        lockedAllocation.fulfillmentStatus === "returned" ||
+        lockedAllocation.paymentStatus === "paid"
+      ) {
+        throw new Error("ALLOCATION_NOT_PAYABLE");
+      }
+
+      const activeCashfree = await tx
+        .select({ id: payment.id })
+        .from(payment)
+        .where(
+          and(
+            eq(payment.firmOrderId, lockedAllocation.id),
+            eq(payment.provider, "cashfree"),
+            inArray(payment.status, [...ACTIVE_CASHFREE_PAYMENT_STATUSES]),
+          ),
+        )
+        .limit(1);
+      if (activeCashfree.length) {
+        throw new Error("ONLINE_PAYMENT_ALREADY_STARTED");
+      }
+
+      await tx.execute(
+        sql`select pg_advisory_xact_lock(hashtext(${utrReference}))`,
+      );
+
+      const duplicateUtr = await tx
+        .select({ id: manualPaymentSubmission.id })
+        .from(manualPaymentSubmission)
+        .where(eq(manualPaymentSubmission.utrReference, utrReference))
+        .limit(1);
+      if (duplicateUtr.length) {
+        throw new Error("UTR_ALREADY_USED");
+      }
+
+      const pendingSubmission = await tx
+        .select({ id: manualPaymentSubmission.id })
+        .from(manualPaymentSubmission)
+        .where(
+          and(
+            eq(manualPaymentSubmission.firmOrderId, lockedAllocation.id),
+            eq(manualPaymentSubmission.status, "submitted"),
+          ),
+        )
+        .limit(1);
+      if (pendingSubmission.length) {
+        throw new Error("SUBMISSION_ALREADY_EXISTS");
+      }
+
+      await tx.insert(manualPaymentSubmission).values({
+        id: submissionId,
+        orderId: lockedOrder.id,
+        firmOrderId: lockedAllocation.id,
+        firmId: lockedAllocation.firmId,
+        buyerId: lockedOrder.buyerId,
+        amountPaise: lockedAllocation.amountPaise,
+        utrReference,
+        paymentDate,
+        proofFileUrl: null,
+        proofFileName: null,
+        proofFileType: null,
+        status: "submitted",
+      });
     });
 
     return NextResponse.json({
@@ -260,6 +372,38 @@ export async function POST(
       message: "Payment details submitted successfully. Awaiting admin review.",
     });
   } catch (error) {
+    const message = error instanceof Error ? error.message : "";
+    if (message === "ORDER_NOT_PAYABLE") {
+      return NextResponse.json(
+        { error: "This order cannot accept a manual payment submission." },
+        { status: 409 },
+      );
+    }
+    if (message === "ALLOCATION_NOT_PAYABLE") {
+      return NextResponse.json(
+        { error: "This firm allocation cannot accept a manual payment." },
+        { status: 409 },
+      );
+    }
+    if (message === "ONLINE_PAYMENT_ALREADY_STARTED") {
+      return NextResponse.json(
+        { error: "Online payment is already in progress for this allocation." },
+        { status: 409 },
+      );
+    }
+    if (message === "UTR_ALREADY_USED") {
+      return NextResponse.json(
+        { error: "This UTR has already been submitted." },
+        { status: 409 },
+      );
+    }
+    if (message === "SUBMISSION_ALREADY_EXISTS") {
+      return NextResponse.json(
+        { error: "A payment submission is already awaiting review." },
+        { status: 409 },
+      );
+    }
+
     console.error("Manual payment submission error:", error);
 
     return NextResponse.json(

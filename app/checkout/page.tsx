@@ -82,11 +82,18 @@ export default function CheckoutPage() {
   const [transportGstin, setTransportGstin] = useState("");
   const [addressPrefilled, setAddressPrefilled] = useState(false);
   const [keyboardOpen, setKeyboardOpen] = useState(false);
-  const idempotencyKeyRef = useRef(
-    typeof crypto !== "undefined" && "randomUUID" in crypto
-      ? crypto.randomUUID()
-      : `checkout-${Date.now()}`,
-  );
+  const [checkoutKey] = useState(() => {
+    if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") {
+      return crypto.randomUUID();
+    }
+    if (typeof crypto !== "undefined" && typeof crypto.getRandomValues === "function") {
+      const values = new Uint32Array(4);
+      crypto.getRandomValues(values);
+      return `checkout-${Array.from(values, (value) => value.toString(16)).join("")}`;
+    }
+    return `checkout-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+  });
+  const idempotencyKeyRef = useRef<string>(checkoutKey);
 
   const gstinValidation = gstinInput.trim()
     ? validateGSTIN(gstinInput)
@@ -401,6 +408,7 @@ export default function CheckoutPage() {
         {!loading && cart && cart.items.length > 0 && (
           <form
             id="checkout-form"
+            aria-busy={submitting}
             onSubmit={placeOrder}
             className="mt-6 grid gap-5 sm:mt-8 lg:grid-cols-[1fr_360px] lg:gap-8"
           >

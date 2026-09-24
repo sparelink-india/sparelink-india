@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { getServerSession } from "@/lib/auth-server";
 import { getDb } from "@/lib/db";
-import { user, order, customerProfile, dealer } from "@/drizzle/schema";
+import { user, order, customerProfile, dealer, session as authSession } from "@/drizzle/schema";
 import { count, desc, eq } from "drizzle-orm";
 import { applyInclusiveDiscount, parseDiscountPercentInput } from "@/lib/party-pricing";
 import {
@@ -224,13 +224,19 @@ export async function PATCH(request: Request) {
     }
   }
 
-  await db
-    .update(user)
-    .set({
-      role: newRole,
-      updatedAt: new Date(),
-    })
-    .where(eq(user.id, userId));
+  await db.transaction(async (tx) => {
+    await tx
+      .update(user)
+      .set({
+        role: newRole,
+        updatedAt: new Date(),
+      })
+      .where(eq(user.id, userId));
+
+    if (action === "suspend") {
+      await tx.delete(authSession).where(eq(authSession.userId, userId));
+    }
+  });
 
   return NextResponse.json({
     success: true,

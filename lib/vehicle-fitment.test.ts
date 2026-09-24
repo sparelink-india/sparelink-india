@@ -5,6 +5,7 @@ import {
   groupVehiclesByBrand,
   matchVehiclesForQuery,
   parseFitmentFuel,
+  queryCouldMatchVehicleName,
   slugifyFitment,
 } from "./vehicle-fitment";
 
@@ -73,5 +74,12 @@ describe("vehicle fitment grouping", () => {
     const variant = matchVehiclesForQuery("Hyundai Creta 1.5 Petrol", vehicles);
     assert.equal(variant?.mode, "variant");
     assert.deepEqual(variant?.vehicleIds, ["vehicle-hyundai-creta"]);
+  });
+
+  it("skips catalogue matching for empty or generic vehicle words", () => {
+    assert.equal(queryCouldMatchVehicleName(""), false);
+    assert.equal(queryCouldMatchVehicleName("car"), false);
+    assert.equal(queryCouldMatchVehicleName("Creta"), true);
+    assert.equal(matchVehiclesForQuery("car", []), null);
   });
 });

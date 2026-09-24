@@ -7,6 +7,7 @@ import type { SearchHit, SearchListing } from "@/components/search-experience";
 import type { MessageKey } from "@/lib/i18n";
 import { displayProductTitle } from "@/lib/product-detail-fields";
 import { isAuthoritativeSellingPricePaise } from "@/lib/storefront-price-display";
+import { selectPreferredStorefrontListing } from "@/lib/storefront-listing-selection";
 
 function stockLabel(
   listing: SearchListing | undefined,
@@ -30,6 +31,35 @@ function listingImageSrc(hit: SearchHit, listing: SearchListing | undefined) {
   );
 }
 
+function formatPaise(value: number | null | undefined) {
+  return typeof value === "number" && Number.isFinite(value) && value > 0
+    ? `₹${(value / 100).toLocaleString("en-IN")}`
+    : "—";
+}
+
+function listingListPaise(listing: SearchListing | undefined) {
+  const value = listing?.listInclusivePaise ?? listing?.pricePaise;
+  return typeof value === "number" && value > 0 ? value : null;
+}
+
+function discountText(listing: SearchListing | undefined) {
+  return typeof listing?.discountPercent === "number"
+    ? `${Math.round(listing.discountPercent)}%`
+    : "—";
+}
+
+function MobileCartIcon({ className = "h-4 w-4" }: { className?: string }) {
+  return (
+    <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.8" aria-hidden>
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        d="M3 4h2l1.4 10.2a2 2 0 0 0 2 1.8h7.8a2 2 0 0 0 1.9-1.4L20 8H6.2M9 20h.01M17 20h.01"
+      />
+    </svg>
+  );
+}
+
 export function SearchProductCard({
   hit,
   query,
@@ -42,7 +72,7 @@ export function SearchProductCard({
   hit: SearchHit;
   query: string;
   addingId: string;
-  layout?: "grid" | "list";
+  layout?: "grid" | "list" | "mobile";
   /** Card index in the current page; first few stay eager for first paint. */
   index?: number;
   onOpen: () => void;
@@ -50,7 +80,7 @@ export function SearchProductCard({
 }) {
   const { t } = useI18n();
   const partData = hit.document ?? {};
-  const listing = hit.listings?.[0];
+  const listing = selectPreferredStorefrontListing(hit.listings);
   const title = displayProductTitle(partData.name || t("product.partFallback"), partData.part_number);
   const priced = isAuthoritativeSellingPricePaise(
     listing?.listInclusivePaise,
@@ -84,6 +114,88 @@ export function SearchProductCard({
   ) : (
     <p className="text-sm font-extrabold text-slate-800">{t("price.onRequest")}</p>
   );
+
+  if (layout === "mobile") {
+    const listPaise = listingListPaise(listing);
+    const partMeta = [
+      partData.part_number ? `Part No: ${partData.part_number}` : "Part No: —",
+      listing?.gstRate != null ? `GST: ${listing.gstRate}%` : "GST: —",
+      listing?.hsn ? `HSN: ${listing.hsn}` : "HSN: —",
+    ].join(" • ");
+
+    return (
+      <article className="rounded-xl border border-[#7a1233] bg-white p-3 shadow-sm">
+        <div className="flex items-start gap-3">
+          <button
+            type="button"
+            className="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-[#7a1233]"
+            onClick={onOpen}
+            aria-label={title}
+          >
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={image}
+              alt=""
+              width={48}
+              height={48}
+              loading={loading}
+              decoding="async"
+              className="h-full w-full object-contain p-1"
+              onError={(event) => {
+                const el = event.currentTarget as HTMLImageElement;
+                const original = hit.imageUrl || listing?.imageUrl;
+                if (original && el.src !== original) {
+                  el.src = original;
+                  return;
+                }
+                el.src = "/images/products/placeholder.svg";
+              }}
+            />
+          </button>
+          <div className="min-w-0 flex-1">
+            <button
+              type="button"
+              className="block w-full truncate text-left text-[17px] font-extrabold leading-tight text-slate-950 hover:text-[#7a1233]"
+              onClick={onOpen}
+              title={title}
+            >
+              <SearchHighlight text={title} query={query} />
+            </button>
+            <p className="mt-1 truncate text-[11px] font-medium text-slate-600">{partMeta}</p>
+            <div className="mt-3 flex flex-wrap items-center gap-1.5">
+              <span className="rounded-md bg-[#f5dfe3] px-2 py-1 text-[11px] font-bold text-[#7a1233]">
+                LIST {formatPaise(listPaise)}
+              </span>
+              <span className="rounded-md bg-slate-100 px-2 py-1 text-[11px] font-bold text-slate-700">
+                MRP {formatPaise(listing?.mrpPaise)}
+              </span>
+              <span className="rounded-md bg-[#e5f1d9] px-2 py-1 text-[11px] font-bold text-[#4b7d1c]">
+                DISC {discountText(listing)}
+              </span>
+              <button
+                type="button"
+                disabled={!canAdd || addingId === listing?.id}
+                onClick={() => listing && onAddToCart(listing.id, title)}
+                className="ml-auto inline-flex min-h-9 items-center gap-1.5 rounded-lg bg-[#7a1233] px-3 text-xs font-bold text-white hover:bg-[#611029] disabled:cursor-not-allowed disabled:bg-slate-200 disabled:text-slate-500"
+                aria-label={`${t("product.addToCart")}: ${title}`}
+              >
+                {canAdd ? (
+                  <>
+                    <MobileCartIcon />
+                    {t("product.addToCart")}
+                  </>
+                ) : priced ? (
+                  t("product.outOfStock")
+                ) : (
+                  t("price.onRequest")
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      </article>
+    );
+  }
 
   if (layout === "list") {
     return (

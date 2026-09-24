@@ -1,4 +1,4 @@
-import { and, eq } from "drizzle-orm";
+import { and, eq, ne } from "drizzle-orm";
 import { NextRequest, NextResponse } from "next/server";
 
 import { firmOrder, order, payment } from "@/drizzle/schema";
@@ -14,12 +14,22 @@ import {
 import { getDb } from "@/lib/db";
 import { isAllowedFirmId } from "@/lib/firms";
 import { syncParentOrderPaymentStatus } from "@/lib/payment-rollup";
+import { canAccessCustomerOrder } from "@/lib/order-architecture";
+import { denyIfMustChangePassword } from "@/lib/require-role";
+import {
+  canAcceptPaymentForAllocationStatus,
+  canAcceptPaymentForOrderStatus,
+  isCashfreePaymentMethod,
+} from "@/lib/payment-security";
 
 export async function GET(request: NextRequest) {
   const session = await getServerSession();
-  if (!session) {
+  if (!session || session.user.role === "suspended") {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
+
+  const blocked = await denyIfMustChangePassword(session.user.id);
+  if (blocked) return blocked;
 
   const orderId = request.nextUrl.searchParams.get("orderId")?.trim() ?? "";
   const firmOrderId =
@@ -44,10 +54,26 @@ export async function GET(request: NextRequest) {
     }
 
     if (
-      session.user.role !== "admin" &&
-      orderRecord.buyerId !== session.user.id
+      !canAccessCustomerOrder(
+        { role: session.user.role, id: session.user.id },
+        orderRecord.buyerId,
+      )
     ) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    }
+
+    if (!isCashfreePaymentMethod(orderRecord.paymentMethod)) {
+      return NextResponse.json(
+        { error: "This order does not use online payment." },
+        { status: 409 },
+      );
+    }
+
+    if (!canAcceptPaymentForOrderStatus(orderRecord.status)) {
+      return NextResponse.json(
+        { error: "This order cannot accept payment." },
+        { status: 409 },
+      );
     }
 
     const allocation = await db.query.firmOrder.findFirst({
@@ -68,6 +94,16 @@ export async function GET(request: NextRequest) {
       );
     }
 
+    if (
+      !isCashfreePaymentMethod(allocation.paymentMethod) ||
+      !canAcceptPaymentForAllocationStatus(allocation.fulfillmentStatus)
+    ) {
+      return NextResponse.json(
+        { error: "This allocation cannot accept online payment." },
+        { status: 409 },
+      );
+    }
+
     const paymentRecord = await db.query.payment.findFirst({
       where: and(
         eq(payment.firmOrderId, allocation.id),
@@ -80,6 +116,15 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({
         status: allocation.paymentStatus === "paid" ? "paid" : "unpaid",
         firmOrderPaymentStatus: allocation.paymentStatus,
+      });
+    }
+
+    if (allocation.paymentStatus === "paid") {
+      return NextResponse.json({
+        status: "paid",
+        gatewayStatus: paymentRecord.gatewayStatus,
+        providerOrderId: paymentRecord.providerOrderId,
+        firmOrderPaymentStatus: "paid",
       });
     }
 
@@ -119,37 +164,29 @@ export async function GET(request: NextRequest) {
     const now = new Date();
 
     if (mapped === "paid") {
+      if (paymentRecord.currency !== "INR") {
+        return NextResponse.json(
+          { error: "Payment currency could not be verified." },
+          { status: 409 },
+        );
+      }
+
       if (
         gatewayOrder.orderAmountPaise === null ||
         gatewayOrder.orderAmountPaise !== paymentRecord.amountPaise ||
         paymentRecord.amountPaise !== allocation.amountPaise
       ) {
-        if (
-          gatewayOrder.orderAmountPaise !== null &&
-          gatewayOrder.orderAmountPaise !== paymentRecord.amountPaise
-        ) {
-          console.error("Cashfree amount mismatch", {
-            firmOrderId: allocation.id,
-            expectedPaise: paymentRecord.amountPaise,
-          });
-          return NextResponse.json(
-            { error: "Payment amount could not be verified." },
-            { status: 409 },
-          );
-        }
-
-        return NextResponse.json({
-          status: "pending",
-          gatewayStatus: gatewayOrder.orderStatus,
-          providerOrderId: paymentRecord.providerOrderId,
-          firmOrderPaymentStatus: allocation.paymentStatus,
+        console.error("Cashfree amount mismatch", {
+          firmOrderId: allocation.id,
+          expectedPaise: paymentRecord.amountPaise,
         });
+        return NextResponse.json(
+          { error: "Payment amount could not be verified." },
+          { status: 409 },
+        );
       }
 
-      if (
-        gatewayOrder.orderCurrency &&
-        gatewayOrder.orderCurrency !== "INR"
-      ) {
+      if (gatewayOrder.orderCurrency !== "INR") {
         return NextResponse.json(
           { error: "Payment currency could not be verified." },
           { status: 409 },
@@ -157,6 +194,36 @@ export async function GET(request: NextRequest) {
       }
 
       const applied = await db.transaction(async (tx) => {
+        const parentRows = await tx
+          .select()
+          .from(order)
+          .where(eq(order.id, orderRecord.id))
+          .for("update");
+        const lockedParent = parentRows[0];
+        if (
+          !lockedParent ||
+          !isCashfreePaymentMethod(lockedParent.paymentMethod) ||
+          !canAcceptPaymentForOrderStatus(lockedParent.status)
+        ) {
+          throw new Error("ORDER_NOT_PAYABLE");
+        }
+
+        const allocationRows = await tx
+          .select()
+          .from(firmOrder)
+          .where(eq(firmOrder.id, allocation.id))
+          .for("update");
+        const lockedAllocation = allocationRows[0];
+        if (
+          !lockedAllocation ||
+          lockedAllocation.orderId !== lockedParent.id ||
+          lockedAllocation.amountPaise !== paymentRecord.amountPaise ||
+          !isCashfreePaymentMethod(lockedAllocation.paymentMethod) ||
+          !canAcceptPaymentForAllocationStatus(lockedAllocation.fulfillmentStatus)
+        ) {
+          throw new Error("ALLOCATION_NOT_PAYABLE");
+        }
+
         const paymentRows = await tx
           .select()
           .from(payment)
@@ -260,6 +327,7 @@ export async function GET(request: NextRequest) {
           and(
             eq(firmOrder.id, allocation.id),
             eq(firmOrder.orderId, orderRecord.id),
+            ne(firmOrder.paymentStatus, "paid"),
           ),
         );
     }
@@ -274,6 +342,17 @@ export async function GET(request: NextRequest) {
           : mapped,
     });
   } catch (error) {
+    if (
+      error instanceof Error &&
+      (error.message === "ORDER_NOT_PAYABLE" ||
+        error.message === "ALLOCATION_NOT_PAYABLE")
+    ) {
+      return NextResponse.json(
+        { error: "This order or allocation can no longer accept payment." },
+        { status: 409 },
+      );
+    }
+
     if (error instanceof Error && error.message === "PAYMENT_GUARD") {
       return NextResponse.json(
         { error: "Payment could not be updated safely." },

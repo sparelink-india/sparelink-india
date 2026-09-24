@@ -8,6 +8,7 @@ import { useI18n } from "@/components/preferences-provider";
 import { WhatsAppIcon } from "@/components/whatsapp-cta";
 import type { MessageKey } from "@/lib/i18n";
 import { isAuthoritativeSellingPricePaise } from "@/lib/storefront-price-display";
+import { selectPreferredStorefrontListing } from "@/lib/storefront-listing-selection";
 import { getWhatsAppChatUrl } from "@/lib/whatsapp";
 
 type Listing = {
@@ -179,7 +180,7 @@ export function ProductDetailModal({
     return () => controller.abort();
   }, [open, partId, sku, t]);
 
-  const listing = payload?.listings[0];
+  const listing = selectPreferredStorefrontListing(payload?.listings);
   const priced = isAuthoritativeSellingPricePaise(
     listing?.listInclusivePaise,
     listing?.netInclusivePaise,

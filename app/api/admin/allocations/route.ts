@@ -17,7 +17,6 @@ const ALLOWED_STATUSES = new Set([
 export async function GET() {
   const auth = await requireAdminApi();
   if (auth.error) return auth.error;
-  const session = auth.session;
 
   const db = getDb();
 
@@ -99,6 +98,16 @@ export async function PATCH(request: Request) {
     return NextResponse.json(
       { error: "Allocation not found" },
       { status: 404 },
+    );
+  }
+
+  if (
+    existing.fulfillmentStatus === "cancelled" &&
+    fulfillmentStatus !== "cancelled"
+  ) {
+    return NextResponse.json(
+      { error: "Cancelled allocations cannot be reopened." },
+      { status: 409 },
     );
   }
 

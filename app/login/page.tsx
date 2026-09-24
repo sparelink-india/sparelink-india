@@ -102,10 +102,10 @@ export default function LoginPage() {
           </div>
 
           {message ? (
-            <p className="mt-4 rounded-xl bg-emerald-50 p-3 text-sm text-emerald-800">{message}</p>
+            <p role="status" className="mt-4 rounded-xl bg-emerald-50 p-3 text-sm text-emerald-800">{message}</p>
           ) : null}
           {error ? (
-            <p className="mt-4 rounded-xl bg-red-50 p-3 text-sm text-red-700">{error}</p>
+            <p role="alert" className="mt-4 rounded-xl bg-red-50 p-3 text-sm text-red-700">{error}</p>
           ) : null}
         </div>
       </main>

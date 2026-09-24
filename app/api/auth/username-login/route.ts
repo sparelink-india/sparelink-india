@@ -41,6 +41,14 @@ export async function POST(request: Request) {
     const user = result.user as { id: string; role?: string };
     const role = user.role || "buyer";
 
+    if (role === "suspended") {
+      await auth.api.signOut({ headers: request.headers }).catch(() => undefined);
+      return NextResponse.json(
+        { error: "This account is suspended." },
+        { status: 403 },
+      );
+    }
+
     if (expectedRole && role !== expectedRole) {
       await auth.api.signOut({ headers: request.headers }).catch(() => undefined);
       return NextResponse.json(

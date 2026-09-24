@@ -287,7 +287,15 @@ for (let pageNum = 1; pageNum <= doc.numPages; pageNum += 1) {
 await worker.terminate();
 await doc.destroy();
 
-const unique = dedupe(collected.map(({ x, y, _rgba, ...row }) => row));
+const unique = dedupe(
+  collected.map((item) => {
+    const row = { ...item };
+    delete row.x;
+    delete row.y;
+    delete row._rgba;
+    return row;
+  }),
+);
 const READY = unique.filter((row) => row.validationStatus === "READY");
 const REVIEW = unique.filter((row) => row.validationStatus === "REVIEW");
 const summary = {

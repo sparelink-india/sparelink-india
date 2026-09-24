@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
-import { and, count, desc, eq, ne, sql } from "drizzle-orm";
-import { order, orderItem, user } from "@/drizzle/schema";
+import { and, count, desc, eq, inArray, ne, sql } from "drizzle-orm";
+import { firm, firmOrder, order, orderItem, user } from "@/drizzle/schema";
 import { writeAuditLog } from "@/lib/audit";
 import { getServerSession } from "@/lib/auth-server";
 import { getDb } from "@/lib/db";
@@ -8,7 +8,7 @@ import {
   restockInventoryForCancelledOrder,
   shouldRestockOnStatusChange,
 } from "@/lib/order-cancel-restock";
-import { canMutateOrderPaymentStatus } from "@/lib/order-architecture";
+import { canTransitionOrderStatus } from "@/lib/payment-security";
 
 const ALLOWED_STATUSES = new Set([
   "pending",
@@ -21,13 +21,6 @@ const ALLOWED_STATUSES = new Set([
   "placed",
   "processing",
   "completed",
-]);
-
-const ALLOWED_PAYMENT_STATUSES = new Set([
-  "pending",
-  "paid",
-  "failed",
-  "unpaid",
 ]);
 
 export async function GET() {
@@ -55,6 +48,29 @@ export async function GET() {
       .innerJoin(user, eq(order.buyerId, user.id))
       .orderBy(desc(order.createdAt));
 
+    const orderIds = ordersData.map((o) => o.id);
+    const firmAllocations =
+      orderIds.length === 0
+        ? []
+        : await db
+            .select({
+              orderId: firmOrder.orderId,
+              firmOrderId: firmOrder.id,
+              firmName: firm.name,
+              firmCode: firm.code,
+              amountPaise: firmOrder.amountPaise,
+            })
+            .from(firmOrder)
+            .innerJoin(firm, eq(firmOrder.firmId, firm.id))
+            .where(inArray(firmOrder.orderId, orderIds));
+
+    const allocationsByOrder = new Map<string, typeof firmAllocations>();
+    for (const row of firmAllocations) {
+      const list = allocationsByOrder.get(row.orderId) ?? [];
+      list.push(row);
+      allocationsByOrder.set(row.orderId, list);
+    }
+
     const orderWithCounts = await Promise.all(
       ordersData.map(async (o) => {
         const itemResult = await db
@@ -64,6 +80,12 @@ export async function GET() {
         return {
           ...o,
           itemCount: itemResult[0]?.count ?? 0,
+          firmAllocations: (allocationsByOrder.get(o.id) ?? []).map((row) => ({
+            firmOrderId: row.firmOrderId,
+            firmName: row.firmName,
+            firmCode: row.firmCode,
+            amountPaise: row.amountPaise,
+          })),
         };
       }),
     );
@@ -107,19 +129,17 @@ export async function PATCH(request: Request) {
       { status: 400 },
     );
   }
+  if (paymentStatus) {
+    return NextResponse.json(
+      {
+        error:
+          "Payment status must be changed through the verified payment or manual bank-transfer workflow.",
+      },
+      { status: 400 },
+    );
+  }
   if (status && !ALLOWED_STATUSES.has(status)) {
     return NextResponse.json({ error: "Invalid status" }, { status: 400 });
-  }
-  if (paymentStatus) {
-    if (!canMutateOrderPaymentStatus(session.user.role)) {
-      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-    }
-    if (!ALLOWED_PAYMENT_STATUSES.has(paymentStatus)) {
-      return NextResponse.json(
-        { error: "Invalid payment status" },
-        { status: 400 },
-      );
-    }
   }
 
   const db = getDb();
@@ -157,6 +177,12 @@ export async function PATCH(request: Request) {
 
       previousStatus = existing.status;
       previousPaymentStatus = existing.paymentStatus;
+      if (
+        status &&
+        !canTransitionOrderStatus(existing.status, status)
+      ) {
+        throw new Error("INVALID_STATUS_TRANSITION");
+      }
       const doRestock = shouldRestockOnStatusChange(existing.status, status);
       didRestock = doRestock;
 
@@ -191,6 +217,12 @@ export async function PATCH(request: Request) {
   } catch (error) {
     if (error instanceof Error && error.message === "ORDER_NOT_FOUND") {
       return NextResponse.json({ error: "Order not found" }, { status: 404 });
+    }
+    if (error instanceof Error && error.message === "INVALID_STATUS_TRANSITION") {
+      return NextResponse.json(
+        { error: "This order cannot move to the requested status." },
+        { status: 409 },
+      );
     }
     throw error;
   }

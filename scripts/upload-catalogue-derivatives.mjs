@@ -1,7 +1,6 @@
 ﻿import { spawn } from "node:child_process";
 import { readdirSync } from "node:fs";
 import { join } from "node:path";
-import { promisify } from "node:util";
 
 const spawnAsync = (command, args, options = {}) =>
   new Promise((resolve, reject) => {

@@ -1,4 +1,3 @@
-import { createRequire } from "module";
 import { readFileSync } from "fs";
 import path from "path";
 import { pathToFileURL } from "url";

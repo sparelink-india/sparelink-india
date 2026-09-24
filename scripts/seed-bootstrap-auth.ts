@@ -7,13 +7,42 @@ import { hashPassword, verifyPassword } from "better-auth/crypto";
 
 import { USERNAME_ACCOUNTS } from "../lib/auth-flags";
 
-const BOOTSTRAP: Record<string, string> = {
-  "000": "000",
-  "111": "111",
-  "123": "123",
+const bootstrapPasswordEnvironment: Record<string, string> = {
+  "000": "SPARELINK_BOOTSTRAP_PASSWORD_000",
+  "111": "SPARELINK_BOOTSTRAP_PASSWORD_111",
+  "123": "SPARELINK_BOOTSTRAP_PASSWORD_123",
 };
 
+function assertDevelopmentSeedAllowed() {
+  const isProduction =
+    process.env.NODE_ENV === "production" ||
+    process.env.VERCEL_ENV === "production" ||
+    process.env.SPARELINK_ENV === "production";
+  if (isProduction) {
+    throw new Error("Bootstrap auth seeding is disabled in production.");
+  }
+  if (process.env.SPARELINK_BOOTSTRAP_SEED !== "development") {
+    throw new Error(
+      "Set SPARELINK_BOOTSTRAP_SEED=development to run the local bootstrap seed explicitly.",
+    );
+  }
+}
+
+function getBootstrapPassword(username: string) {
+  const environmentName = bootstrapPasswordEnvironment[username];
+  const password = environmentName
+    ? process.env[environmentName]?.trim()
+    : undefined;
+  if (!password || password.length < 12) {
+    throw new Error(
+      `Missing or invalid bootstrap password environment variable for username ${username}.`,
+    );
+  }
+  return password;
+}
+
 async function main() {
+  assertDevelopmentSeedAllowed();
   const { getDb } = await import("../lib/db");
   const { user, account, dealer } = await import("../drizzle/schema");
   const { setMustChangePassword } = await import("../lib/must-change-password");
@@ -23,7 +52,7 @@ async function main() {
 
   for (const username of Object.keys(USERNAME_ACCOUNTS)) {
     const spec = USERNAME_ACCOUNTS[username];
-    const password = BOOTSTRAP[username];
+    const password = getBootstrapPassword(username);
     if (!spec || !password) throw new Error("Bootstrap map incomplete.");
     const hash = await hashPassword(password);
     const hashedOk = await verifyPassword({ hash, password });
@@ -126,7 +155,7 @@ async function main() {
 
   for (const username of Object.keys(USERNAME_ACCOUNTS)) {
     const spec = USERNAME_ACCOUNTS[username];
-    const password = BOOTSTRAP[username];
+    const password = getBootstrapPassword(username);
     if (!spec || !password) continue;
     const signedIn = await auth.api.signInEmail({
       body: { email: spec.email, password },

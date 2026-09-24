@@ -4,17 +4,22 @@ import Link from "next/link";
 import { useMemo, useState } from "react";
 
 import { useI18n } from "@/components/preferences-provider";
+import { SearchHighlight } from "@/components/search-highlight";
 import { SearchProductCard } from "@/components/search-product-card";
 import { getBrandLogo } from "@/lib/brand-logo";
-import { readRecentSearches } from "@/lib/recent-searches";
+import { displayProductTitle } from "@/lib/product-detail-fields";
+import { isAuthoritativeSellingPricePaise } from "@/lib/storefront-price-display";
+import { selectPreferredStorefrontListing } from "@/lib/storefront-listing-selection";
 import { slugifyFitment } from "@/lib/vehicle-fitment";
 
 export type SearchListing = {
   id: string;
   sku?: string | null;
   pricePaise: number;
+  mrpPaise?: number | null;
   stock: number | null;
   status: string;
+  hsn?: string | null;
   gstRate?: number | null;
   listInclusivePaise?: number;
   netInclusivePaise?: number;
@@ -43,6 +48,39 @@ export type FacetRow = { value: string; count: number };
 export type VehicleRow = { make: string; model: string; count: number };
 
 export type SearchTab = "all" | "products" | "brands" | "categories" | "vehicles";
+type StockFilter = "all" | "in_stock";
+type SortMode = "relevance" | "name" | "price-low-high";
+
+function formatPaise(value: number | null | undefined) {
+  return typeof value === "number" && Number.isFinite(value) && value > 0
+    ? `₹${(value / 100).toLocaleString("en-IN")}`
+    : "—";
+}
+
+function formatTotalPaise(value: number) {
+  return `₹${(Math.max(0, value) / 100).toLocaleString("en-IN", {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  })}`;
+}
+
+function listPrice(listing: SearchListing | undefined) {
+  const value = listing?.listInclusivePaise ?? listing?.pricePaise;
+  return typeof value === "number" && value > 0 ? value : null;
+}
+
+function hasInStockListing(hit: SearchHit) {
+  return Boolean(
+    hit.listings?.some(
+      (listing) => listing.status === "active" && (listing.stock ?? 0) > 0,
+    ),
+  );
+}
+
+function hitPrice(hit: SearchHit) {
+  const listing = selectPreferredStorefrontListing(hit.listings);
+  return listPrice(listing) ?? Number.POSITIVE_INFINITY;
+}
 
 function FacetChecks({
   title,
@@ -105,16 +143,28 @@ function FacetChecks({
 function SearchFilters({
   activeBrand,
   activeCategory,
+  activeStock,
   onBrand,
   onCategory,
+  onStockChange,
+  onClearFilters,
+  tabs,
+  activeTab,
+  onTabChange,
   categories,
   brands,
   vehicles,
 }: {
   activeBrand: string;
   activeCategory: string;
+  activeStock: StockFilter;
   onBrand: (brand: string) => void;
   onCategory: (category: string) => void;
+  onStockChange: (value: StockFilter) => void;
+  onClearFilters: () => void;
+  tabs: Array<{ id: SearchTab; label: string; count: number }>;
+  activeTab: SearchTab;
+  onTabChange: (tab: SearchTab) => void;
   categories: FacetRow[];
   brands: FacetRow[];
   vehicles: VehicleRow[];
@@ -124,19 +174,50 @@ function SearchFilters({
     <aside className="space-y-6 rounded-2xl border border-slate-200 bg-white p-4">
       <div className="flex items-center justify-between">
         <h2 className="text-sm font-bold text-slate-900">{t("search.filters")}</h2>
-        {activeBrand || activeCategory ? (
+        {activeBrand || activeCategory || activeStock !== "all" ? (
           <button
             type="button"
             className="text-[11px] font-semibold text-[#7a1233]"
-            onClick={() => {
-              onBrand("");
-              onCategory("");
-            }}
+            onClick={onClearFilters}
           >
             {t("search.clearAll")}
           </button>
         ) : null}
       </div>
+      <section className="border-b border-slate-100 pb-3">
+        <h3 className="text-[11px] font-bold uppercase tracking-widest text-slate-500">Browse</h3>
+        <div className="mt-2 flex flex-wrap gap-1.5">
+          {tabs.map((item) => (
+            <button
+              key={item.id}
+              type="button"
+              aria-pressed={activeTab === item.id}
+              onClick={() => onTabChange(item.id)}
+              className={`rounded-full border px-2.5 py-1 text-[11px] font-semibold ${
+                activeTab === item.id
+                  ? "border-[#7a1233] bg-[#7a1233] text-white"
+                  : "border-slate-200 text-slate-700 hover:border-slate-300"
+              }`}
+            >
+              {item.label} ({item.count})
+            </button>
+          ))}
+        </div>
+      </section>
+      <section>
+        <h3 className="text-[11px] font-bold uppercase tracking-widest text-slate-500">Stock</h3>
+        <select
+          value={activeStock}
+          onChange={(event) =>
+            onStockChange(event.target.value === "in_stock" ? "in_stock" : "all")
+          }
+          className="mt-2 h-9 w-full rounded-lg border border-slate-200 bg-white px-2 text-xs font-semibold text-slate-700 outline-none focus:border-[#7a1233]"
+          aria-label="Stock filter"
+        >
+          <option value="all">All Stock</option>
+          <option value="in_stock">In Stock</option>
+        </select>
+      </section>
       <FacetChecks
         title={t("search.categoryFilter")}
         rows={categories}
@@ -190,15 +271,20 @@ export function SearchExperience({
   vehicles,
   activeBrand,
   activeCategory,
+  activeStock,
   tab,
   addingId,
+  selectedCount,
+  estimatedTotalPaise,
+  cartCount,
   onTabChange,
   onBrand,
   onCategory,
+  onStockChange,
+  onClearFilters,
   onPage,
   onOpenProduct,
   onAddToCart,
-  onSearch,
 }: {
   query: string;
   loading: boolean;
@@ -212,22 +298,51 @@ export function SearchExperience({
   vehicles: VehicleRow[];
   activeBrand: string;
   activeCategory: string;
+  activeStock: StockFilter;
   tab: SearchTab;
   addingId: string;
+  selectedCount: number;
+  estimatedTotalPaise: number;
+  cartCount: number;
   onTabChange: (tab: SearchTab) => void;
   onBrand: (brand: string) => void;
   onCategory: (category: string) => void;
+  onStockChange: (value: StockFilter) => void;
+  onClearFilters: () => void;
   onPage: (page: number) => void;
   onOpenProduct: (hit: SearchHit) => void;
   onAddToCart: (listingId: string, name: string) => void;
-  onSearch: (query: string) => void;
 }) {
   const { t } = useI18n();
-  const [filtersOpen, setFiltersOpen] = useState(false);
-  const [layout, setLayout] = useState<"grid" | "list">("grid");
-  const [sort, setSort] = useState<"relevance" | "name">("relevance");
-  const recent = useMemo(() => readRecentSearches(), [query, found]);
+  const [filtersOpen] = useState(false);
+  const [sort, setSort] = useState<SortMode>("price-low-high");
+  const sortedResults = useMemo(() => {
+    const next =
+      activeStock === "in_stock"
+        ? results.filter((hit) => hasInStockListing(hit))
+        : [...results];
+    if (sort === "name") {
+      return next.sort((a, b) =>
+        String(a.document?.name || "").localeCompare(String(b.document?.name || ""), "en", {
+          sensitivity: "base",
+        }),
+      );
+    }
+    if (sort === "price-low-high") {
+      return next.sort((a, b) => hitPrice(a) - hitPrice(b));
+    }
+    return next;
+  }, [activeStock, results, sort]);
+
+  const visibleFound = activeStock === "in_stock" ? sortedResults.length : found;
   const totalPages = Math.max(1, Math.ceil(found / Math.max(perPage, 1)));
+  const pageItems = useMemo<(number | "ellipsis")[]>(() => {
+    if (totalPages <= 6) return Array.from({ length: totalPages }, (_, index) => index + 1);
+    if (page > 4 && page < totalPages - 1) {
+      return [1, 2, 3, "ellipsis", page, "ellipsis", totalPages];
+    }
+    return [1, 2, 3, "ellipsis", totalPages];
+  }, [page, totalPages]);
   const productCount = found;
   const brandCount = brands.length;
   const categoryCount = categories.length;
@@ -247,107 +362,48 @@ export function SearchExperience({
   ];
 
   const showProducts = tab === "all" || tab === "products";
-  const sortedResults = useMemo(() => {
-    if (sort !== "name") return results;
-    return [...results].sort((a, b) =>
-      String(a.document?.name || "").localeCompare(String(b.document?.name || ""), "en", {
-        sensitivity: "base",
-      }),
-    );
-  }, [results, sort]);
-
   const filterProps = {
     activeBrand,
     activeCategory,
+    activeStock,
     onBrand,
     onCategory,
+    onStockChange,
+    onClearFilters,
+    tabs,
+    activeTab: tab,
+    onTabChange,
     categories,
     brands,
     vehicles,
   };
 
   return (
-    <section id="search-results" className="border-b border-slate-200 bg-slate-50">
-      <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6">
-        <div className="mb-4">
-          <p className="text-xs font-bold uppercase tracking-widest text-[#7a1233]">{t("search.parts")}</p>
-          <h1 className="mt-1 text-2xl font-bold tracking-tight text-slate-950 sm:text-3xl">
-            {t("search.resultsFor", { query })}
-          </h1>
-          <p className="mt-1 text-sm text-slate-600">
-            {loading
-              ? t("search.searching")
-              : found === 1
-                ? t("search.foundOne", { query })
-                : t("search.found", { count: found, query })}
-          </p>
-        </div>
-
-        <div className="flex gap-2 overflow-x-auto pb-1" role="tablist" aria-label={t("search.tabsLabel")}>
-          {tabs.map((item) => (
-            <button
-              key={item.id}
-              type="button"
-              role="tab"
-              aria-selected={tab === item.id}
-              onClick={() => onTabChange(item.id)}
-              className={`shrink-0 rounded-full px-3 py-1.5 text-xs font-bold ${
-                tab === item.id
-                  ? "bg-[#7a1233] text-white"
-                  : "border border-slate-200 bg-white text-slate-700 hover:border-slate-300"
-              }`}
-            >
-              {item.label} ({item.count})
-            </button>
-          ))}
-        </div>
-
-        <div className="mt-4 flex flex-wrap items-center justify-between gap-3 lg:hidden">
-          <button
-            type="button"
-            className="min-h-10 rounded-lg border border-slate-300 bg-white px-4 text-sm font-semibold"
-            onClick={() => setFiltersOpen((value) => !value)}
-          >
-            {t("search.filters")}
-          </button>
-          <Toolbar
-            found={found}
-            layout={layout}
-            sort={sort}
-            onLayout={setLayout}
-            onSort={setSort}
-          />
+    <section
+      id="search-results"
+      className="border-b border-slate-200 bg-slate-50 pb-[calc(var(--mobile-nav-height)+0.5rem)] md:pb-0"
+    >
+      <div className="mx-auto max-w-[1240px] px-4 py-6 sm:px-6">
+        <div className="mt-4 rounded-xl bg-white p-3 shadow-sm md:hidden">
+          <div className="flex items-center justify-between gap-3">
+            <p className="text-xs font-medium text-slate-700">
+              {loading ? t("search.searching") : `Showing ${visibleFound} items`}
+            </p>
+            <Toolbar sort={sort} onSort={setSort} />
+          </div>
         </div>
         {filtersOpen ? (
-          <div className="mt-3 lg:hidden">
+          <div className="mt-3 hidden md:block">
             <SearchFilters {...filterProps} />
           </div>
         ) : null}
 
-        <div className="mt-4 grid min-w-0 gap-5 lg:grid-cols-[minmax(12rem,16.25rem)_minmax(0,1fr)]">
-          <div className="hidden lg:block">
-            <SearchFilters {...filterProps} />
-          </div>
-
-          <div className="min-w-0">
-            <div className="mb-3 hidden items-center justify-between gap-3 lg:flex">
-              <p className="text-sm font-semibold text-slate-800">
-                {loading
-                  ? t("search.searching")
-                  : t("search.showing", {
-                      from: found ? (page - 1) * perPage + 1 : 0,
-                      to: Math.min(page * perPage, found),
-                      total: found,
-                    })}
-              </p>
-              <Toolbar found={found} layout={layout} sort={sort} onLayout={setLayout} onSort={setSort} />
-            </div>
-
-            {error ? (
-              <p className="mb-3 text-sm text-rose-700" role="alert">
-                {error}
-              </p>
-            ) : null}
+        <div className="mt-4 min-w-0">
+          {error ? (
+            <p className="mb-3 text-sm text-rose-700" role="alert">
+              {error}
+            </p>
+          ) : null}
 
             {tab === "brands" ? (
               <ul className="overflow-hidden rounded-2xl border border-slate-200 bg-white">
@@ -413,154 +469,316 @@ export function SearchExperience({
             ) : null}
 
             {showProducts && loading ? (
-              <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-4">
-                {[1, 2, 3, 4, 5, 6, 7, 8].map((item) => (
-                  <div key={item} className="aspect-[3/4] animate-pulse rounded-2xl bg-slate-200" />
+              <div className="space-y-2" aria-hidden="true">
+                {Array.from({ length: 8 }, (_, item) => (
+                  <div key={item} className="h-16 animate-pulse rounded-lg bg-slate-200" />
                 ))}
               </div>
             ) : null}
 
-            {showProducts && !loading && results.length === 0 ? (
+            {showProducts && !loading && sortedResults.length === 0 ? (
               <div className="rounded-2xl border border-dashed border-slate-300 bg-white p-10 text-center">
                 <h3 className="text-lg font-bold">{t("search.noneTitle")}</h3>
                 <p className="mt-1 text-sm text-slate-500">{t("search.noneHint")}</p>
               </div>
             ) : null}
 
-            {showProducts && !loading ? (
-              layout === "grid" ? (
-                <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-4">
+            {showProducts && !loading && sortedResults.length > 0 ? (
+              <>
+                <div className="hidden md:block">
+                  <ProductTable
+                    results={sortedResults}
+                    query={query}
+                    addingId={addingId}
+                    onOpenProduct={onOpenProduct}
+                    onAddToCart={onAddToCart}
+                  />
+                </div>
+                <div className="space-y-3 md:hidden">
                   {sortedResults.map((hit, index) => (
                     <SearchProductCard
                       key={hit.document?.id || hit.document?.part_number || index}
                       hit={hit}
                       query={query}
                       addingId={addingId}
-                      layout="grid"
+                      layout="mobile"
                       index={index}
                       onOpen={() => onOpenProduct(hit)}
                       onAddToCart={onAddToCart}
                     />
                   ))}
                 </div>
-              ) : (
-                <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white">
-                  {sortedResults.map((hit, index) => (
-                    <SearchProductCard
-                      key={hit.document?.id || hit.document?.part_number || index}
-                      hit={hit}
-                      query={query}
-                      addingId={addingId}
-                      layout="list"
-                      index={index}
-                      onOpen={() => onOpenProduct(hit)}
-                      onAddToCart={onAddToCart}
-                    />
-                  ))}
-                </div>
-              )
+              </>
             ) : null}
 
-            {showProducts && totalPages > 1 ? (
-              <div className="mt-4 flex items-center gap-3">
-                <button
-                  type="button"
-                  disabled={page <= 1}
-                  onClick={() => onPage(page - 1)}
-                  className="min-h-10 rounded-lg border bg-white px-3 text-sm font-semibold disabled:opacity-40"
-                >
-                  {t("search.prev")}
-                </button>
-                <p className="text-xs text-slate-600">{t("search.page", { page, pages: totalPages })}</p>
-                <button
-                  type="button"
-                  disabled={page >= totalPages}
-                  onClick={() => onPage(page + 1)}
-                  className="min-h-10 rounded-lg border bg-white px-3 text-sm font-semibold disabled:opacity-40"
-                >
-                  {t("search.next")}
-                </button>
+            {showProducts ? (
+              <div
+                className={`mt-4 flex flex-wrap items-center justify-between gap-3 ${
+                  totalPages > 1 ? "flex" : "hidden md:flex"
+                }`}
+              >
+                <p className="hidden text-sm text-slate-600 md:block">
+                  Showing {visibleFound ? (page - 1) * perPage + 1 : 0} of {visibleFound} items
+                </p>
+                {totalPages > 1 ? (
+                  <div className="flex items-center gap-1.5">
+                    <button
+                      type="button"
+                      disabled={page <= 1}
+                      onClick={() => onPage(page - 1)}
+                      className="min-h-9 rounded-lg border border-slate-300 bg-white px-3 text-sm font-semibold text-slate-600 disabled:opacity-40"
+                    >
+                      {t("search.prev")}
+                    </button>
+                    {pageItems.map((item, index) =>
+                      item === "ellipsis" ? (
+                        <span key={`ellipsis-${index}`} className="px-1 text-sm text-slate-500">
+                          …
+                        </span>
+                      ) : (
+                        <button
+                          key={item}
+                          type="button"
+                          aria-current={item === page ? "page" : undefined}
+                          onClick={() => onPage(item)}
+                          className={`min-h-9 min-w-9 rounded-lg px-2 text-sm font-semibold ${
+                            item === page
+                              ? "bg-[#7a1233] text-white"
+                              : "border border-slate-300 bg-white text-slate-700"
+                          }`}
+                        >
+                          {item}
+                        </button>
+                      ),
+                    )}
+                    <button
+                      type="button"
+                      disabled={page >= totalPages}
+                      onClick={() => onPage(page + 1)}
+                      className="min-h-9 rounded-lg border border-slate-300 bg-white px-3 text-sm font-semibold text-slate-600 disabled:opacity-40"
+                    >
+                      {t("search.next")}
+                    </button>
+                  </div>
+                ) : null}
+              </div>
+            ) : null}
+
+            {showProducts ? (
+              <div className="sticky bottom-0 z-30 -mx-4 mt-4 border-t border-[#d8b9bc] bg-[#ead6d7]/95 px-4 py-3 shadow-[0_-4px_16px_rgba(15,23,42,0.08)] backdrop-blur sm:-mx-6 sm:px-6">
+                <div className="mx-auto flex max-w-[1240px] flex-col items-stretch gap-3 sm:flex-row sm:items-center sm:justify-between">
+                  <p className="min-w-0 text-xs font-semibold leading-5 text-slate-700 sm:text-sm">
+                    Selected: {selectedCount} items
+                    <span className="mx-1.5 text-slate-400">•</span>
+                    <span>Estimated Total: {formatTotalPaise(estimatedTotalPaise)}</span>
+                  </p>
+                  <div className="flex flex-wrap items-center justify-end gap-2 text-xs font-bold sm:shrink-0 sm:text-sm">
+                    <Link
+                      href="/cart"
+                      className="inline-flex min-h-10 items-center rounded-lg bg-[#7a1233] px-3 text-white hover:bg-[#611029]"
+                    >
+                      View Cart ({cartCount})
+                    </Link>
+                    <span className="text-[#7a1233]">•</span>
+                    <Link
+                      href="/checkout"
+                      className="inline-flex min-h-10 items-center gap-1 rounded-lg bg-[#7a1233] px-3 text-white hover:bg-[#611029]"
+                    >
+                      Proceed to Checkout <span aria-hidden="true">→</span>
+                    </Link>
+                  </div>
+                </div>
               </div>
             ) : null}
           </div>
         </div>
-
-        <div className="mt-4 flex flex-wrap gap-2 rounded-xl border border-slate-200 bg-white p-2">
-          {recent.length ? (
-            <button
-              type="button"
-              className="rounded-full bg-slate-100 px-3 py-1.5 text-xs font-semibold text-slate-700"
-              onClick={() => onSearch(recent[0] || query)}
-            >
-              {t("search.recent")}: {recent[0]}
-            </button>
-          ) : null}
-          <Link
-            href="/vehicle-fitment"
-            className="rounded-full bg-slate-100 px-3 py-1.5 text-xs font-semibold text-slate-700"
-          >
-            {t("search.byVehicle")}
-          </Link>
-          <button
-            type="button"
-            className="rounded-full bg-slate-100 px-3 py-1.5 text-xs font-semibold text-slate-700"
-            onClick={() => document.querySelector<HTMLInputElement>('input[type="search"]')?.focus()}
-          >
-            {t("search.byPartNumber")}
-          </button>
-        </div>
-      </div>
     </section>
   );
 }
 
-function Toolbar({
-  found,
-  layout,
-  sort,
-  onLayout,
-  onSort,
+function TableCartIcon({ className = "h-4 w-4" }: { className?: string }) {
+  return (
+    <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.8" aria-hidden>
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        d="M3 4h2l1.4 10.2a2 2 0 0 0 2 1.8h7.8a2 2 0 0 0 1.9-1.4L20 8H6.2M9 20h.01M17 20h.01"
+      />
+    </svg>
+  );
+}
+
+function ProductTable({
+  results,
+  query,
+  addingId,
+  onOpenProduct,
+  onAddToCart,
 }: {
-  found: number;
-  layout: "grid" | "list";
-  sort: "relevance" | "name";
-  onLayout: (value: "grid" | "list") => void;
-  onSort: (value: "relevance" | "name") => void;
+  results: SearchHit[];
+  query: string;
+  addingId: string;
+  onOpenProduct: (hit: SearchHit) => void;
+  onAddToCart: (listingId: string, name: string) => void;
 }) {
   const { t } = useI18n();
   return (
-    <div className="flex items-center gap-2">
-      <label className="hidden items-center gap-1 text-xs font-semibold text-slate-600 sm:flex">
-        {t("search.sortBy")}
-        <select
-          value={sort}
-          onChange={(event) => onSort(event.target.value === "name" ? "name" : "relevance")}
-          className="rounded-md border border-slate-200 bg-white px-2 py-1 text-xs font-semibold text-slate-800"
-        >
-          <option value="relevance">{t("search.relevance")}</option>
-          <option value="name">{t("search.nameAZ")}</option>
-        </select>
-      </label>
-      {found > 0 ? (
-        <div className="inline-flex overflow-hidden rounded-lg border border-slate-200 bg-white">
-          <button
-            type="button"
-            aria-label={t("search.gridView")}
-            className={`px-2.5 py-1.5 text-xs font-bold ${layout === "grid" ? "bg-[#7a1233] text-white" : "text-slate-600"}`}
-            onClick={() => onLayout("grid")}
-          >
-            ▦
-          </button>
-          <button
-            type="button"
-            aria-label={t("search.listView")}
-            className={`px-2.5 py-1.5 text-xs font-bold ${layout === "list" ? "bg-[#7a1233] text-white" : "text-slate-600"}`}
-            onClick={() => onLayout("list")}
-          >
-            ☰
-          </button>
-        </div>
-      ) : null}
+    <div className="overflow-x-auto rounded-2xl bg-white shadow-[0_8px_24px_rgba(15,23,42,0.06)]">
+      <table className="w-full min-w-[920px] table-fixed border-collapse text-left">
+        <thead className="bg-[#7a1233] text-sm font-bold text-white">
+          <tr>
+            <th className="w-[38%] px-3 py-2.5">Item Name</th>
+            <th className="w-[13%] px-3 py-2.5">Part No.</th>
+            <th className="w-[7%] px-3 py-2.5">GST</th>
+            <th className="w-[11%] px-3 py-2.5">HSN</th>
+            <th className="w-[10%] px-3 py-2.5">LIST</th>
+            <th className="w-[10%] px-3 py-2.5">MRP</th>
+            <th className="w-[7%] px-3 py-2.5">DISC</th>
+            <th className="w-[10%] px-3 py-2.5 text-right">Action</th>
+          </tr>
+        </thead>
+        <tbody>
+          {results.map((hit, index) => {
+            const partData = hit.document ?? {};
+            const listing = selectPreferredStorefrontListing(hit.listings);
+            const title = displayProductTitle(
+              partData.name || t("product.partFallback"),
+              partData.part_number,
+            );
+            const image =
+              hit.thumbUrl ||
+              listing?.thumbUrl ||
+              hit.imageUrl ||
+              listing?.imageUrl ||
+              "/images/products/placeholder.svg";
+            const priced = isAuthoritativeSellingPricePaise(
+              listing?.listInclusivePaise,
+              listing?.netInclusivePaise,
+              listing?.pricePaise,
+            );
+            const canAdd =
+              Boolean(listing) &&
+              listing?.status === "active" &&
+              (listing?.stock ?? 0) > 0 &&
+              priced;
+            return (
+              <tr
+                key={hit.document?.id || hit.document?.part_number || index}
+                className="border-t border-slate-100 align-middle hover:bg-slate-50/70"
+              >
+                <td className="px-3 py-2">
+                  <div className="flex min-w-0 items-center gap-2.5">
+                    <button
+                      type="button"
+                      onClick={() => onOpenProduct(hit)}
+                      className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-full bg-[#7a1233]"
+                      aria-label={title}
+                    >
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        src={image}
+                        alt=""
+                        width={40}
+                        height={40}
+                        loading={index < 4 ? "eager" : "lazy"}
+                        decoding="async"
+                        className="h-full w-full object-contain p-1"
+                        onError={(event) => {
+                          const el = event.currentTarget as HTMLImageElement;
+                          const original = hit.imageUrl || listing?.imageUrl;
+                          if (original && el.src !== original) {
+                            el.src = original;
+                            return;
+                          }
+                          el.src = "/images/products/placeholder.svg";
+                        }}
+                      />
+                    </button>
+                    <button
+                      type="button"
+                      className="min-w-0 flex-1 truncate text-left text-sm font-bold leading-tight text-slate-950 hover:text-[#7a1233]"
+                      onClick={() => onOpenProduct(hit)}
+                      title={title}
+                    >
+                      <SearchHighlight text={title} query={query} />
+                    </button>
+                  </div>
+                </td>
+                <td className="px-3 py-2 font-mono text-xs text-slate-700">
+                  <span className="text-sm font-semibold text-slate-800">{partData.part_number || "—"}</span>
+                </td>
+                <td className="px-3 py-2 text-xs text-slate-600">
+                  {listing?.gstRate != null ? `${listing.gstRate}%` : "—"}
+                </td>
+                <td className="px-3 py-2 font-mono text-[11px] text-slate-600">
+                  {listing?.hsn || "—"}
+                </td>
+                <td className="px-3 py-2 text-xs font-semibold text-slate-800">
+                  {formatPaise(listPrice(listing))}
+                </td>
+                <td className="px-3 py-2 text-xs text-slate-500">
+                  {formatPaise(listing?.mrpPaise)}
+                </td>
+                <td className="px-3 py-2 text-sm font-semibold text-slate-800">
+                  <span className="rounded-md bg-[#7a1233] px-1.5 py-0.5 text-xs font-bold text-white">
+                    {typeof listing?.discountPercent === "number"
+                      ? `${Math.round(listing.discountPercent)}%`
+                      : "—"}
+                  </span>
+                </td>
+                <td className="px-3 py-2 text-right">
+                  <button
+                    type="button"
+                    disabled={!canAdd || addingId === listing?.id}
+                    onClick={() => listing && onAddToCart(listing.id, title)}
+                    className="inline-flex min-h-9 items-center gap-1.5 rounded-lg bg-[#7a1233] px-3 text-xs font-bold text-white hover:bg-[#611029] disabled:cursor-not-allowed disabled:bg-slate-200 disabled:text-slate-500"
+                    aria-label={`${t("product.addToCart")}: ${title}`}
+                  >
+                    {canAdd ? (
+                      <>
+                        <TableCartIcon />
+                        {t("product.addToCart")}
+                      </>
+                    ) : priced ? (
+                      t("product.outOfStock")
+                    ) : (
+                      t("price.onRequest")
+                    )}
+                  </button>
+                </td>
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
     </div>
+  );
+}
+
+function Toolbar({
+  sort,
+  onSort,
+}: {
+  sort: SortMode;
+  onSort: (value: SortMode) => void;
+}) {
+  const { t } = useI18n();
+  return (
+    <label className="flex items-center gap-1 text-xs font-semibold text-slate-600">
+      {t("search.sortBy")}:
+      <select
+        value={sort}
+        onChange={(event) => {
+          const next = event.target.value;
+          onSort(next === "name" || next === "relevance" ? next : "price-low-high");
+        }}
+        className="rounded-md border border-slate-200 bg-white px-2 py-1 text-xs font-semibold text-slate-800"
+        aria-label="Sort results"
+      >
+        <option value="price-low-high">Price Low-High</option>
+        <option value="relevance">{t("search.relevance")}</option>
+        <option value="name">{t("search.nameAZ")}</option>
+      </select>
+    </label>
   );
 }

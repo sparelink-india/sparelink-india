@@ -1,11 +1,22 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState, useSyncExternalStore } from "react";
 
 import { CatalogueProductImage } from "@/components/catalogue-product-image";
 import { useI18n } from "@/components/preferences-provider";
 import { readRecentlyViewed, type RecentlyViewedItem } from "@/lib/recently-viewed";
+
+function subscribeRecentlyViewed(callback: () => void) {
+  window.addEventListener("focus", callback);
+  window.addEventListener("storage", callback);
+  return () => {
+    window.removeEventListener("focus", callback);
+    window.removeEventListener("storage", callback);
+  };
+}
+
+const emptyItems: RecentlyViewedItem[] = [];
 
 export function RecentlyViewedSection({
   onOpen,
@@ -13,14 +24,14 @@ export function RecentlyViewedSection({
   onOpen: (item: RecentlyViewedItem) => void;
 }) {
   const { t } = useI18n();
-  const [items, setItems] = useState<RecentlyViewedItem[]>([]);
-
-  useEffect(() => {
-    setItems(readRecentlyViewed());
-    const refresh = () => setItems(readRecentlyViewed());
-    window.addEventListener("focus", refresh);
-    return () => window.removeEventListener("focus", refresh);
-  }, []);
+  const getSnapshot = useCallback(() => JSON.stringify(readRecentlyViewed()), []);
+  const getServerSnapshot = useCallback(() => "[]", []);
+  const rawItems = useSyncExternalStore(
+    subscribeRecentlyViewed,
+    getSnapshot,
+    getServerSnapshot,
+  );
+  const items: RecentlyViewedItem[] = rawItems ? JSON.parse(rawItems) : emptyItems;
 
   if (items.length === 0) return null;
 

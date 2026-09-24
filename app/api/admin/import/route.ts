@@ -25,6 +25,11 @@ import {
 import { typesense } from "@/lib/typesense";
 import { partNumberSearchText } from "@/lib/search-intent";
 
+const MAX_IMPORT_BYTES = 10 * 1024 * 1024;
+const MAX_IMPORT_ROWS = 5_000;
+const MAX_IMPORT_COLUMNS = 100;
+const MAX_IMPORT_CELL_LENGTH = 10_000;
+
 // Store previews in memory (in production, use a cache like Redis)
 const previewCache = new Map<string, ParsedImportData>();
 
@@ -72,7 +77,6 @@ async function getValidationContext(): Promise<ValidationContext> {
 export async function POST(request: NextRequest) {
   const auth = await requireAdminApi();
   if (auth.error) return auth.error;
-  const session = auth.session;
 
   try {
     const formData = await request.formData();
@@ -84,6 +88,12 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(
         { error: "File is required" },
         { status: 400 },
+      );
+    }
+    if (file && file.size > MAX_IMPORT_BYTES) {
+      return NextResponse.json(
+        { error: "File exceeds the 10 MB import limit" },
+        { status: 413 },
       );
     }
 
@@ -108,6 +118,24 @@ export async function POST(request: NextRequest) {
         return NextResponse.json(
           { error: "File must have at least header and one data row" },
           { status: 400 },
+        );
+      }
+      if (data.length > MAX_IMPORT_ROWS + 1 || data[0].length > MAX_IMPORT_COLUMNS) {
+        return NextResponse.json(
+          { error: "File exceeds the import row or column limit" },
+          { status: 413 },
+        );
+      }
+      if (
+        data.some(
+          (row) =>
+            row.length > MAX_IMPORT_COLUMNS ||
+            row.some((cell) => String(cell ?? "").length > MAX_IMPORT_CELL_LENGTH),
+        )
+      ) {
+        return NextResponse.json(
+          { error: "File contains an oversized cell" },
+          { status: 413 },
         );
       }
 

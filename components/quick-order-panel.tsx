@@ -1,14 +1,14 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useRef, useState } from "react";
 
 import { useI18n } from "@/components/preferences-provider";
 
 type QuickRow = { id: string; partNumber: string; qty: number };
 
-function newRow(): QuickRow {
-  return { id: `${Date.now()}-${Math.random().toString(36).slice(2, 7)}`, partNumber: "", qty: 1 };
+function newRow(id: string): QuickRow {
+  return { id, partNumber: "", qty: 1 };
 }
 
 /**
@@ -22,7 +22,9 @@ export function QuickOrderPanel({
 }) {
   const { t } = useI18n();
   const router = useRouter();
-  const [rows, setRows] = useState<QuickRow[]>([newRow(), newRow(), newRow()]);
+  const nextRowId = useRef(4);
+  const createRow = () => newRow(`row-${nextRowId.current++}`);
+  const [rows, setRows] = useState<QuickRow[]>(() => [newRow("row-1"), newRow("row-2"), newRow("row-3")]);
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
@@ -52,8 +54,8 @@ export function QuickOrderPanel({
       const listings = Array.isArray(hit.listings) ? hit.listings : [];
       const listing = listings.find(
         (row: { status?: string; stock?: number | null; pricePaise?: number }) =>
-          row.status === "active" && (row.stock == null || row.stock > 0) && (row.pricePaise ?? 0) > 0,
-      ) ?? listings[0];
+          row.status === "active" && row.stock !== null && row.stock !== undefined && row.stock > 0 && (row.pricePaise ?? 0) > 0,
+      );
       if (listing?.id) {
         return {
           listingId: String(listing.id),
@@ -113,7 +115,7 @@ export function QuickOrderPanel({
 
       if (added > 0) {
         setMessage(t("quickOrder.added", { count: added }));
-        setRows([newRow(), newRow(), newRow()]);
+        setRows([newRow(`row-${nextRowId.current++}`), newRow(`row-${nextRowId.current++}`), newRow(`row-${nextRowId.current++}`)]);
       }
       if (failures.length > 0) {
         setError(t("quickOrder.failedParts", { parts: failures.join(", ") }));
@@ -142,7 +144,7 @@ export function QuickOrderPanel({
         <button
           type="button"
           className="min-h-10 rounded-lg border border-slate-200 px-3 text-xs font-semibold text-slate-700"
-          onClick={() => setRows((prev) => [...prev, newRow()])}
+          onClick={() => setRows((prev) => [...prev, createRow()])}
         >
           {t("quickOrder.addRow")}
         </button>
@@ -187,7 +189,7 @@ export function QuickOrderPanel({
               aria-label={t("quickOrder.removeRow")}
               className="inline-flex min-h-11 items-center justify-center rounded-xl border border-slate-200 text-slate-500"
               onClick={() =>
-                setRows((prev) => (prev.length <= 1 ? [newRow()] : prev.filter((r) => r.id !== row.id)))
+                setRows((prev) => (prev.length <= 1 ? [createRow()] : prev.filter((r) => r.id !== row.id)))
               }
             >
               ×

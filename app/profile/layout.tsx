@@ -1,7 +1,12 @@
 import type { ReactNode } from "react";
 
-import { PasswordReadyLayout } from "@/lib/password-ready-layout";
+import { requireRole } from "@/lib/require-role";
 
-export default function ProfileLayout({ children }: { children: ReactNode }) {
-  return <PasswordReadyLayout>{children}</PasswordReadyLayout>;
+export default async function ProfileLayout({
+  children,
+}: {
+  children: ReactNode;
+}) {
+  await requireRole(["buyer"]);
+  return children;
 }

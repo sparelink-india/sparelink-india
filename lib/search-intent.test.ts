@@ -4,6 +4,7 @@ import { describe, it } from "node:test";
 import {
   filterAutocompleteHits,
   isPartNumberRelevant,
+  parseExactHsnQuery,
   parseSearchIntent,
   scorePartNumberMatch,
   scoreSearchDocument,
@@ -53,6 +54,14 @@ describe("search intent", () => {
     assert.equal(parseSearchIntent("101").isPartNumberQuery, true);
     assert.equal(parseSearchIntent("103").typesenseQuery, "103");
     assert.equal(parseSearchIntent("5240L,M5").isPartNumberQuery, true);
+  });
+
+  it("recognizes exact HSN forms without treating malformed values as HSN", () => {
+    assert.equal(parseExactHsnQuery("87083000"), "87083000");
+    assert.equal(parseExactHsnQuery("HSN 84212300"), "84212300");
+    assert.equal(parseExactHsnQuery("HSN: 8421 2300"), null);
+    assert.equal(parseExactHsnQuery("842123"), null);
+    assert.equal(parseExactHsnQuery("HSN 8421230"), null);
   });
 
   it("ranks window regulator assy above generic Altroz parts", () => {

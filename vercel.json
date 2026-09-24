@@ -4,5 +4,6 @@
       "path": "/api/cron/ci-sync",
       "schedule": "0 2 * * *"
     }
-  ]
+  ],
+  "regions": ["sin1"]
 }

@@ -8,7 +8,6 @@ import * as XLSX from "xlsx";
 export async function GET() {
   const auth = await requireAdminApi();
   if (auth.error) return auth.error;
-  const session = auth.session;
 
   const db = getDb();
 

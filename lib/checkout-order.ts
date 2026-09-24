@@ -10,6 +10,8 @@
  * - This module does not invent stock or add a reservation layer.
  */
 
+import { createHash } from "node:crypto";
+
 import type { CustomerLinePrice } from "@/lib/party-pricing";
 import {
   AMBAJI_TRADERS_FIRM_ID,
@@ -99,6 +101,81 @@ export function parseCheckoutIdempotencyKey(value: unknown): string | null {
   if (!trimmed || trimmed.length > 128) return null;
   if (!/^[A-Za-z0-9._:-]+$/.test(trimmed)) return null;
   return trimmed;
+}
+
+type CheckoutIdempotencyCartLine = Pick<
+  CheckoutCartLine,
+  "dealerListingId" | "quantity" | "firmId" | "pricePaise"
+> & { id?: string };
+
+function canonicalize(value: unknown): unknown {
+  if (Array.isArray(value)) return value.map(canonicalize);
+  if (!value || typeof value !== "object") return value;
+  return Object.fromEntries(
+    Object.entries(value as Record<string, unknown>)
+      .filter(([, item]) => item !== undefined)
+      .sort(([left], [right]) => left.localeCompare(right))
+      .map(([key, item]) => [key, canonicalize(item)]),
+  );
+}
+
+function fingerprint(value: unknown) {
+  return createHash("sha256")
+    .update(JSON.stringify(canonicalize(value)))
+    .digest("hex");
+}
+
+function cartFingerprintValue(cartItems: readonly CheckoutIdempotencyCartLine[]) {
+  return [...cartItems]
+    .map((item) => ({
+      id: item.id ?? null,
+      dealerListingId: item.dealerListingId,
+      quantity: item.quantity,
+      firmId: item.firmId,
+      pricePaise: item.pricePaise,
+    }))
+    .sort((left, right) =>
+      `${left.id ?? ""}:${left.dealerListingId}`.localeCompare(
+        `${right.id ?? ""}:${right.dealerListingId}`,
+      ),
+    );
+}
+
+/**
+ * The existing order key column is globally unique. Include the buyer and
+ * request fingerprints in the stored value so keys are buyer-scoped and a
+ * reused key with a different payload cannot silently replay another order.
+ */
+export function buildCheckoutIdempotencyStorageKey(
+  buyerId: string,
+  rawKey: string,
+  body: Record<string, unknown>,
+  cartItems: readonly CheckoutIdempotencyCartLine[],
+) {
+  return `${buyerId}~${rawKey}~${fingerprint(body)}~${fingerprint(
+    cartFingerprintValue(cartItems),
+  )}`;
+}
+
+export function checkoutIdempotencyStoragePattern(
+  buyerId: string,
+  rawKey: string,
+) {
+  return `${`${buyerId}~${rawKey}~`.replace(/[\\%_]/g, "\\$&")}%`;
+}
+
+export function checkoutIdempotencyStorageMatches(
+  storedKey: string | null | undefined,
+  buyerId: string,
+  rawKey: string,
+  body: Record<string, unknown>,
+  cartItems: readonly CheckoutIdempotencyCartLine[],
+) {
+  if (!storedKey) return false;
+  const [storedBuyerId, storedRawKey, bodyHash, cartHash] = storedKey.split("~");
+  if (storedBuyerId !== buyerId || storedRawKey !== rawKey) return false;
+  if (bodyHash !== fingerprint(body)) return false;
+  return cartItems.length === 0 || cartHash === fingerprint(cartFingerprintValue(cartItems));
 }
 
 export function validateCheckoutQuantity(quantity: unknown): number {

@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useState } from "react";
 
 import { BrandLogo } from "@/components/brand-logo";
@@ -13,6 +14,9 @@ import { WhatsAppCta } from "@/components/whatsapp-cta";
 import { UTILITY_STRIP } from "@/lib/brand";
 import { getWhatsAppChatUrl } from "@/lib/whatsapp";
 
+type FacetOption = { value: string; count: number };
+type OrderStockFilter = "all" | "in_stock";
+
 type StorefrontHeaderProps = {
   cartCount?: number;
   wishlistCount?: number;
@@ -22,6 +26,15 @@ type StorefrontHeaderProps = {
   searchLoading?: boolean;
   mobileMenuOpen?: boolean;
   onMobileMenuToggle?: () => void;
+  orderMode?: boolean;
+  orderPage?: boolean;
+  categoryOptions?: FacetOption[];
+  activeCategory?: string;
+  onCategoryChange?: (value: string) => void;
+  stockFilter?: OrderStockFilter;
+  onStockFilterChange?: (value: OrderStockFilter) => void;
+  onClearFilters?: () => void;
+  onCartItemAdded?: (listingId: string, unitPaise?: number) => void;
 };
 
 function CartIcon() {
@@ -99,8 +112,18 @@ export function StorefrontHeader({
   searchLoading = false,
   mobileMenuOpen,
   onMobileMenuToggle,
+  orderMode = false,
+  orderPage = false,
+  categoryOptions = [],
+  activeCategory = "",
+  onCategoryChange,
+  stockFilter = "all",
+  onStockFilterChange,
+  onClearFilters,
+  onCartItemAdded,
 }: StorefrontHeaderProps) {
   const { t } = useI18n();
+  const router = useRouter();
   const whatsappHref = getWhatsAppChatUrl();
   const [internalMenuOpen, setInternalMenuOpen] = useState(false);
   const [localQuery, setLocalQuery] = useState(query);
@@ -126,7 +149,7 @@ export function StorefrontHeader({
       onSearch(resolved);
       return;
     }
-    window.location.assign(resolved ? `/?q=${encodeURIComponent(resolved)}` : "/");
+    router.push(resolved ? `/?q=${encodeURIComponent(resolved)}` : "/");
   }
 
   function openProduct(product: HeaderSearchProduct) {
@@ -144,19 +167,32 @@ export function StorefrontHeader({
         onSubmitSearch={submitSearch}
         searchLoading={searchLoading}
         onOpenProduct={openProduct}
-        onAddToCart={async (listingId) => {
+        onAddToCart={async (listingId, unitPaise) => {
           const response = await fetch("/api/cart", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ dealerListingId: listingId, quantity: 1 }),
           });
           if (response.status === 401) {
-            window.location.assign("/login");
+            router.push("/login");
             return;
           }
-          if (response.ok) setCartBump((count) => count + 1);
+          if (response.ok) {
+            setCartBump((count) => count + 1);
+            onCartItemAdded?.(listingId, unitPaise);
+          }
         }}
         panelHost={panelHost}
+        orderMode={orderMode}
+        orderPage={orderPage}
+        categoryOptions={categoryOptions}
+        activeCategory={activeCategory}
+        onCategoryChange={onCategoryChange}
+        stockFilter={stockFilter}
+        onStockFilterChange={onStockFilterChange}
+        onClearFilters={onClearFilters}
+        mobileCartHref="/cart"
+        mobileCartCount={cartCount + cartBump}
       />
     );
   }
@@ -170,34 +206,83 @@ export function StorefrontHeader({
     </Link>
   );
 
+  if (orderPage) {
+    return (
+      <header className="bg-[#f7f5f3] text-slate-900">
+        <div className="mx-auto max-w-[1240px] px-4 py-4 sm:px-6 md:py-8 lg:px-8">
+          <div className="hidden items-start justify-between gap-6 md:flex">
+            <div>
+              <h1 className="text-4xl font-extrabold tracking-tight text-[#4b0d20] sm:text-5xl">
+                Order Spare Parts
+              </h1>
+              <p className="mt-3 text-sm text-slate-600">
+                Search and add parts to your cart • All prices are inclusive of GST
+              </p>
+            </div>
+            <Link
+              href="/?focus=search"
+              className="inline-flex min-h-14 items-center rounded-xl bg-[#7a1233] px-6 text-lg font-bold text-white shadow-sm transition hover:bg-[#611029]"
+            >
+              <span className="mr-2 text-2xl leading-none">+</span>
+              Create New Order
+            </Link>
+          </div>
+          <div className="relative mt-0 md:mt-7 md:rounded-2xl md:bg-white md:p-3 md:shadow-[0_10px_30px_rgba(15,23,42,0.08)]">
+            {renderSearchField()}
+          </div>
+        </div>
+        <ProductDetailModal
+          key={detailTarget?.partId || detailTarget?.sku || "no-product"}
+          open={Boolean(detailTarget)}
+          partId={detailTarget?.partId}
+          sku={detailTarget?.sku}
+          onClose={() => setDetailTarget(null)}
+          onAddedToCart={() => setCartBump((count) => count + 1)}
+          onWishlistChange={() => setWishBump((count) => count + 1)}
+        />
+      </header>
+    );
+  }
+
   return (
     <header className="sticky top-0 z-40 overflow-visible bg-white text-slate-900 shadow-sm">
       <div className="bg-[#7a1233] px-4 py-[7px] text-[12px] font-medium text-white sm:px-6">
-        <div className="mx-auto flex max-w-[1688px] items-center justify-between gap-3">
-          <p className="min-w-0 truncate">{UTILITY_STRIP}</p>
-          <div className="shrink-0 lg:hidden">
-            <HeaderPreferenceToggle compact />
-          </div>
-          <nav className="hidden items-center gap-3 whitespace-nowrap lg:flex">
+        <div className="mx-auto flex max-w-[1688px] items-center gap-3">
+          <Link href="/" className="shrink-0 text-sm font-extrabold tracking-tight text-white hover:underline">
+            SpareParts Pro
+          </Link>
+          <nav className="hidden items-center gap-1 text-xs font-semibold text-white/90 sm:flex" aria-label="Primary order navigation">
+            <Link href="/profile" className="rounded px-2 py-1 hover:bg-white/10 hover:text-white">
+              Dashboard
+            </Link>
+            <Link href="/?focus=search" className="rounded px-2 py-1 hover:bg-white/10 hover:text-white">
+              Catalog
+            </Link>
+            <Link href="/orders" className="rounded px-2 py-1 hover:bg-white/10 hover:text-white">
+              Orders
+            </Link>
+          </nav>
+          <p className="ml-auto hidden min-w-0 truncate text-[11px] text-white/75 xl:block">{UTILITY_STRIP}</p>
+          <nav className="ml-auto hidden items-center gap-3 whitespace-nowrap text-[12px] font-medium text-white xl:flex">
             <span className="inline-flex items-center gap-1.5">
               <PeopleIcon />
               {t("nav.trusted")}
             </span>
-            <span className="opacity-50">|</span>
             <span className="inline-flex items-center gap-1.5">
               <TruckIcon />
               {t("nav.panIndia")}
             </span>
-            <span className="opacity-50">|</span>
             <Link href="/help-support" className="inline-flex items-center gap-1.5 hover:underline">
               <HelpIcon />
               {t("nav.needHelp")}
             </Link>
-            <span className="opacity-50">|</span>
-            <Link href="/login/dealer" className="inline-flex items-center gap-1.5 hover:underline">
+            <Link href="/login/dealer" className="hover:underline">
               {t("nav.dealer")}
             </Link>
           </nav>
+          <div className="ml-auto shrink-0 sm:hidden">
+            <HeaderPreferenceToggle compact />
+          </div>
         </div>
       </div>
 
@@ -217,15 +302,17 @@ export function StorefrontHeader({
         <div className="min-w-0 justify-self-center lg:justify-self-auto lg:shrink-0">
           <BrandLogo />
         </div>
-        <Link
-          href="/cart"
-          className="relative inline-flex h-10 w-10 items-center justify-center lg:hidden"
-          aria-label={t("nav.cart")}
-        >
-          <CartIcon />
-          <CountBadge count={cartCount + cartBump} />
-        </Link>
-        <div className="col-span-3 min-w-0 w-full lg:order-3 lg:basis-full xl:order-none xl:min-w-[16rem] xl:flex-1 xl:basis-0">{renderSearchField()}</div>
+        {orderMode ? null : (
+          <Link
+            href="/cart"
+            className="relative inline-flex h-10 w-10 items-center justify-center lg:hidden"
+            aria-label={t("nav.cart")}
+          >
+            <CartIcon />
+            <CountBadge count={cartCount + cartBump} />
+          </Link>
+        )}
+        <div className="col-span-3 min-w-0 w-full lg:order-3 lg:basis-full xl:order-3 xl:basis-full">{renderSearchField()}</div>
         <div className="hidden min-w-0 shrink items-center justify-end gap-x-3 gap-y-2 text-[13px] font-semibold text-slate-800 lg:flex lg:flex-wrap xl:gap-5">
           <Link href="/login" className="inline-flex min-h-11 items-center gap-1.5 hover:text-[#7a1233]">
             <UserIcon />
@@ -264,6 +351,7 @@ export function StorefrontHeader({
       </nav>
 
       <ProductDetailModal
+        key={detailTarget?.partId || detailTarget?.sku || "no-product"}
         open={Boolean(detailTarget)}
         partId={detailTarget?.partId}
         sku={detailTarget?.sku}

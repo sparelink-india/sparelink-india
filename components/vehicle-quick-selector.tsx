@@ -57,15 +57,49 @@ export function VehicleQuickSelector() {
   }, []);
 
   useEffect(() => {
+    let active = true;
     void fetch("/api/vehicles", { cache: "no-store" })
       .then((res) => (res.ok ? res.json() : null))
       .then((data) => {
+        if (!active) return;
         setVehicles(Array.isArray(data?.vehicles) ? data.vehicles : []);
       })
-      .catch(() => setVehicles([]))
-      .finally(() => setLoading(false));
-    void loadGarage();
-  }, [loadGarage]);
+      .catch(() => {
+        if (active) setVehicles([]);
+      })
+      .finally(() => {
+        if (active) setLoading(false);
+      });
+
+    void fetch("/api/garage", { cache: "no-store" })
+      .then(async (response) => {
+        if (!active) return;
+        if (response.status === 401) {
+          setGarage([]);
+          setGarageState("guest");
+          return;
+        }
+        const data = await response.json().catch(() => ({}));
+        if (!active) return;
+        if (!response.ok) {
+          setGarage([]);
+          setGarageState("error");
+          return;
+        }
+        setGarage(Array.isArray(data.vehicles) ? data.vehicles : []);
+        setGarageState("ready");
+      })
+      .catch(() => {
+        if (active) {
+          setGarage([]);
+          setGarageState("error");
+        }
+      });
+
+    return () => {
+      active = false;
+    };
+  }, []);
 
   const makes = useMemo(() => {
     const set = new Set<string>();

@@ -10,7 +10,9 @@ import {
 import { ignoreCheckoutClientOverrides } from "./party-pricing";
 import { priceCustomerLine } from "./party-pricing";
 import {
+  buildCheckoutIdempotencyStorageKey,
   buildParentOrderPlan,
+  checkoutIdempotencyStorageMatches,
   CheckoutError,
   countAllocationsByCanonicalFirm,
   parseCheckoutIdempotencyKey,
@@ -294,5 +296,112 @@ describe("multi-firm checkout order plan", () => {
     const laterCatalogue = priceCustomerLine(12000, 1, 18, 30);
     assert.equal(original.unitPricePaise, 7000);
     assert.notEqual(original.unitPricePaise, laterCatalogue.netInclusivePaise);
+  });
+});
+
+describe("checkout idempotency storage", () => {
+  const body = {
+    paymentMethod: "bank_transfer",
+    shippingAddress: {
+      name: "Test Buyer",
+      phone: "9876543210",
+      city: "Pune",
+    },
+  };
+  const cart = [
+    {
+      id: "cart-item-1",
+      dealerListingId: "listing-1",
+      quantity: 2,
+      firmId: AMBAJI_TRADERS_FIRM_ID,
+      pricePaise: 10000,
+    },
+  ];
+
+  it("replays the same buyer, key, body, and cart snapshot", () => {
+    const stored = buildCheckoutIdempotencyStorageKey(
+      "buyer-1",
+      "checkout-1",
+      body,
+      cart,
+    );
+
+    assert.equal(
+      checkoutIdempotencyStorageMatches(
+        stored,
+        "buyer-1",
+        "checkout-1",
+        body,
+        cart,
+      ),
+      true,
+    );
+  });
+
+  it("does not replay a reused key with a different payload", () => {
+    const stored = buildCheckoutIdempotencyStorageKey(
+      "buyer-1",
+      "checkout-1",
+      body,
+      cart,
+    );
+
+    assert.equal(
+      checkoutIdempotencyStorageMatches(
+        stored,
+        "buyer-1",
+        "checkout-1",
+        { ...body, paymentMethod: "cash_on_delivery" },
+        cart,
+      ),
+      false,
+    );
+  });
+
+  it("does not replay a reused key with different cart contents", () => {
+    const stored = buildCheckoutIdempotencyStorageKey(
+      "buyer-1",
+      "checkout-1",
+      body,
+      cart,
+    );
+
+    assert.equal(
+      checkoutIdempotencyStorageMatches(
+        stored,
+        "buyer-1",
+        "checkout-1",
+        body,
+        [{ ...cart[0], quantity: 3 }],
+      ),
+      false,
+    );
+  });
+
+  it("scopes the stored key to the buyer", () => {
+    const first = buildCheckoutIdempotencyStorageKey(
+      "buyer-1",
+      "checkout-1",
+      body,
+      cart,
+    );
+    const second = buildCheckoutIdempotencyStorageKey(
+      "buyer-2",
+      "checkout-1",
+      body,
+      cart,
+    );
+
+    assert.notEqual(first, second);
+    assert.equal(
+      checkoutIdempotencyStorageMatches(
+        first,
+        "buyer-2",
+        "checkout-1",
+        body,
+        cart,
+      ),
+      false,
+    );
   });
 });

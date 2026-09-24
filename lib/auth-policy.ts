@@ -49,6 +49,10 @@ export function isBuyerRole(role: string | null | undefined): boolean {
   return role === "buyer";
 }
 
+export function isSuspendedRole(role: string | null | undefined): boolean {
+  return role === "suspended";
+}
+
 export function sessionHasRole(
   role: string | null | undefined,
   allowed: readonly AppUserRole[],

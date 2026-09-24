@@ -7,7 +7,6 @@ import { desc } from "drizzle-orm";
 export async function GET() {
   const auth = await requireAdminApi();
   if (auth.error) return auth.error;
-  const session = auth.session;
 
   const db = getDb();
 

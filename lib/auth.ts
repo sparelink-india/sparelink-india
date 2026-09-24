@@ -1,11 +1,12 @@
 import { betterAuth } from "better-auth";
+import { APIError } from "better-auth/api";
 import { drizzleAdapter } from "@better-auth/drizzle-adapter";
 import { nextCookies } from "better-auth/next-js";
 import { phoneNumber } from "better-auth/plugins";
 import { getDb } from "@/lib/db";
 import { deliverBuyerOtp } from "@/lib/otp";
 import { sessionCookieAttributes } from "@/lib/access-control";
-import { assignRoleOnUserCreate } from "@/lib/auth-policy";
+import { assignRoleOnUserCreate, isSuspendedRole } from "@/lib/auth-policy";
 import * as schema from "@/drizzle/schema";
 
 const googleClientId = process.env.GOOGLE_CLIENT_ID?.trim();
@@ -67,6 +68,26 @@ function createAuth() {
               role: assignRoleOnUserCreate(),
             },
           }),
+        },
+      },
+      session: {
+        create: {
+          before: async (session, context) => {
+            if (!context) return false;
+            const user = await context.context.internalAdapter.findUserById(
+              session.userId,
+            );
+            if (
+              isSuspendedRole(
+                (user as { role?: string | null } | null | undefined)?.role,
+              )
+            ) {
+              throw new APIError("FORBIDDEN", {
+                code: "SUSPENDED_USER",
+                message: "This account is suspended.",
+              });
+            }
+          },
         },
       },
     },

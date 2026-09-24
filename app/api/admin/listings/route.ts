@@ -8,7 +8,6 @@ import { isAllowedFirmId } from "@/lib/firms";
 export async function GET() {
   const auth = await requireAdminApi();
   if (auth.error) return auth.error;
-  const session = auth.session;
 
   const db = getDb();
 
@@ -45,7 +44,6 @@ export async function GET() {
 export async function PATCH(request: Request) {
   const auth = await requireAdminApi();
   if (auth.error) return auth.error;
-  const session = auth.session;
 
   const body = await request.json().catch(() => null);
   const { listingId, firmId } = body || {};

@@ -1,7 +1,7 @@
 /* eslint-disable react-hooks/set-state-in-effect */
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { SiteFooter } from "@/components/site-footer";
 import { StorefrontHeader } from "@/components/storefront-header";
@@ -32,7 +32,7 @@ export default function WishlistPage() {
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
 
-  async function loadWishlist() {
+  const loadWishlist = useCallback(async () => {
     setError("");
     const response = await fetch("/api/wishlist", { cache: "no-store" });
     if (response.status === 401) {
@@ -50,11 +50,11 @@ export default function WishlistPage() {
     setNeedsLogin(false);
     setItems(Array.isArray(data.items) ? data.items : []);
     setLoading(false);
-  }
+  }, [t]);
 
   useEffect(() => {
     void loadWishlist();
-  }, []);
+  }, [loadWishlist]);
 
   async function addToCart(item: WishlistItem) {
     if (!item.listingId) {

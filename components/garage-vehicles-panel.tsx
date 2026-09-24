@@ -63,8 +63,32 @@ export function GarageVehiclesPanel({
   }, [t]);
 
   useEffect(() => {
-    void loadGarage();
-  }, [loadGarage]);
+    let active = true;
+    async function initGarage() {
+      const response = await fetch("/api/garage", { cache: "no-store" });
+      if (!active) return;
+      if (response.status === 401) {
+        setNeedsLogin(true);
+        setVehicles([]);
+        setLoading(false);
+        return;
+      }
+      const data = await response.json().catch(() => ({}));
+      if (!active) return;
+      if (!response.ok) {
+        setError(typeof data.error === "string" ? data.error : t("garage.loadFail"));
+        setLoading(false);
+        return;
+      }
+      setNeedsLogin(false);
+      setVehicles(Array.isArray(data.vehicles) ? data.vehicles : []);
+      setLoading(false);
+    }
+    void initGarage();
+    return () => {
+      active = false;
+    };
+  }, [t]);
 
   useEffect(() => {
     if (!showAdd) return;

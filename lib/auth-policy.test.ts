@@ -8,7 +8,6 @@ import {
   buildLoginOptionsPayload,
   isGoogleOAuthConfigured,
   isOtpRequired,
-  isRegistrationOtpRequired,
   resolveLoginEmail,
 } from "./auth-flags";
 import {
@@ -21,6 +20,7 @@ import {
   isAdminRole,
   isBuyerRole,
   isDealerRole,
+  isSuspendedRole,
   normalizeIndianMobile,
   payloadExposesSecrets,
   preserveRoleOnExistingSignIn,
@@ -54,19 +54,15 @@ function withGoogleEnv(clientId: string | undefined, clientSecret: string | unde
   }
 }
 
-describe("buyer registration without OTP", () => {
-  it("does not require OTP to create a buyer account", () => {
-    assert.equal(isRegistrationOtpRequired(), false);
+describe("buyer registration with phone OTP", () => {
+  it("verifies phone OTP before creating buyer account", () => {
     const page = source("app/register/page.tsx");
-    const route = source("app/api/auth/register/route.ts");
     const auth = source("lib/auth.ts");
-    assert.match(page, /\/api\/auth\/register/);
-    assert.equal(page.includes("send-otp"), false);
-    assert.equal(page.includes("phone-number/verify"), false);
-    assert.match(route, /signUpEmail/);
-    assert.equal(route.includes("send-otp"), false);
-    assert.match(auth, /disableSignUp:\s*false/);
+    assert.match(page, /\/api\/auth\/phone-number\/send-otp/);
+    assert.match(page, /\/api\/auth\/phone-number\/verify/);
+    assert.match(auth, /disableSignUp:\s*true/);
     assert.match(auth, /phoneNumber\(/);
+    assert.match(auth, /signUpOnVerification/);
   });
 
   it("maps a new username or email onto a buyer login without a phone code", () => {
@@ -195,6 +191,9 @@ describe("admin, dealer, and buyer authorization", () => {
     assert.equal(isBuyerRole("buyer"), true);
     assert.equal(isBuyerRole("admin"), false);
     assert.equal(isBuyerRole("dealer"), false);
+    assert.equal(isSuspendedRole("suspended"), true);
+    assert.equal(isSuspendedRole("buyer"), false);
+    assert.equal(isSuspendedRole("admin"), false);
     assert.equal(sessionHasRole("admin", ["admin"]), true);
     assert.equal(sessionHasRole("buyer", ["admin"]), false);
     assert.equal(sessionHasRole("dealer", ["dealer"]), true);
@@ -209,6 +208,9 @@ describe("admin, dealer, and buyer authorization", () => {
     assert.match(source("lib/require-role.ts"), /isAdminRole/);
     assert.match(source("lib/require-role.ts"), /isDealerRole/);
     assert.match(source("app/api/cart/route.ts"), /isBuyerRole/);
+    assert.match(source("lib/auth.ts"), /session:\s*\{\s*create:\s*\{\s*before/);
+    assert.match(source("lib/auth.ts"), /isSuspendedRole/);
+    assert.match(source("app/api/admin/users/route.ts"), /delete\(authSession\)/);
   });
 });
 

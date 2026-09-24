@@ -65,20 +65,27 @@ export function MobileBottomNav({
   const { t } = useI18n();
   const pathname = usePathname();
   const searchParams = useSearchParams();
-  const [cartCount, setCartCount] = useState(cartCountProp ?? 0);
+  const [fetchedCartCount, setFetchedCartCount] = useState<number | null>(null);
+  const cartCount = typeof cartCountProp === "number" ? cartCountProp : (fetchedCartCount ?? 0);
   const [keyboardOpen, setKeyboardOpen] = useState(false);
 
   useEffect(() => {
     if (typeof cartCountProp === "number") {
-      setCartCount(cartCountProp);
       return;
     }
+    let active = true;
     void fetch("/api/cart", { cache: "no-store" })
       .then((res) => (res.ok ? res.json() : null))
       .then((data) => {
-        if (data && typeof data.itemCount === "number") setCartCount(data.itemCount);
+        if (active && data && typeof data.itemCount === "number") {
+          setFetchedCartCount(data.itemCount);
+        }
       })
       .catch(() => undefined);
+
+    return () => {
+      active = false;
+    };
   }, [cartCountProp, pathname]);
 
   useEffect(() => {

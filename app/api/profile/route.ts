@@ -12,6 +12,9 @@ export async function GET() {
   if (!session) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
+  if (session.user.role !== "buyer") {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
 
   const blocked = await denyIfMustChangePassword(session.user.id);
   if (blocked) return blocked;
@@ -60,6 +63,9 @@ export async function PATCH(request: Request) {
   const session = await getServerSession();
   if (!session) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+  if (session.user.role !== "buyer") {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
   const blocked = await denyIfMustChangePassword(session.user.id);

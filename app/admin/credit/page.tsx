@@ -1,6 +1,6 @@
 "use client";
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 
 type Summary = {
   dealerId: string;
@@ -32,15 +32,15 @@ export default function CreditAdminPage() {
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
 
-  const loadDealers = async () => {
+  const loadDealers = useCallback(async () => {
     const r = await fetch("/api/admin/credit", { cache: "no-store" });
     const d = await r.json();
     if (!r.ok) throw new Error(d.error);
     setDealers(d.dealers);
     if (!selected && d.dealers[0]) setSelected(d.dealers[0].dealerId);
-  };
+  }, [selected]);
 
-  const loadDealer = async (dealerId: string) => {
+  const loadDealer = useCallback(async (dealerId: string) => {
     const r = await fetch(`/api/admin/credit?dealerId=${encodeURIComponent(dealerId)}`, {
       cache: "no-store",
     });
@@ -49,7 +49,7 @@ export default function CreditAdminPage() {
     setSummary(d.summary);
     setLedger(d.ledger);
     setCreditLimitPaise(d.summary.creditLimitPaise);
-  };
+  }, []);
 
   useEffect(() => {
     const t = window.setTimeout(() => {
@@ -58,7 +58,7 @@ export default function CreditAdminPage() {
       );
     }, 0);
     return () => window.clearTimeout(t);
-  }, []);
+  }, [loadDealers]);
 
   useEffect(() => {
     if (!selected) return;
@@ -68,7 +68,7 @@ export default function CreditAdminPage() {
       );
     }, 0);
     return () => window.clearTimeout(t);
-  }, [selected]);
+  }, [loadDealer, selected]);
 
   const saveLimit = async (e: React.FormEvent) => {
     e.preventDefault();

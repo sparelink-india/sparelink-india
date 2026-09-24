@@ -84,7 +84,6 @@ export function HeaderPreferenceToggle({ compact = false }: { compact?: boolean 
           {compact ? null : <span>Dark</span>}
         </button>
       </div>
-      <span className={compact ? "h-4 w-px bg-white/40" : "h-5 w-px bg-slate-200 dark:bg-[#3d4658]"} aria-hidden />
       <div
         role="group"
         aria-label="Language"

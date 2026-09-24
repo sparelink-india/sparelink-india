@@ -3,12 +3,18 @@
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
+import { InvoiceDownloadLinks } from "@/components/invoice-download-links";
 
 type PaymentOrder = {
   id: string;
   orderNumber: string;
   paymentStatus: string;
   paymentMethod: string;
+};
+
+type FirmAllocation = {
+  firmOrderId: string;
+  firmName: string;
 };
 
 function parentPaymentLabel(status: string) {
@@ -21,6 +27,7 @@ export default function OrderConfirmationPage() {
   const params = useParams();
   const id = typeof params.id === "string" ? params.id : "";
   const [order, setOrder] = useState<PaymentOrder | null>(null);
+  const [firmAllocations, setFirmAllocations] = useState<FirmAllocation[]>([]);
 
   useEffect(() => {
     if (!id) return;
@@ -29,10 +36,22 @@ export default function OrderConfirmationPage() {
         const data = await res.json();
         if (res.ok && data.order) {
           setOrder(data.order);
+          const payments = Array.isArray(data.firmPayments)
+            ? data.firmPayments
+            : [];
+          setFirmAllocations(
+            payments.map(
+              (row: { firmOrderId: string; firmName: string }) => ({
+                firmOrderId: row.firmOrderId,
+                firmName: row.firmName,
+              }),
+            ),
+          );
         }
       })
       .catch(() => {
         setOrder(null);
+        setFirmAllocations([]);
       });
   }, [id]);
 
@@ -40,6 +59,8 @@ export default function OrderConfirmationPage() {
     order &&
     order.paymentMethod !== "cash_on_delivery" &&
     order.paymentStatus !== "paid";
+
+  const multiFirm = firmAllocations.length > 1;
 
   return (
     <main className="min-h-screen bg-slate-50/80 px-4 py-16 text-slate-900 sm:px-6 sm:py-24">
@@ -86,9 +107,13 @@ export default function OrderConfirmationPage() {
                 : "Confirming from SpareLink..."}
             </span>
           </div>
-          <div className="flex justify-between">
+          <div className="flex justify-between gap-3">
             <span>GST Tax Invoice:</span>
-            <span className="text-slate-900 font-medium">Ready for Download</span>
+            <span className="text-slate-900 font-medium text-right">
+              {multiFirm
+                ? "One invoice per fulfillment firm"
+                : "Ready for Download"}
+            </span>
           </div>
         </div>
 
@@ -104,22 +129,23 @@ export default function OrderConfirmationPage() {
         )}
 
         <div className="mt-6 flex flex-wrap items-center justify-center gap-2.5">
-          <a
-            href={`/api/orders/${id}/invoice`}
-            target="_blank"
-            rel="noreferrer"
-            download
-            className="inline-flex items-center gap-1.5 rounded-xl border border-slate-300 bg-white px-3.5 py-2 text-xs font-bold text-slate-800 shadow-xs hover:bg-slate-50 transition-colors"
-          >
-            <span>📄</span> Download PDF
-          </a>
-          <a
-            href={`/api/orders/${id}/excel`}
-            download
-            className="inline-flex items-center gap-1.5 rounded-xl border border-emerald-300 bg-emerald-50 px-3.5 py-2 text-xs font-bold text-emerald-800 shadow-xs hover:bg-emerald-100 transition-colors"
-          >
-            <span>📊</span> Download Excel
-          </a>
+          {id ? (
+            <InvoiceDownloadLinks
+              orderId={id}
+              allocations={firmAllocations}
+              className="flex flex-wrap items-center justify-center gap-2.5"
+              linkClassName="inline-flex items-center gap-1.5 rounded-xl border border-slate-300 bg-white px-3.5 py-2 text-xs font-bold text-slate-800 shadow-xs hover:bg-slate-50 transition-colors"
+            />
+          ) : null}
+          {id ? (
+            <a
+              href={`/api/orders/${id}/excel`}
+              download
+              className="inline-flex items-center gap-1.5 rounded-xl border border-emerald-300 bg-emerald-50 px-3.5 py-2 text-xs font-bold text-emerald-800 shadow-xs hover:bg-emerald-100 transition-colors"
+            >
+              <span>📊</span> Download Excel
+            </a>
+          ) : null}
         </div>
 
         <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:justify-center border-t border-slate-100 pt-6">

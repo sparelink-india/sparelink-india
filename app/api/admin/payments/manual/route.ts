@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { requireAdminApi } from "@/lib/require-role";
-import { and, desc, eq } from "drizzle-orm";
+import { and, desc, eq, ne } from "drizzle-orm";
 import { getDb } from "@/lib/db";
 import {
   firmOrder,
@@ -10,11 +10,11 @@ import {
 } from "@/drizzle/schema";
 import { isAllowedFirmId } from "@/lib/firms";
 import { syncParentOrderPaymentStatus } from "@/lib/payment-rollup";
+import { isBankTransferPaymentMethod } from "@/lib/payment-security";
 
 export async function GET() {
   const auth = await requireAdminApi();
   if (auth.error) return auth.error;
-  const session = auth.session;
 
   const db = getDb();
 
@@ -121,9 +121,26 @@ export async function PATCH(request: Request) {
 
   try {
     const parentStatus = await db.transaction(async (tx) => {
-      const newStatus = action === "approve" ? "approved" : "rejected";
+      const submissionRows = await tx
+        .select()
+        .from(manualPaymentSubmission)
+        .where(eq(manualPaymentSubmission.id, submission.id))
+        .for("update");
+      const lockedSubmission = submissionRows[0];
+      if (!lockedSubmission || lockedSubmission.status !== "submitted") {
+        throw new Error("SUBMISSION_ALREADY_REVIEWED");
+      }
 
-      await tx
+      const parentRows = await tx
+        .select()
+        .from(order)
+        .where(eq(order.id, lockedSubmission.orderId))
+        .for("update");
+      const lockedOrder = parentRows[0];
+      if (!lockedOrder) throw new Error("ORDER_MISSING");
+
+      const newStatus = action === "approve" ? "approved" : "rejected";
+      const updatedSubmission = await tx
         .update(manualPaymentSubmission)
         .set({
           status: newStatus,
@@ -136,13 +153,22 @@ export async function PATCH(request: Request) {
           reviewedAt: new Date(),
           updatedAt: new Date(),
         })
-        .where(eq(manualPaymentSubmission.id, submission.id));
-
-      if (action !== "approve") {
-        return syncParentOrderPaymentStatus(tx, orderRecord.id);
+        .where(
+          and(
+            eq(manualPaymentSubmission.id, lockedSubmission.id),
+            eq(manualPaymentSubmission.status, "submitted"),
+          ),
+        )
+        .returning({ id: manualPaymentSubmission.id });
+      if (!updatedSubmission.length) {
+        throw new Error("SUBMISSION_ALREADY_REVIEWED");
       }
 
-      if (!submission.firmOrderId) {
+      if (action !== "approve") {
+        return syncParentOrderPaymentStatus(tx, lockedOrder.id);
+      }
+
+      if (!lockedSubmission.firmOrderId) {
         throw new Error("ALLOCATION_REQUIRED");
       }
 
@@ -151,38 +177,67 @@ export async function PATCH(request: Request) {
         .from(firmOrder)
         .where(
           and(
-            eq(firmOrder.id, submission.firmOrderId),
-            eq(firmOrder.orderId, orderRecord.id),
+            eq(firmOrder.id, lockedSubmission.firmOrderId),
+            eq(firmOrder.orderId, lockedOrder.id),
           ),
         )
         .for("update");
       const allocation = allocationRows[0];
 
-      if (!allocation) {
-        throw new Error("ALLOCATION_MISSING");
-      }
-
+      if (!allocation) throw new Error("ALLOCATION_MISSING");
       if (!isAllowedFirmId(allocation.firmId)) {
         throw new Error("FIRM_NOT_ALLOWED");
       }
-
-      if (allocation.paymentStatus !== "paid") {
-        await tx
-          .update(firmOrder)
-          .set({
-            paymentStatus: "paid",
-            updatedAt: new Date(),
-          })
-          .where(
-            and(
-              eq(firmOrder.id, allocation.id),
-              eq(firmOrder.orderId, orderRecord.id),
-              eq(firmOrder.firmId, allocation.firmId),
-            ),
-          );
+      if (
+        lockedSubmission.buyerId !== lockedOrder.buyerId ||
+        lockedSubmission.firmId !== allocation.firmId ||
+        !isBankTransferPaymentMethod(lockedOrder.paymentMethod) ||
+        !isBankTransferPaymentMethod(allocation.paymentMethod) ||
+        lockedSubmission.amountPaise !== allocation.amountPaise ||
+        lockedOrder.status === "cancelled" ||
+        lockedOrder.status === "returned" ||
+        lockedOrder.paymentStatus === "paid" ||
+        allocation.fulfillmentStatus === "cancelled" ||
+        allocation.fulfillmentStatus === "returned" ||
+        allocation.paymentStatus === "paid"
+      ) {
+        throw new Error("PAYMENT_RELATIONSHIP_INVALID");
       }
 
-      return syncParentOrderPaymentStatus(tx, orderRecord.id);
+      const duplicateApproved = await tx
+        .select({ id: manualPaymentSubmission.id })
+        .from(manualPaymentSubmission)
+        .where(
+          and(
+            eq(manualPaymentSubmission.utrReference, lockedSubmission.utrReference),
+            ne(manualPaymentSubmission.id, lockedSubmission.id),
+            eq(manualPaymentSubmission.status, "approved"),
+          ),
+        )
+        .limit(1);
+      if (duplicateApproved.length) throw new Error("UTR_ALREADY_APPROVED");
+
+      const paidAllocation = await tx
+        .update(firmOrder)
+        .set({
+          paymentStatus: "paid",
+          updatedAt: new Date(),
+        })
+        .where(
+          and(
+            eq(firmOrder.id, allocation.id),
+            eq(firmOrder.orderId, lockedOrder.id),
+            eq(firmOrder.firmId, allocation.firmId),
+            eq(firmOrder.paymentMethod, "bank_transfer"),
+            eq(firmOrder.paymentStatus, "unpaid"),
+          ),
+        )
+        .returning({ id: firmOrder.id });
+      if (!paidAllocation.length) {
+        throw new Error("PAYMENT_RELATIONSHIP_INVALID");
+      }
+
+      return syncParentOrderPaymentStatus(tx, lockedOrder.id);
     });
 
     return NextResponse.json({
@@ -194,6 +249,20 @@ export async function PATCH(request: Request) {
           : `UTR submission for Order #${orderRecord.orderNumber} has been rejected.`,
     });
   } catch (err) {
+    if (err instanceof Error && err.message === "SUBMISSION_ALREADY_REVIEWED") {
+      return NextResponse.json(
+        { error: "This submission has already been reviewed." },
+        { status: 409 },
+      );
+    }
+
+    if (err instanceof Error && err.message === "ORDER_MISSING") {
+      return NextResponse.json(
+        { error: "Associated order not found." },
+        { status: 404 },
+      );
+    }
+
     if (err instanceof Error && err.message === "ALLOCATION_REQUIRED") {
       return NextResponse.json(
         {
@@ -215,6 +284,20 @@ export async function PATCH(request: Request) {
       return NextResponse.json(
         { error: "This allocation is not assigned to a valid fulfillment firm." },
         { status: 400 },
+      );
+    }
+
+    if (err instanceof Error && err.message === "PAYMENT_RELATIONSHIP_INVALID") {
+      return NextResponse.json(
+        { error: "The payment submission does not match this order allocation." },
+        { status: 409 },
+      );
+    }
+
+    if (err instanceof Error && err.message === "UTR_ALREADY_APPROVED") {
+      return NextResponse.json(
+        { error: "This UTR has already been approved." },
+        { status: 409 },
       );
     }
 

@@ -1,7 +1,7 @@
-import { and, eq } from "drizzle-orm";
+import { and, eq, ne } from "drizzle-orm";
 import { NextRequest, NextResponse } from "next/server";
 
-import { firmOrder, payment } from "@/drizzle/schema";
+import { firmOrder, order, payment } from "@/drizzle/schema";
 import { syncParentOrderPaymentStatus } from "@/lib/payment-rollup";
 import {
   extractCashfreeWebhookPayment,
@@ -13,6 +13,11 @@ import {
 } from "@/lib/cashfree";
 import { getDb } from "@/lib/db";
 import { isAllowedFirmId } from "@/lib/firms";
+import {
+  canAcceptPaymentForAllocationStatus,
+  canAcceptPaymentForOrderStatus,
+  isCashfreePaymentMethod,
+} from "@/lib/payment-security";
 
 function ok(extra?: Record<string, unknown>) {
   return NextResponse.json({ received: true, ...extra });
@@ -54,7 +59,10 @@ export async function POST(request: NextRequest) {
       console.error("Cashfree webhook unknown provider order", {
         providerOrderId: extracted.providerOrderId,
       });
-      return ok({ ignored: true });
+      return NextResponse.json(
+        { error: "Payment record is not available yet; retry later." },
+        { status: 503 },
+      );
     }
 
     if (!isAllowedFirmId(paymentRecord.firmId)) {
@@ -111,10 +119,13 @@ export async function POST(request: NextRequest) {
         return;
       }
 
-      if (lockedPayment.status === "paid") {
-        await syncParentOrderPaymentStatus(tx, lockedPayment.orderId);
-        return;
-      }
+      const parentRows = await tx
+        .select()
+        .from(order)
+        .where(eq(order.id, lockedPayment.orderId))
+        .for("update");
+      const parent = parentRows[0];
+      if (!parent) throw new Error("WEBHOOK_GUARD");
 
       if (
         lockedPayment.providerOrderId !== extracted.providerOrderId ||
@@ -130,8 +141,21 @@ export async function POST(request: NextRequest) {
         .where(eq(firmOrder.id, lockedPayment.firmOrderId))
         .for("update");
       const allocation = allocationRows[0];
-      if (!allocation || allocation.firmId !== lockedPayment.firmId) {
+      if (
+        !allocation ||
+        allocation.orderId !== parent.id ||
+        allocation.firmId !== lockedPayment.firmId ||
+        !isCashfreePaymentMethod(parent.paymentMethod) ||
+        !isCashfreePaymentMethod(allocation.paymentMethod) ||
+        !canAcceptPaymentForOrderStatus(parent.status) ||
+        !canAcceptPaymentForAllocationStatus(allocation.fulfillmentStatus)
+      ) {
         throw new Error("WEBHOOK_GUARD");
+      }
+
+      if (lockedPayment.status === "paid") {
+        await syncParentOrderPaymentStatus(tx, parent.id);
+        return;
       }
 
       const mapped: SpareLinkPaymentStatus = extracted.mappedStatus;
@@ -150,7 +174,10 @@ export async function POST(request: NextRequest) {
           throw new Error("WEBHOOK_AMOUNT");
         }
 
-        if (extracted.currency && extracted.currency.toUpperCase() !== "INR") {
+        if (
+          extracted.currency?.toUpperCase() !== "INR" ||
+          lockedPayment.currency !== "INR"
+        ) {
           console.error("Cashfree webhook currency rejected", {
             paymentId: lockedPayment.id,
             firmCode: credentials.firmCode,
@@ -216,7 +243,30 @@ export async function POST(request: NextRequest) {
           failedAt,
           updatedAt: now,
         })
-        .where(eq(payment.id, lockedPayment.id));
+        .where(
+          and(
+            eq(payment.id, lockedPayment.id),
+            ne(payment.status, "paid"),
+          ),
+        );
+
+      if (mapped !== "pending" && mapped !== "created") {
+        await tx
+          .update(firmOrder)
+          .set({
+            paymentStatus: mapped,
+            updatedAt: now,
+          })
+          .where(
+            and(
+              eq(firmOrder.id, lockedPayment.firmOrderId),
+              eq(firmOrder.orderId, parent.id),
+              eq(firmOrder.firmId, lockedPayment.firmId),
+              ne(firmOrder.paymentStatus, "paid"),
+            ),
+          );
+        await syncParentOrderPaymentStatus(tx, parent.id);
+      }
 
       console.info("Cashfree webhook updated", {
         paymentId: lockedPayment.id,

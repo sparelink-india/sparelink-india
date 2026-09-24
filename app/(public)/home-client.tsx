@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { Suspense, useEffect, useLayoutEffect, useRef, useState } from "react";
+import { Suspense, useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { SiteFooter } from "@/components/site-footer";
 import { StorefrontHeader } from "@/components/storefront-header";
@@ -33,6 +33,7 @@ type Listing = {
   mrpPaise: number | null;
   status: string;
   stock: number | null;
+  hsn?: string | null;
   gstRate?: number | null;
   listInclusivePaise?: number;
   netInclusivePaise?: number;
@@ -70,7 +71,7 @@ type SearchHit = {
 function storefrontSearchHref(
   searchQuery: string,
   nextPage = 1,
-  extras: { brand?: string; categoryName?: string; tab?: string } = {},
+  extras: { brand?: string; categoryName?: string; stock?: StockFilter; tab?: string } = {},
 ) {
   const trimmed = searchQuery.trim();
   if (!trimmed) return "/";
@@ -78,6 +79,7 @@ function storefrontSearchHref(
   if (nextPage > 1) params.set("page", String(nextPage));
   if (extras.brand) params.set("brand", extras.brand);
   if (extras.categoryName) params.set("categoryName", extras.categoryName);
+  if (extras.stock) params.set("stock", extras.stock);
   if (extras.tab && extras.tab !== "all") params.set("tab", extras.tab);
   return `/?${params.toString()}`;
 }
@@ -146,6 +148,8 @@ async function fetchSearchPayload(
   return data;
 }
 
+type StockFilter = "all" | "in_stock";
+
 export function HomePageContent({
   initialQuery = "",
   initialPage = 1,
@@ -160,6 +164,7 @@ export function HomePageContent({
   const urlPage = parseSearchPage(searchParams.get("page") ?? String(initialPage));
   const urlBrand = (searchParams.get("brand") ?? "").trim();
   const urlCategory = (searchParams.get("categoryName") ?? "").trim();
+  const urlStock: StockFilter = searchParams.get("stock") === "all" ? "all" : "in_stock";
   const urlTab = parseSearchTab(searchParams.get("tab"));
   const [query, setQuery] = useState(urlQuery);
   const focusSearch = searchParams.get("focus") === "search";
@@ -176,13 +181,39 @@ export function HomePageContent({
   const [perPage, setPerPage] = useState(24);
   const [loading, setLoading] = useState(() => Boolean(urlQuery));
   const [addingId, setAddingId] = useState("");
-  const [addedId, setAddedId] = useState("");
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
   const [cartCount, setCartCount] = useState<number>(0);
   const [wishlistCount, setWishlistCount] = useState(0);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [selectedCount, setSelectedCount] = useState(0);
+  const [estimatedTotalPaise, setEstimatedTotalPaise] = useState(0);
   const searchGenRef = useRef(0);
+  const initialSearchKeyRef = useRef("");
+  const pendingPageScrollRef = useRef(false);
+  const refreshCartSummary = useCallback(async () => {
+    try {
+      const response = await fetch("/api/cart", { cache: "no-store" });
+      if (!response.ok) return;
+      const data = await response.json();
+      if (typeof data.itemCount === "number") {
+        setCartCount(data.itemCount);
+        setSelectedCount(data.itemCount);
+      } else if (Array.isArray(data.items)) {
+        const count = data.items.reduce(
+          (sum: number, item: { quantity: number }) => sum + item.quantity,
+          0,
+        );
+        setCartCount(count);
+        setSelectedCount(count);
+      }
+      if (typeof data.totalPaise === "number" && Number.isFinite(data.totalPaise)) {
+        setEstimatedTotalPaise(data.totalPaise);
+      }
+    } catch {
+      // Cart summary is supplementary; the cart page remains the source of truth.
+    }
+  }, []);
   const [detailTarget, setDetailTarget] = useState<{
     partId?: string;
     sku?: string;
@@ -199,22 +230,28 @@ export function HomePageContent({
     }, 80);
     return () => window.clearTimeout(timer);
   }, [focusSearch]);
-  // Fetch initial cart count
+  // Fetch initial cart and wishlist summaries.
   useEffect(() => {
-    void fetch("/api/cart")
-      .then((res) => (res.ok ? res.json() : null))
+    void fetch("/api/cart", { cache: "no-store" })
+      .then(async (response) => (response.ok ? response.json() : null))
       .then((data) => {
-        if (data && typeof data.itemCount === "number") {
+        if (!data) return;
+        if (typeof data.itemCount === "number") {
           setCartCount(data.itemCount);
-        } else if (data && Array.isArray(data.items)) {
+          setSelectedCount(data.itemCount);
+        } else if (Array.isArray(data.items)) {
           const count = data.items.reduce(
-            (acc: number, item: { quantity: number }) => acc + item.quantity,
+            (sum: number, item: { quantity: number }) => sum + item.quantity,
             0,
           );
           setCartCount(count);
+          setSelectedCount(count);
+        }
+        if (typeof data.totalPaise === "number" && Number.isFinite(data.totalPaise)) {
+          setEstimatedTotalPaise(data.totalPaise);
         }
       })
-      .catch(() => setCartCount(0));
+      .catch(() => undefined);
 
     void fetch("/api/wishlist")
       .then((res) => (res.ok ? res.json() : null))
@@ -278,14 +315,17 @@ export function HomePageContent({
   function commitSearch(
     searchQuery: string,
     nextPage = 1,
-    extras: { brand?: string; categoryName?: string; tab?: SearchTab } = {},
+    extras: { brand?: string; categoryName?: string; stock?: StockFilter; tab?: SearchTab } = {},
   ) {
     const nextBrand = extras.brand ?? brandFilter;
     const nextCategory = extras.categoryName ?? categoryFilter;
+    const nextStock = extras.stock ?? urlStock;
     const nextTab = extras.tab ?? tab;
+    if (nextPage !== page) pendingPageScrollRef.current = true;
     const href = storefrontSearchHref(searchQuery, nextPage, {
       brand: nextBrand,
       categoryName: nextCategory,
+      stock: nextStock,
       tab: nextTab,
     });
     const current = `${window.location.pathname}${window.location.search}`;
@@ -375,9 +415,26 @@ export function HomePageContent({
     );
     const nextBrand = (params.get("brand") ?? urlBrand).trim();
     const nextCategory = (params.get("categoryName") ?? urlCategory).trim();
+    const requestKey = [q, nextPage, nextBrand, nextCategory, urlStock, urlTab].join("\u001f");
+    if (initialSearchKeyRef.current === requestKey) return;
+    initialSearchKeyRef.current = requestKey;
     void performSearch(q, nextPage, { brand: nextBrand, categoryName: nextCategory });
     // eslint-disable-next-line react-hooks/exhaustive-deps -- layout search from the real URL
-  }, [urlQuery, urlPage, urlBrand, urlCategory, urlTab, initialQuery, initialPage]);
+  }, [urlQuery, urlPage, urlBrand, urlCategory, urlStock, urlTab, initialQuery, initialPage]);
+
+  useEffect(() => {
+    if (!pendingPageScrollRef.current || loading) return;
+    const target = document.getElementById("search-results");
+    if (target) {
+      const header = document.querySelector("header");
+      const headerHeight = header?.getBoundingClientRect().height ?? 0;
+      const top = Math.max(0, target.getBoundingClientRect().top + window.scrollY - headerHeight);
+      window.scrollTo({ top, behavior: "instant" });
+    } else {
+      window.scrollTo({ top: 0, behavior: "instant" });
+    }
+    pendingPageScrollRef.current = false;
+  }, [loading, page, results, searchedQuery]);
 
   async function addToCart(listingId: string, partName: string) {
     setAddingId(listingId);
@@ -407,10 +464,19 @@ export function HomePageContent({
         throw new Error(data.error || t("product.addFail"));
       }
 
-      setAddedId(listingId);
-      window.setTimeout(() => setAddedId(""), 2500);
-      // Increment cart badge
+      // Increment cart badge and order summary selection.
       setCartCount((prev) => prev + 1);
+      const selectedListing = results
+        .flatMap((hit) => hit.listings ?? [])
+        .find((listing) => listing.id === listingId);
+      const unitPaise =
+        selectedListing?.netInclusivePaise ??
+        selectedListing?.listInclusivePaise ??
+        selectedListing?.pricePaise ??
+        0;
+      setSelectedCount((count) => count + 1);
+      setEstimatedTotalPaise((total) => total + unitPaise);
+      void refreshCartSummary();
       setMessage(t("product.added", { name: partName }));
     } catch (cartError) {
       console.error(cartError);
@@ -419,6 +485,8 @@ export function HomePageContent({
       setAddingId("");
     }
   }
+
+  const isOrderSearchState = Boolean(searchedQuery || urlQuery || loading || error || message);
 
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900">
@@ -431,6 +499,35 @@ export function HomePageContent({
         searchLoading={loading}
         mobileMenuOpen={mobileMenuOpen}
         onMobileMenuToggle={() => setMobileMenuOpen(!mobileMenuOpen)}
+        orderMode
+        orderPage={isOrderSearchState}
+        categoryOptions={facetCategories}
+        activeCategory={categoryFilter}
+        onCategoryChange={(value) =>
+          commitSearch(searchedQuery || query, 1, {
+            categoryName: value,
+            stock: urlStock,
+            tab: "products",
+          })
+        }
+        stockFilter={urlStock}
+        onStockFilterChange={(value) =>
+          commitSearch(searchedQuery || query, 1, { stock: value })
+        }
+        onClearFilters={() =>
+          commitSearch(searchedQuery || query, 1, {
+            brand: "",
+            categoryName: "",
+            stock: "all",
+            tab: "all",
+          })
+        }
+        onCartItemAdded={(_listingId, unitPaise) => {
+          setCartCount((count) => count + 1);
+          setSelectedCount((count) => count + 1);
+          setEstimatedTotalPaise((total) => total + (unitPaise ?? 0));
+          void refreshCartSummary();
+        }}
       />
 
       <main className="flex flex-col">
@@ -439,9 +536,10 @@ export function HomePageContent({
             <div className="space-y-3 px-3 pt-3 md:hidden">
               <VehicleQuickSelector />
               <QuickOrderPanel
-                onCartChange={(delta) =>
-                  setCartCount((prev) => prev + delta)
-                }
+                onCartChange={(delta) => {
+                  setCartCount((prev) => prev + delta);
+                  void refreshCartSummary();
+                }}
               />
             </div>
 
@@ -571,12 +669,29 @@ export function HomePageContent({
             vehicles={vehicleHits}
             activeBrand={brandFilter}
             activeCategory={categoryFilter}
+            activeStock={urlStock}
             tab={tab}
             addingId={addingId}
+            selectedCount={selectedCount}
+            estimatedTotalPaise={estimatedTotalPaise}
+            cartCount={cartCount}
             onTabChange={(next) => commitSearch(searchedQuery || query, 1, { tab: next })}
             onBrand={(brand) => commitSearch(searchedQuery || query, 1, { brand, tab: "products" })}
             onCategory={(categoryName) =>
-              commitSearch(searchedQuery || query, 1, { categoryName, tab: "products" })
+              commitSearch(searchedQuery || query, 1, {
+                categoryName,
+                stock: urlStock,
+                tab: "products",
+              })
+            }
+            onStockChange={(value) => commitSearch(searchedQuery || query, 1, { stock: value })}
+            onClearFilters={() =>
+              commitSearch(searchedQuery || query, 1, {
+                brand: "",
+                categoryName: "",
+                stock: "all",
+                tab: "all",
+              })
             }
             onPage={(nextPage) => commitSearch(searchedQuery || query, nextPage)}
             onOpenProduct={(hit) =>
@@ -586,11 +701,11 @@ export function HomePageContent({
               })
             }
             onAddToCart={(listingId, name) => void addToCart(listingId, name)}
-            onSearch={(nextQuery) => commitSearch(nextQuery, 1)}
           />
         )}
 
-        <section id="how-it-works" className="py-16 sm:py-20 bg-white border-t border-slate-200/80">
+        {!isOrderSearchState ? (
+          <section id="how-it-works" className="py-16 sm:py-20 bg-white border-t border-slate-200/80">
           <div className="mx-auto max-w-4xl px-4 sm:px-6">
             <div className="text-center">
               <p className="text-xs font-bold uppercase tracking-widest text-emerald-600">
@@ -615,21 +730,29 @@ export function HomePageContent({
               <p>{t("fulfill.close")}</p>
             </div>
           </div>
-        </section>
+          </section>
+        ) : null}
       </main>
 
-      <SiteFooter />
-
-      <Suspense fallback={null}>
-        <MobileBottomNav cartCount={cartCount} />
-      </Suspense>
+      {!isOrderSearchState ? (
+        <>
+          <SiteFooter />
+          <Suspense fallback={null}>
+            <MobileBottomNav cartCount={cartCount} />
+          </Suspense>
+        </>
+      ) : null}
 
       <ProductDetailModal
+        key={detailTarget?.partId || detailTarget?.sku || "no-product"}
         open={Boolean(detailTarget)}
         partId={detailTarget?.partId}
         sku={detailTarget?.sku}
         onClose={() => setDetailTarget(null)}
-        onAddedToCart={() => setCartCount((prev) => prev + 1)}
+        onAddedToCart={() => {
+          setCartCount((prev) => prev + 1);
+          void refreshCartSummary();
+        }}
         onWishlistChange={() => setWishlistCount((prev) => prev + 1)}
       />
     </div>

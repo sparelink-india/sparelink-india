@@ -1,9 +1,10 @@
 ﻿import { NextRequest, NextResponse } from "next/server";
-import { and, eq, inArray, or } from "drizzle-orm";
+import { and, eq, inArray, or, sql } from "drizzle-orm";
 import {
   filterAutocompleteHits,
   parseSearchIntent,
   partNumberDigits,
+  parseExactHsnQuery,
   rankSearchHits,
 } from "@/lib/search-intent";
 import { isCustomerVisibleProduct } from "@/lib/ci-sync/types";
@@ -351,9 +352,54 @@ export async function GET(request: NextRequest) {
     }
 
     const sessionPromise = getServerSession();
+    const hsnQuery = parseExactHsnQuery(query);
 
     let searchResults;
-    if (intent.isPartNumberQuery && typesenseQuery !== "*") {
+    if (hsnQuery) {
+      const hsnSession = await sessionPromise;
+      const hsnIsAdmin = hsnSession?.user?.role === "admin";
+      const hsnParts = await db
+        .select({
+          id: part.id,
+          partNumber: part.partNumber,
+          name: part.name,
+          description: part.description,
+          brand: part.brand,
+          category: partCategory.name,
+        })
+        .from(part)
+        .leftJoin(partCategory, eq(part.categoryId, partCategory.id))
+        .where(
+          and(
+            sql`${part.specifications}::jsonb ->> 'hsn' = ${hsnQuery}`,
+            hsnIsAdmin
+              ? undefined
+              : and(
+                  eq(part.isPublished, true),
+                  eq(part.approvalStatus, "APPROVED"),
+                ),
+          ),
+        );
+
+      searchResults = hsnParts.length
+        ? {
+            hits: hsnParts.map((row) => ({
+              document: {
+                id: row.id,
+                part_number: row.partNumber,
+                name: row.name,
+                description: row.description ?? undefined,
+                brand: row.brand ?? undefined,
+                category: row.category ?? undefined,
+              },
+            })),
+            found: hsnParts.length,
+            facet_counts: [],
+          }
+        : intent.isPartNumberQuery && typesenseQuery !== "*"
+          ? await searchPartNumberQueries([intent.originalQuery])
+          : await searchTypesense(defaultSearchParams);
+    } else if (intent.isPartNumberQuery && typesenseQuery !== "*") {
       const digitQuery = partNumberDigits(intent.originalQuery);
       const pnQueries = [intent.originalQuery];
       if (digitQuery && digitQuery.toLowerCase() !== intent.originalQuery.toLowerCase()) {
@@ -785,7 +831,8 @@ export async function GET(request: NextRequest) {
       });
     }
 
-    const shouldPage = useVehicleFilter || usePostFilter || intent.isPartNumberQuery;
+    const shouldPage =
+      Boolean(hsnQuery) || useVehicleFilter || usePostFilter || intent.isPartNumberQuery;
     const pagedResults = shouldPage
       ? filteredResults.slice((page - 1) * perPage, page * perPage)
       : filteredResults;

@@ -55,6 +55,13 @@ export function partNumberDigits(value: string): string {
   return value.replace(/\D+/g, "");
 }
 
+/** Exact HSN lookup candidates; bare eight-digit queries fall back to part-number search if no HSN exists. */
+export function parseExactHsnQuery(value: string): string | null {
+  const trimmed = value.trim();
+  const match = /^(?:HSN[\s:.-]*)?(\d{8})$/i.exec(trimmed);
+  return match?.[1] ?? null;
+}
+
 /** Search-only tokens. Never change the displayed/canonical part number. */
 export function partNumberSearchText(partNumber: string): string {
   const original = partNumber.trim();

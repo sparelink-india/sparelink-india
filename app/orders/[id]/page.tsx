@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
+import { InvoiceDownloadLinks } from "@/components/invoice-download-links";
 
 type OrderDetail = {
   id: string;
@@ -133,7 +134,7 @@ export default function OrderDetailPage() {
           <p className="text-sm text-zinc-500">Loading order details…</p>
         )}
         {error && (
-          <div className="rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">
+          <div role="alert" className="rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">
             {error}
           </div>
         )}
@@ -243,13 +244,13 @@ export default function OrderDetailPage() {
                 <h2 className="text-sm font-bold">Fulfillment</h2>
                 <p className="mt-1 text-xs text-zinc-500">
                   Your SpareLink order may be fulfilled by one or more of our
-                  firms.
+                  firms. Each firm issues its own tax invoice.
                 </p>
                 <ul className="mt-3 space-y-2 text-sm">
                   {firmPayments.map((firm) => (
                     <li
                       key={firm.firmOrderId}
-                      className="flex justify-between gap-3 rounded-xl bg-zinc-50 px-3 py-2"
+                      className="flex flex-wrap items-center justify-between gap-3 rounded-xl bg-zinc-50 px-3 py-2"
                     >
                       <span>
                         {firm.firmName}
@@ -258,8 +259,19 @@ export default function OrderDetailPage() {
                           {statusLabel(firm.paymentStatus)}
                         </span>
                       </span>
-                      <span className="font-medium">
-                        ₹{(firm.amountPaise / 100).toLocaleString("en-IN")}
+                      <span className="flex items-center gap-2">
+                        <span className="font-medium">
+                          ₹{(firm.amountPaise / 100).toLocaleString("en-IN")}
+                        </span>
+                        <a
+                          href={`/api/orders/${order.id}/invoice?firmOrderId=${encodeURIComponent(firm.firmOrderId)}`}
+                          target="_blank"
+                          rel="noreferrer"
+                          download
+                          className="rounded-md border border-zinc-300 bg-white px-2 py-1 text-[11px] font-bold text-zinc-700"
+                        >
+                          Invoice
+                        </a>
                       </span>
                     </li>
                   ))}
@@ -268,14 +280,14 @@ export default function OrderDetailPage() {
             )}
 
             <div className="flex flex-wrap gap-2">
-              <a
-                href={`/api/orders/${order.id}/invoice`}
-                target="_blank"
-                rel="noreferrer"
-                className="rounded-lg border border-zinc-300 bg-white px-3 py-2 text-xs font-bold"
-              >
-                Download PDF
-              </a>
+              <InvoiceDownloadLinks
+                orderId={order.id}
+                allocations={firmPayments.map((firm) => ({
+                  firmOrderId: firm.firmOrderId,
+                  firmName: firm.firmName,
+                }))}
+                linkClassName="rounded-lg border border-zinc-300 bg-white px-3 py-2 text-xs font-bold"
+              />
               <a
                 href={`/api/orders/${order.id}/excel`}
                 className="rounded-lg border border-emerald-300 bg-emerald-50 px-3 py-2 text-xs font-bold text-emerald-800"

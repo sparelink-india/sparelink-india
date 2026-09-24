@@ -5,6 +5,7 @@ import { Suspense, useEffect, useMemo, useState } from "react";
 import { SignOutButton } from "@/components/sign-out-button";
 import { StorefrontHeader } from "@/components/storefront-header";
 import { MobileBottomNav } from "@/components/mobile/mobile-bottom-nav";
+import { InvoiceDownloadLinks } from "@/components/invoice-download-links";
 import { useI18n } from "@/components/preferences-provider";
 
 type Order = {
@@ -26,10 +27,10 @@ type Order = {
     unitPricePaise?: number;
     totalPaise: number;
   }[];
-  allocations?: {
+  firmAllocations?: {
     id: string;
     firmName: string;
-    totalPaise: number;
+    amountPaise: number;
     fulfillmentStatus: string;
     paymentStatus: string;
   }[];
@@ -122,6 +123,7 @@ export default function OrdersPage() {
               key={item.id}
               type="button"
               onClick={() => setFilter(item.id)}
+              aria-pressed={filter === item.id}
               className={`min-h-10 shrink-0 rounded-full px-3.5 text-xs font-bold ${
                 filter === item.id
                   ? "bg-[#7a1233] text-white"
@@ -137,7 +139,7 @@ export default function OrdersPage() {
           <p className="mt-8 text-sm text-slate-500">{t("orders.loading")}</p>
         )}
         {error && (
-          <div className="mt-8 rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">
+          <div role="alert" className="mt-8 rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">
             {error}
           </div>
         )}
@@ -213,16 +215,16 @@ export default function OrdersPage() {
                       </div>
                     ))}
 
-                    {order.allocations && order.allocations.length > 0 ? (
+                    {order.firmAllocations && order.firmAllocations.length > 0 ? (
                       <div className="mt-3 space-y-1 text-slate-600">
-                        {order.allocations.map((allocation) => (
+                        {order.firmAllocations.map((allocation) => (
                           <div
                             key={allocation.id}
                             className="flex justify-between gap-4"
                           >
                             <span>{allocation.firmName}</span>
                             <span>
-                              ₹{(allocation.totalPaise / 100).toLocaleString("en-IN")}
+                              ₹{(allocation.amountPaise / 100).toLocaleString("en-IN")}
                             </span>
                           </div>
                         ))}
@@ -301,15 +303,16 @@ export default function OrdersPage() {
                               Payment details
                             </Link>
                           )}
-                        <a
-                          href={`/api/orders/${order.id}/invoice`}
-                          target="_blank"
-                          rel="noreferrer"
-                          download
-                          className="inline-flex min-h-10 items-center gap-1.5 rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs font-bold text-slate-700"
-                        >
-                          Download PDF
-                        </a>
+                        <InvoiceDownloadLinks
+                          orderId={order.id}
+                          allocations={(order.firmAllocations ?? []).map(
+                            (allocation) => ({
+                              firmOrderId: allocation.id,
+                              firmName: allocation.firmName,
+                            }),
+                          )}
+                          linkClassName="inline-flex min-h-10 items-center gap-1.5 rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs font-bold text-slate-700"
+                        />
                         <a
                           href={`/api/orders/${order.id}/excel`}
                           download

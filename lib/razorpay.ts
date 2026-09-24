@@ -9,9 +9,9 @@ export function isRazorpayConfigured() {
 }
 
 export async function createRazorpayOrder(
-  _amountPaise: number,
-  _receipt: string,
+  ..._args: [amountPaise?: number, receipt?: string]
 ): Promise<never> {
+  void _args;
   throw new Error(
     "Online card/UPI gateway payments are disabled. Use firm-wise bank transfer or COD.",
   );

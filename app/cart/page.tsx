@@ -2,7 +2,7 @@
 "use client";
 
 import Link from "next/link";
-import { Suspense, useEffect, useState, useTransition } from "react";
+import { Suspense, useCallback, useEffect, useState, useTransition } from "react";
 import { SignOutButton } from "@/components/sign-out-button";
 import { SiteFooter } from "@/components/site-footer";
 import { StorefrontHeader } from "@/components/storefront-header";
@@ -85,7 +85,7 @@ export default function CartPage() {
     }
   }, [lightboxImage]);
 
-  async function loadCart() {
+  const loadCart = useCallback(async () => {
     try {
       setError("");
       const response = await fetch("/api/cart", {
@@ -109,11 +109,11 @@ export default function CartPage() {
     } finally {
       setLoading(false);
     }
-  }
+  }, [t]);
 
   useEffect(() => {
     void loadCart();
-  }, []);
+  }, [loadCart]);
 
   async function updateQuantity(cartItemId: string, newQuantity: number) {
     if (newQuantity < 1) return;
@@ -129,19 +129,9 @@ export default function CartPage() {
       const updatedItems = cart.items.map((item) =>
         item.id === cartItemId ? { ...item, quantity: newQuantity } : item,
       );
-      const newTotalPaise = updatedItems.reduce(
-        (acc, item) => acc + item.pricePaise * item.quantity,
-        0,
-      );
-      const newItemCount = updatedItems.reduce(
-        (acc, item) => acc + item.quantity,
-        0,
-      );
       setCart({
         ...cart,
         items: updatedItems,
-        totalPaise: newTotalPaise,
-        itemCount: newItemCount,
       });
     }
 
@@ -184,19 +174,9 @@ export default function CartPage() {
     const previousCart = cart;
     if (cart) {
       const updatedItems = cart.items.filter((item) => item.id !== cartItemId);
-      const newTotalPaise = updatedItems.reduce(
-        (acc, item) => acc + item.pricePaise * item.quantity,
-        0,
-      );
-      const newItemCount = updatedItems.reduce(
-        (acc, item) => acc + item.quantity,
-        0,
-      );
       setCart({
         ...cart,
         items: updatedItems,
-        totalPaise: newTotalPaise,
-        itemCount: newItemCount,
       });
     }
 
@@ -352,8 +332,23 @@ export default function CartPage() {
           </div>
         )}
 
+        {!loading && cart?.requiresLogin && (
+          <div className="mt-10 rounded-2xl border border-dashed border-slate-300 bg-white p-12 text-center shadow-sm sm:p-16">
+            <h2 className="text-xl font-bold text-slate-900">Sign in to view your cart</h2>
+            <p className="mx-auto mt-2 max-w-sm text-sm text-slate-500">
+              Your cart is saved to your SpareLink account.
+            </p>
+            <Link
+              href="/login"
+              className="mt-7 inline-flex min-h-11 items-center justify-center rounded-xl bg-slate-950 px-6 text-sm font-semibold text-white shadow-sm transition hover:bg-slate-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-950"
+            >
+              Sign in
+            </Link>
+          </div>
+        )}
+
         {/* Empty State */}
-        {!loading && isCartEmpty && (
+        {!loading && !cart?.requiresLogin && isCartEmpty && (
           <div className="mt-10 rounded-2xl border border-dashed border-slate-300 bg-white p-12 text-center shadow-sm sm:p-16">
             <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-2xl bg-slate-100 text-slate-400">
               <svg
@@ -460,12 +455,21 @@ export default function CartPage() {
                       >
                         {/* eslint-disable-next-line @next/next/no-img-element */}
                         <img
-                          src={item.imageUrl || "/images/products/placeholder.svg"}
+                          src={item.thumbUrl || item.imageUrl || "/images/products/placeholder.svg"}
                           alt={item.partName || "Automotive part"}
+                          width={112}
+                          height={84}
+                          loading="lazy"
+                          decoding="async"
                           className="h-full w-full object-contain p-1.5 transition-transform duration-300 group-hover:scale-105"
                           onError={(e) => {
-                            (e.currentTarget as HTMLImageElement).src =
-                              "/images/products/placeholder.svg";
+                            const element = e.currentTarget as HTMLImageElement;
+                            const original = item.imageUrl;
+                            if (original && element.src !== original) {
+                              element.src = original;
+                              return;
+                            }
+                            element.src = "/images/products/placeholder.svg";
                           }}
                         />
                         {item.partBrand && (

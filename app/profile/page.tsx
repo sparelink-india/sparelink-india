@@ -2,7 +2,7 @@
 "use client";
 
 import Link from "next/link";
-import { FormEvent, Suspense, useEffect, useState } from "react";
+import { FormEvent, Suspense, useCallback, useEffect, useState } from "react";
 import { validateGSTIN } from "@/lib/gst";
 import { SignOutButton } from "@/components/sign-out-button";
 import { SiteFooter } from "@/components/site-footer";
@@ -60,7 +60,7 @@ export default function ProfilePage() {
 
   const gstinValidation = gstin.trim() ? validateGSTIN(gstin) : null;
 
-  async function loadProfile() {
+  const loadProfile = useCallback(async () => {
     try {
       setError("");
       const res = await fetch("/api/profile", { cache: "no-store" });
@@ -85,11 +85,11 @@ export default function ProfilePage() {
     } finally {
       setLoading(false);
     }
-  }
+  }, [t]);
 
   useEffect(() => {
     void loadProfile();
-  }, []);
+  }, [loadProfile]);
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();

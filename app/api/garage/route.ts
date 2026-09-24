@@ -4,12 +4,18 @@ import { NextResponse } from "next/server";
 import { customerVehicle } from "@/drizzle/schema";
 import { getServerSession } from "@/lib/auth-server";
 import { getDb } from "@/lib/db";
+import { denyIfMustChangePassword } from "@/lib/require-role";
 
 export async function GET() {
   const session = await getServerSession();
   if (!session) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
+  if (session.user.role !== "buyer") {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
+  const blocked = await denyIfMustChangePassword(session.user.id);
+  if (blocked) return blocked;
 
   const db = getDb();
   const vehicles = await db
@@ -26,6 +32,11 @@ export async function POST(request: Request) {
   if (!session) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
+  if (session.user.role !== "buyer") {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
+  const blocked = await denyIfMustChangePassword(session.user.id);
+  if (blocked) return blocked;
 
   const body = await request.json().catch(() => null);
   if (!body || typeof body !== "object") {
@@ -94,6 +105,11 @@ export async function DELETE(request: Request) {
   if (!session) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
+  if (session.user.role !== "buyer") {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
+  const blocked = await denyIfMustChangePassword(session.user.id);
+  if (blocked) return blocked;
 
   const body = await request.json().catch(() => null);
   const id =

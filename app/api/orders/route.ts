@@ -1,5 +1,5 @@
 ﻿import { randomUUID } from "node:crypto";
-import { and, desc, eq, gte, inArray, sql } from "drizzle-orm";
+import { and, count, desc, eq, gte, inArray, like, or, sql } from "drizzle-orm";
 import { NextResponse } from "next/server";
 
 import {
@@ -19,9 +19,21 @@ import { isCodEnabledForFirm } from "@/lib/bank-payment-config";
 import { getDb } from "@/lib/db";
 import { extractGSTRate } from "@/lib/gst";
 import { isCashfreeConfiguredForFirm } from "@/lib/cashfree";
-import { SPARELINK_FIRMS, cartSupportsParentOnlinePayment, isAllowedFirmId } from "@/lib/firms";
 import {
-  splitLinesByFirm,
+  SPARELINK_FIRMS,
+  cartSupportsParentOnlinePayment,
+  isAllowedFirmId,
+  type ParentPaymentMethod,
+} from "@/lib/firms";
+import {
+  buildCheckoutIdempotencyStorageKey,
+  buildParentOrderPlan,
+  checkoutIdempotencyStorageMatches,
+  checkoutIdempotencyStoragePattern,
+  CheckoutError,
+  parseCheckoutIdempotencyKey,
+} from "@/lib/checkout-order";
+import {
   validateAvailableStock,
   validateCartQuantity,
 } from "@/lib/order-architecture";
@@ -87,6 +99,73 @@ function parseShippingAddress(value: unknown): ShippingAddress | null {
   };
 }
 
+type OrderDb = ReturnType<typeof getDb>;
+
+async function findIdempotentOrder(
+  db: OrderDb,
+  buyerId: string,
+  rawKey: string,
+) {
+  return db.query.order.findFirst({
+    where: and(
+      eq(order.buyerId, buyerId),
+      or(
+        eq(order.checkoutIdempotencyKey, rawKey),
+        like(
+          order.checkoutIdempotencyKey,
+          checkoutIdempotencyStoragePattern(buyerId, rawKey),
+        ),
+      ),
+    ),
+  });
+}
+
+async function orderResponse(
+  db: OrderDb,
+  orderId: string,
+  status: 200 | 201,
+) {
+  const orderRecord = await db.query.order.findFirst({
+    where: eq(order.id, orderId),
+  });
+  if (!orderRecord) return null;
+
+  const allocations = await db
+    .select({
+      firmId: firmOrder.firmId,
+      firmName: firm.name,
+      amountPaise: firmOrder.amountPaise,
+      gstPaise: firmOrder.gstPaise,
+      itemCount: count(firmOrderItem.orderItemId),
+    })
+    .from(firmOrder)
+    .innerJoin(firm, eq(firmOrder.firmId, firm.id))
+    .leftJoin(firmOrderItem, eq(firmOrder.id, firmOrderItem.firmOrderId))
+    .where(eq(firmOrder.orderId, orderId))
+    .groupBy(firmOrder.id, firm.name);
+
+  return NextResponse.json(
+    {
+      id: orderRecord.id,
+      orderNumber: orderRecord.orderNumber,
+      subtotalPaise: orderRecord.subtotalPaise,
+      gstPaise: orderRecord.gstPaise,
+      shippingPaise: orderRecord.shippingPaise,
+      totalPaise: orderRecord.totalPaise,
+      status: orderRecord.status,
+      paymentStatus: orderRecord.paymentStatus,
+      firmAllocations: allocations.map((allocation) => ({
+        firmId: allocation.firmId,
+        firmName: allocation.firmName,
+        amountPaise: allocation.amountPaise,
+        gstPaise: allocation.gstPaise,
+        itemCount: allocation.itemCount,
+      })),
+    },
+    { status },
+  );
+}
+
 export async function GET() {
   const session = await getServerSession();
   if (!session || session.user.role !== "buyer") {
@@ -105,6 +184,7 @@ export async function GET() {
       paymentStatus: order.paymentStatus,
       paymentMethod: order.paymentMethod,
       subtotalPaise: order.subtotalPaise,
+      gstPaise: order.gstPaise,
       shippingPaise: order.shippingPaise,
       totalPaise: order.totalPaise,
       createdAt: order.createdAt,
@@ -155,14 +235,17 @@ export async function GET() {
 
   return NextResponse.json({
     orders: orders.map((item) => {
-      const gstPaise = Math.max(
-        0,
-        item.totalPaise - item.subtotalPaise - (item.shippingPaise ?? 0),
-      );
+      const gstPaise =
+        item.gstPaise > 0
+          ? item.gstPaise
+          : Math.max(
+              0,
+              item.totalPaise - item.subtotalPaise - (item.shippingPaise ?? 0),
+            );
       return {
         ...item,
         gstPaise,
-        items: items.filter((orderItem) => orderItem.orderId === item.id),
+        items: items.filter((orderItemRow) => orderItemRow.orderId === item.id),
         firmAllocations: allocations.filter(
           (allocation) => allocation.orderId === item.id,
         ),
@@ -180,6 +263,16 @@ export async function POST(request: Request) {
 
   const blocked = await denyIfMustChangePassword(session.user.id);
   if (blocked) return blocked;
+
+  const rawIdempotencyKey = parseCheckoutIdempotencyKey(
+    request.headers.get("Idempotency-Key"),
+  );
+  if (!rawIdempotencyKey) {
+    return NextResponse.json(
+      { error: "A valid Idempotency-Key header is required." },
+      { status: 400 },
+    );
+  }
 
   const rawBody = await request.json().catch(() => null);
   const body = ignoreClientPricing(
@@ -226,37 +319,67 @@ export async function POST(request: Request) {
   }
 
   const db = getDb();
+  const existingOrder = await findIdempotentOrder(
+    db,
+    session.user.id,
+    rawIdempotencyKey,
+  );
   const buyerCart = await db.query.cart.findFirst({
     where: eq(cart.buyerId, session.user.id),
   });
+  const loadCartItems = async (cartId: string) =>
+    db
+      .select({
+        id: cartItem.id,
+        dealerListingId: dealerListing.id,
+        dealerId: dealerListing.dealerId,
+        firmId: dealerListing.firmId,
+        quantity: cartItem.quantity,
+        pricePaise: dealerListing.pricePaise,
+        listingStatus: dealerListing.status,
+        stock: inventory.quantity,
+        partId: part.id,
+        partNumber: part.partNumber,
+        partName: part.name,
+        partDescription: part.description,
+        partBrand: part.brand,
+        partSpecifications: part.specifications,
+        sku: dealerListing.sku,
+      })
+      .from(cartItem)
+      .innerJoin(dealerListing, eq(cartItem.dealerListingId, dealerListing.id))
+      .innerJoin(part, eq(dealerListing.partId, part.id))
+      .leftJoin(inventory, eq(inventory.dealerListingId, dealerListing.id))
+      .where(eq(cartItem.cartId, cartId));
+
+  if (existingOrder) {
+    const replayCartItems = buyerCart ? await loadCartItems(buyerCart.id) : [];
+    if (
+      !checkoutIdempotencyStorageMatches(
+        existingOrder.checkoutIdempotencyKey,
+        session.user.id,
+        rawIdempotencyKey,
+        body,
+        replayCartItems,
+      )
+    ) {
+      return NextResponse.json(
+        {
+          error:
+            "This Idempotency-Key was already used with a different checkout request.",
+        },
+        { status: 409 },
+      );
+    }
+    const replayResponse = await orderResponse(db, existingOrder.id, 200);
+    return replayResponse ?? NextResponse.json({ error: "Order not found" }, { status: 404 });
+  }
 
   if (!buyerCart) {
     return NextResponse.json({ error: "Your cart is empty." }, { status: 400 });
   }
 
-  const cartItems = await db
-    .select({
-      id: cartItem.id,
-      dealerListingId: dealerListing.id,
-      dealerId: dealerListing.dealerId,
-      firmId: dealerListing.firmId,
-      quantity: cartItem.quantity,
-      pricePaise: dealerListing.pricePaise,
-      listingStatus: dealerListing.status,
-      stock: inventory.quantity,
-      partId: part.id,
-      partNumber: part.partNumber,
-      partName: part.name,
-      partDescription: part.description,
-      partBrand: part.brand,
-      partSpecifications: part.specifications,
-      sku: dealerListing.sku,
-    })
-    .from(cartItem)
-    .innerJoin(dealerListing, eq(cartItem.dealerListingId, dealerListing.id))
-    .innerJoin(part, eq(dealerListing.partId, part.id))
-    .leftJoin(inventory, eq(inventory.dealerListingId, dealerListing.id))
-    .where(eq(cartItem.cartId, buyerCart.id));
+  const cartItems = await loadCartItems(buyerCart.id);
 
   if (!cartItems.length) {
     return NextResponse.json({ error: "Your cart is empty." }, { status: 400 });
@@ -369,32 +492,58 @@ export async function POST(request: Request) {
     pensolConfigs.commonConfig,
     pensolConfigs.customerConfig,
   );
-  const pricedLines = cartItems.map((item, index) => ({
-    item,
+  const pricedCheckoutLines = cartItems.map((item, index) => ({
+    line: {
+      dealerListingId: item.dealerListingId,
+      dealerId: item.dealerId,
+      firmId: item.firmId,
+      quantity: item.quantity,
+      pricePaise: item.pricePaise,
+      listingStatus: item.listingStatus,
+      stock: item.stock,
+      partId: item.partId,
+      partNumber: item.partNumber,
+      partName: item.partName,
+      partBrand: item.partBrand,
+      sku: item.sku,
+    },
     gstRate: storefront.priced[index].gstRate,
     priced: storefront.priced[index],
   }));
-  const totals = storefront.totals;
 
-  const firmSplit = splitLinesByFirm(
-    pricedLines.map(({ item, priced }) => ({
-      listingId: item.dealerListingId,
-      firmId: item.firmId as string,
-      quantity: item.quantity,
-      unitNetInclusivePaise: priced.netInclusivePaise,
-      lineNetInclusivePaise: priced.lineNetPaise,
-      lineGstPaise: priced.lineGstPaise,
-    })),
+  const checkoutIdempotencyKey = buildCheckoutIdempotencyStorageKey(
+    session.user.id,
+    rawIdempotencyKey,
+    body,
+    cartItems,
   );
-  if (!firmSplit.ok) {
-    return NextResponse.json({ error: firmSplit.error }, { status: 400 });
-  }
-
   const orderId = randomUUID();
   const orderNumber = `SL-${Date.now().toString(36).toUpperCase()}-${orderId.slice(0, 6).toUpperCase()}`;
 
+  let parentPlan;
   try {
-    await db.transaction(async (tx) => {
+    parentPlan = buildParentOrderPlan(
+      pricedCheckoutLines,
+      paymentMethod as ParentPaymentMethod,
+      orderNumber,
+      storefront.totals.shippingPaise,
+    );
+  } catch (error) {
+    if (error instanceof CheckoutError) {
+      return NextResponse.json(
+        { error: error.message },
+        { status: error.status },
+      );
+    }
+    throw error;
+  }
+  const firmNameById = new Map(
+    SPARELINK_FIRMS.map((row) => [row.id, row.name] as const),
+  );
+
+  let replayOrderId: string | null = null;
+  try {
+    const transactionResult = await db.transaction(async (tx) => {
       const lockedCart = await tx
         .select({ id: cart.id })
         .from(cart)
@@ -402,6 +551,40 @@ export async function POST(request: Request) {
         .for("update");
       if (!lockedCart.length) {
         throw new Error("Your cart is empty.");
+      }
+
+      const concurrentOrder = await tx
+        .select({
+          id: order.id,
+          checkoutIdempotencyKey: order.checkoutIdempotencyKey,
+        })
+        .from(order)
+        .where(
+          and(
+            eq(order.buyerId, session.user.id),
+            or(
+              eq(order.checkoutIdempotencyKey, rawIdempotencyKey),
+              like(
+                order.checkoutIdempotencyKey,
+                checkoutIdempotencyStoragePattern(session.user.id, rawIdempotencyKey),
+              ),
+            ),
+          ),
+        )
+        .limit(1);
+      if (concurrentOrder.length) {
+        if (
+          !checkoutIdempotencyStorageMatches(
+            concurrentOrder[0].checkoutIdempotencyKey,
+            session.user.id,
+            rawIdempotencyKey,
+            body,
+            cartItems,
+          )
+        ) {
+          throw new Error("IDEMPOTENCY_KEY_REUSED");
+        }
+        return { replayOrderId: concurrentOrder[0].id };
       }
 
       const liveCartItems = await tx
@@ -482,9 +665,11 @@ export async function POST(request: Request) {
         status: "placed",
         paymentStatus: "pending",
         paymentMethod,
-        subtotalPaise: totals.subtotalPaise,
-        shippingPaise: totals.shippingPaise,
-        totalPaise: totals.totalPaise,
+        subtotalPaise: parentPlan.subtotalPaise,
+        gstPaise: parentPlan.gstPaise,
+        shippingPaise: parentPlan.shippingPaise,
+        totalPaise: parentPlan.totalPaise,
+        checkoutIdempotencyKey,
         shippingName: buyerBusinessName
           ? `${shippingAddress.name} (${buyerBusinessName})`
           : shippingAddress.name,
@@ -508,28 +693,40 @@ export async function POST(request: Request) {
         billingPincode: shippingAddress.pincode,
       });
 
-      const createdItems = pricedLines.map(({ item, priced }) => {
-        return {
+      const createdItems = parentPlan.allocations.flatMap((allocation) =>
+        allocation.items.map((snap) => ({
           id: randomUUID(),
           orderId,
-          dealerListingId: item.dealerListingId,
-          dealerId: item.dealerId,
-          partId: item.partId,
-          partNumber: item.partNumber,
-          partName: item.partName,
-          quantity: item.quantity,
-          unitPricePaise: priced.netInclusivePaise,
-          totalPaise: priced.lineNetPaise,
-        };
-      });
+          dealerListingId: snap.dealerListingId,
+          dealerId: snap.dealerId,
+          partId: snap.partId,
+          partNumber: snap.partNumber,
+          partName: snap.partName,
+          partBrand: snap.partBrand,
+          sku: snap.sku,
+          firmId: snap.firmId,
+          quantity: snap.quantity,
+          listInclusivePaise: snap.listInclusivePaise,
+          discountPercent: snap.discountPercent,
+          discountPaise: snap.discountPaise,
+          unitPricePaise: snap.unitPricePaise,
+          gstRate: snap.gstRate,
+          basePaise: snap.basePaise,
+          gstPaise: snap.gstPaise,
+          lineDiscountPaise: snap.lineDiscountPaise,
+          lineBasePaise: snap.lineBasePaise,
+          lineGstPaise: snap.lineGstPaise,
+          totalPaise: snap.totalPaise,
+        })),
+      );
       await tx.insert(orderItem).values(createdItems);
 
       const createdByListing = new Map(
         createdItems.map((item) => [item.dealerListingId, item]),
       );
-      for (const allocation of firmSplit.allocations) {
-        const items = allocation.items.map((line) => {
-          const created = createdByListing.get(line.listingId);
+      for (const allocation of parentPlan.allocations) {
+        const linked = allocation.items.map((snap) => {
+          const created = createdByListing.get(snap.dealerListingId);
           if (!created) {
             throw new Error(
               "This listing is not assigned to a fulfillment firm.",
@@ -538,19 +735,25 @@ export async function POST(request: Request) {
           return created;
         });
         const firmOrderId = randomUUID();
-        const allocationNumber = `SLA-${orderNumber}-${allocation.firmId.slice(0, 6).toUpperCase()}`;
+        const allocationNumber =
+          allocation.invoiceReference ||
+          `SLA-${orderNumber}-${allocation.firmId.slice(0, 6).toUpperCase()}`;
         await tx.insert(firmOrder).values({
           id: firmOrderId,
           orderId,
           firmId: allocation.firmId,
           allocationNumber,
-          amountPaise: allocation.amountPaise,
+          amountPaise: allocation.totalPaise,
+          subtotalPaise: allocation.subtotalPaise,
+          gstPaise: allocation.gstPaise,
+          paymentMethod: allocation.paymentMethod,
+          invoiceReference: allocation.invoiceReference,
           fulfillmentStatus: "pending",
           paymentStatus: "unpaid",
           paymentAccountingReference: `SPL-${orderNumber}-${allocation.firmId.slice(0, 8).toUpperCase()}`,
         });
         await tx.insert(firmOrderItem).values(
-          items.map((item) => ({
+          linked.map((item) => ({
             id: randomUUID(),
             firmOrderId,
             orderItemId: item.id,
@@ -559,15 +762,47 @@ export async function POST(request: Request) {
       }
 
       await tx.delete(cartItem).where(eq(cartItem.cartId, buyerCart.id));
+       return { replayOrderId: null };
     });
-  } catch (error) {
-    console.error("Checkout failed");
+     replayOrderId = transactionResult.replayOrderId;
+   } catch (error) {
+     const committedOrder = await findIdempotentOrder(
+       db,
+       session.user.id,
+       rawIdempotencyKey,
+     );
+     if (committedOrder) {
+       if (
+         checkoutIdempotencyStorageMatches(
+           committedOrder.checkoutIdempotencyKey,
+           session.user.id,
+           rawIdempotencyKey,
+           body,
+           cartItems,
+         )
+       ) {
+         return (
+           (await orderResponse(db, committedOrder.id, 200)) ??
+           NextResponse.json({ error: "Order not found" }, { status: 404 })
+         );
+       }
+       return NextResponse.json(
+         {
+           error:
+             "This Idempotency-Key was already used with a different checkout request.",
+         },
+         { status: 409 },
+       );
+     }
+
+     console.error("Checkout failed");
     const known =
       error instanceof Error &&
       (error.message.endsWith("is no longer available.") ||
         error.message === "This listing is not assigned to a fulfillment firm." ||
         error.message === "Your cart is empty." ||
-        error.message === "Your cart changed. Please review and try again.");
+        error.message === "Your cart changed. Please review and try again." ||
+        error.message.includes("not assigned to a SpareLink fulfillment firm"));
     return NextResponse.json(
       {
         error: known
@@ -578,20 +813,27 @@ export async function POST(request: Request) {
     );
   }
 
+  if (replayOrderId) {
+    return (
+      (await orderResponse(db, replayOrderId, 200)) ??
+      NextResponse.json({ error: "Order not found" }, { status: 404 })
+    );
+  }
+
   return NextResponse.json(
     {
       id: orderId,
       orderNumber,
-      subtotalPaise: totals.subtotalPaise,
-      gstPaise: totals.gstPaise,
-      shippingPaise: totals.shippingPaise,
-      totalPaise: totals.totalPaise,
+      subtotalPaise: parentPlan.subtotalPaise,
+      gstPaise: parentPlan.gstPaise,
+      shippingPaise: parentPlan.shippingPaise,
+      totalPaise: parentPlan.totalPaise,
       status: "placed",
       paymentStatus: "pending",
-      firmAllocations: firmSplit.allocations.map((allocation) => ({
+      firmAllocations: parentPlan.allocations.map((allocation) => ({
         firmId: allocation.firmId,
-        firmName: allocation.firmName,
-        amountPaise: allocation.amountPaise,
+        firmName: firmNameById.get(allocation.firmId) ?? allocation.firmId,
+        amountPaise: allocation.totalPaise,
         gstPaise: allocation.gstPaise,
         itemCount: allocation.items.length,
       })),

@@ -24,6 +24,7 @@ type FirmPayment = {
   firmCode: string;
   allocationNumber: string;
   amountPaise: number;
+  paymentMethod: string;
   fulfillmentStatus: string;
   paymentStatus: string;
   paymentAccountingReference: string;
@@ -372,7 +373,8 @@ export default function OrderPaymentPage() {
   if (!order) return null;
 
   const isCod = order.paymentMethod === "cash_on_delivery";
-  const canPayOnline = !isCod;
+  const canPayOnline = order.paymentMethod === "online_payment";
+  const canPayBank = order.paymentMethod === "bank_transfer";
 
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900">
@@ -418,13 +420,13 @@ export default function OrderPaymentPage() {
         </div>
 
         {error && (
-          <div className="mt-5 rounded-xl border border-rose-200 bg-rose-50 p-4 text-xs font-medium text-rose-800">
+          <div role="alert" className="mt-5 rounded-xl border border-rose-200 bg-rose-50 p-4 text-xs font-medium text-rose-800">
             {error}
           </div>
         )}
 
         {successMsg && (
-          <div className="mt-5 rounded-xl border border-emerald-200 bg-emerald-50 p-4 text-xs font-medium text-emerald-800">
+          <div role="status" className="mt-5 rounded-xl border border-emerald-200 bg-emerald-50 p-4 text-xs font-medium text-emerald-800">
             {successMsg}
           </div>
         )}
@@ -499,6 +501,7 @@ export default function OrderPaymentPage() {
               );
               const showPayNow =
                 canPayOnline &&
+                firmPayment.paymentMethod === "online_payment" &&
                 !paid &&
                 firmPayment.onlinePaymentConfigured !== false;
               const retryable =
@@ -581,7 +584,8 @@ export default function OrderPaymentPage() {
                     </p>
                   )}
 
-                  {canPayOnline && (
+                  {canPayBank &&
+                    firmPayment.paymentMethod === "bank_transfer" && (
                     <div className="mt-5 rounded-xl border border-slate-200 bg-slate-50/70 p-4">
                       <h4 className="text-sm font-bold text-slate-900">
                         Bank / UPI transfer for this firm

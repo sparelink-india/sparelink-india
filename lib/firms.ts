@@ -147,3 +147,74 @@ export function resolveAllocationPaymentMethod(
   }
   return "cash_on_delivery";
 }
+
+/**
+ * Seller identity for tax invoices. Reads firm table fields first; optional
+ * env overlays (`AMBAJI_TRADERS_GSTIN`, `HIND_MOTORS_GSTIN`, `INDIA_SALES_GSTIN`,
+ * and matching `*_LEGAL_NAME` / `*_ADDRESS` / `*_PHONE` / `*_EMAIL`) follow the
+ * same per-firm prefix pattern as bank payment config. Never invents GSTINs.
+ */
+export type FirmSellerProfile = {
+  firmId: string;
+  firmCode: string;
+  displayName: string;
+  legalName: string;
+  address: string | null;
+  phone: string | null;
+  email: string | null;
+  gstin: string | null;
+};
+
+function firmSellerEnvPrefix(
+  firmName: string,
+  firmCode?: string | null,
+): "AMBAJI_TRADERS" | "HIND_MOTORS" | "INDIA_SALES" | null {
+  const normalizedName = firmName.trim().toLowerCase();
+  const normalizedCode = firmCode?.trim().toUpperCase();
+  if (normalizedName === "ambaji traders" || normalizedCode === "AMB") {
+    return "AMBAJI_TRADERS";
+  }
+  if (normalizedName === "hind motors" || normalizedCode === "HIN") {
+    return "HIND_MOTORS";
+  }
+  if (normalizedName === "india sales" || normalizedCode === "IND") {
+    return "INDIA_SALES";
+  }
+  return null;
+}
+
+function readOptionalEnv(key: string): string | null {
+  const value = process.env[key]?.trim();
+  return value ? value : null;
+}
+
+export function resolveFirmSellerProfile(firm: {
+  id: string;
+  name: string;
+  code: string;
+  legalName?: string | null;
+  address?: string | null;
+  phone?: string | null;
+  email?: string | null;
+  gstin?: string | null;
+}): FirmSellerProfile {
+  const prefix = firmSellerEnvPrefix(firm.name, firm.code);
+  const envLegalName = prefix ? readOptionalEnv(`${prefix}_LEGAL_NAME`) : null;
+  const envAddress = prefix ? readOptionalEnv(`${prefix}_ADDRESS`) : null;
+  const envPhone = prefix ? readOptionalEnv(`${prefix}_PHONE`) : null;
+  const envEmail = prefix ? readOptionalEnv(`${prefix}_EMAIL`) : null;
+  const envGstin = prefix ? readOptionalEnv(`${prefix}_GSTIN`) : null;
+
+  const gstinRaw = (firm.gstin?.trim() || envGstin || null)?.toUpperCase() ?? null;
+
+  return {
+    firmId: firm.id,
+    firmCode: firm.code,
+    displayName: firm.name,
+    legalName: firm.legalName?.trim() || envLegalName || firm.name,
+    address: firm.address?.trim() || envAddress,
+    phone: firm.phone?.trim() || envPhone,
+    email: firm.email?.trim() || envEmail,
+    gstin: gstinRaw,
+  };
+}

@@ -19,13 +19,14 @@ Configure these on the production host (for example Vercel Production). Do not c
 - `BETTER_AUTH_URL` — same public https origin as `NEXT_PUBLIC_APP_URL`
 - `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET` — optional; leave empty until Google login is issued. New Google users are created as buyers only
 - `TYPESENSE_HOST`, `TYPESENSE_PORT`, `TYPESENSE_PROTOCOL`, `TYPESENSE_API_KEY`
-- `CATALOGUE_IMAGE_ORIGIN` — `https://assets.sparelinkindia.com` (no trailing slash). Prefixes catalogue raster URLs; leave unset only for local junction serving
+- `CATALOGUE_IMAGE_ORIGIN` — `https://assets.sparelinkindia.com` (no trailing slash). Prefixes catalogue raster URLs served from Cloudflare R2 bucket `sparelink-india-assets`; leave unset only for local junction serving
 - Cashfree production dashboard webhook: `https://<public-host>/api/payments/cashfree/webhook` on **each onboarded firm merchant** (Ambaji now; Hind/India Sales when those keys exist)
 
 Optional on the host (not secrets in git):
 
 - `SMTP_*` / `SUPPORT_EMAIL_TO` — support request mail
-- `NEXT_PUBLIC_SUPPORT_PHONE` / `NEXT_PUBLIC_SUPPORT_EMAIL` / `NEXT_PUBLIC_WHATSAPP_*` — published contact numbers only
+- `NEXT_PUBLIC_SUPPORT_PHONE` / `NEXT_PUBLIC_SUPPORT_EMAIL` / `NEXT_PUBLIC_WHATSAPP_*` — published contact numbers (`NEXT_PUBLIC_WHATSAPP_AMBAJI`, `_HIND`, `_INDIA_SALES`)
+- `AMBAJI_TRADERS_*`, `HIND_MOTORS_*`, `INDIA_SALES_*` — optional direct bank transfer config (`*_BANK_ACCOUNT_*`, `*_BANK_IFSC_CODE`, `*_BANK_UPI_ID`, `*_COD_ENABLED`) and tax invoice seller overlays (`*_GSTIN`, `*_LEGAL_NAME`, `*_ADDRESS`, `*_PHONE`, `*_EMAIL`)
 
 Never use TEST database URLs or sandbox Cashfree keys in the production host environment. Razorpay remains disabled; do not set Razorpay keys.
 
@@ -53,6 +54,7 @@ The Drizzle journal includes `0020_cashfree_firm_payments`. `npm run db:migrate:
 
 ## Local development
 
+- Bootstrap auth seeding is disabled unless `SPARELINK_BOOTSTRAP_SEED=development` is set explicitly. It refuses production environments and requires separate `SPARELINK_BOOTSTRAP_PASSWORD_000`, `SPARELINK_BOOTSTRAP_PASSWORD_111`, and `SPARELINK_BOOTSTRAP_PASSWORD_123` variables; never commit their values.
 - `next dev` loads `.env.development.local` then `.env.local`
 - Keep TEST `DATABASE_URL` and `CASHFREE_ENVIRONMENT=sandbox` in `.env.development.local`
 - Do not run `next start` against `.env.local` unless you intend to use that file’s database

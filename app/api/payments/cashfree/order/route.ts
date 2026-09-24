@@ -1,8 +1,14 @@
 import { randomUUID } from "node:crypto";
-import { and, eq } from "drizzle-orm";
+import { and, eq, isNull } from "drizzle-orm";
 import { NextResponse } from "next/server";
 
-import { firmOrder, order, payment, user } from "@/drizzle/schema";
+import {
+  firmOrder,
+  manualPaymentSubmission,
+  order,
+  payment,
+  user,
+} from "@/drizzle/schema";
 import { getServerSession } from "@/lib/auth-server";
 import {
   ACTIVE_CASHFREE_PAYMENT_STATUSES,
@@ -18,6 +24,13 @@ import {
 } from "@/lib/cashfree";
 import { getDb } from "@/lib/db";
 import { isAllowedFirmId } from "@/lib/firms";
+import { canAccessCustomerOrder } from "@/lib/order-architecture";
+import { denyIfMustChangePassword } from "@/lib/require-role";
+import {
+  canAcceptPaymentForAllocationStatus,
+  canAcceptPaymentForOrderStatus,
+  isCashfreePaymentMethod,
+} from "@/lib/payment-security";
 
 function publicCreateResponse(
   paymentSessionId: string,
@@ -36,6 +49,9 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
+  const blocked = await denyIfMustChangePassword(session.user.id);
+  if (blocked) return blocked;
+
   const body = await request.json().catch(() => null);
   const orderId =
     typeof body?.orderId === "string" ? body.orderId.trim() : "";
@@ -50,6 +66,7 @@ export async function POST(request: Request) {
   }
 
   const db = getDb();
+  let localPaymentId: string | null = null;
 
   try {
     const orderRecord = await db.query.order.findFirst({
@@ -61,27 +78,50 @@ export async function POST(request: Request) {
     }
 
     if (
-      session.user.role !== "admin" &&
-      orderRecord.buyerId !== session.user.id
+      !canAccessCustomerOrder(
+        { role: session.user.role, id: session.user.id },
+        orderRecord.buyerId,
+      )
     ) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
-    if (orderRecord.status === "cancelled") {
+    if (!canAcceptPaymentForOrderStatus(orderRecord.status)) {
       return NextResponse.json(
         { error: "This order cannot accept payment." },
         { status: 400 },
       );
     }
 
-    if (orderRecord.paymentMethod === "cash_on_delivery") {
+    if (!isCashfreePaymentMethod(orderRecord.paymentMethod)) {
       return NextResponse.json(
-        { error: "Cash on delivery orders cannot be paid online." },
+        { error: "Online payment is only available for online payment orders." },
         { status: 400 },
       );
     }
 
+    const paymentId = randomUUID();
+    localPaymentId = paymentId;
+    const providerOrderId = buildCashfreeOrderId(firmOrderId);
+
     const reused = await db.transaction(async (tx) => {
+      const parentRows = await tx
+        .select()
+        .from(order)
+        .where(eq(order.id, orderRecord.id))
+        .for("update");
+      const lockedParent = parentRows[0];
+      if (
+        !lockedParent ||
+        !isCashfreePaymentMethod(lockedParent.paymentMethod) ||
+        !canAcceptPaymentForOrderStatus(lockedParent.status)
+      ) {
+        return {
+          error: "This order cannot accept online payment.",
+          status: 409 as const,
+        };
+      }
+
       const allocations = await tx
         .select()
         .from(firmOrder)
@@ -100,9 +140,16 @@ export async function POST(request: Request) {
         };
       }
 
-      if (allocation.fulfillmentStatus === "cancelled") {
+      if (!canAcceptPaymentForAllocationStatus(allocation.fulfillmentStatus)) {
         return {
           error: "This allocation cannot accept payment.",
+          status: 400 as const,
+        };
+      }
+
+      if (!isCashfreePaymentMethod(allocation.paymentMethod)) {
+        return {
+          error: "This allocation is not configured for online payment.",
           status: 400 as const,
         };
       }
@@ -144,6 +191,23 @@ export async function POST(request: Request) {
         };
       }
 
+      const pendingManual = await tx
+        .select({ id: manualPaymentSubmission.id })
+        .from(manualPaymentSubmission)
+        .where(
+          and(
+            eq(manualPaymentSubmission.firmOrderId, allocation.id),
+            eq(manualPaymentSubmission.status, "submitted"),
+          ),
+        )
+        .limit(1);
+      if (pendingManual.length) {
+        return {
+          error: "A bank transfer submission is already awaiting review.",
+          status: 409 as const,
+        };
+      }
+
       if (
         existing &&
         ACTIVE_CASHFREE_PAYMENT_STATUSES.includes(
@@ -157,6 +221,29 @@ export async function POST(request: Request) {
             paymentSessionId: existing.paymentSessionId,
             providerOrderId: existing.providerOrderId,
           },
+        };
+      }
+
+      if (!existing) {
+        await tx.insert(payment).values({
+          id: paymentId,
+          orderId: orderRecord.id,
+          firmOrderId: allocation.id,
+          firmId: allocation.firmId,
+          provider: "cashfree",
+          providerOrderId,
+          amountPaise: allocation.amountPaise,
+          currency: "INR",
+          status: "created",
+          idempotencyKey: `cashfree:${allocation.id}:${providerOrderId}`,
+        });
+        return { allocation, existing: null };
+      }
+
+      if (existing.status === "created" && !existing.paymentSessionId) {
+        return {
+          error: "Online payment creation is already in progress. Please retry shortly.",
+          status: 409 as const,
         };
       }
 
@@ -186,6 +273,7 @@ export async function POST(request: Request) {
 
     const allocation = reused.allocation;
     const existing = reused.existing;
+    localPaymentId = existing?.id ?? paymentId;
 
     if (
       existing &&
@@ -224,7 +312,6 @@ export async function POST(request: Request) {
       );
     }
 
-    const providerOrderId = buildCashfreeOrderId(allocation.id);
     const customerName = buyer?.name?.trim() || orderRecord.shippingName;
     const customerEmail = buyer?.email?.trim();
 
@@ -241,18 +328,39 @@ export async function POST(request: Request) {
       },
     });
 
-    const paymentId = existing?.id ?? randomUUID();
     const now = new Date();
 
     await db.transaction(async (tx) => {
+      const parentRows = await tx
+        .select()
+        .from(order)
+        .where(eq(order.id, orderRecord.id))
+        .for("update");
+      const lockedParent = parentRows[0];
+      if (
+        !lockedParent ||
+        lockedParent.paymentMethod !== "online_payment" ||
+        lockedParent.status === "cancelled" ||
+        lockedParent.status === "returned"
+      ) {
+        throw new Error("ORDER_NOT_PAYABLE");
+      }
+
       const allocations = await tx
         .select()
         .from(firmOrder)
         .where(eq(firmOrder.id, allocation.id))
         .for("update");
       const locked = allocations[0];
-      if (!locked || locked.paymentStatus === "paid") {
-        throw new Error("ALLOCATION_PAID");
+      if (
+        !locked ||
+        locked.orderId !== lockedParent.id ||
+        locked.paymentMethod !== "online_payment" ||
+        locked.fulfillmentStatus === "cancelled" ||
+        locked.fulfillmentStatus === "returned" ||
+        locked.paymentStatus === "paid"
+      ) {
+        throw new Error("ALLOCATION_NOT_PAYABLE");
       }
 
       const currentRows = await tx
@@ -332,6 +440,38 @@ export async function POST(request: Request) {
         { status: 409 },
       );
     }
+
+    if (
+      error instanceof Error &&
+      (error.message === "ORDER_NOT_PAYABLE" ||
+        error.message === "ALLOCATION_NOT_PAYABLE")
+    ) {
+      await db
+        .update(payment)
+        .set({ status: "failed", failedAt: new Date(), updatedAt: new Date() })
+        .where(
+          and(
+            eq(payment.id, localPaymentId ?? ""),
+            eq(payment.status, "created"),
+            isNull(payment.paymentSessionId),
+          ),
+        );
+      return NextResponse.json(
+        { error: "This order or allocation can no longer accept payment." },
+        { status: 409 },
+      );
+    }
+
+    await db
+      .update(payment)
+      .set({ status: "failed", failedAt: new Date(), updatedAt: new Date() })
+      .where(
+        and(
+          eq(payment.id, localPaymentId ?? ""),
+          eq(payment.status, "created"),
+          isNull(payment.paymentSessionId),
+        ),
+      );
 
     if (error instanceof CashfreeRequestError) {
       return NextResponse.json(

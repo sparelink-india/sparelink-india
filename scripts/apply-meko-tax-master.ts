@@ -21,7 +21,6 @@ const TAX_MASTER = [
 ] as const;
 
 type TaxRule = (typeof TAX_MASTER)[number];
-type TaxSlug = TaxRule["slug"];
 
 const TAX_BY_SLUG = new Map<string, TaxRule>(TAX_MASTER.map((row) => [row.slug, row]));
 

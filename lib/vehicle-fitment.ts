@@ -155,6 +155,12 @@ export function filterModelVehicleIds(
     .map((item) => item.id);
 }
 
+/** False when matchVehiclesForQuery cannot succeed, so callers can skip a catalogue read. */
+export function queryCouldMatchVehicleName(query: string): boolean {
+  const normalized = normalizeSearchText(query);
+  return Boolean(normalized) && !GENERIC_MODEL_TOKENS.has(normalized);
+}
+
 export function matchVehiclesForQuery(
   query: string,
   vehicles: VehicleRecord[],

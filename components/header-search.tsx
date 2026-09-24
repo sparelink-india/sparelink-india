@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import Image from "next/image";
 import Link from "next/link";
@@ -12,6 +12,7 @@ import type { MessageKey } from "@/lib/i18n";
 import { displayProductTitle } from "@/lib/product-detail-fields";
 import { readRecentSearches, rememberSearch } from "@/lib/recent-searches";
 import { isAuthoritativeSellingPricePaise } from "@/lib/storefront-price-display";
+import { selectPreferredStorefrontListing } from "@/lib/storefront-listing-selection";
 import { slugifyFitment } from "@/lib/vehicle-fitment";
 
 type SearchPanelTab = "all" | "products" | "brands" | "categories" | "vehicles" | "articles";
@@ -48,6 +49,18 @@ function SearchIcon({ className = "h-4 w-4" }: { className?: string }) {
   return (
     <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
       <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-5.2-5.2m1.2-4.3a6.5 6.5 0 11-13 0 6.5 6.5 0 0113 0z" />
+    </svg>
+  );
+}
+
+function CartIcon({ className = "h-5 w-5" }: { className?: string }) {
+  return (
+    <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.8">
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        d="M3 3h2l.4 2M7 13h10l3-8H6.4M7 13 5.4 5M7 13l-2 6h14M10 21a2 2 0 100-4 2 2 0 000 4zm8 0a2 2 0 100-4 2 2 0 000 4z"
+      />
     </svg>
   );
 }
@@ -111,7 +124,9 @@ function mapHits(results: unknown, fallbackName: string): HeaderSearchProduct[] 
       listings?: Listing[];
     };
     const doc = row.document ?? {};
-    const listing = Array.isArray(row.listings) ? row.listings[0] : undefined;
+    const listing = selectPreferredStorefrontListing(
+      Array.isArray(row.listings) ? row.listings : undefined,
+    );
     const partNumber = String(doc.part_number || listing?.sku || "");
     const name = String(doc.name || fallbackName);
     return {
@@ -198,14 +213,34 @@ export function HeaderSearchField({
   onOpenProduct,
   onAddToCart,
   panelHost,
+  orderMode = false,
+  orderPage = false,
+  categoryOptions = [],
+  activeCategory = "",
+  onCategoryChange,
+  stockFilter = "all",
+  onStockFilterChange,
+  onClearFilters,
+  mobileCartHref,
+  mobileCartCount = 0,
 }: {
   value: string;
   onChange: (value: string) => void;
   onSubmitSearch: (nextQuery?: string) => void;
   searchLoading: boolean;
   onOpenProduct?: (product: HeaderSearchProduct) => void;
-  onAddToCart?: (listingId: string) => Promise<void> | void;
+  onAddToCart?: (listingId: string, unitPaise?: number) => Promise<void> | void;
   panelHost?: HTMLElement | null;
+  orderMode?: boolean;
+  orderPage?: boolean;
+  categoryOptions?: FacetRow[];
+  activeCategory?: string;
+  onCategoryChange?: (value: string) => void;
+  stockFilter?: "all" | "in_stock";
+  onStockFilterChange?: (value: "all" | "in_stock") => void;
+  onClearFilters?: () => void;
+  mobileCartHref?: string;
+  mobileCartCount?: number;
 }) {
   const { t } = useI18n();
   const listId = useId();
@@ -225,26 +260,49 @@ export function HeaderSearchField({
   const [suggesting, setSuggesting] = useState(false);
   const [loadingMore, setLoadingMore] = useState(false);
   const [addingId, setAddingId] = useState("");
-  const fetchGen = useRef(0);
+  const autocompleteGen = useRef(0);
+  const autocompleteInFlight = useRef(false);
+  const loadMoreAbortRef = useRef<AbortController | null>(null);
+  const loadingMoreRef = useRef(false);
   const recent = readRecentSearches();
+  const [isMobileViewport, setIsMobileViewport] = useState(false);
+  const [hasUserEdited, setHasUserEdited] = useState(false);
+  const suppressAutocomplete = orderPage && !hasUserEdited;
+
+  useEffect(() => {
+    const media = window.matchMedia("(max-width: 767px)");
+    const update = () => setIsMobileViewport(media.matches);
+    update();
+    media.addEventListener("change", update);
+    return () => media.removeEventListener("change", update);
+  }, []);
 
   useEffect(() => {
     const q = value.trim();
-    if (q.length < 2) {
+    const gen = ++autocompleteGen.current;
+    loadMoreAbortRef.current?.abort();
+    loadMoreAbortRef.current = null;
+    if (suppressAutocomplete) {
+      return;
+    }
+
+    if (!q || q.length < 2) {
+      autocompleteInFlight.current = false;
       return;
     }
 
     const controller = new AbortController();
     const handle = window.setTimeout(() => {
+      if (gen !== autocompleteGen.current || controller.signal.aborted) return;
+      autocompleteInFlight.current = true;
       setSuggesting(true);
-      const gen = ++fetchGen.current;
       void fetch(`/api/search/parts?q=${encodeURIComponent(q)}&page=1&perPage=24`, {
         signal: controller.signal,
         cache: "no-store",
       })
         .then((response) => (response.ok ? response.json() : null))
         .then((data) => {
-          if (gen !== fetchGen.current) return;
+          if (gen !== autocompleteGen.current || controller.signal.aborted) return;
           const rows = mapHits(data?.results, t("product.partFallback"));
           setSuggestions(rows);
           setBrands(Array.isArray(data?.facets?.brands) ? data.facets.brands : []);
@@ -260,19 +318,21 @@ export function HeaderSearchField({
         })
         .catch((error: unknown) => {
           if (error instanceof DOMException && error.name === "AbortError") return;
-          if (gen !== fetchGen.current) return;
+          if (gen !== autocompleteGen.current) return;
           setSuggestions([]);
         })
         .finally(() => {
-          if (gen === fetchGen.current) setSuggesting(false);
+          if (gen !== autocompleteGen.current) return;
+          autocompleteInFlight.current = false;
         });
-    }, 250);
+    }, 300);
 
     return () => {
       window.clearTimeout(handle);
       controller.abort();
+      autocompleteInFlight.current = false;
     };
-  }, [t, value]);
+  }, [suppressAutocomplete, t, value]);
 
   useEffect(() => {
     function onPointerDown(event: MouseEvent) {
@@ -286,27 +346,39 @@ export function HeaderSearchField({
 
   async function loadMore() {
     const q = value.trim();
-    if (loadingMore || suggesting || q.length < 2) return;
+    if (!q || q.length < 2) return;
+    if (loadingMoreRef.current || suggesting || autocompleteInFlight.current) return;
     if (suggestions.length >= found) return;
+    const gen = autocompleteGen.current;
+    const controller = new AbortController();
+    loadMoreAbortRef.current = controller;
+    loadingMoreRef.current = true;
     setLoadingMore(true);
     const nextPage = page + 1;
     try {
       const response = await fetch(
         `/api/search/parts?q=${encodeURIComponent(q)}&page=${nextPage}&perPage=24`,
-        { cache: "no-store" },
+        { cache: "no-store", signal: controller.signal },
       );
+      if (gen !== autocompleteGen.current || controller.signal.aborted) return;
       if (!response.ok) return;
       const data = await response.json();
+      if (gen !== autocompleteGen.current || controller.signal.aborted) return;
       const rows = mapHits(data?.results, t("product.partFallback"));
       setSuggestions((current) => {
         const seen = new Set(current.map((item) => item.id));
         return [...current, ...rows.filter((item) => !seen.has(item.id))];
       });
       setPage(nextPage);
-    } catch {
+    } catch (error: unknown) {
+      if (error instanceof DOMException && error.name === "AbortError") return;
       /* keep existing rows */
     } finally {
-      setLoadingMore(false);
+      if (loadMoreAbortRef.current === controller) loadMoreAbortRef.current = null;
+      if (gen === autocompleteGen.current) {
+        loadingMoreRef.current = false;
+        setLoadingMore(false);
+      }
     }
   }
 
@@ -326,7 +398,12 @@ export function HeaderSearchField({
     if (!listingId || !onAddToCart) return;
     setAddingId(listingId);
     try {
-      await onAddToCart(listingId);
+      const unitPaise =
+        item.listing?.netInclusivePaise ??
+        item.listing?.listInclusivePaise ??
+        item.listing?.pricePaise ??
+        0;
+      await onAddToCart(listingId, unitPaise);
     } finally {
       setAddingId("");
     }
@@ -336,6 +413,7 @@ export function HeaderSearchField({
     const q = value.trim();
     if (!q) return;
     suppressOpenRef.current = true;
+    setHasUserEdited(false);
     setOpen(false);
     setActiveIndex(-1);
     onSubmitSearch(q);
@@ -370,6 +448,7 @@ export function HeaderSearchField({
   const showProductRows = panelTab === "all" || panelTab === "products";
   const sidebarCategories = categories.slice(0, 8);
   const sidebarBrands = brands.slice(0, 8);
+  const orderCategories = categoryOptions.length ? categoryOptions : categories;
 
   const panel = showDropdown ? (
     <div
@@ -603,6 +682,7 @@ export function HeaderSearchField({
                     return (
                       <div
                         key={`${item.id}-${index}`}
+                        id={`${listId}-option-${index}`}
                         role="option"
                         aria-selected={index === activeIndex}
                         className={`flex min-w-0 flex-col gap-3 border-b border-slate-100 px-3 py-3 sm:flex-row sm:items-center sm:gap-4 sm:px-4 sm:py-3.5 ${
@@ -740,13 +820,24 @@ export function HeaderSearchField({
   return (
     <div ref={rootRef} className="relative min-w-0 w-full">
       <form
-        className="flex h-11 min-w-0 w-full overflow-hidden rounded-md border border-slate-300 bg-white md:h-12"
+        data-storefront-search
+        className={`flex min-h-11 min-w-0 w-full items-stretch md:min-h-12 ${
+          orderPage
+            ? "gap-1 rounded-xl border border-[#7a1233] bg-white p-1.5 md:gap-2 md:rounded-none md:border-0 md:bg-transparent md:p-0"
+            : "overflow-hidden rounded-md border-y border-slate-300 bg-white"
+        }`}
         onSubmit={(event) => {
           event.preventDefault();
           submitForm();
         }}
       >
-        <div className="flex h-full min-w-0 flex-1 items-center">
+        <div
+          className={`flex h-full min-w-0 flex-1 items-center ${
+            orderPage
+              ? "rounded-lg border-0 px-1 md:rounded-lg md:border md:border-slate-300 md:px-1"
+              : ""
+          }`}
+        >
           <span className="pl-3 text-slate-400" aria-hidden>
             <SearchIcon />
           </span>
@@ -754,12 +845,26 @@ export function HeaderSearchField({
             type="search"
             value={value}
             role="combobox"
-            aria-label={t("search.placeholderHeader")}
+            aria-label={
+              orderPage
+                ? isMobileViewport
+                  ? "Search by item, part no., HSN"
+                  : "Search by item name, part no., or HSN"
+                : orderMode
+                  ? "Search by item name, part no., or HSN"
+                  : t("search.placeholderHeader")
+            }
             aria-expanded={showDropdown}
             aria-controls={listId}
+            aria-activedescendant={
+              activeIndex >= 0 && suggestions[activeIndex]
+                ? `${listId}-option-${activeIndex}`
+                : undefined
+            }
             aria-autocomplete="list"
             autoComplete="off"
             onChange={(event) => {
+              setHasUserEdited(true);
               onChange(event.target.value);
               setOpen(true);
             }}
@@ -791,7 +896,15 @@ export function HeaderSearchField({
                 );
               }
             }}
-            placeholder={t("search.placeholderHeader")}
+            placeholder={
+              orderPage
+                ? isMobileViewport
+                  ? "Search by item, part no., HSN..."
+                  : "Search by item name, part no., or HSN..."
+                : orderMode
+                  ? "Search by item name, part no., or HSN..."
+                  : t("search.placeholderHeader")
+            }
             className="h-full min-w-0 flex-1 bg-white px-2 text-sm text-slate-900 outline-none placeholder:text-slate-400"
           />
           {value ? (
@@ -800,6 +913,7 @@ export function HeaderSearchField({
               aria-label={t("common.close")}
               className="mr-1 flex h-8 w-8 items-center justify-center rounded-full text-slate-500 hover:bg-slate-100"
               onClick={() => {
+                setHasUserEdited(true);
                 onChange("");
                 setSuggestions([]);
                 setOpen(false);
@@ -809,14 +923,85 @@ export function HeaderSearchField({
             </button>
           ) : null}
         </div>
+        {orderMode ? (
+          <div className="hidden min-h-full shrink-0 items-center gap-2 px-2 md:flex">
+            <label className="flex h-full items-center gap-1 whitespace-nowrap text-xs font-semibold text-slate-600">
+              <span>Category:</span>
+              <select
+                value={activeCategory}
+                onChange={(event) => onCategoryChange?.(event.target.value)}
+                className={`h-9 max-w-40 rounded-md px-2 text-xs font-semibold text-slate-800 outline-none focus:ring-2 focus:ring-[#7a1233]/20 ${
+                  orderPage ? "border border-slate-300 bg-white" : "bg-slate-50"
+                }`}
+                aria-label="Category"
+              >
+                <option value="">All Categories</option>
+                {orderCategories.map((row) => (
+                  <option key={row.value} value={row.value}>
+                    {row.value}
+                  </option>
+                ))}
+                {activeCategory && !orderCategories.some((row) => row.value === activeCategory) ? (
+                  <option value={activeCategory}>{activeCategory}</option>
+                ) : null}
+              </select>
+            </label>
+            <label className="flex h-full items-center gap-1 whitespace-nowrap text-xs font-semibold text-slate-600">
+              <span>Stock:</span>
+              <select
+                value={stockFilter}
+                onChange={(event) =>
+                  onStockFilterChange?.(event.target.value === "in_stock" ? "in_stock" : "all")
+                }
+                className={`h-9 rounded-md px-2 text-xs font-semibold text-slate-800 outline-none focus:ring-2 focus:ring-[#7a1233]/20 ${
+                  orderPage ? "border border-slate-300 bg-white" : "bg-slate-50"
+                }`}
+                aria-label="Stock"
+              >
+                <option value="all">All Stock</option>
+                <option value="in_stock">In Stock</option>
+              </select>
+            </label>
+            <button
+              type="button"
+              onClick={() => onClearFilters?.()}
+              className={`h-9 whitespace-nowrap rounded-md px-2 text-xs font-semibold text-slate-600 hover:bg-slate-50 hover:text-[#7a1233] ${
+                orderPage ? "border border-[#7a1233]" : ""
+              }`}
+            >
+              Clear Filters
+            </button>
+          </div>
+        ) : null}
         <button
           type="submit"
           disabled={searchLoading}
-          className="inline-flex h-full shrink-0 items-center gap-1.5 bg-[#7a1233] px-3 text-sm font-bold text-white hover:bg-[#611029] disabled:opacity-60 sm:px-4"
+          aria-label={orderMode ? "Search catalogue" : t("nav.search")}
+          className={`${
+            orderPage
+              ? "hidden"
+              : "inline-flex min-h-11 shrink-0 items-center gap-1.5 bg-[#7a1233] px-2.5 text-sm font-bold text-white hover:bg-[#611029] disabled:opacity-60 sm:px-3"
+          }`}
         >
           <SearchIcon />
-          <span className="hidden min-[380px]:inline">{suggesting ? t("nav.searching") : t("nav.search")}</span>
+          <span className="hidden lg:inline">{suggesting ? t("nav.searching") : t("nav.search")}</span>
         </button>
+        {orderMode && mobileCartHref ? (
+          <Link
+            href={mobileCartHref}
+            aria-label={t("nav.cart")}
+            className={`relative inline-flex min-h-11 shrink-0 items-center justify-center px-2.5 text-slate-700 hover:bg-slate-50 md:hidden ${
+              orderPage ? "rounded-lg" : ""
+            }`}
+          >
+            <CartIcon />
+            {mobileCartCount > 0 ? (
+              <span className="absolute right-0.5 top-1 inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-[#c81e1e] px-1 text-[9px] font-bold leading-none text-white">
+                {mobileCartCount > 99 ? "99+" : mobileCartCount}
+              </span>
+            ) : null}
+          </Link>
+        ) : null}
       </form>
       {panelHost && typeof document !== "undefined" ? createPortal(panel, panelHost) : panel}
     </div>
