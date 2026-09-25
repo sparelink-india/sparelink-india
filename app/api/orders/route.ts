@@ -609,7 +609,7 @@ async function handlePost(request: Request) {
         .innerJoin(part, eq(dealerListing.partId, part.id))
         .leftJoin(inventory, eq(inventory.dealerListingId, dealerListing.id))
         .where(eq(cartItem.cartId, buyerCart.id))
-        .for("update");
+        .for("update", { of: [cartItem, dealerListing, part] });
       if (!liveCartItems.length) {
         throw new Error("Your cart is empty.");
       }

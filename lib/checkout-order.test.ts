@@ -1,4 +1,6 @@
 import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
 import { describe, it } from "node:test";
 
 import {
@@ -74,6 +76,17 @@ describe("multi-firm checkout order plan", () => {
     assert.deepEqual(await response.json(), {
       error: "Unable to place your order. Please try again.",
     });
+  });
+
+  it("scopes the cart transaction lock away from nullable inventory rows", () => {
+    const source = readFileSync(
+      join(process.cwd(), "app/api/orders/route.ts"),
+      "utf8",
+    );
+
+    assert.ok(
+      source.includes('.for("update", { of: [cartItem, dealerListing, part] });'),
+    );
   });
 
   it("2-3. buyer-owned cart lines create one parent order", () => {
