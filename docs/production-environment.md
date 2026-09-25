@@ -52,6 +52,63 @@ The Drizzle journal includes `0020_cashfree_firm_payments`. `npm run db:migrate:
 - Ambaji sandbox Cashfree keys only
 - Do not point preview at the production database
 
+## FIRST PRODUCTION ADMIN SETUP
+
+Production has no self-service password reset, no admin-initiated password reset, and no admin-created accounts. The **only** supported way to establish the first production admin is for an operator to promote one existing, human-owned account with the repository's own script.
+
+The script is `scripts/set-admin-role.ts`. It never creates an account, never changes a role default, never promotes the first user, and never modifies email, password, or credential state. It changes exactly one user's `role` and writes an `admin.role_change` row to `audit_log` in the same transaction.
+
+### Preconditions
+
+1. The intended operator has **already registered a normal buyer account** through the production registration flow and can sign in with it at `/login`.
+2. That account belongs to the intended business owner. Get their authorization in writing first.
+3. The operator has the production database reachable through the host's normal secret store. The script reads `DATABASE_URL` from the environment and from `.env.local`, and never prints it.
+
+### Procedure
+
+Run from the repository root, one account at a time. The script takes **no command-line flags**; every input is an environment variable.
+
+```bash
+# 1. Identify the target with exactly ONE of these. Never set both.
+export ADMIN_EMAIL="the-owner@example.com"      # or: export ADMIN_USER_ID="<user uuid>"
+# Never set both ADMIN_EMAIL and ADMIN_USER_ID; the script refuses.
+
+# 2. In production, also confirm the operator intends this change.
+export SPARELINK_ALLOW_ADMIN_ROLE_CHANGE=YES
+
+# 3. Run the promotion.
+npx tsx scripts/set-admin-role.ts
+```
+
+The script fails closed, with an explanatory message and **no** database change, when:
+
+- neither or both target identifiers are set;
+- a production environment is detected (`NODE_ENV`, `VERCEL_ENV`, or `SPARELINK_ENV` equals `production`) and `SPARELINK_ALLOW_ADMIN_ROLE_CHANGE` is not exactly `YES`;
+- the target account does not exist.
+
+If the target is already an admin it reports that and changes nothing.
+
+### After the promotion
+
+4. Clear the acknowledgement so it cannot be reused:
+
+```bash
+unset SPARELINK_ALLOW_ADMIN_ROLE_CHANGE
+```
+
+5. Confirm the change is auditable. The row is written with `action = 'admin.role_change'`, `entity_type = 'user'`, `entity_id` = the promoted user id, and metadata recording previous role, new role, how the target was identified, and whether the environment was production. `actor_user_id` is null because a CLI run has no authenticated session. No password, hash, token, or connection string is recorded.
+
+6. Have the operator sign in normally at `/login` and confirm the admin surfaces load.
+
+### Hard rules
+
+- Never enable `scripts/seed-bootstrap-auth.ts` in production. It refuses production environments by design and exists only for local development.
+- Never expose, print, commit, or share admin credentials, `DATABASE_URL`, or `BETTER_AUTH_SECRET`.
+- Never create an admin through public registration. Registration always forces the `buyer` role and ignores any client-supplied role.
+- Never use direct SQL to change a role. Use the script so the change stays scoped and auditable.
+- Never promote an account without the account owner's or business owner's authorization.
+- Promote one account at a time, and only for a person who will actually operate the admin surface.
+
 ## Local development
 
 - Bootstrap auth seeding is disabled unless `SPARELINK_BOOTSTRAP_SEED=development` is set explicitly. It refuses production environments and requires separate `SPARELINK_BOOTSTRAP_PASSWORD_000`, `SPARELINK_BOOTSTRAP_PASSWORD_111`, and `SPARELINK_BOOTSTRAP_PASSWORD_123` variables; never commit their values.

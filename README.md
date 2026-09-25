@@ -2,7 +2,14 @@
 
 Production codebase for the SpareLink India spare-parts marketplace: buyers find parts by vehicle or part number, dealers list stock and price, and SpareLink owns catalog quality, KYC, and checkout.
 
-This repository is in **Step 1 (repo foundation)**. Authentication, catalog, search, enquiries, payments, and dealer/admin features are not implemented yet.
+Authentication, catalogue, search, checkout, payments, and the dealer/admin surfaces are implemented. See `docs/production-environment.md` for the production host variables and for the supported **first production admin** procedure.
+
+### Accounts and roles
+
+- Roles are `buyer`, `dealer`, `admin` (plus `suspended`). Every account created through any public flow is forced to `buyer` by a Better Auth database hook, and `role` is not accepted from client input, so no public path can create or escalate to `admin`.
+- There is no self-service password reset or admin-initiated password reset. Password recovery is not available by design.
+- The first production admin is established by an operator promoting one existing, human-owned account with `scripts/set-admin-role.ts`. That script requires exactly one target identifier, fails closed in production without an explicit acknowledgement, and writes an `admin.role_change` audit-log row. See `docs/production-environment.md`.
+- `scripts/seed-bootstrap-auth.ts` is development-only and refuses to run in production. Never enable it on the production host.
 
 ## Stack
 
@@ -60,7 +67,7 @@ drizzle/          Schema and migrations
 .github/workflows CI
 ```
 
-Buyer, dealer, admin, and API route groups will be added with those features.
+Buyer, dealer, and admin route groups live under `app/`, with server-side authorization enforced per API route. Admin user management (`/admin/users`) can suspend, activate, and set discounts; it cannot create accounts, set passwords, or change roles.
 
 ## License
 
