@@ -31,6 +31,33 @@ describe("payment and order security rules", () => {
     assert.equal(canMarkPaymentPaid("cancelled", "pending"), false);
   });
 
+  it("keeps a cancelled parent non-payable regardless of allocation state", () => {
+    // Defense in depth: cancelling an order must not become payable again even
+    // if its firm allocation were somehow left in a non-terminal state.
+    for (const allocationStatus of ["pending", "confirmed", "packed", "shipped", "delivered"]) {
+      assert.equal(
+        canMarkPaymentPaid("cancelled", allocationStatus),
+        false,
+        allocationStatus,
+      );
+    }
+  });
+
+  it("keeps a cancelled or returned allocation non-payable", () => {
+    for (const allocationStatus of ["cancelled", "returned"]) {
+      assert.equal(canAcceptPaymentForAllocationStatus(allocationStatus), false, allocationStatus);
+      assert.equal(
+        canMarkPaymentPaid("placed", allocationStatus),
+        false,
+        allocationStatus,
+      );
+      // An open parent order does not override a terminal allocation.
+      assert.equal(canAcceptPaymentForOrderStatus("placed"), true);
+    }
+    assert.equal(canAcceptPaymentForAllocationStatus("returned"), false);
+    assert.equal(canAcceptPaymentForOrderStatus("returned"), false);
+  });
+
   it("prevents terminal order states from moving backward", () => {
     assert.equal(canTransitionOrderStatus("processing", "completed"), true);
     assert.equal(canTransitionOrderStatus("cancelled", "placed"), false);

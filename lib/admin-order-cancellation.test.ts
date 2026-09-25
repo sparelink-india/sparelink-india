@@ -221,7 +221,8 @@ describe("admin orders page wiring", () => {
     const p = page();
     assert.match(p, /if \(cancellingId\) return;/);
     assert.match(p, /disabled=\{cancellingId !== null\}/);
-    assert.match(p, /cancellingId === o\.id \? "Cancelling…"/);
+    assert.match(p, /const isCancelling = cancellingId === order\.id/);
+    assert.match(p, /isCancelling \? "Cancelling…"/);
   });
 
   it("refreshes the order list after a successful cancellation", () => {
@@ -244,8 +245,13 @@ describe("admin orders page wiring", () => {
 
   it("gates the action through the shared policy helper", () => {
     const p = page();
-    assert.match(p, /isOrderCancellationAllowed\(o\)/);
-    assert.match(p, /isOrderCancellationAllowed\(order\)/);
+    // The handler guard and the per-row visibility gate both use the helper.
+    assert.ok(p.includes("isOrderCancellationAllowed(order)"), "handler must guard");
+    assert.ok(
+      /const cancellable = isOrderCancellationAllowed\(order\)/.test(p) ||
+        /isOrderCancellationAllowed\(order\)\s*\?/.test(p),
+      "row visibility must be gated by the policy helper",
+    );
   });
 
   it("does not introduce a new cancellation endpoint", () => {

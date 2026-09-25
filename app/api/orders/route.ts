@@ -13,6 +13,7 @@ import {
   order,
   orderItem,
   part,
+  stockAdjustment,
 } from "@/drizzle/schema";
 import { getServerSession } from "@/lib/auth-server";
 import { isCodEnabledForFirm } from "@/lib/bank-payment-config";
@@ -37,6 +38,7 @@ import {
   validateAvailableStock,
   validateCartQuantity,
 } from "@/lib/order-architecture";
+import { CHECKOUT_STOCK_ADJUSTMENT_REASON } from "@/lib/order-cancel-restock";
 import { denyIfMustChangePassword } from "@/lib/require-role";
 import { resolveStorefrontPricing } from "@/lib/customer-discount";
 import { ignoreClientPricing } from "@/lib/party-pricing";
@@ -634,6 +636,13 @@ async function handlePost(request: Request) {
 
       // Existing checkout decrements live stock in this transaction.
       // This is not a separate reservation system; do not invent one here.
+      //
+      // Every decrement is ALSO recorded as a `stock_adjustment` in this same
+      // transaction. That record is the durable proof of how much stock this
+      // order actually removed, which is what lets cancellation restock
+      // reconcile later instead of blindly adding the ordered quantity back
+      // (see `lib/order-cancel-restock.ts`). If this transaction rolls back,
+      // both the decrement and the adjustment roll back together.
       for (const item of cartItems) {
         const updated = await tx
           .update(inventory)
@@ -647,11 +656,36 @@ async function handlePost(request: Request) {
               gte(inventory.quantity, item.quantity),
             ),
           )
-          .returning({ id: inventory.id });
+          // `returning` gives the authoritative post-decrement quantity, so the
+          // recorded previous/new pair cannot drift from the real movement.
+          .returning({
+            id: inventory.id,
+            quantity: inventory.quantity,
+            warehouseCode: inventory.warehouseCode,
+          });
 
         if (!updated.length) {
           throw new Error(`${item.partName} is no longer available.`);
         }
+
+        const inventoryRow = updated[0];
+        const newQuantity = inventoryRow.quantity;
+        await tx.insert(stockAdjustment).values({
+          id: randomUUID(),
+          inventoryId: inventoryRow.id,
+          dealerListingId: item.dealerListingId,
+          actorUserId: session.user.id,
+          previousQuantity: newQuantity + item.quantity,
+          newQuantity,
+          delta: -item.quantity,
+          // Stable machine-readable reason. The order number is carried by
+          // referenceType/referenceId, not interpolated here, so the row stays
+          // reliably matchable.
+          reason: CHECKOUT_STOCK_ADJUSTMENT_REASON,
+          warehouseCode: inventoryRow.warehouseCode || "MAIN",
+          referenceType: "order",
+          referenceId: orderId,
+        });
       }
 
       const requestedShippingMethod =

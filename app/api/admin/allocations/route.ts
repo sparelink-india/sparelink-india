@@ -5,6 +5,10 @@ import { firm, firmOrder, firmOrderItem, order } from "@/drizzle/schema";
 import { writeAuditLog } from "@/lib/audit";
 import { getDb } from "@/lib/db";
 
+// Mirrors the parent order status model. `cancelled` and `returned` are both
+// already treated as terminal/non-payable by `canAcceptPaymentForAllocationStatus`
+// and by the manual bank-transfer guard, and `returned` can now be written
+// automatically when a parent order transitions to `returned`.
 const ALLOWED_STATUSES = new Set([
   "pending",
   "confirmed",
@@ -12,6 +16,7 @@ const ALLOWED_STATUSES = new Set([
   "shipped",
   "delivered",
   "cancelled",
+  "returned",
 ]);
 
 export async function GET() {
@@ -101,12 +106,17 @@ export async function PATCH(request: Request) {
     );
   }
 
+  // Terminal allocations are never reopened, matching the payment guards that
+  // treat both `cancelled` and `returned` as non-payable.
+  const TERMINAL_FULFILLMENT_STATUSES = new Set(["cancelled", "returned"]);
   if (
-    existing.fulfillmentStatus === "cancelled" &&
-    fulfillmentStatus !== "cancelled"
+    TERMINAL_FULFILLMENT_STATUSES.has(existing.fulfillmentStatus) &&
+    fulfillmentStatus !== existing.fulfillmentStatus
   ) {
     return NextResponse.json(
-      { error: "Cancelled allocations cannot be reopened." },
+      {
+        error: `${existing.fulfillmentStatus === "cancelled" ? "Cancelled" : "Returned"} allocations cannot be reopened.`,
+      },
       { status: 409 },
     );
   }

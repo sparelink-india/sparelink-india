@@ -8,6 +8,11 @@ import {
   restockInventoryForCancelledOrder,
   shouldRestockOnStatusChange,
 } from "@/lib/order-cancel-restock";
+import {
+  allocationTerminalStatusForOrderStatus,
+  closeOrderAllocations,
+  shouldCloseAllocationsOnStatusChange,
+} from "@/lib/order-cancel-allocation";
 import { canTransitionOrderStatus } from "@/lib/payment-security";
 
 const ALLOWED_STATUSES = new Set([
@@ -154,9 +159,13 @@ export async function PATCH(request: Request) {
   if (paymentStatus) updates.paymentStatus = paymentStatus;
 
   let restockedLines = 0;
+  let creditedUnits = 0;
+  let indeterminateLines = 0;
   let previousStatus = "";
   let previousPaymentStatus = "";
   let didRestock = false;
+  let closedAllocations = 0;
+  let allocationStatus: string | null = null;
 
   try {
     await db.transaction(async (tx) => {
@@ -165,6 +174,7 @@ export async function PATCH(request: Request) {
           id: order.id,
           status: order.status,
           paymentStatus: order.paymentStatus,
+          createdAt: order.createdAt,
         })
         .from(order)
         .where(eq(order.id, orderId))
@@ -207,12 +217,41 @@ export async function PATCH(request: Request) {
           return;
         }
 
-        const result = await restockInventoryForCancelledOrder(tx, orderId);
+        const result = await restockInventoryForCancelledOrder(
+          tx,
+          orderId,
+          existing.createdAt,
+        );
         restockedLines = result.restockedLines;
+        creditedUnits = result.creditedUnits;
+        indeterminateLines = result.indeterminateLines;
+
+        // Close the allocations in the SAME transaction, so a cancelled order
+        // can never be left with an open `pending` firm allocation.
+        const allocation = await closeOrderAllocations(
+          tx,
+          orderId,
+          allocationTerminalStatusForOrderStatus(status) ?? "cancelled",
+        );
+        closedAllocations = allocation.closedAllocations;
+        allocationStatus = allocation.allocationStatus;
         return;
       }
 
       await tx.update(order).set(updates).where(eq(order.id, orderId));
+
+      // `returned` (and any other terminal allocation status) does not restock
+      // — the goods are physically coming back — but the allocation must still
+      // close so it stops being reported and paid as open work.
+      if (shouldCloseAllocationsOnStatusChange(existing.status, status)) {
+        const allocation = await closeOrderAllocations(
+          tx,
+          orderId,
+          allocationTerminalStatusForOrderStatus(status) as string,
+        );
+        closedAllocations = allocation.closedAllocations;
+        allocationStatus = allocation.allocationStatus;
+      }
     });
   } catch (error) {
     if (error instanceof Error && error.message === "ORDER_NOT_FOUND") {
@@ -238,8 +277,20 @@ export async function PATCH(request: Request) {
       status,
       paymentStatus,
       restockedLines: didRestock ? restockedLines : 0,
+      // Added for allocation propagation. Existing fields above are unchanged.
+      creditedUnits: didRestock ? creditedUnits : 0,
+      indeterminateRestockLines: didRestock ? indeterminateLines : 0,
+      closedAllocations,
+      allocationStatus,
     },
   });
 
-  return NextResponse.json({ success: true, restockedLines: didRestock ? restockedLines : 0 });
+  return NextResponse.json({
+    success: true,
+    restockedLines: didRestock ? restockedLines : 0,
+    creditedUnits: didRestock ? creditedUnits : 0,
+    indeterminateRestockLines: didRestock ? indeterminateLines : 0,
+    closedAllocations,
+    allocationStatus,
+  });
 }
