@@ -13,7 +13,7 @@ const googleClientId = process.env.GOOGLE_CLIENT_ID?.trim();
 const googleClientSecret = process.env.GOOGLE_CLIENT_SECRET?.trim();
 const googleEnabled = Boolean(googleClientId && googleClientSecret);
 
-function createAuth() {
+function createAuth(disableSignUp = true) {
   return betterAuth({
     secret: process.env.BETTER_AUTH_SECRET,
     baseURL: process.env.BETTER_AUTH_URL || process.env.NEXT_PUBLIC_APP_URL,
@@ -29,7 +29,7 @@ function createAuth() {
 
     emailAndPassword: {
       enabled: true,
-      disableSignUp: true,
+      disableSignUp,
       minPasswordLength: 8,
     },
 
@@ -118,6 +118,7 @@ function createAuth() {
 type Auth = ReturnType<typeof createAuth>;
 
 let authInstance: Auth | undefined;
+let registrationAuthInstance: Auth | undefined;
 
 /**
  * Better Auth must not call getDb() at module import. Next.js evaluates this
@@ -131,16 +132,33 @@ export function getAuth(): Auth {
   return authInstance;
 }
 
-export const auth: Auth = new Proxy({} as Auth, {
-  get(_target, property, receiver) {
-    const instance = getAuth();
-    const value = Reflect.get(instance, property, receiver);
-    if (typeof value === "function") {
-      return value.bind(instance);
-    }
-    return value;
-  },
-  has(_target, property) {
-    return property in getAuth();
-  },
-});
+/**
+ * The public registration route uses the same Better Auth configuration with
+ * native email sign-up enabled only for this server-side route. The main auth
+ * instance keeps native sign-up disabled.
+ */
+export function getRegistrationAuth(): Auth {
+  if (!registrationAuthInstance) {
+    registrationAuthInstance = createAuth(false);
+  }
+  return registrationAuthInstance;
+}
+
+function createAuthProxy(getInstance: () => Auth): Auth {
+  return new Proxy({} as Auth, {
+    get(_target, property, receiver) {
+      const instance = getInstance();
+      const value = Reflect.get(instance, property, receiver);
+      if (typeof value === "function") {
+        return value.bind(instance);
+      }
+      return value;
+    },
+    has(_target, property) {
+      return property in getInstance();
+    },
+  });
+}
+
+export const auth = createAuthProxy(getAuth);
+export const registrationAuth = createAuthProxy(getRegistrationAuth);

@@ -60,7 +60,11 @@ describe("buyer registration with phone OTP", () => {
     const auth = source("lib/auth.ts");
     assert.match(page, /\/api\/auth\/phone-number\/send-otp/);
     assert.match(page, /\/api\/auth\/phone-number\/verify/);
-    assert.match(auth, /disableSignUp:\s*true/);
+    assert.match(auth, /function createAuth\(disableSignUp = true\)/);
+    assert.match(auth, /disableSignUp,/);
+    assert.match(auth, /createAuth\(false\)/);
+    const registerRoute = source("app/api/auth/register/route.ts");
+    assert.match(registerRoute, /registrationAuth\.api\.signUpEmail/);
     assert.match(auth, /phoneNumber\(/);
     assert.match(auth, /signUpOnVerification/);
   });

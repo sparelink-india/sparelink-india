@@ -2,7 +2,7 @@ import { randomUUID } from "node:crypto";
 import { eq } from "drizzle-orm";
 import { NextResponse } from "next/server";
 
-import { auth } from "@/lib/auth";
+import { registrationAuth } from "@/lib/auth";
 import {
   normalizeIndianMobile,
   PASSWORD_MIN_LENGTH,
@@ -119,7 +119,7 @@ export async function POST(request: Request) {
 
   let signUpResponse: Response;
   try {
-    signUpResponse = await auth.api.signUpEmail({
+    signUpResponse = await registrationAuth.api.signUpEmail({
       body: {
         name,
         email: emailResult.email,
