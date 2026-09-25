@@ -6,6 +6,7 @@ import {
   isPartNumberRelevant,
   parseExactHsnQuery,
   parseSearchIntent,
+  rankSearchHits,
   scorePartNumberMatch,
   scoreSearchDocument,
 } from "./search-intent";
@@ -62,6 +63,59 @@ describe("search intent", () => {
     assert.equal(parseExactHsnQuery("HSN: 8421 2300"), null);
     assert.equal(parseExactHsnQuery("842123"), null);
     assert.equal(parseExactHsnQuery("HSN 8421230"), null);
+  });
+
+  it("keeps bare HSN hits outside part-number ranking", () => {
+    const hsnQuery = parseExactHsnQuery("84212300");
+    const intent = parseSearchIntent("84212300");
+    const hsnHits = [{ document: { id: "part-21009", part_number: "21009" } }];
+    const rankedHits = hsnQuery
+      ? hsnHits
+      : rankSearchHits(intent, hsnHits, (hit) => hit.document);
+
+    assert.equal(intent.isPartNumberQuery, true);
+    assert.deepEqual(rankedHits, hsnHits);
+  });
+
+  it("keeps explicit HSN hits available", () => {
+    const intent = parseSearchIntent("HSN 84212300");
+    const hsnHits = [{ document: { id: "part-21009", part_number: "21009" } }];
+    const rankedHits = rankSearchHits(intent, hsnHits, (hit) => hit.document);
+
+    assert.equal(intent.isPartNumberQuery, false);
+    assert.deepEqual(rankedHits, hsnHits);
+  });
+
+  it("keeps normal numeric and alphanumeric part-number ranking", () => {
+    const numericHits = [
+      { document: { id: "part-21009", part_number: "21009" } },
+      { document: { id: "part-99999", part_number: "99999" } },
+    ];
+    const alphanumericHits = [
+      { document: { id: "part-m648", part_number: "M-648" } },
+      { document: { id: "part-m999", part_number: "M-999" } },
+    ];
+
+    assert.deepEqual(
+      rankSearchHits(parseSearchIntent("21009"), numericHits, (hit) => hit.document),
+      [numericHits[0]],
+    );
+    assert.deepEqual(
+      rankSearchHits(parseSearchIntent("M-648"), alphanumericHits, (hit) => hit.document),
+      [alphanumericHits[0]],
+    );
+  });
+
+  it("returns zero when an HSN has no matching hits", () => {
+    const hsnQuery = parseExactHsnQuery("99999999");
+    const intent = parseSearchIntent("99999999");
+    const hsnHits: Array<{ document: { id: string; part_number: string } }> = [];
+    const rankedHits = hsnQuery
+      ? hsnHits
+      : rankSearchHits(intent, hsnHits, (hit) => hit.document);
+
+    assert.equal(hsnQuery, "99999999");
+    assert.deepEqual(rankedHits, []);
   });
 
   it("ranks window regulator assy above generic Altroz parts", () => {

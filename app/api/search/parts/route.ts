@@ -529,7 +529,9 @@ export async function GET(request: NextRequest) {
       });
     }
 
-    const rankedHits = rankSearchHits(intent, hits, documentFromHit);
+    const rankedHits = hsnQuery
+      ? hits
+      : rankSearchHits(intent, hits, documentFromHit);
     const documents = rankedHits.map(documentFromHit);
 
     const session = await sessionPromise;
