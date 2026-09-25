@@ -352,4 +352,22 @@ describe("admin role script wiring", () => {
     assert.equal(/DATABASE_URL/.test(script), false);
     assert.equal(/BETTER_AUTH_SECRET/.test(script), false);
   });
+
+  it("loads the database modules only after dotenv has run", () => {
+    const script = source("scripts/set-admin-role.ts");
+    const dotenvAt = script.indexOf("dotenv.config(");
+    const staticDb = script.search(/^import .*(?:\.\.\/lib\/db|\.\.\/drizzle\/schema)/m);
+    const dynamicDb = script.indexOf('await import("../lib/db")');
+    const dynamicSchema = script.indexOf('await import("../drizzle/schema")');
+
+    assert.notEqual(dotenvAt, -1, "dotenv.config must be present");
+    // Regression guard: a static import of the database modules is hoisted
+    // above dotenv.config(), so lib/env.ts would read an undefined database
+    // setting and the script would fail closed.
+    assert.equal(staticDb, -1, "database modules must not use static imports");
+    assert.notEqual(dynamicDb, -1, "lib/db must be dynamically imported");
+    assert.notEqual(dynamicSchema, -1, "drizzle/schema must be dynamically imported");
+    assert.match(script, /async function createStore\(\): Promise<AdminRoleChangeStore>/);
+    assert.match(script, /const store = await createStore\(\)/);
+  });
 });

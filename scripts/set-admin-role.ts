@@ -4,8 +4,6 @@ import { and, eq, ne } from "drizzle-orm";
 
 dotenv.config({ path: ".env.local" });
 
-import { getDb } from "../lib/db";
-import { user, auditLog } from "../drizzle/schema";
 import {
   ADMIN_ROLE,
   runAdminRoleChange,
@@ -28,7 +26,15 @@ import {
  * update, so the change and its audit record commit or roll back together.
  */
 
-function createStore(): AdminRoleChangeStore {
+/**
+ * The database modules are imported dynamically on purpose. Static ESM imports
+ * are hoisted and evaluated before `dotenv.config()` runs, so `lib/env.ts` would
+ * capture the database connection setting as undefined and the script would fail
+ * closed. This matches `scripts/seed-bootstrap-auth.ts`.
+ */
+async function createStore(): Promise<AdminRoleChangeStore> {
+  const { getDb } = await import("../lib/db");
+  const { user, auditLog } = await import("../drizzle/schema");
   const db = getDb();
 
   return {
@@ -73,7 +79,7 @@ function auditRow(audit: AdminRoleChangeAudit) {
 }
 
 async function main() {
-  const store = createStore();
+  const store = await createStore();
   const result = await runAdminRoleChange({ env: process.env, store });
 
   if (result.outcome === "already-admin") {
