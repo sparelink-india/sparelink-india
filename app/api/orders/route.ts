@@ -254,7 +254,14 @@ export async function GET() {
   });
 }
 
-export async function POST(request: Request) {
+export function unexpectedCheckoutErrorResponse() {
+  return NextResponse.json(
+    { error: "Unable to place your order. Please try again." },
+    { status: 500 },
+  );
+}
+
+async function handlePost(request: Request) {
   const session = await getServerSession();
 
   if (!session || session.user.role !== "buyer") {
@@ -795,7 +802,7 @@ export async function POST(request: Request) {
        );
      }
 
-     console.error("Checkout failed");
+     console.error("Checkout failed", error);
     const known =
       error instanceof Error &&
       (error.message.endsWith("is no longer available.") ||
@@ -840,4 +847,13 @@ export async function POST(request: Request) {
     },
     { status: 201 },
   );
+}
+
+export async function POST(request: Request) {
+  try {
+    return await handlePost(request);
+  } catch (error) {
+    console.error("Checkout request failed", error);
+    return unexpectedCheckoutErrorResponse();
+  }
 }

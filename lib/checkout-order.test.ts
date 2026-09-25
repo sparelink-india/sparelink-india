@@ -9,6 +9,7 @@ import {
 } from "./firms";
 import { ignoreCheckoutClientOverrides } from "./party-pricing";
 import { priceCustomerLine } from "./party-pricing";
+import { unexpectedCheckoutErrorResponse } from "@/app/api/orders/route";
 import {
   buildCheckoutIdempotencyStorageKey,
   buildParentOrderPlan,
@@ -63,6 +64,16 @@ describe("multi-firm checkout order plan", () => {
   it("1. unauthenticated checkout is a buyer-api 401 concern (key rejected if empty)", () => {
     assert.equal(parseCheckoutIdempotencyKey(""), null);
     assert.equal(parseCheckoutIdempotencyKey("  "), null);
+  });
+
+  it("returns a JSON response for unexpected checkout failures", async () => {
+    const response = unexpectedCheckoutErrorResponse();
+
+    assert.equal(response.status, 500);
+    assert.match(response.headers.get("content-type") ?? "", /application\/json/);
+    assert.deepEqual(await response.json(), {
+      error: "Unable to place your order. Please try again.",
+    });
   });
 
   it("2-3. buyer-owned cart lines create one parent order", () => {
