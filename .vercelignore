@@ -1,3 +1,12 @@
 data/source-catalogue/images
 data/catalogue-image-store
 public/catalogue-images
+data/meko-catalogue-archive
+data/meko-official-catalogue
+app/api/search/parts/route.ts.bak
+app/api/search/parts/route.ts.before-pn-speed-fix
+app/api/search/parts/route.ts.backup
+r2-missing.txt
+r2-object-keys.json
+sparelink-safety-backups
+_migration-manifest
