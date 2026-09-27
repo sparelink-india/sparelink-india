@@ -4,6 +4,10 @@ import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } fro
 import { useRouter } from "next/navigation";
 
 import { InclusivePrice } from "@/components/inclusive-price";
+import {
+  ErrorState,
+  PanelSkeleton,
+} from "@/components/page-states";
 import { useI18n } from "@/components/preferences-provider";
 import { WhatsAppIcon } from "@/components/whatsapp-cta";
 import type { MessageKey } from "@/lib/i18n";
@@ -104,12 +108,12 @@ function InfoCard({
   children: ReactNode;
 }) {
   return (
-    <div className="rounded-xl border border-slate-200 bg-slate-50/80 px-3 py-2.5">
-      <p className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-[0.12em] text-slate-500">
+    <div className="rounded-[var(--sl-radius)] border border-[var(--sl-border)] bg-[var(--sl-surface-sunk)]/80 px-3 py-2.5">
+      <p className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-[0.12em] text-[var(--sl-muted)]">
         {icon}
         {title}
       </p>
-      <div className="mt-1 text-xs font-semibold leading-snug text-slate-900">{children}</div>
+      <div className="mt-1 text-xs font-semibold leading-snug text-[var(--sl-text)]">{children}</div>
     </div>
   );
 }
@@ -333,30 +337,43 @@ export function ProductDetailModal({
       role="dialog"
       aria-modal="true"
       aria-labelledby={titleId}
-      className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/70 p-0 backdrop-blur-[8px] sm:p-4"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-[rgba(23,17,15,0.78)] p-0 backdrop-blur-[8px] sm:p-4"
       onClick={(event) => {
         if (event.target === event.currentTarget) onClose();
       }}
     >
-      <div className="relative flex h-[100dvh] w-full max-w-[min(92vw,1420px)] min-w-0 flex-col overflow-hidden rounded-none bg-white shadow-2xl sm:h-[min(86dvh,880px)] sm:max-h-[min(88dvh,880px)] sm:rounded-[20px]">
+      <div className="relative flex h-[100dvh] w-full max-w-[min(92vw,1420px)] min-w-0 flex-col overflow-hidden rounded-none bg-white shadow-[0_40px_90px_-30px_rgba(42,8,18,0.7)] ring-1 ring-brand-900/10 sm:h-[min(86dvh,880px)] sm:max-h-[min(88dvh,880px)] sm:rounded-[20px]">
         <button
           type="button"
           onClick={onClose}
           aria-label={t("common.close")}
-          className="absolute right-3 top-3 z-40 flex h-9 w-9 items-center justify-center rounded-full border border-slate-200 bg-white text-lg text-slate-600 shadow-sm hover:bg-slate-50"
+          className="sl-v2-focus-invert absolute right-3 top-3 z-40 flex h-9 w-9 items-center justify-center rounded-full border border-[var(--sl-border)] bg-white/95 text-[var(--sl-primary)] shadow-sm backdrop-blur transition-colors duration-200 hover:bg-[var(--sl-primary-soft)]"
         >
-          ×
+          <svg
+            className="h-4 w-4"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            aria-hidden
+          >
+            <path d="M6 6l12 12M18 6L6 18" />
+          </svg>
         </button>
 
         {!payload && !error ? (
-          <div className="flex flex-1 items-center justify-center p-10 text-sm text-slate-500">
-            {t("common.loading")}
+          <div className="flex flex-1 flex-col items-center justify-center gap-4 p-10" role="status" aria-busy="true">
+            <PanelSkeleton rows={4} className="w-full max-w-sm" />
+            <span className="sr-only">{t("common.loading")}</span>
           </div>
         ) : error && !payload ? (
-          <div className="flex flex-1 items-center justify-center p-10 text-sm text-rose-700">{error}</div>
+          <div className="flex flex-1 items-center justify-center p-8">
+            <ErrorState title={t("common.error")} body={error} onRetry={() => window.location.reload()} />
+          </div>
         ) : payload ? (
           <div className="grid min-h-0 min-w-0 flex-1 grid-cols-1 overflow-y-auto md:grid-cols-[minmax(0,1.27fr)_minmax(0,1fr)] md:overflow-hidden">
-            <div className="flex min-h-0 min-w-0 flex-col bg-[#f6f7f9] p-3 sm:p-4">
+            <div className="flex min-h-0 min-w-0 flex-col bg-[var(--sl-surface-sunk)] p-3 sm:p-4">
               <div className="flex min-h-0 min-w-0 flex-1 gap-2 sm:gap-3">
                 {!view360 && images.length > 1 ? (
                   <div className="hidden w-[clamp(4.25rem,8vw,5.75rem)] shrink-0 flex-col gap-2 overflow-y-auto md:flex">
@@ -365,8 +382,8 @@ export function ProductDetailModal({
                         key={`${src}-${index}`}
                         type="button"
                         onClick={() => setImageIndex(index)}
-                        className={`aspect-square w-full shrink-0 overflow-hidden rounded-xl border bg-white ${
-                          index === imageIndex ? "border-[#7a1233] ring-1 ring-[#7a1233]/30" : "border-slate-200"
+                        className={`aspect-square w-full shrink-0 overflow-hidden rounded-[var(--sl-radius)] border bg-white ${
+                          index === imageIndex ? "border-[var(--sl-primary)] ring-1 ring-[var(--sl-primary)]/30" : "border-[var(--sl-border)]"
                         }`}
                       >
                         {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -387,7 +404,7 @@ export function ProductDetailModal({
 
                 <div className="flex min-h-0 min-w-0 flex-1 flex-col">
                   <div
-                    className="relative flex min-h-[220px] min-w-0 flex-1 items-center justify-center overflow-hidden rounded-2xl bg-white md:min-h-0"
+                    className="relative flex min-h-[220px] min-w-0 flex-1 items-center justify-center overflow-hidden rounded-[var(--sl-radius-lg)] bg-white md:min-h-0"
                     onPointerDown={(event) => {
                       if (!view360) return;
                       event.currentTarget.setPointerCapture(event.pointerId);
@@ -437,7 +454,7 @@ export function ProductDetailModal({
                         }}
                         className="absolute left-3 top-3 inline-flex items-center gap-1.5 rounded-full bg-white px-3 py-1.5 text-[11px] font-bold text-slate-800 shadow"
                       >
-                        <span className="text-[#7a1233]">360°</span>
+                        <span className="text-[var(--sl-primary)]">360°</span>
                         {view360 ? t("product.exit360") : t("product.view360")}
                       </button>
                     ) : null}
@@ -446,7 +463,7 @@ export function ProductDetailModal({
                       type="button"
                       aria-label={t("product.enlarge", { name: payload.part.title })}
                       onClick={() => setEnlarged(true)}
-                      className="absolute right-3 top-3 flex h-9 w-9 items-center justify-center rounded-xl bg-white text-slate-700 shadow"
+                      className="absolute right-3 top-3 flex h-9 w-9 items-center justify-center rounded-[var(--sl-radius)] bg-white text-[var(--sl-text-soft)] shadow"
                     >
                       ↗
                     </button>
@@ -457,17 +474,39 @@ export function ProductDetailModal({
                           type="button"
                           aria-label={t("product.prevImage")}
                           onClick={() => cycle(-1)}
-                          className="absolute left-2 top-1/2 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full bg-white text-lg text-slate-800 shadow"
+                          className="sl-v2-focus absolute left-2 top-1/2 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-[var(--sl-radius-sm)] border border-[var(--sl-border)] bg-white/95 !text-[var(--sl-text)] shadow-[var(--sl-shadow)] transition-colors hover:bg-white"
                         >
-                          ‹
+                          <svg
+                          className="h-4 w-4"
+                          fill="none"
+                          viewBox="0 0 24 24"
+                          stroke="currentColor"
+                          strokeWidth="2.2"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          aria-hidden
+                        >
+                          <path d="M15 6l-6 6 6 6" />
+                        </svg>
                         </button>
                         <button
                           type="button"
                           aria-label={t("product.nextImage")}
                           onClick={() => cycle(1)}
-                          className="absolute right-2 top-1/2 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full bg-white text-lg text-slate-800 shadow"
+                          className="sl-v2-focus absolute right-2 top-1/2 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-[var(--sl-radius-sm)] border border-[var(--sl-border)] bg-white/95 !text-[var(--sl-text)] shadow-[var(--sl-shadow)] transition-colors hover:bg-white"
                         >
-                          ›
+                          <svg
+                          className="h-4 w-4"
+                          fill="none"
+                          viewBox="0 0 24 24"
+                          stroke="currentColor"
+                          strokeWidth="2.2"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          aria-hidden
+                        >
+                          <path d="M9 6l6 6-6 6" />
+                        </svg>
                         </button>
                       </>
                     ) : null}
@@ -478,23 +517,45 @@ export function ProductDetailModal({
                           type="button"
                           aria-label={t("product.prevImage")}
                           onClick={() => cycleFrame(-1)}
-                          className="absolute left-2 top-1/2 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full bg-white text-lg text-slate-800 shadow"
+                          className="sl-v2-focus absolute left-2 top-1/2 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-[var(--sl-radius-sm)] border border-[var(--sl-border)] bg-white/95 !text-[var(--sl-text)] shadow-[var(--sl-shadow)] transition-colors hover:bg-white"
                         >
-                          ‹
+                          <svg
+                            className="h-4 w-4"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            stroke="currentColor"
+                            strokeWidth="2.2"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            aria-hidden
+                          >
+                            <path d="M15 6l-6 6 6 6" />
+                          </svg>
                         </button>
                         <button
                           type="button"
                           aria-label={t("product.nextImage")}
                           onClick={() => cycleFrame(1)}
-                          className="absolute right-2 top-1/2 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full bg-white text-lg text-slate-800 shadow"
+                          className="sl-v2-focus absolute right-2 top-1/2 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-[var(--sl-radius-sm)] border border-[var(--sl-border)] bg-white/95 !text-[var(--sl-text)] shadow-[var(--sl-shadow)] transition-colors hover:bg-white"
                         >
-                          ›
+                          <svg
+                            className="h-4 w-4"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            stroke="currentColor"
+                            strokeWidth="2.2"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            aria-hidden
+                          >
+                            <path d="M9 6l6 6-6 6" />
+                          </svg>
                         </button>
                       </>
                     ) : null}
 
                     {view360 ? (
-                      <span className="pointer-events-none absolute bottom-3 left-1/2 -translate-x-1/2 rounded-full bg-white/95 px-2.5 py-1 text-[10px] font-semibold text-slate-500 shadow">
+                      <span className="pointer-events-none absolute bottom-3 left-1/2 -translate-x-1/2 rounded-full bg-white/95 px-2.5 py-1 text-[10px] font-semibold text-[var(--sl-muted)] shadow">
                         {frame + 1} / {images.length}
                       </span>
                     ) : null}
@@ -509,7 +570,7 @@ export function ProductDetailModal({
                           aria-label={`${index + 1}`}
                           onClick={() => setImageIndex(index)}
                           className={`h-1.5 rounded-full ${
-                            index === imageIndex ? "w-5 bg-[#7a1233]" : "w-1.5 bg-slate-300"
+                            index === imageIndex ? "w-5 bg-[var(--sl-primary)]" : "w-1.5 bg-slate-300"
                           }`}
                         />
                       ))}
@@ -523,8 +584,8 @@ export function ProductDetailModal({
                           key={`m-${src}-${index}`}
                           type="button"
                           onClick={() => setImageIndex(index)}
-                          className={`h-14 w-14 shrink-0 overflow-hidden rounded-xl border bg-white ${
-                            index === imageIndex ? "border-[#7a1233]" : "border-slate-200"
+                          className={`h-14 w-14 shrink-0 overflow-hidden rounded-[var(--sl-radius)] border bg-white ${
+                            index === imageIndex ? "border-[var(--sl-primary)]" : "border-[var(--sl-border)]"
                           }`}
                         >
                           {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -546,19 +607,31 @@ export function ProductDetailModal({
               </div>
 
               <ul className="mt-3 grid grid-cols-3 gap-2">
-                <li className="rounded-xl bg-white px-2 py-2 text-center">
-                  <p className="text-[11px] font-bold text-slate-800">{t("product.genuineQuality")}</p>
-                  <p className="text-[10px] text-slate-500">{t("product.genuineQualityHint")}</p>
-                </li>
-                <li className="rounded-xl bg-white px-2 py-2 text-center">
-                  <p className="text-[11px] font-bold text-slate-800">{t("product.fastDispatch")}</p>
-                  <p className="text-[10px] text-slate-500">{t("product.fastDispatchHint")}</p>
-                </li>
-                <li className="rounded-xl bg-white px-2 py-2 text-center">
-                  <p className="text-[11px] font-bold text-slate-800">{t("product.easyReturns")}</p>
-                  <p className="text-[10px] text-slate-500">{t("product.easyReturnsHint")}</p>
-                </li>
-              </ul>
+              <li className="sl-v2-card px-2 py-2.5 text-center">
+                <p className="sl-label !text-[var(--sl-primary)]">
+                  {t("product.genuineQuality")}
+                </p>
+                <p className="sl-small mt-1 !text-[0.625rem] leading-snug">
+                  {t("product.genuineQualityHint")}
+                </p>
+              </li>
+              <li className="sl-v2-card px-2 py-2.5 text-center">
+                <p className="sl-label !text-[var(--sl-primary)]">
+                  {t("product.fastDispatch")}
+                </p>
+                <p className="sl-small mt-1 !text-[0.625rem] leading-snug">
+                  {t("product.fastDispatchHint")}
+                </p>
+              </li>
+              <li className="sl-v2-card px-2 py-2.5 text-center">
+                <p className="sl-label !text-[var(--sl-primary)]">
+                  {t("product.easyReturns")}
+                </p>
+                <p className="sl-small mt-1 !text-[0.625rem] leading-snug">
+                  {t("product.easyReturnsHint")}
+                </p>
+              </li>
+            </ul>
             </div>
 
             <div className="flex min-h-0 min-w-0 flex-col overflow-y-auto overflow-x-hidden px-4 py-4 sm:px-6 sm:py-5">
@@ -574,45 +647,45 @@ export function ProductDetailModal({
                       />
                     </div>
                   ) : payload.part.brand ? (
-                    <p className="text-sm font-extrabold tracking-tight text-[#7a1233]">{payload.part.brand}</p>
+                    <p className="sl-h3 !text-[var(--sl-primary)]">{payload.part.brand}</p>
                   ) : null}
                 </div>
                 <span
-                  className={`shrink-0 rounded-full px-3 py-1 text-[11px] font-bold ${
-                    stockUi.tone === "ok"
-                      ? "bg-emerald-50 text-emerald-800"
-                      : stockUi.tone === "warn"
-                        ? "bg-amber-50 text-amber-800"
-                        : stockUi.tone === "danger"
-                          ? "bg-rose-50 text-rose-700"
-                          : "bg-slate-100 text-slate-600"
-                  }`}
-                >
-                  {stockUi.tone === "ok" ? `✓ ${stockUi.label}` : stockUi.label}
+              className={`sl-v2-badge shrink-0 ${
+                stockUi.tone === "ok"
+                  ? "sl-v2-badge-success"
+                  : stockUi.tone === "warn"
+                    ? "sl-v2-badge-brand"
+                    : stockUi.tone === "danger"
+                      ? "sl-v2-badge-danger"
+                      : ""
+              }`}
+            >
+                  {stockUi.label}
                 </span>
               </div>
 
-              <h2 id={titleId} className="mt-3 break-words text-[clamp(1.1rem,2vw,1.375rem)] font-extrabold leading-snug tracking-tight text-slate-950">
+              <h2 id={titleId} className="sl-h1 mt-3 break-words !text-[clamp(1.1rem,2vw,1.375rem)] leading-snug tracking-tight text-slate-950">
                 {payload.part.title}
               </h2>
-              {subtitle ? <p className="mt-1 text-sm text-slate-500">{subtitle}</p> : null}
-              {category ? <p className="mt-1 text-sm font-semibold text-slate-700">{category}</p> : null}
+              {subtitle ? <p className="sl-body mt-1.5">{subtitle}</p> : null}
+              {category ? <p className="sl-nav mt-1.5 !text-[var(--sl-text-soft)]">{category}</p> : null}
 
               {payload.part.description ? (
                 <>
-                  <div className="my-3 h-px bg-slate-200" />
-                  <p className="text-sm leading-relaxed text-slate-600">{payload.part.description}</p>
+                  <div className="my-4 h-px bg-[var(--sl-border)]" />
+                  <p className="sl-body">{payload.part.description}</p>
                 </>
               ) : null}
 
               {infoCards.length ? (
                 <>
-                  <div className="my-3 h-px bg-slate-200" />
+                  <div className="my-4 h-px bg-[var(--sl-border)]" />
                   <div className="grid grid-cols-1 gap-2 min-[420px]:grid-cols-3">
                     {infoCards.map((card) => (
-                      <div key={card.label} className="rounded-xl bg-slate-50 px-3 py-2.5">
-                        <p className="text-[10px] font-semibold uppercase tracking-wide text-slate-500">{card.label}</p>
-                        <p className="mt-0.5 break-words text-sm font-bold text-slate-900">{card.value}</p>
+                      <div key={card.label} className="sl-v2-card px-3 py-2.5">
+                        <p className="sl-label !text-[0.625rem]">{card.label}</p>
+                        <p className="sl-nav mt-1 break-words !text-[var(--sl-text)]">{card.value}</p>
                       </div>
                     ))}
                   </div>
@@ -686,10 +759,10 @@ export function ProductDetailModal({
                 </div>
               ) : null}
 
-              <div className="mt-4 border-t border-slate-200 pt-3">
+              <div className="mt-4 border-t border-[var(--sl-border)] pt-3">
                 {listing ? (
                   listing.isPensol ? (
-                    <div className="text-sm font-bold text-slate-900">
+                    <div className="text-sm font-bold text-[var(--sl-text)]">
                       {listing.pricePaise > 0
                         ? `₹${(listing.pricePaise / 100).toLocaleString("en-IN")}`
                         : t("price.onRequest")}
@@ -705,7 +778,7 @@ export function ProductDetailModal({
                     />
                   )
                 ) : (
-                  <p className="text-sm font-bold text-slate-800">{t("price.onRequest")}</p>
+                  <p className="sl-h3">{t("price.onRequest")}</p>
                 )}
                 {listing?.firmName ? (
                   <p className="mt-1 text-[11px] font-semibold text-emerald-700">
@@ -713,33 +786,57 @@ export function ProductDetailModal({
                   </p>
                 ) : null}
 
-                {error ? <p className="mt-2 text-xs text-rose-700">{error}</p> : null}
+                {error ? (
+              <p className="sl-small mt-2 font-medium !text-[var(--sl-danger)]" role="alert">
+                {error}
+              </p>
+            ) : null}
 
                 <div className="mt-3 flex min-w-0 flex-wrap items-center gap-3">
-                  <div className="flex items-center rounded-xl border border-slate-200">
+                  <div className="flex items-center rounded-[var(--sl-radius)] border border-[var(--sl-border)]">
                     <button
                       type="button"
                       aria-label="Decrease quantity"
-                      className="h-12 w-11 text-lg"
+                      className="sl-v2-focus flex h-12 w-11 shrink-0 items-center justify-center rounded-[var(--sl-radius-sm)] border border-[var(--sl-border-strong)] bg-white text-[var(--sl-text)] transition-colors hover:bg-[var(--sl-surface-sunk)]"
                       onClick={() => setQuantity((value) => Math.max(1, value - 1))}
                     >
-                      −
+                      <svg
+                        className="h-4 w-4"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                        strokeWidth="2.2"
+                        strokeLinecap="round"
+                        aria-hidden
+                      >
+                        <path d="M5 12h14" />
+                      </svg>
                     </button>
-                    <span className="min-w-8 text-center text-sm font-bold">{quantity}</span>
+                    <span className="min-w-9 text-center sl-price !text-base tabular-nums">{quantity}</span>
                     <button
                       type="button"
-                      aria-label="Increase quantity"
-                      className="h-12 w-11 text-lg"
+                      aria-label={t("product.increaseQuantity")}
+                      className="sl-v2-focus flex h-12 w-11 shrink-0 items-center justify-center rounded-[var(--sl-radius-sm)] border border-[var(--sl-border-strong)] bg-white text-[var(--sl-text)] transition-colors hover:bg-[var(--sl-surface-sunk)]"
                       onClick={() => setQuantity((value) => Math.min(Math.max(stock, 1), value + 1))}
                     >
-                      +
+                      <svg
+                        className="h-4 w-4"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                        strokeWidth="2.2"
+                        strokeLinecap="round"
+                        aria-hidden
+                      >
+                        <path d="M12 5v14M5 12h14" />
+                      </svg>
                     </button>
                   </div>
                   <button
                     type="button"
                     disabled={!canAdd || adding}
                     onClick={() => void addToCart()}
-                    className="inline-flex min-h-12 min-w-0 flex-1 items-center justify-center gap-2 rounded-xl bg-[#7a1233] px-4 text-sm font-bold text-white hover:bg-[#611029] disabled:opacity-50"
+                    className="sl-v2-btn sl-v2-btn-primary min-w-0 flex-1"
                   >
                     <CartIcon className="h-4 w-4" />
                     {canAdd
@@ -756,7 +853,7 @@ export function ProductDetailModal({
                       href={whatsappHref}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="inline-flex min-h-11 min-w-0 items-center justify-center gap-2 rounded-xl border border-emerald-200 bg-emerald-50 px-3 text-center text-sm font-bold text-emerald-800 hover:bg-emerald-100"
+                      className="sl-v2-btn sl-v2-btn-secondary min-w-0"
                     >
                       <WhatsAppIcon className="h-5 w-5" />
                       {t("product.enquireWhatsApp")}
@@ -769,7 +866,7 @@ export function ProductDetailModal({
                     disabled={wishlistBusy}
                     aria-label={t("product.addWishlist")}
                     onClick={() => void addWishlist()}
-                    className="inline-flex min-h-11 min-w-0 items-center justify-center gap-2 rounded-xl border border-rose-200 bg-white px-3 text-sm font-bold text-rose-700 hover:bg-rose-50 disabled:opacity-50"
+                    className="sl-v2-btn sl-v2-btn-secondary min-w-0"
                   >
                     <HeartIcon className="h-4 w-4" />
                     {t("product.addWishlist")}

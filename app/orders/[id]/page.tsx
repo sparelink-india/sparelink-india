@@ -144,7 +144,7 @@ export default function OrderDetailPage() {
               <p className="text-xs font-bold uppercase tracking-widest text-zinc-500">
                 Order detail
               </p>
-              <h1 className="mt-1 text-2xl font-bold tracking-tight">
+              <h1 className="sl-type-page mt-1 text-2xl">
                 #{order.orderNumber}
               </h1>
               <p className="mt-1 text-sm text-zinc-500">

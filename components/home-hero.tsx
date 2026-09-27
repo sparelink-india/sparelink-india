@@ -3,20 +3,39 @@
 /* Hero uses pre-cut product rasters; next/image crop would clip edges. */
 /* eslint-disable @next/next/no-img-element */
 
-import type { ReactNode } from "react";
 import Link from "next/link";
+import { useState } from "react";
 
 import { useI18n } from "@/components/preferences-provider";
 import type { MessageKey } from "@/lib/i18n";
 
-const QUICK_SEARCHES = [
-  { label: "Water Pump Bolero (M663)", q: "M663" },
-  { label: "Door Handle (113)", q: "113" },
-  { label: "Engine Oil Filter", q: "Engine Oil Filter" },
-  { label: "Brake Pads", q: "Brake Pad" },
-  { label: "Clutch Kit", q: "Clutch Kit" },
-  { label: "12V Battery", q: "Battery" },
-] as const;
+type SearchModeIcon = "hash" | "tag" | "badge" | "car" | "code";
+
+/**
+ * Discoverability hints for the real search box below. These do NOT create a
+ * second search path — tapping one seeds the same query the customer would
+ * have typed, which flows through the existing `onQuickSearch` handler.
+ */
+/**
+ * Prominent "search by" affordances.
+ *
+ * Reduced to four. HSN is deliberately NOT a prominent pill — it would make the
+ * row a five-pill strip and dilute the primary action. HSN search still works
+ * exactly as before: the input is free text, the same endpoint parses it, and
+ * the header search exposes HSN in its own placeholder. Only its prominence
+ * changed, never its behaviour.
+ */
+const SEARCH_MODES: {
+  label: string;
+  example: string;
+  q: string;
+  icon: SearchModeIcon;
+}[] = [
+  { label: "Part Number", example: "856, M-856, 101", q: "856", icon: "hash" },
+  { label: "Part Name", example: "water pump, brake pad", q: "Water Pump", icon: "tag" },
+  { label: "Vehicle", example: "Bolero, Swift, Creta", q: "Bolero", icon: "car" },
+  { label: "Brand", example: "CI Automotive, Pensol", q: "CI Automotive", icon: "badge" },
+];
 
 const VEHICLE_TYPES: {
   key: MessageKey;
@@ -39,6 +58,13 @@ export function HomeHero({
   onQuickSearch: (query: string) => void;
 }) {
   const { t } = useI18n();
+  const [heroQuery, setHeroQuery] = useState("");
+
+  const submitHeroSearch = (value: string) => {
+    const trimmed = value.trim();
+    if (!trimmed) return;
+    onQuickSearch(trimmed);
+  };
 
   return (
     <section id="search" className="relative">
@@ -49,208 +75,245 @@ export function HomeHero({
           className="hero-scene-img pointer-events-none absolute inset-0 h-full w-full object-cover"
         />
         <div className="pointer-events-none absolute inset-0 hero-scene-veil" aria-hidden />
+        {/*
+          Burgundy identity wash — lightened after screenshot review.
 
-        <div className="hero-stage relative z-[3]">
-          <div className="hero-col hero-col-left hidden lg:flex">
-            <ProductPanel
-              side="left"
-              src="/images/hero/cutouts/outer-handles.png"
-              label={t("hero.labelHandles")}
-              imgClass="hero-cutout-lg"
-            />
-            <ProductPanel
-              side="left"
-              src="/images/hero/cutouts/cables.png"
-              label={t("hero.labelCables")}
-              imgClass="hero-cutout-lg"
-            />
-            <ProductPanel
-              side="left"
-              src="/images/hero/cutouts/window-regulators.png"
-              label={t("hero.labelRegulators")}
-              imgClass="hero-cutout-lg"
-            />
-          </div>
+          Screenshot review showed the automotive photography was still not
+          readable through the overlay. The wash is now
+          0.56 / 0.16 / 0.28 / 0.68 (previously 0.72 / 0.30 / 0.42 / 0.80),
+          which opens the middle band to 0.16 so the vehicle photo reads through
+          clearly, while the top and bottom bands still anchor the burgundy
+          identity and preserve white-text contrast for the headline, the
+          search field and the CTAs.
+          */}
+        <div
+          className="pointer-events-none absolute inset-0"
+          style={{
+            background:
+              "linear-gradient(180deg, rgba(42,8,18,0.56) 0%, rgba(42,8,18,0.16) 34%, rgba(74,12,32,0.28) 68%, rgba(42,8,18,0.68) 100%)",
+          }}
+          aria-hidden
+        />
+        <div
+          className="pointer-events-none absolute inset-0"
+          style={{ background: "var(--sl-grad-sheen)" }}
+          aria-hidden
+        />
 
-          <div className="hero-center relative z-[4] mx-auto flex flex-col items-center justify-center px-3 text-center sm:px-4">
-            <p className="hero-eyebrow">{t("hero.eyebrow")}</p>
-            <h1 className="hero-headline">
-              <span className="block text-white">{t("hero.titleLine1")}</span>
-              <span className="block text-[#f0c14b]">{t("hero.titleAccent")}</span>
-              <span className="block text-white">{t("hero.titleLine3")}</span>
-            </h1>
-            <p className="hero-subhead">{t("hero.subtitle")}</p>
-            <div className="mt-5 flex flex-wrap items-center justify-center gap-3">
-              <Link href="#categories" className="hero-cta">
+        {/*
+          DESIGN RESET — the hero is now ONE purpose: find the right spare part.
+          The previous build stacked six decorative product cut-out panels and
+          three clipped "hero-panel" figures around the search (12 <img>, 6
+          <figure>, 16 chips and ~23 CTA elements inside the hero band). They
+          competed with the single most important element on the page and read
+          as collage rather than premium. The real product photography now
+          lives in the page background only, and the search owns the frame.
+        */}
+        {/*
+          Content wrapper. `justify-center` with padding, and no fixed height,
+          so the block always fits its content — the CTAs were previously
+          clipped because the container had a large py on top of a fixed
+          desktop hero height.
+        */}
+        <div className="relative z-[3] mx-auto flex w-full max-w-3xl flex-col items-center justify-center px-4 py-10 text-center sm:py-12 lg:py-9">
+          <p className="sl-label !text-[var(--sl-gold-soft)]">{t("hero.eyebrow")}</p>
+          {/*
+            Headline reflowed from three forced lines to two. The previous
+            `block` span per line fragmented "India's Trusted / Auto Parts /
+            Distributor & Dealer" into a tall narrow stack; rendering the first
+            two segments as one flowing line lets the browser break where the
+            text actually needs it.
+          */}
+          <h1 className="sl-display !text-white max-w-2xl">
+            <span className="text-white">
+              {t("hero.titleLine1")} {t("hero.titleLine3")}
+            </span>{" "}
+            <span className="sl-text-grad">{t("hero.titleAccent")}</span>
+          </h1>
+          <p className="sl-body !text-white/80 max-w-xl">{t("hero.subtitle")}</p>
+
+          {/* Primary interaction: the real search. Submits through the same
+              onQuickSearch handler the quick chips already use. */}
+          <form
+            className="mt-6 w-full sm:mt-7"
+            role="search"
+            onSubmit={(event) => {
+              event.preventDefault();
+              submitHeroSearch(heroQuery);
+            }}
+          >
+            <label htmlFor="hero-search-input" className="sr-only">
+              Search automotive spare parts by part number, name, brand, vehicle or HSN
+            </label>
+              <div className="sl-search sl-search-invert shadow-[0_18px_50px_-18px_rgba(0,0,0,0.85)]">
+                <span className="sl-search-icon">
+                  <SearchGlyph />
+                </span>
+                <input
+                  id="hero-search-input"
+                  type="search"
+                  value={heroQuery}
+                  onChange={(event) => setHeroQuery(event.target.value)}
+                  placeholder="Search part number, name, brand or vehicle…"
+                  autoComplete="off"
+                  className="sl-search-input"
+                />
+                <button
+                  type="submit"
+                  disabled={!heroQuery.trim()}
+                  className="sl-search-submit"
+                >
+                  <span className="hidden sm:inline">Search</span>
+                  <SearchGlyph className="h-4 w-4 sm:hidden" />
+                </button>
+              </div>
+
+              {/* Horizontally scrollable on narrow screens so 320px never
+                  overflows; wraps naturally from sm upward. */}
+              <div className="-mx-1 mt-3 flex gap-1.5 overflow-x-auto px-1 pb-1 sm:flex-wrap sm:justify-center sm:overflow-visible">
+                <span className="sr-only">Search by</span>
+                <span
+                  className="hidden shrink-0 items-center pr-1 text-[10px] font-semibold uppercase tracking-[0.14em] text-white/55 sm:inline-flex"
+                  aria-hidden
+                >
+                  Search by
+                </span>
+                {SEARCH_MODES.map((mode) => (
+                  <button
+                    key={mode.label}
+                    type="button"
+                    onClick={() => {
+                      setHeroQuery(mode.q);
+                      submitHeroSearch(mode.q);
+                    }}
+                    title={mode.example}
+                    className="sl-chip sl-chip-invert h-8 min-h-8 shrink-0 px-3 text-[11px] font-semibold"
+                  >
+                    <SearchModeGlyph kind={mode.icon} />
+                    {mode.label}
+                  </button>
+                ))}
+              </div>
+            </form>
+
+            <div className="mt-5 flex flex-wrap items-center justify-center gap-2.5 sm:mt-6 sm:gap-3">
+              <Link href="#categories" className="sl-v2-btn sl-v2-btn-ghost-invert text-[13px] sm:text-sm">
                 {t("hero.browse")}
               </Link>
-              <Link href="/vehicle-fitment" className="hero-cta inline-flex items-center gap-2">
+              <Link
+                href="/vehicle-fitment"
+                className="sl-v2-btn sl-v2-btn-ghost-invert inline-flex items-center gap-2 text-[13px] sm:text-sm"
+              >
                 <CarIcon />
                 {t("hero.findVehicle")}
               </Link>
             </div>
-            <div className="hero-badges">
-              <HeroStat icon={<ShieldMini />} line1={t("hero.statGenuine1")} line2={t("hero.statGenuine2")} />
-              <HeroStat icon={<TruckMini />} line1={t("hero.statSupply1")} line2={t("hero.statSupply2")} />
-              <HeroStat icon={<RupeeMini />} line1={t("hero.statPrice1")} line2={t("hero.statPrice2")} />
-              <HeroStat icon={<HeadsetMini />} line1={t("hero.statDealer1")} line2={t("hero.statDealer2")} />
-            </div>
-          </div>
-
-          <div className="hero-col hero-col-right hidden lg:flex">
-            <PensolPanel label={t("hero.labelPensol")} />
-            <ProductPanel
-              side="right"
-              src="/images/hero/cutouts/uj-cross.png"
-              label={t("hero.labelUj")}
-              imgClass="hero-cutout-lg"
-            />
-            <WaterPumpPanel label={t("hero.labelPumps")} />
-          </div>
-
-          <div className="hero-mobile-panels z-[3] grid grid-cols-2 gap-2 px-2 pb-3 lg:hidden">
-            <ProductPanel
-              side="left"
-              src="/images/hero/cutouts/outer-handles.png"
-              label={t("hero.labelHandles")}
-              imgClass="hero-cutout-lg"
-            />
-            <ProductPanel
-              side="right"
-              src="/images/hero/cutouts/cables.png"
-              label={t("hero.labelCables")}
-              imgClass="hero-cutout-lg"
-            />
-            <ProductPanel
-              side="left"
-              src="/images/hero/cutouts/window-regulators.png"
-              label={t("hero.labelRegulators")}
-              imgClass="hero-cutout-lg"
-            />
-            <PensolPanel label={t("hero.labelPensol")} compact />
-            <ProductPanel
-              side="right"
-              src="/images/hero/cutouts/uj-cross.png"
-              label={t("hero.labelUj")}
-              imgClass="hero-cutout-lg"
-            />
-            <WaterPumpPanel label={t("hero.labelPumps")} compact />
-          </div>
         </div>
       </div>
 
-      <div className="hero-vehicle-strip border-b border-slate-200 bg-white">
-        <div className="mx-auto flex h-[67px] max-w-[1440px] items-center gap-3 overflow-x-auto px-3 sm:justify-center lg:px-6">
-          {VEHICLE_TYPES.map((item) => (
-            <Link
-              key={item.key}
-              href={item.href}
-              className="flex min-w-[4.75rem] flex-col items-center gap-1 px-1 text-slate-800 hover:text-[#7a1233]"
-            >
-              <VehicleGlyph kind={item.icon} />
-              <span className="whitespace-nowrap text-center text-[10px] font-semibold uppercase tracking-wide">
-                {t(item.key)}
-              </span>
-            </Link>
-          ))}
+      {/*
+        Vehicle discovery strip. Previously a bare row of 8 bare icon links,
+        which read as an old catalogue nav bar. It now has a clear label and
+        each type is a proper compact card with a consistent hover state. The
+        vehicle types themselves are unchanged and still link to the real
+        /vehicle-fitment route.
+      */}
+      <div className="border-b border-[var(--sl-border)]/70 bg-[var(--sl-cream)]">
+        <div className="sl-container py-5">
+          <p className="sl-label">Find parts for your vehicle</p>
+          <ul className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-4 lg:grid-cols-8">
+            {VEHICLE_TYPES.map((item) => (
+              <li key={item.key}>
+                <Link
+                  href={item.href}
+                  className="group flex min-h-[68px] flex-col items-center justify-center gap-1.5 rounded-[var(--sl-radius-sm)] border border-[var(--sl-border)] bg-white px-2 py-2 text-center transition-colors duration-200 hover:border-brand-300 hover:bg-white hover:shadow-[0_4px_14px_-8px_rgba(42,8,18,0.35)]"
+                >
+                  <span className="text-[var(--sl-primary)] transition-transform duration-200 group-hover:scale-110">
+                    <VehicleGlyph kind={item.icon} />
+                  </span>
+                  <span className="text-[10px] font-semibold uppercase leading-tight tracking-wide text-[var(--sl-text-soft)] group-hover:text-[var(--sl-primary)]">
+                    {t(item.key)}
+                  </span>
+                </Link>
+              </li>
+            ))}
+          </ul>
         </div>
       </div>
 
-      <div className="border-b border-slate-200 bg-white">
-        <div className="mx-auto flex max-w-[1440px] flex-wrap items-center justify-center gap-2 px-4 py-4 lg:px-8">
-          <span className="text-xs font-semibold text-slate-700">{t("hero.quickSearches")}</span>
-          {QUICK_SEARCHES.map((item) => (
-            <button
-              key={item.q}
-              type="button"
-              onClick={() => onQuickSearch(item.q)}
-              className="rounded-full border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-800 shadow-sm hover:bg-slate-50"
-            >
-              {item.label}
-            </button>
-          ))}
-        </div>
-      </div>
+      {/*
+        DESIGN RESET: the standalone "quick searches" chip band is removed.
+        It duplicated the "Search by" chips directly under the search field —
+        two chip rows in one band was the single biggest source of clutter in
+        the hero. The five "Search by" chips (Part Number / Part Name / Brand /
+        Vehicle / HSN) remain, they are the restrained discovery affordance, and
+        they submit through the same real `onQuickSearch` handler. The vehicle
+        strip above keeps every vehicle entry point.
+      */}
     </section>
   );
 }
 
-function ProductPanel({
-  src,
-  label,
-  imgClass,
-  side,
-}: {
-  src: string;
-  label: string;
-  imgClass?: string;
-  side: "left" | "right";
-}) {
+function SearchGlyph({ className = "h-5 w-5" }: { className?: string }) {
   return (
-    <figure className={`hero-panel hero-panel-${side}`}>
-      <figcaption className="hero-product-label">{label}</figcaption>
-      <img src={src} alt="" className={`hero-panel-img ${imgClass ?? ""}`} />
-    </figure>
+    <svg
+      className={`${className} shrink-0 text-white/75`}
+      fill="none"
+      viewBox="0 0 24 24"
+      stroke="currentColor"
+      strokeWidth="1.9"
+      aria-hidden
+    >
+      <circle cx="11" cy="11" r="6.5" />
+      <path strokeLinecap="round" strokeLinejoin="round" d="m20 20-3.6-3.6" />
+    </svg>
   );
 }
 
-function PensolPanel({ label, compact = false }: { label: string; compact?: boolean }) {
+function SearchModeGlyph({ kind }: { kind: SearchModeIcon }) {
+  const common = "h-3.5 w-3.5 shrink-0";
   return (
-    <figure className="hero-panel hero-panel-right">
-      <figcaption className="hero-product-label">{label}</figcaption>
-      <div className="hero-pensol-row">
-        <img
-          src="/images/hero/pensol-4st-extra.jpg"
-          alt=""
-          className={`w-auto max-w-[38%] object-contain hero-photo-knockout ${compact ? "h-[5.35rem]" : "h-[8.15rem]"}`}
+    <svg
+      className={common}
+      fill="none"
+      viewBox="0 0 24 24"
+      stroke="currentColor"
+      strokeWidth="1.9"
+      aria-hidden
+    >
+      {kind === "hash" ? (
+        <path strokeLinecap="round" d="M9 4 7 20M17 4l-2 16M4 9h16M3 15h16" />
+      ) : kind === "tag" ? (
+        <path
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          d="M3 12.5V4h8.5L21 13.5 13.5 21 3 12.5Zm4-4h.01"
         />
-        <img
-          src="/images/hero/pensol-4st-extra-sl.jpg"
-          alt=""
-          className={`-ml-1 w-auto max-w-[42%] object-contain hero-photo-knockout ${compact ? "h-[6.1rem]" : "h-[8.85rem]"}`}
+      ) : kind === "badge" ? (
+        <path
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          d="M12 3 4 6v6c0 4.5 3.2 8 8 9 4.8-1 8-4.5 8-9V6l-8-3Z"
         />
-        <img
-          src="/images/hero/pensol-ap-lr.jpg"
-          alt=""
-          className={`-ml-1 w-auto max-w-[34%] object-contain hero-photo-knockout ${compact ? "h-[4.5rem]" : "h-[6.85rem]"}`}
+      ) : kind === "car" ? (
+        <path
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          d="M3 13l2-5h14l2 5M5 17a1.5 1.5 0 100-3 1.5 1.5 0 000 3zm14 0a1.5 1.5 0 100-3 1.5 1.5 0 000 3zM4 13h16"
         />
-      </div>
-    </figure>
-  );
-}
-
-function WaterPumpPanel({ label, compact = false }: { label: string; compact?: boolean }) {
-  const size = compact ? "h-[4.5rem]" : "h-[5.55rem]";
-  return (
-    <figure className="hero-panel hero-panel-right">
-      <figcaption className="hero-product-label">{label}</figcaption>
-      <div className="hero-pump-grid">
-        <img src="/images/hero/pumps/m-547.png" alt="" className={`hero-pump-img w-auto object-contain ${size}`} />
-        <img src="/images/hero/pumps/m-516.png" alt="" className={`hero-pump-img w-auto object-contain ${size}`} />
-        <img src="/images/hero/pumps/m-518.png" alt="" className={`hero-pump-img w-auto object-contain ${size}`} />
-        <img src="/images/hero/pumps/m-522.png" alt="" className={`hero-pump-img w-auto object-contain ${size}`} />
-      </div>
-    </figure>
-  );
-}
-
-function HeroStat({ icon, line1, line2 }: { icon: ReactNode; line1: string; line2: string }) {
-  return (
-    <div className="flex flex-col items-center gap-1.5 text-center">
-      <span className="hero-stat-badge inline-flex h-10 w-10 items-center justify-center rounded-full text-white">
-        {icon}
-      </span>
-      <p className="max-w-[8.5rem] text-[10px] font-semibold leading-tight text-white">
-        {line1}
-        <br />
-        {line2}
-      </p>
-    </div>
+      ) : (
+        <path
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          d="m8 8-4 4 4 4m8-8 4 4-4 4m-2-11-4 14"
+        />
+      )}
+    </svg>
   );
 }
 
 function VehicleGlyph({ kind }: { kind: (typeof VEHICLE_TYPES)[number]["icon"] }) {
-  const common = "h-7 w-7 text-slate-800";
+  const common = "h-7 w-7 text-current";
   return (
     <svg className={common} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.6" aria-hidden>
       {kind === "bike" ? (
@@ -272,38 +335,6 @@ function CarIcon() {
   return (
     <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.8">
       <path strokeLinecap="round" strokeLinejoin="round" d="M3 13l2-5h14l2 5M5 17a1.5 1.5 0 100-3 1.5 1.5 0 000 3zm14 0a1.5 1.5 0 100-3 1.5 1.5 0 000 3zM4 13h16" />
-    </svg>
-  );
-}
-
-function ShieldMini() {
-  return (
-    <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.8">
-      <path strokeLinecap="round" strokeLinejoin="round" d="M12 3l8 3v6c0 5-3.5 8.5-8 10-4.5-1.5-8-5-8-10V6l8-3z" />
-    </svg>
-  );
-}
-
-function TruckMini() {
-  return (
-    <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.8">
-      <path strokeLinecap="round" strokeLinejoin="round" d="M3 16V7h11v9M14 10h4l3 3v3h-7M7 18a2 2 0 100-4 2 2 0 000 4zm10 0a2 2 0 100-4 2 2 0 000 4z" />
-    </svg>
-  );
-}
-
-function RupeeMini() {
-  return (
-    <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.8">
-      <path strokeLinecap="round" strokeLinejoin="round" d="M7 6h10M7 10h10M7 6c4 0 6 2 6 4s-2 4-6 4c2.5 0 6 2 8 4" />
-    </svg>
-  );
-}
-
-function HeadsetMini() {
-  return (
-    <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.8">
-      <path strokeLinecap="round" strokeLinejoin="round" d="M4 12a8 8 0 1116 0v5a2 2 0 01-2 2h-2v-7h4M4 12v5a2 2 0 002 2h2v-7H4" />
     </svg>
   );
 }

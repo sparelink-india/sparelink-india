@@ -3,11 +3,19 @@
 import { FormEvent, useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { BrandLogo } from "@/components/brand-logo";
+import { AuthAlert, AuthShell } from "@/components/auth-shell";
 import { SiteFooter } from "@/components/site-footer";
 import { StorefrontHeader } from "@/components/storefront-header";
 import { useI18n } from "@/components/preferences-provider";
 
+/**
+ * V2 Dealer Login — same split-panel architecture as customer login but with a
+ * distinct B2B register: the copy names the bulk-ordering functionality that
+ * actually exists, and no claim is made that isn't substantiated.
+ *
+ * Authentication is unchanged: same endpoint, same `expectedRole: "dealer"`
+ * payload, same session-flags pre-check, same redirects.
+ */
 export default function DealerLoginPage() {
   const router = useRouter();
   const { t } = useI18n();
@@ -52,54 +60,76 @@ export default function DealerLoginPage() {
   }
 
   return (
-    <div className="flex min-h-screen flex-col bg-slate-50">
+    <div className="sl-page flex min-h-screen flex-col">
       <StorefrontHeader />
-      <main className="flex flex-1 items-center justify-center px-6 py-12">
-        <div className="w-full max-w-md rounded-2xl border border-zinc-200 bg-white p-8 shadow-sm">
-          <Link href="/" className="text-xs font-semibold text-[#7a1233] hover:underline">
-            {t("search.catalog")}
-          </Link>
-          <div className="mt-4">
-            <BrandLogo />
-          </div>
-          <h1 className="mt-4 text-lg font-semibold text-zinc-900">{t("dealer.title")}</h1>
-          <p className="mt-1 text-sm text-zinc-500">{t("dealer.hint")}</p>
-          <form onSubmit={handleLogin} className="mt-8 space-y-4">
+      <AuthShell
+        variant="dealer"
+        eyebrow={t("auth.dealerEyebrow")}
+        heading={t("dealer.title")}
+        intro={t("dealer.hint")}
+        bullets={[
+          { title: t("auth.dealerB1"), body: t("auth.dealerB1Body") },
+          { title: t("auth.dealerB2"), body: t("auth.dealerB2Body") },
+          { title: t("auth.dealerB3"), body: t("auth.dealerB3Body") },
+        ]}
+        footerNote={
+          <p className="sl-small text-center">
+            {t("dealer.customer")}{" "}
+            <Link
+              href="/login"
+              className="sl-v2-focus font-bold text-[var(--sl-primary)] hover:underline"
+            >
+              {t("dealer.customerLogin")}
+            </Link>
+          </p>
+        }
+      >
+        <form onSubmit={handleLogin} className="space-y-4">
+          <div>
+            <label htmlFor="dealer-username" className="sl-label block">
+              {t("login.username")}
+            </label>
             <input
+              id="dealer-username"
+              name="username"
               type="text"
               autoComplete="username"
               value={username}
               onChange={(event) => setUsername(event.target.value)}
               placeholder={t("login.username")}
-              className="h-12 w-full rounded-xl border border-zinc-300 px-4 outline-none focus:border-zinc-950"
+              className="sl-v2-input mt-1.5"
               required
             />
+          </div>
+
+          <div>
+            <label htmlFor="dealer-password" className="sl-label block">
+              {t("login.password")}
+            </label>
             <input
+              id="dealer-password"
+              name="password"
               type="password"
               autoComplete="current-password"
               value={password}
               onChange={(event) => setPassword(event.target.value)}
               placeholder={t("login.password")}
-              className="h-12 w-full rounded-xl border border-zinc-300 px-4 outline-none focus:border-zinc-950"
+              className="sl-v2-input mt-1.5"
               required
             />
-            <button
-              type="submit"
-              disabled={busy}
-              className="h-12 w-full rounded-xl bg-[#7a1233] font-medium text-white hover:bg-[#611029] disabled:opacity-60"
-            >
-              {t("dealer.submit")}
-            </button>
-          </form>
-          {error ? <p className="mt-5 rounded-xl bg-red-50 p-3 text-sm text-red-700">{error}</p> : null}
-          <p className="mt-4 text-center text-xs text-zinc-500">
-            {t("dealer.customer")}{" "}
-            <Link href="/login" className="font-semibold text-zinc-900 underline">
-              {t("dealer.customerLogin")}
-            </Link>
-          </p>
-        </div>
-      </main>
+          </div>
+
+          <button
+            type="submit"
+            disabled={busy}
+            className="sl-v2-btn sl-v2-btn-primary w-full"
+          >
+            {busy ? t("product.adding") : t("dealer.submit")}
+          </button>
+        </form>
+
+        {error ? <AuthAlert tone="error">{error}</AuthAlert> : null}
+      </AuthShell>
       <SiteFooter />
     </div>
   );

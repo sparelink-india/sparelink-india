@@ -202,7 +202,7 @@ export function GarageVehiclesPanel({
     <section
       id="garage"
       aria-labelledby="garage-heading"
-      className={`rounded-2xl border border-slate-200 bg-white shadow-xs ${compact ? "p-3" : "p-5"} ${className}`}
+      className={`rounded-[var(--sl-radius-lg)] border border-[var(--sl-border)] bg-white shadow-xs ${compact ? "p-3" : "p-5"} ${className}`}
     >
       <div className="flex items-start justify-between gap-2">
         <div>
@@ -212,7 +212,7 @@ export function GarageVehiclesPanel({
           <h2 id="garage-heading" className="text-base font-bold text-slate-950 sm:text-lg">
             {t("garage.title")}
           </h2>
-          <p className="mt-0.5 text-xs text-slate-500">{t("garage.hint")}</p>
+          <p className="mt-0.5 text-xs text-[var(--sl-muted)]">{t("garage.hint")}</p>
         </div>
         {!needsLogin ? (
           <button
@@ -222,7 +222,7 @@ export function GarageVehiclesPanel({
               setError("");
               setMessage("");
             }}
-            className="min-h-10 shrink-0 rounded-xl border border-slate-200 px-3 text-xs font-semibold text-slate-800"
+            className="min-h-10 shrink-0 rounded-[var(--sl-radius)] border border-[var(--sl-border)] px-3 text-xs font-semibold text-slate-800"
           >
             {showAdd ? t("common.cancel") : t("garage.add")}
           </button>
@@ -230,12 +230,12 @@ export function GarageVehiclesPanel({
       </div>
 
       {error ? (
-        <p role="alert" className="mt-3 rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-xs font-medium text-rose-800">
+        <p role="alert" className="mt-3 rounded-[var(--sl-radius)] border border-rose-200 bg-rose-50 px-3 py-2 text-xs font-medium text-rose-800">
           {error}
         </p>
       ) : null}
       {message ? (
-        <p role="status" className="mt-3 rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs font-medium text-emerald-800">
+        <p role="status" className="mt-3 rounded-[var(--sl-radius)] border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs font-medium text-emerald-800">
           {message}
         </p>
       ) : null}
@@ -243,16 +243,16 @@ export function GarageVehiclesPanel({
       {loading ? (
         <div className="mt-3 space-y-2" aria-busy="true">
           {[1, 2].map((n) => (
-            <div key={n} className="h-14 animate-pulse rounded-xl bg-slate-100" />
+            <div key={n} className="h-14 animate-pulse rounded-[var(--sl-radius)] bg-slate-100" />
           ))}
           <p className="sr-only">{t("garage.loading")}</p>
         </div>
       ) : needsLogin ? (
-        <div className="mt-3 rounded-xl border border-dashed border-slate-300 bg-slate-50 p-4 text-center">
-          <p className="text-sm text-slate-600">{t("garage.login")}</p>
+        <div className="mt-3 rounded-[var(--sl-radius)] border border-dashed border-[var(--sl-border-strong)] bg-[var(--sl-surface-sunk)] p-4 text-center">
+          <p className="text-sm text-[var(--sl-text-soft)]">{t("garage.login")}</p>
           <Link
             href="/login"
-            className="mt-3 inline-flex min-h-11 items-center rounded-xl bg-[#7a1233] px-5 text-xs font-bold text-white"
+            className="mt-3 inline-flex min-h-11 items-center rounded-[var(--sl-radius)] bg-[var(--sl-primary)] px-5 text-xs font-bold text-white"
           >
             {t("nav.login")}
           </Link>
@@ -260,10 +260,10 @@ export function GarageVehiclesPanel({
       ) : (
         <>
           {showAdd ? (
-            <div className="mt-3 space-y-2 rounded-xl border border-slate-200 bg-slate-50 p-3">
+            <div className="mt-3 space-y-2 rounded-[var(--sl-radius)] border border-[var(--sl-border)] bg-[var(--sl-surface-sunk)] p-3">
               <div className="grid gap-2 sm:grid-cols-2">
                 <div>
-                  <label htmlFor="garage-make" className="mb-1 block text-xs font-semibold text-slate-600">
+                  <label htmlFor="garage-make" className="mb-1 block text-xs font-semibold text-[var(--sl-text-soft)]">
                     {t("vehicleSelect.make")}
                   </label>
                   <select
@@ -274,7 +274,7 @@ export function GarageVehiclesPanel({
                       setModel("");
                       setVariant("");
                     }}
-                    className="min-h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm outline-none focus:border-[#7a1233] focus:ring-2 focus:ring-[#7a1233]/20"
+                    className="min-h-11 w-full rounded-[var(--sl-radius)] border border-[var(--sl-border)] bg-white px-3 text-sm outline-none focus:border-[var(--sl-primary)] focus:ring-2 focus:ring-[var(--sl-primary)]/20"
                   >
                     <option value="">{t("vehicleSelect.chooseMake")}</option>
                     {makes.map((value) => (
@@ -285,7 +285,7 @@ export function GarageVehiclesPanel({
                   </select>
                 </div>
                 <div>
-                  <label htmlFor="garage-model" className="mb-1 block text-xs font-semibold text-slate-600">
+                  <label htmlFor="garage-model" className="mb-1 block text-xs font-semibold text-[var(--sl-text-soft)]">
                     {t("vehicleSelect.model")}
                   </label>
                   <select
@@ -296,7 +296,7 @@ export function GarageVehiclesPanel({
                       setModel(e.target.value);
                       setVariant("");
                     }}
-                    className="min-h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm outline-none focus:border-[#7a1233] focus:ring-2 focus:ring-[#7a1233]/20 disabled:opacity-50"
+                    className="min-h-11 w-full rounded-[var(--sl-radius)] border border-[var(--sl-border)] bg-white px-3 text-sm outline-none focus:border-[var(--sl-primary)] focus:ring-2 focus:ring-[var(--sl-primary)]/20 disabled:opacity-50"
                   >
                     <option value="">{t("vehicleSelect.chooseModel")}</option>
                     {models.map((value) => (
@@ -309,14 +309,14 @@ export function GarageVehiclesPanel({
               </div>
               {variants.length > 0 ? (
                 <div>
-                  <label htmlFor="garage-variant" className="mb-1 block text-xs font-semibold text-slate-600">
+                  <label htmlFor="garage-variant" className="mb-1 block text-xs font-semibold text-[var(--sl-text-soft)]">
                     {t("garage.variant")}
                   </label>
                   <select
                     id="garage-variant"
                     value={variant}
                     onChange={(e) => setVariant(e.target.value)}
-                    className="min-h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm outline-none focus:border-[#7a1233] focus:ring-2 focus:ring-[#7a1233]/20"
+                    className="min-h-11 w-full rounded-[var(--sl-radius)] border border-[var(--sl-border)] bg-white px-3 text-sm outline-none focus:border-[var(--sl-primary)] focus:ring-2 focus:ring-[var(--sl-primary)]/20"
                   >
                     <option value="">{t("garage.anyVariant")}</option>
                     {variants.map((value) => (
@@ -328,7 +328,7 @@ export function GarageVehiclesPanel({
                 </div>
               ) : null}
               <div>
-                <label htmlFor="garage-year" className="mb-1 block text-xs font-semibold text-slate-600">
+                <label htmlFor="garage-year" className="mb-1 block text-xs font-semibold text-[var(--sl-text-soft)]">
                   {t("garage.yearOptional")}
                 </label>
                 <input
@@ -337,14 +337,14 @@ export function GarageVehiclesPanel({
                   value={year}
                   onChange={(e) => setYear(e.target.value.replace(/[^\d]/g, "").slice(0, 4))}
                   placeholder="2019"
-                  className="min-h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm outline-none focus:border-[#7a1233] focus:ring-2 focus:ring-[#7a1233]/20"
+                  className="min-h-11 w-full rounded-[var(--sl-radius)] border border-[var(--sl-border)] bg-white px-3 text-sm outline-none focus:border-[var(--sl-primary)] focus:ring-2 focus:ring-[var(--sl-primary)]/20"
                 />
               </div>
               <button
                 type="button"
                 disabled={saving || !make || !model}
                 onClick={() => void addVehicle()}
-                className="btn-press flex min-h-12 w-full items-center justify-center rounded-xl bg-[#7a1233] text-sm font-bold text-white disabled:opacity-50"
+                className="btn-press flex min-h-12 w-full items-center justify-center rounded-[var(--sl-radius)] bg-[var(--sl-primary)] text-sm font-bold text-white disabled:opacity-50"
               >
                 {saving ? t("garage.saving") : t("garage.saveVehicle")}
               </button>
@@ -352,13 +352,13 @@ export function GarageVehiclesPanel({
           ) : null}
 
           {vehicles.length === 0 ? (
-            <div className="mt-3 rounded-xl border border-dashed border-slate-300 bg-slate-50 p-4 text-center">
-              <p className="text-sm text-slate-600">{t("garage.empty")}</p>
+            <div className="mt-3 rounded-[var(--sl-radius)] border border-dashed border-[var(--sl-border-strong)] bg-[var(--sl-surface-sunk)] p-4 text-center">
+              <p className="text-sm text-[var(--sl-text-soft)]">{t("garage.empty")}</p>
               {!showAdd ? (
                 <button
                   type="button"
                   onClick={() => setShowAdd(true)}
-                  className="mt-3 inline-flex min-h-11 items-center rounded-xl bg-slate-950 px-5 text-xs font-bold text-white"
+                  className="mt-3 inline-flex min-h-11 items-center rounded-[var(--sl-radius)] bg-slate-950 px-5 text-xs font-bold text-white"
                 >
                   {t("garage.add")}
                 </button>
@@ -369,21 +369,21 @@ export function GarageVehiclesPanel({
               {vehicles.map((vehicle) => (
                 <li
                   key={vehicle.id}
-                  className="flex items-center gap-2 rounded-xl border border-slate-200 bg-slate-50/80 p-2.5"
+                  className="flex items-center gap-2 rounded-[var(--sl-radius)] border border-[var(--sl-border)] bg-[var(--sl-surface-sunk)]/80 p-2.5"
                 >
                   <Link
                     href={garageFitmentHref(vehicle.make, vehicle.model)}
-                    className="min-w-0 flex-1 rounded-lg px-1 py-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#7a1233]"
+                    className="min-w-0 flex-1 rounded-[var(--sl-radius-sm)] px-1 py-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--sl-primary)]"
                   >
                     <p className="truncate text-sm font-semibold text-slate-950">
                       {garageVehicleLabel(vehicle)}
                     </p>
                     {vehicle.registrationNumber ? (
-                      <p className="truncate font-mono text-[11px] text-slate-500">
+                      <p className="truncate font-mono text-[11px] text-[var(--sl-muted)]">
                         {vehicle.registrationNumber}
                       </p>
                     ) : (
-                      <p className="text-[11px] font-semibold text-[#7a1233]">
+                      <p className="text-[11px] font-semibold text-[var(--sl-primary)]">
                         {t("garage.viewParts")} →
                       </p>
                     )}
@@ -397,7 +397,7 @@ export function GarageVehiclesPanel({
                     type="button"
                     disabled={busyId === vehicle.id}
                     onClick={() => void removeVehicle(vehicle.id)}
-                    className="min-h-10 shrink-0 rounded-lg border border-rose-200 px-2.5 text-xs font-semibold text-rose-700 disabled:opacity-50"
+                    className="min-h-10 shrink-0 rounded-[var(--sl-radius-sm)] border border-rose-200 px-2.5 text-xs font-semibold text-rose-700 disabled:opacity-50"
                     aria-label={t("garage.removeAria", { name: garageVehicleLabel(vehicle) })}
                   >
                     {busyId === vehicle.id ? "…" : t("cart.remove")}

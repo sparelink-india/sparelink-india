@@ -9,7 +9,7 @@ export default function GlobalError({
   reset: () => void;
 }) {
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center bg-slate-50 px-6 py-16 text-center text-slate-900">
+    <div className="sl-page flex min-h-screen flex-col items-center justify-center px-6 py-16 text-center text-ink-900">
       <p className="text-xs font-bold uppercase tracking-widest text-emerald-700">
         SpareLink India
       </p>

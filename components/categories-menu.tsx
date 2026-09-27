@@ -71,7 +71,7 @@ export function CategoriesMenu() {
             setOpen(true);
           }
         }}
-        className="inline-flex w-full items-center justify-center gap-2 rounded-md bg-[#7a1233] px-4 py-2.5 text-sm font-semibold text-white md:w-auto"
+        className="inline-flex w-full items-center justify-center gap-2 rounded-md bg-[var(--sl-primary)] px-4 py-2.5 text-sm font-semibold text-white md:w-auto"
       >
         <span aria-hidden>☰</span>
         {t("nav.categories")}

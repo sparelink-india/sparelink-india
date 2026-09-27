@@ -1,7 +1,8 @@
 "use client";
 
 import { FormEvent, useState } from "react";
-import Link from "next/link";
+import { OrderStatusTimeline } from "@/components/order-status-timeline";
+import { EmptyState, ErrorState, StateIcons } from "@/components/page-states";
 import { SiteFooter } from "@/components/site-footer";
 import { StorefrontHeader } from "@/components/storefront-header";
 import { useI18n } from "@/components/preferences-provider";
@@ -60,55 +61,118 @@ export default function TrackOrderPage() {
   }
 
   return (
-    <div className="flex min-h-screen flex-col bg-slate-50">
+    <div className="sl-page flex min-h-screen flex-col">
       <StorefrontHeader />
-      <main className="mx-auto w-full max-w-3xl flex-1 px-4 py-10">
-        <h1 className="text-2xl font-bold text-slate-900">{t("track.title")}</h1>
-        <p className="mt-2 text-sm text-slate-600">{t("track.hint")}</p>
-        <form onSubmit={handleTrack} className="mt-6 flex flex-col gap-3 sm:flex-row">
+      <main className="sl-container sl-container-narrow sl-page-main flex-1">
+        {/* ---- Order identity: search first, result below ---- */}
+        <p className="sl-label">{t("nav.track")}</p>
+        <h1 className="sl-h1 mt-1.5">{t("track.searchTitle")}</h1>
+        <p className="sl-body mt-2 max-w-prose">{t("track.searchHint")}</p>
+
+        <form
+          onSubmit={handleTrack}
+          className="sl-v2-card mt-6 flex flex-col gap-2.5 p-3 sm:flex-row"
+        >
+          <label htmlFor="track-query" className="sr-only">
+            {t("track.searchPlaceholder")}
+          </label>
           <input
+            id="track-query"
             value={query}
             onChange={(event) => setQuery(event.target.value)}
-            placeholder={t("track.id")}
-            className="h-12 flex-1 rounded-xl border border-slate-300 px-4"
+            placeholder={t("track.searchPlaceholder")}
+            className="sl-v2-input flex-1"
           />
           <button
             type="submit"
             disabled={busy || !query.trim()}
-            className="h-12 rounded-xl bg-[#7a1233] px-5 font-semibold text-white disabled:opacity-50"
+            className="sl-v2-btn sl-v2-btn-primary shrink-0 sm:w-44"
           >
-            {t("track.button")}
+            {busy ? t("product.adding") : t("track.searchAction")}
           </button>
         </form>
+
         {!query.trim() && !order && !error ? (
-          <p className="mt-8 rounded-xl border border-dashed border-slate-300 bg-white p-8 text-center text-sm text-slate-500">
-            {t("track.empty")}
-          </p>
-        ) : null}
-        {error ? (
-          <div className="mt-6 rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-950">
-            <p>{error}</p>
-            {needsLogin ? (
-              <Link href="/login" className="mt-3 inline-block font-semibold text-[#7a1233] underline">
-                {t("dealer.customerLogin")}
-              </Link>
-            ) : null}
+          <div className="mt-7">
+            <EmptyState
+              icon={StateIcons.orders}
+              title={t("track.empty")}
+              body={t("track.emptyBody")}
+              action={{ href: "/orders", label: t("nav.orders") }}
+              secondaryAction={{ href: "/help-support", label: t("nav.help") }}
+            />
           </div>
         ) : null}
-        {order ? (
-          <article className="mt-6 rounded-2xl border border-slate-200 bg-white p-6">
-            <p className="font-semibold">#{order.orderNumber}</p>
-            <p className="mt-1 text-sm text-slate-500">{t("track.status", { status: order.status, payment: order.paymentStatus })}</p>
-            <p className="mt-1 text-sm">{t("track.total", { amount: (order.totalPaise / 100).toLocaleString("en-IN") })}</p>
-            <ul className="mt-4 space-y-2 text-sm">
-              {order.items.map((item) => (
-                <li key={item.id}>
-                  {item.partName} ({item.partNumber}) × {item.quantity}
-                </li>
-              ))}
-            </ul>
-          </article>
+
+        {error ? (
+          <div className="mt-6">
+            <ErrorState
+              title={t("track.notFoundTitle")}
+              body={error}
+              onRetry={() => void handleTrack(new Event("submit") as never)}
+              action={needsLogin ? { href: "/login", label: t("nav.login") } : undefined}
+            />
+          </div>
         ) : null}
+
+        {order ? (
+          /* ---- Result: two columns. Timeline left, order facts right. ---- */
+          <div className="mt-7 grid gap-4 lg:grid-cols-[1fr_20rem] lg:items-start">
+            <section className="sl-v2-card p-5 sm:p-6" aria-label={t("track.progressLabel")}>
+              <div className="flex flex-wrap items-baseline justify-between gap-2 border-b border-[var(--sl-border)] pb-4">
+                <div>
+                  <p className="sl-label">{t("track.orderLabel")}</p>
+                  <p className="sl-partno mt-1 !text-sm !font-bold">{order.orderNumber}</p>
+                </div>
+                <p className="sl-small">{t("track.placedOn", { date: order.createdAt })}</p>
+              </div>
+
+              <div className="mt-5">
+                <OrderStatusTimeline
+                  status={order.status}
+                  paymentStatus={order.paymentStatus}
+                />
+              </div>
+
+              {/* Honest disclosure: this project has no courier integration, so
+                  no tracking number or scan feed is shown. Saying so is better
+                  than leaving the user wondering where it is. */}
+              <p className="sl-small mt-5 border-t border-[var(--sl-border)] pt-4">
+                {t("track.noCarrierNote")}
+              </p>
+            </section>
+
+            <aside className="sl-v2-card p-5 sm:p-6">
+              <h2 className="sl-h2">{t("track.summaryTitle")}</h2>
+              <p className="mt-3 flex items-baseline justify-between border-b border-[var(--sl-border)] pb-3">
+                <span className="sl-small">{t("cart.total")}</span>
+                <span className="sl-price">
+                  ₹{(order.totalPaise / 100).toLocaleString("en-IN")}
+                </span>
+              </p>
+
+              <h3 className="sl-label mt-5">{t("track.itemsLabel")}</h3>
+              <ul className="mt-2.5 space-y-3">
+                {order.items.map((item) => (
+                  <li key={item.id} className="border-b border-[var(--sl-border)] pb-3 last:border-0 last:pb-0">
+                    <p className="sl-h3 !text-sm">{item.partName}</p>
+                    <p className="sl-partno mt-0.5">
+                      <span className="sr-only">Part number: </span>
+                      {item.partNumber}
+                    </p>
+                    <div className="mt-1.5 flex items-center justify-between gap-2">
+                      <span className="sl-small">× {item.quantity}</span>
+                      <span className="sl-small font-semibold">
+                        ₹{(item.totalPaise / 100).toLocaleString("en-IN")}
+                      </span>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            </aside>
+          </div>
+        ) : null}
+
         <div className="mt-8">
           <WhatsAppCta href={whatsappHref} label={t("wa.chat")} />
         </div>

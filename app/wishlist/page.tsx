@@ -2,10 +2,16 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import Link from "next/link";
 import { SiteFooter } from "@/components/site-footer";
 import { StorefrontHeader } from "@/components/storefront-header";
 import { InclusivePrice } from "@/components/inclusive-price";
+import {
+  EmptyState,
+  ErrorState,
+  Notice,
+  ProductGridSkeleton,
+  StateIcons,
+} from "@/components/page-states";
 import { useI18n } from "@/components/preferences-provider";
 
 type WishlistItem = {
@@ -94,30 +100,71 @@ export default function WishlistPage() {
   }
 
   return (
-    <div className="flex min-h-screen flex-col bg-slate-50">
+    <div className="sl-page flex min-h-screen flex-col">
       <StorefrontHeader />
-      <main className="mx-auto w-full max-w-5xl flex-1 px-4 py-10">
-        <h1 className="text-2xl font-bold text-slate-900">{t("wishlist.title")}</h1>
-        {loading ? <p className="mt-6 text-sm text-slate-500">{t("wishlist.loading")}</p> : null}
+      <main className="sl-container sl-page-main flex-1">
+        {/* Page header with a live count, so the state of the list is stated
+            before the grid rather than inferred from it. */}
+        <div className="flex flex-wrap items-end justify-between gap-3 border-b border-[var(--sl-border)] pb-5">
+          <div>
+            <p className="sl-label">{t("nav.account")}</p>
+            <h1 className="sl-h1 mt-1.5">{t("wishlist.title")}</h1>
+          </div>
+          {!loading && !needsLogin && items.length > 0 ? (
+            <span className="sl-v2-badge sl-v2-badge-brand">
+              {items.length} {items.length === 1 ? t("wishlist.item") : t("wishlist.items")}
+            </span>
+          ) : null}
+        </div>
+
+        {loading ? <ProductGridSkeleton count={4} /> : null}
+
         {needsLogin ? (
-          <div className="mt-8 rounded-2xl border border-dashed border-slate-300 bg-white p-10 text-center">
-            <p className="text-sm text-slate-600">{t("wishlist.login")}</p>
-            <Link href="/login" className="mt-4 inline-flex rounded-xl bg-[#7a1233] px-5 py-2.5 text-sm font-semibold text-white">
-              {t("nav.login")}
-            </Link>
+          <div className="mt-7">
+            <EmptyState
+              icon={StateIcons.wishlist}
+              title={t("wishlist.loginTitle")}
+              body={t("wishlist.login")}
+              action={{ href: "/login", label: t("nav.login") }}
+              secondaryAction={{ href: "/", label: t("search.catalog") }}
+            />
           </div>
         ) : null}
-        {error ? <p className="mt-4 text-sm text-red-700">{error}</p> : null}
-        {message ? <p className="mt-4 text-sm text-emerald-700">{message}</p> : null}
+
+        {error ? (
+          <div className="mt-7">
+            <ErrorState
+              title={t("common.error")}
+              body={error}
+              onRetry={() => void loadWishlist()}
+            />
+          </div>
+        ) : null}
+
+        {message ? (
+          <div className="mt-7">
+            <Notice>{message}</Notice>
+          </div>
+        ) : null}
+
         {!loading && !needsLogin && items.length === 0 ? (
-          <div className="mt-8 rounded-2xl border border-dashed border-slate-300 bg-white p-10 text-center text-sm text-slate-500">
-            {t("wishlist.empty")}
+          <div className="mt-7">
+            <EmptyState
+              icon={StateIcons.wishlist}
+              title={t("wishlist.emptyTitle")}
+              body={t("wishlist.empty")}
+              action={{ href: "/", label: t("search.catalog") }}
+            />
           </div>
         ) : null}
-        <div className="mt-6 grid gap-4 sm:grid-cols-2">
+
+        <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
           {items.map((item) => (
-            <article key={item.id} className="rounded-2xl border border-slate-200 bg-white p-4">
-              <div className="aspect-[4/3] overflow-hidden rounded-xl bg-slate-100">
+            <article key={item.id} className="sl-v2-card sl-v2-card-hover flex flex-col overflow-hidden">
+              {/* Catalogue presentation: `object-contain` on a clean stage.
+                  The previous version used `object-cover`, which cropped parts
+                  out of frame. */}
+              <div className="relative aspect-[4/3] w-full overflow-hidden bg-[var(--sl-surface-sunk)]">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
                   src={item.thumbUrl || item.imageUrl || "/images/products/placeholder.svg"}
@@ -126,7 +173,7 @@ export default function WishlistPage() {
                   height={480}
                   loading="lazy"
                   decoding="async"
-                  className="h-full w-full object-cover"
+                  className="h-full w-full object-contain p-3"
                   onError={(event) => {
                     const el = event.currentTarget as HTMLImageElement;
                     if (item.imageUrl && el.src !== item.imageUrl) {
@@ -137,35 +184,50 @@ export default function WishlistPage() {
                   }}
                 />
               </div>
-              {item.partNumber ? <p className="mt-3 font-mono text-xs text-slate-500">Part #{item.partNumber}</p> : null}
-              <h2 className="mt-1 font-semibold">{item.partName || t("product.partFallback")}</h2>
-              {item.pricePaise != null && item.pricePaise > 0 ? (
-                <InclusivePrice
-                  align="left"
-                  pricePaise={item.pricePaise}
-                  listInclusivePaise={item.listInclusivePaise ?? item.pricePaise}
-                  netInclusivePaise={item.netInclusivePaise ?? item.pricePaise}
-                  discountPercent={item.discountPercent ?? 0}
-                  gstRate={item.gstRate}
-                />
-              ) : (
-                <p className="mt-1 text-sm text-slate-500">{t("product.priceCheckout")}</p>
-              )}
-              <div className="mt-4 flex gap-2">
-                <button
-                  type="button"
-                  onClick={() => void addToCart(item)}
-                  className="rounded-lg bg-slate-950 px-3 py-2 text-sm font-semibold text-white"
-                >
-                  {t("product.addToCart")}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => void removeItem(item)}
-                  className="rounded-lg border border-rose-200 px-3 py-2 text-sm font-semibold text-rose-700"
-                >
-                  {t("cart.remove")}
-                </button>
+
+              <div className="flex flex-1 flex-col p-3.5">
+                {item.partNumber ? (
+                  <p className="sl-partno">
+                    <span className="sr-only">Part number: </span>
+                    {item.partNumber}
+                  </p>
+                ) : null}
+                <h2 className="sl-h3 mt-1 line-clamp-2">
+                  {item.partName || t("product.partFallback")}
+                </h2>
+
+                <div className="mt-2">
+                  {item.pricePaise != null && item.pricePaise > 0 ? (
+                    <InclusivePrice
+                      align="left"
+                      pricePaise={item.pricePaise}
+                      listInclusivePaise={item.listInclusivePaise ?? item.pricePaise}
+                      netInclusivePaise={item.netInclusivePaise ?? item.pricePaise}
+                      discountPercent={item.discountPercent ?? 0}
+                      gstRate={item.gstRate}
+                    />
+                  ) : (
+                    <p className="sl-small">{t("product.priceCheckout")}</p>
+                  )}
+                </div>
+
+                <div className="mt-auto flex flex-col gap-2 pt-3.5">
+                  <button
+                    type="button"
+                    onClick={() => void addToCart(item)}
+                    disabled={!item.listingId}
+                    className="sl-v2-btn sl-v2-btn-primary w-full !min-h-11 !text-[0.8125rem]"
+                  >
+                    {t("product.addToCart")}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => void removeItem(item)}
+                    className="sl-v2-btn sl-v2-btn-ghost w-full !min-h-11 !text-[0.8125rem] hover:!bg-[var(--sl-danger-soft)] hover:!text-[var(--sl-danger)]"
+                  >
+                    {t("cart.remove")}
+                  </button>
+                </div>
               </div>
             </article>
           ))}

@@ -44,6 +44,52 @@ type StorefrontProductCardProps = {
   onAdd?: () => void;
 };
 
+function CartIcon() {
+  return (
+    <svg
+      className="h-4 w-4"
+      fill="none"
+      viewBox="0 0 24 24"
+      stroke="currentColor"
+      strokeWidth="1.9"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden
+    >
+      <path d="M3 3h2l.4 2M7 13h10l3-8H6.4M7 13L5.4 5M7 13l-2 6h14M10 21a1 1 0 100-2 1 1 0 000 2zm8 0a1 1 0 100-2 1 1 0 000 2z" />
+    </svg>
+  );
+}
+
+function CheckIcon() {
+  return (
+    <svg
+      className="h-4 w-4"
+      fill="none"
+      viewBox="0 0 24 24"
+      stroke="currentColor"
+      strokeWidth="2.2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden
+    >
+      <path d="M4 12.5l5 5L20 6.5" />
+    </svg>
+  );
+}
+
+/**
+ * V2 catalogue product card.
+ *
+ * Hierarchy is deliberately fixed so a grid of these reads as a parts
+ * catalogue rather than a marketplace listing:
+ *   image stage → brand → name → part number → price → stock → add to cart.
+ *
+ * The part number uses the monospaced `.sl-partno` treatment because it is
+ * catalogue data a mechanic will read aloud or copy, not prose. Pricing logic
+ * is untouched — `InclusivePrice` and `isAuthoritativeSellingPricePaise` remain
+ * the single source of truth for what is displayed.
+ */
 export function StorefrontProductCard({
   name,
   brand,
@@ -76,18 +122,53 @@ export function StorefrontProductCard({
   const isAvailable =
     Boolean(listing) && status === "active" && stock > 0 && isPriced;
 
+  if (compact) {
+    /* Dense row used inside search facets and related-parts rails. */
+    return (
+      <article
+        className={`sl-v2-card sl-v2-card-hover flex items-center gap-3 overflow-hidden p-2 ${className}`}
+      >
+        <button
+          type="button"
+          onClick={onOpen}
+          className="sl-v2-focus h-16 w-16 shrink-0 overflow-hidden rounded-[var(--sl-radius-sm)] bg-[var(--sl-surface-sunk)]"
+          aria-label={t("photo.enlargeAria", { name })}
+        >
+          <CatalogueProductImage
+            src={imageUrl || listing?.imageUrl}
+            thumbUrl={thumbUrl || listing?.thumbUrl}
+            mediumUrl={mediumUrl || listing?.mediumUrl}
+            alt={name}
+            size="thumb"
+            className="h-full w-full p-1.5"
+            imgClassName="h-full w-full object-contain"
+          />
+        </button>
+        <div className="min-w-0 flex-1">
+          <h3 className="sl-h3 line-clamp-2 !text-sm">{name}</h3>
+          {partNumber ? <p className="sl-partno mt-0.5">{partNumber}</p> : null}
+        </div>
+        <span
+          className={`sl-v2-badge shrink-0 ${
+            isAvailable ? "sl-v2-badge-success" : "sl-v2-badge-danger"
+          }`}
+        >
+          {isAvailable ? t("product.inStockShort") : t("product.outOfStockShort")}
+        </span>
+      </article>
+    );
+  }
+
   return (
     <article
-      className={`card-hover flex overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-xs ${
-        compact ? "flex-row gap-0" : "flex-col"
-      } ${className}`}
+      className={`sl-v2-card sl-v2-card-hover sl-v2-rule group flex flex-col overflow-hidden ${className}`}
     >
+      {/* ---- Image stage: the visual focus. One consistent ratio, clean
+           surface, no gradient tint, no floating frame. ---- */}
       <button
         type="button"
         onClick={onOpen}
-        className={`relative shrink-0 bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#7a1233] ${
-          compact ? "h-28 w-28" : "aspect-[4/3] w-full"
-        }`}
+        className="sl-v2-focus relative block aspect-[4/3] w-full shrink-0 overflow-hidden bg-[var(--sl-surface-sunk)]"
         aria-label={t("photo.enlargeAria", { name })}
       >
         <CatalogueProductImage
@@ -96,72 +177,100 @@ export function StorefrontProductCard({
           mediumUrl={mediumUrl || listing?.mediumUrl}
           alt={name}
           size="thumb"
-          className="h-full w-full p-2"
+          className="h-full w-full p-3 transition-transform duration-300 group-hover:scale-[1.03]"
           imgClassName="h-full w-full object-contain"
         />
-      </button>
-
-      <div className={`flex min-w-0 flex-1 flex-col gap-1.5 ${compact ? "p-3" : "p-3.5"}`}>
         {badge ? (
-          <span className="inline-flex w-fit rounded-md bg-slate-100 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-slate-700">
+          <span className="sl-v2-badge sl-v2-badge-brand absolute left-2 top-2">
             {badge}
           </span>
         ) : null}
-        {brand ? (
-          <p className="text-[11px] font-bold uppercase tracking-wide text-slate-500">{brand}</p>
-        ) : null}
-        {partNumber ? (
-          <p className="font-mono text-xs font-semibold text-slate-800">{partNumber}</p>
-        ) : null}
-        <h3 className={`font-bold leading-snug text-slate-950 ${compact ? "line-clamp-2 text-sm" : "line-clamp-3 text-base"}`}>
+      </button>
+
+      <div className="flex min-w-0 flex-1 flex-col p-3.5">
+        {brand ? <p className="sl-label !text-[var(--sl-primary)]">{brand}</p> : null}
+
+        <h3 className="sl-h3 mt-1 line-clamp-2 transition-colors duration-200 group-hover:text-[var(--sl-primary)]">
           {name}
         </h3>
+
+        {partNumber ? (
+          <p className="sl-partno mt-1.5">
+            <span className="sr-only">Part number: </span>
+            {partNumber}
+          </p>
+        ) : null}
+
         {application ? (
-          <p className="line-clamp-1 text-xs text-slate-500">{application}</p>
+          <p className="sl-small mt-1.5 line-clamp-1">{application}</p>
         ) : null}
 
         {listing ? (
-          <div className="mt-auto space-y-2 pt-1">
-            {isPriced ? (
-              <InclusivePrice
-                pricePaise={listing.pricePaise}
-                listInclusivePaise={listing.listInclusivePaise}
-                netInclusivePaise={listing.netInclusivePaise}
-                discountPercent={listing.discountPercent}
-                gstRate={listing.gstRate}
-                align="left"
-              />
-            ) : (
-              <p className="text-sm font-bold text-slate-800">{t("price.onRequest")}</p>
-            )}
-            {listing.mrpPaise && listing.mrpPaise > listing.pricePaise ? (
-              <p className="text-[11px] text-slate-400 line-through">
-                {t("price.mrp")} ₹{(listing.mrpPaise / 100).toLocaleString("en-IN")}
-              </p>
-            ) : null}
-            <p className="text-[11px] text-slate-500">
-              {isAvailable ? t("product.inStock", { count: stock }) : t("product.outOfStock")}
-            </p>
+          <div className="mt-auto flex flex-1 flex-col pt-3">
+            <div className="flex flex-wrap items-baseline gap-x-2 gap-y-1">
+              {isPriced ? (
+                <InclusivePrice
+                  pricePaise={listing.pricePaise}
+                  listInclusivePaise={listing.listInclusivePaise}
+                  netInclusivePaise={listing.netInclusivePaise}
+                  discountPercent={listing.discountPercent}
+                  gstRate={listing.gstRate}
+                  align="left"
+                />
+              ) : (
+                <p className="sl-h3">{t("price.onRequest")}</p>
+              )}
+              {listing.mrpPaise && listing.mrpPaise > listing.pricePaise ? (
+                <p className="sl-price-strike">
+                  {t("price.mrp")} ₹{(listing.mrpPaise / 100).toLocaleString("en-IN")}
+                </p>
+              ) : null}
+            </div>
+
+            <div className="mt-2.5 flex items-center justify-between gap-2">
+              <span
+                className={`sl-v2-badge ${
+                  isAvailable ? "sl-v2-badge-success" : "sl-v2-badge-danger"
+                }`}
+              >
+                {isAvailable
+                  ? t("product.inStock", { count: stock })
+                  : t("product.outOfStock")}
+              </span>
+            </div>
+
             <button
               type="button"
               disabled={!isAvailable || adding || justAdded}
               onClick={onAdd}
-              className={`btn-press min-h-11 w-full rounded-xl text-xs font-bold ${
+              className={`sl-v2-btn mt-2.5 w-full !min-h-11 !text-[0.8125rem] ${
                 justAdded
-                  ? "bg-emerald-600 text-white"
+                  ? "sl-v2-btn-primary"
                   : isAvailable
-                    ? "bg-slate-950 text-white"
-                    : "cursor-not-allowed bg-slate-200 text-slate-400"
+                    ? "sl-v2-btn-primary"
+                    : "!border-[var(--sl-border)] !bg-[var(--sl-surface-sunk)] !text-[var(--sl-muted)]"
               }`}
             >
-              {adding ? "..." : justAdded ? "✓" : t("product.addToCart")}
+              {adding ? (
+                t("product.adding")
+              ) : justAdded ? (
+                <>
+                  <CheckIcon />
+                  {t("product.addedShort")}
+                </>
+              ) : (
+                <>
+                  <CartIcon />
+                  {t("product.addToCart")}
+                </>
+              )}
             </button>
           </div>
         ) : (
           <button
             type="button"
             onClick={onOpen}
-            className="btn-press mt-auto min-h-11 w-full rounded-xl border border-slate-200 text-xs font-bold text-slate-800"
+            className="sl-v2-btn sl-v2-btn-secondary mt-auto w-full !min-h-11 !text-[0.8125rem]"
           >
             {t("offers.details")}
           </button>

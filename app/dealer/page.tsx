@@ -2,6 +2,9 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { SignOutButton } from "@/components/sign-out-button";
+import { QuickOrderPanel } from "@/components/quick-order-panel";
+import { ErrorState, PanelSkeleton } from "@/components/page-states";
+import { useI18n } from "@/components/preferences-provider";
 type Listing = {
   id: string;
   partName: string;
@@ -25,6 +28,7 @@ type Dashboard = {
   }[];
 };
 export default function DealerPage() {
+  const { t } = useI18n();
   const [data, setData] = useState<Dashboard | null>(null);
   const [error, setError] = useState("");
   const [saving, setSaving] = useState("");
@@ -78,36 +82,56 @@ export default function DealerPage() {
           </div>
         </div>
       </header>
-      <div className="mx-auto max-w-6xl px-6 py-10">
-        <h1 className="text-3xl font-bold">
-          {data?.businessName || "Dealer dashboard"}
-        </h1>
+      <div className="sl-container sl-page-main flex-1">
+        <p className="sl-label">{t("nav.dealer")}</p>
+        <h1 className="sl-h1 mt-1.5">{data?.businessName || t("dealer.dashboardTitle")}</h1>
         {error && (
-          <p className="mt-5 rounded-lg bg-red-50 p-3 text-sm text-red-700">
-            {error}
-          </p>
+          <div className="mt-5">
+            <ErrorState title={t("common.error")} body={error} onRetry={() => window.location.reload()} />
+          </div>
         )}
         {!data && !error && (
-          <p className="mt-6 text-sm text-zinc-500">Loading dashboard...</p>
+          <div className="mt-6">
+            <PanelSkeleton rows={5} />
+          </div>
         )}
         {data && (
           <>
-            <div className="mt-6 flex flex-wrap gap-3 text-sm">
+            <nav className="mt-5 flex flex-wrap gap-2" aria-label={t("nav.dealer")}>
               <Link
                 href="/dealer/orders"
-                className="rounded border bg-white px-3 py-2 hover:bg-zinc-100"
+                className="sl-v2-btn sl-v2-btn-secondary !min-h-10 !text-[0.8125rem]"
               >
                 Retail order lines
               </Link>
               <Link
                 href="/dealer/sales-orders"
-                className="rounded border bg-white px-3 py-2 hover:bg-zinc-100"
+                className="sl-v2-btn sl-v2-btn-secondary !min-h-10 !text-[0.8125rem]"
               >
                 B2B sales orders
               </Link>
-            </div>
+            </nav>
+
+            {/*
+              Bulk / quick order by part number.
+
+              This is the SAME component that previously sat on the public
+              homepage — it is reused here unchanged, not duplicated. The
+              component itself is not dealer-aware, so the authorisation
+              boundary is the dealer layout above (session + role === "dealer"),
+              not this file. Its data flow is untouched: it still calls the
+              public /api/search/parts for part-number resolution and
+              POST /api/cart to add lines.
+            */}
             <section className="mt-8">
-              <h2 className="text-xl font-semibold">Your listings</h2>
+              <h2 className="sl-h2">{t("dealer.bulkTitle")}</h2>
+              <p className="sl-body mt-1.5 max-w-prose">{t("dealer.bulkBody")}</p>
+              <div className="mt-4">
+                <QuickOrderPanel />
+              </div>
+            </section>
+            <section className="mt-8">
+              <h2 className="sl-h2">{t("dealer.listingsTitle")}</h2>
               <div className="mt-4 space-y-3">
                 {data.listings.map((l) => (
                   <form
@@ -116,11 +140,11 @@ export default function DealerPage() {
                       e.preventDefault();
                       void save(l, e.currentTarget);
                     }}
-                    className="grid gap-3 rounded-xl border bg-white p-4 md:grid-cols-[1fr_130px_100px_120px_90px]"
+                    className="sl-v2-card grid gap-3 p-4 md:grid-cols-[1fr_130px_100px_120px_90px]"
                   >
                     <div>
-                      <b>{l.partName}</b>
-                      <p className="text-xs text-zinc-500">{l.partNumber}</p>
+                      <p className="sl-h3 !text-sm">{l.partName}</p>
+                      <p className="sl-partno mt-0.5">{l.partNumber}</p>
                     </div>
                     <input
                       name="price"
@@ -128,19 +152,19 @@ export default function DealerPage() {
                       min="0.01"
                       step="0.01"
                       defaultValue={(l.pricePaise / 100).toFixed(2)}
-                      className="rounded border px-2"
+                      className="sl-v2-input !min-h-11"
                     />
                     <input
                       name="stock"
                       type="number"
                       min="0"
                       defaultValue={l.stock ?? 0}
-                      className="rounded border px-2"
+                      className="sl-v2-input !min-h-11"
                     />
                     <select
                       name="status"
                       defaultValue={l.status}
-                      className="rounded border px-2"
+                      className="sl-v2-input !min-h-11"
                     >
                       <option value="active">Active</option>
                       <option value="inactive">Inactive</option>

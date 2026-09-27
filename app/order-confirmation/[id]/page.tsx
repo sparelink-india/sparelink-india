@@ -63,7 +63,7 @@ export default function OrderConfirmationPage() {
   const multiFirm = firmAllocations.length > 1;
 
   return (
-    <main className="min-h-screen bg-slate-50/80 px-4 py-16 text-slate-900 sm:px-6 sm:py-24">
+    <main className="sl-page min-h-screen px-4 py-16 text-ink-900 sm:px-6 sm:py-24">
       <section className="mx-auto max-w-xl rounded-2xl border border-slate-200 bg-white p-8 sm:p-10 text-center shadow-sm">
         <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-emerald-100 text-emerald-700">
           <svg className="h-8 w-8" viewBox="0 0 20 20" fill="currentColor">
@@ -78,7 +78,7 @@ export default function OrderConfirmationPage() {
         <p className="mt-5 text-xs font-bold uppercase tracking-widest text-emerald-700">
           Order Successfully Placed
         </p>
-        <h1 className="mt-2 text-2xl font-bold tracking-tight text-slate-950 sm:text-3xl">
+        <h1 className="sl-type-page mt-2 text-2xl sm:text-3xl">
           Thank you for your order!
         </h1>
 

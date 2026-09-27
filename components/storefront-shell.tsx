@@ -19,10 +19,15 @@ export function StorefrontShell({
   showFooter?: boolean;
 }) {
   return (
-    <div className="storefront-mobile-pad flex min-h-screen flex-col bg-slate-50">
+    <div className="storefront-mobile-pad sl-page flex min-h-screen flex-col">
       <StorefrontHeader cartCount={cartCount} />
+      {/*
+       * One container for every shell page. `wide` is the only knob, and both
+       * variants come from the shared container system so these pages align
+       * with the header, footer and the rest of the storefront.
+       */}
       <main
-        className={`mx-auto w-full flex-1 px-4 py-8 sm:py-10 ${wide ? "max-w-4xl" : "max-w-3xl"}`}
+        className={`sl-container sl-page-main flex-1 ${wide ? "sl-container-prose-lg" : "sl-container-prose"}`}
       >
         {children}
       </main>

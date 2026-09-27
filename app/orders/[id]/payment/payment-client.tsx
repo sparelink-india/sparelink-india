@@ -342,9 +342,9 @@ export default function OrderPaymentPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-slate-50 text-slate-900">
+      <div className="sl-page min-h-screen text-ink-900">
         <main className="mx-auto max-w-4xl px-4 py-16 sm:px-6">
-          <div className="rounded-2xl border border-slate-200 bg-white p-8 text-center text-sm text-slate-500 shadow-xs">
+          <div className="sl-surface p-8 text-center text-sm text-ink-500">
             Loading payment details...
           </div>
         </main>
@@ -354,14 +354,14 @@ export default function OrderPaymentPage() {
 
   if (error && !order) {
     return (
-      <div className="min-h-screen bg-slate-50 text-slate-900">
+      <div className="sl-page min-h-screen text-ink-900">
         <main className="mx-auto max-w-4xl px-4 py-16 sm:px-6">
           <div className="rounded-2xl border border-rose-200 bg-rose-50 p-6 text-sm font-medium text-rose-800">
             {error}
           </div>
           <Link
             href="/orders"
-            className="mt-4 inline-flex rounded-xl border border-slate-300 bg-white px-4 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-100"
+            className="sl-btn sl-btn-secondary mt-4 min-h-11 px-4 text-xs"
           >
             Back to My Orders
           </Link>
@@ -377,18 +377,18 @@ export default function OrderPaymentPage() {
   const canPayBank = order.paymentMethod === "bank_transfer";
 
   return (
-    <div className="min-h-screen bg-slate-50 text-slate-900">
+    <div className="sl-page min-h-screen text-ink-900">
       <header className="sticky top-0 z-30 border-b border-slate-200 bg-white/95 backdrop-blur-md">
         <div className="mx-auto flex max-w-5xl items-center justify-between px-4 py-3.5 sm:px-6">
           <Link href="/" className="flex items-center gap-2">
-            <span className="text-lg font-bold tracking-tight text-slate-950">
+            <span className="sl-type-page text-lg">
               SpareLink
             </span>
             <span className="rounded bg-slate-100 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-emerald-700">
               India
             </span>
           </Link>
-          <nav className="flex items-center gap-4 text-xs font-semibold text-slate-600">
+          <nav className="flex items-center gap-4 text-xs font-semibold text-ink-500">
             <Link href="/orders" className="hover:text-slate-950">
               My Orders
             </Link>
@@ -403,7 +403,7 @@ export default function OrderPaymentPage() {
       <main className="mx-auto max-w-4xl px-4 py-10 sm:px-6">
         <div className="flex flex-col gap-3 border-b border-slate-200 pb-5 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <h1 className="text-2xl font-bold tracking-tight text-slate-950 sm:text-3xl">
+              <h1 className="sl-type-page text-2xl sm:text-3xl">
               Order Payment
             </h1>
             <p className="mt-1 text-xs text-slate-500">
@@ -431,7 +431,7 @@ export default function OrderPaymentPage() {
           </div>
         )}
 
-        <section className="mt-6 rounded-2xl border border-slate-200 bg-white p-6 shadow-xs">
+        <section className="sl-surface mt-6 p-6">
           <div className="flex flex-col gap-4 border-b border-slate-100 pb-4 sm:flex-row sm:items-center sm:justify-between">
             <div>
               <h2 className="text-base font-bold text-slate-950 sm:text-lg">
@@ -512,7 +512,7 @@ export default function OrderPaymentPage() {
               return (
                 <div
                   key={firmPayment.firmOrderId}
-                  className="rounded-2xl border border-slate-200 bg-white p-5 shadow-xs sm:p-6"
+                  className="sl-card p-5 sm:p-6"
                 >
                   <div className="flex flex-col gap-3 border-b border-slate-200 pb-4 sm:flex-row sm:items-start sm:justify-between">
                     <div>

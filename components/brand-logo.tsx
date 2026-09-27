@@ -22,14 +22,14 @@ export function BrandLogo({
     <Link
       href="/"
       aria-label="SpareLink India home"
-      className="inline-flex items-center rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#7a1233]"
+      className="inline-flex items-center rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-600"
     >
       {failed ? (
         <span
           className={
             invert
               ? "text-lg font-extrabold tracking-tight text-white sm:text-xl"
-              : "text-lg font-extrabold tracking-tight text-[#7a1233] sm:text-xl"
+              : "text-lg font-extrabold tracking-tight text-brand-700 sm:text-xl"
           }
         >
           SPARELINK INDIA

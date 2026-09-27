@@ -171,7 +171,7 @@ export function MobileBottomNav({
                 href={item.href}
                 className={`relative flex min-h-12 flex-col items-center justify-center gap-0.5 rounded-lg px-1 py-1 text-[10px] font-semibold transition-colors ${
                   item.active
-                    ? "text-[#7a1233]"
+                    ? "text-[var(--sl-primary)]"
                     : "text-slate-500 hover:text-slate-800"
                 }`}
                 aria-current={item.active ? "page" : undefined}

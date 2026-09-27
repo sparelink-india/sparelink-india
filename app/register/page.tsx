@@ -13,7 +13,7 @@ import {
   type EmailPasswordRegistrationErrors,
   type ShippingPreference,
 } from "@/lib/register-form";
-import { BrandLogo } from "@/components/brand-logo";
+import { AuthShell } from "@/components/auth-shell";
 import { StorefrontHeader } from "@/components/storefront-header";
 import { SiteFooter } from "@/components/site-footer";
 import { useI18n } from "@/components/preferences-provider";
@@ -59,11 +59,12 @@ export default function RegisterPage() {
   }
 
   function fieldClass(field: keyof EmailPasswordRegistrationErrors): string {
-    const base =
-      "h-11 w-full rounded-xl border bg-slate-50/50 px-3.5 text-sm font-medium outline-none focus:bg-white focus:ring-2";
+    /* The shared .sl-v2-input primitive supplies geometry, focus ring and
+       disabled state. Only the invalid variant is added here, so error styling
+       can never drift away from the design system. */
     return fieldErrors[field]
-      ? `${base} border-rose-300 focus:border-rose-500 focus:ring-rose-500/10 text-rose-950`
-      : `${base} border-slate-200 focus:border-slate-950 focus:ring-slate-950/10`;
+      ? "sl-v2-input aria-invalid=true !border-[var(--sl-danger)]"
+      : "sl-v2-input";
   }
 
   function switchMode(next: RegisterMode) {
@@ -91,7 +92,7 @@ export default function RegisterPage() {
       <>
         <div className="grid gap-4 sm:grid-cols-2">
           <label className="block sm:col-span-2">
-            <span className="mb-1 block text-xs font-semibold text-slate-700">
+            <span className="sl-label mb-1 block">
               {t("register.business")}
             </span>
             <input
@@ -99,18 +100,16 @@ export default function RegisterPage() {
               value={businessName}
               onChange={(e) => setBusinessName(e.target.value)}
               placeholder={t("register.phBusiness")}
-              className="h-11 w-full rounded-xl border border-slate-200 bg-slate-50/50 px-3.5 text-sm font-medium outline-none focus:border-slate-950 focus:bg-white focus:ring-2 focus:ring-slate-950/10"
+              className="sl-v2-input"
             />
           </label>
 
           <label className="block sm:col-span-2">
             <div className="flex items-center justify-between">
-              <span className="mb-1 block text-xs font-semibold text-slate-700">
+              <span className="sl-label mb-1 block">
                 {t("register.gstin")}
               </span>
-              <span className="text-[10px] font-semibold text-slate-400 uppercase">
-                15 Chars
-              </span>
+              <span className="sl-small !text-[0.625rem] !uppercase">15 Chars</span>
             </div>
             <input
               type="text"
@@ -118,18 +117,20 @@ export default function RegisterPage() {
               value={gstin}
               onChange={(e) => setGstin(e.target.value.toUpperCase())}
               placeholder={t("register.phGstin")}
-              className={`h-11 w-full font-mono rounded-xl border bg-slate-50/50 px-3.5 text-sm font-medium outline-none focus:bg-white focus:ring-2 ${
+              className={`sl-v2-input !font-mono ${
                 gstin.trim() && gstinValidation
                   ? gstinValidation.valid
-                    ? "border-emerald-500 focus:border-emerald-600 focus:ring-emerald-500/10 text-emerald-950"
-                    : "border-rose-300 focus:border-rose-500 focus:ring-rose-500/10 text-rose-950"
-                  : "border-slate-200 focus:border-slate-950 focus:ring-slate-950/10"
+                    ? "!border-[var(--sl-success)]"
+                    : "!border-[var(--sl-danger)]"
+                  : ""
               }`}
             />
             {gstin.trim() && gstinValidation && (
               <p
-                className={`mt-1.5 text-xs font-medium ${
-                  gstinValidation.valid ? "text-emerald-700" : "text-rose-600"
+                className={`sl-small mt-1.5 font-medium ${
+                  gstinValidation.valid
+                    ? "!text-[var(--sl-success)]"
+                    : "!text-[var(--sl-danger)]"
                 }`}
               >
                 {gstinValidation.message}
@@ -138,7 +139,7 @@ export default function RegisterPage() {
           </label>
 
           <label className="block sm:col-span-2">
-            <span className="mb-1 block text-xs font-semibold text-slate-700">
+            <span className="sl-label mb-1 block">
               {t("register.address")}
             </span>
             <input
@@ -146,12 +147,12 @@ export default function RegisterPage() {
               value={addressLine1}
               onChange={(e) => setAddressLine1(e.target.value)}
               placeholder={t("register.phAddress")}
-              className="h-11 w-full rounded-xl border border-slate-200 bg-slate-50/50 px-3.5 text-sm font-medium outline-none focus:border-slate-950 focus:bg-white focus:ring-2 focus:ring-slate-950/10"
+              className="sl-v2-input"
             />
           </label>
 
           <label className="block">
-            <span className="mb-1 block text-xs font-semibold text-slate-700">
+            <span className="sl-label mb-1 block">
               {t("register.city")}
             </span>
             <input
@@ -159,12 +160,12 @@ export default function RegisterPage() {
               value={city}
               onChange={(e) => setCity(e.target.value)}
               placeholder={t("register.phCity")}
-              className="h-11 w-full rounded-xl border border-slate-200 bg-slate-50/50 px-3.5 text-sm font-medium outline-none focus:border-slate-950 focus:bg-white focus:ring-2 focus:ring-slate-950/10"
+              className="sl-v2-input"
             />
           </label>
 
           <label className="block">
-            <span className="mb-1 block text-xs font-semibold text-slate-700">
+            <span className="sl-label mb-1 block">
               {t("register.pincode")}
             </span>
             <input
@@ -172,13 +173,13 @@ export default function RegisterPage() {
               maxLength={6}
               value={pincode}
               onChange={(e) => setPincode(e.target.value)}
-              placeholder="380001"
-              className="h-11 w-full rounded-xl border border-slate-200 bg-slate-50/50 px-3.5 text-sm font-medium outline-none focus:border-slate-950 focus:bg-white focus:ring-2 focus:ring-slate-950/10"
+              placeholder="••••••••"
+              className="sl-v2-input"
             />
           </label>
 
           <div className="sm:col-span-2">
-            <span className="mb-1.5 block text-xs font-semibold text-slate-700">
+            <span className="sl-label mb-1.5 block">
               {t("register.method")}
             </span>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
@@ -191,7 +192,7 @@ export default function RegisterPage() {
               ).map(([value, label]) => (
                 <label
                   key={value}
-                  className="flex items-center gap-2 rounded-xl border border-slate-200 p-3 text-xs font-semibold text-slate-800 cursor-pointer has-checked:border-slate-950 has-checked:bg-slate-50"
+                  className="sl-v2-focus flex min-h-11 cursor-pointer items-center gap-2.5 rounded-[var(--sl-radius-sm)] border border-[var(--sl-border)] bg-white p-3 text-sm text-[var(--sl-text-soft)] transition-colors has-checked:border-[var(--sl-primary)] has-checked:bg-[var(--sl-primary-soft)] has-checked:!text-[var(--sl-primary)]"
                 >
                   <input
                     type="radio"
@@ -206,48 +207,48 @@ export default function RegisterPage() {
             </div>
 
             {deliveryPreference === "transport" && (
-              <div className="mt-3 rounded-xl bg-slate-50 border border-slate-200 p-4 space-y-3 animate-in fade-in">
-                <p className="text-xs font-bold text-slate-900">
+              <div className="mt-3 space-y-3 rounded-[var(--sl-radius-sm)] border border-[var(--sl-border)] bg-[var(--sl-surface-sunk)] p-4">
+                <p className="sl-label">
                   {t("register.transportTitle")}
                 </p>
                 <div className="grid gap-3 sm:grid-cols-3">
                   <div>
-                    <span className="mb-1 block text-xs font-semibold text-slate-700">
+                    <span className="sl-label mb-1 block">
                       {t("register.transporter")}{" "}
-                      <span className="text-rose-500">*</span>
+                      <span className="!text-[var(--sl-danger)]">*</span>
                     </span>
                     <input
                       required={deliveryPreference === "transport"}
                       value={transportName}
                       onChange={(e) => setTransportName(e.target.value)}
                       placeholder={t("register.phTransporter")}
-                      className={`h-10 w-full rounded-xl border bg-white px-3 text-xs font-medium outline-none focus:border-slate-950 ${
+                      className={`sl-v2-input !min-h-11 !text-sm ${
                         fieldErrors.transportName
-                          ? "border-rose-300 focus:border-rose-500"
-                          : "border-slate-200"
+                          ? "!border-[var(--sl-danger)]"
+                          : ""
                       }`}
                     />
                     {fieldError("transportName") && (
-                      <p className="mt-1.5 text-xs font-medium text-rose-600">
+                      <p className="sl-small mt-1.5 font-medium !text-[var(--sl-danger)]">
                         {fieldError("transportName")}
                       </p>
                     )}
                   </div>
 
                   <div>
-                    <span className="mb-1 block text-xs font-semibold text-slate-700">
+                    <span className="sl-label mb-1 block">
                       {t("register.transportPhone")}
                     </span>
                     <input
                       value={transportPhone}
                       onChange={(e) => setTransportPhone(e.target.value)}
                       placeholder={t("register.phTransportPhone")}
-                      className="h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-xs font-medium outline-none focus:border-slate-950"
+                      className="sl-v2-input !min-h-11 !text-sm"
                     />
                   </div>
 
                   <div>
-                    <span className="mb-1 block text-xs font-semibold text-slate-700">
+                    <span className="sl-label mb-1 block">
                       {t("register.transportGstin")}
                     </span>
                     <input
@@ -255,7 +256,7 @@ export default function RegisterPage() {
                       value={transportGstin}
                       onChange={(e) => setTransportGstin(e.target.value.toUpperCase())}
                       placeholder={t("profile.phTransportGstin")}
-                      className="h-10 w-full font-mono rounded-xl border border-slate-200 bg-white px-3 text-xs font-medium outline-none focus:border-slate-950"
+                      className="sl-v2-input !min-h-11 !font-mono !text-sm !uppercase"
                     />
                   </div>
                 </div>
@@ -414,95 +415,143 @@ export default function RegisterPage() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50/70 text-slate-900">
-    <StorefrontHeader />
-    <main className="px-4 py-12 sm:px-6">
-      <div className="mx-auto mb-8 flex max-w-xl flex-col items-center text-center">
-        <BrandLogo />
-        <h1 className="sr-only">SpareLink India</h1>
-        <p className="mt-2 text-xs font-semibold uppercase tracking-wider text-slate-500">
-          {t("register.kicker")}
-        </p>
-      </div>
-
-      <div className="mx-auto max-w-xl rounded-2xl border border-slate-200 bg-white p-6 sm:p-8 shadow-sm">
-        {error && (
-          <div
-            role="alert"
-            className="mb-6 flex items-start gap-2.5 rounded-xl border border-rose-200 bg-rose-50 p-4 text-xs font-medium text-rose-800"
-          >
-            <span className="text-rose-600 font-bold">âœ•</span>
-            <span>{error}</span>
-          </div>
-        )}
-
-        {message && (
-          <div
-            role="status"
-            className="mb-6 flex items-start gap-2.5 rounded-xl border border-emerald-200 bg-emerald-50 p-4 text-xs font-medium text-emerald-800"
-          >
-            <span className="text-emerald-600 font-bold">âœ“</span>
-            <span>{message}</span>
-          </div>
-        )}
-
-        <fieldset className="mb-6">
-          <legend className="mb-2 text-xs font-semibold text-slate-700">
-            {t("register.modeTitle")}
-          </legend>
+    <div className="sl-page flex min-h-screen flex-col text-[var(--sl-text)]">
+      <StorefrontHeader />
+      <AuthShell
+        eyebrow={t("auth.registerEyebrow")}
+        heading={t("auth.registerHeading")}
+        intro={t("auth.registerIntro")}
+        bullets={[
+          { title: t("auth.registerB1"), body: t("auth.registerB1Body") },
+          { title: t("auth.registerB2"), body: t("auth.registerB2Body") },
+          { title: t("auth.registerB3"), body: t("auth.registerB3Body") },
+        ]}
+        footerNote={
+          <p className="sl-small text-center">
+            {t("register.already")}{" "}
+            <Link
+              href="/login"
+              className="sl-v2-focus font-bold text-[var(--sl-primary)] hover:underline"
+            >
+              {t("register.signIn")}
+            </Link>
+          </p>
+        }
+      >
+        {/* ---- Account creation method: a real choice, shown first ---- */}
+        <fieldset>
+          <legend className="sl-label mb-2">{t("register.modeTitle")}</legend>
           <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
             <button
               type="button"
               onClick={() => switchMode("email")}
               aria-pressed={mode === "email"}
-              className={`rounded-xl border p-3 text-left transition-colors ${
+              className={`sl-v2-focus min-h-11 rounded-[var(--sl-radius-sm)] border p-3 text-left transition-colors ${
                 mode === "email"
-                  ? "border-slate-950 bg-slate-50"
-                  : "border-slate-200 bg-white hover:border-slate-400"
+                  ? "border-[var(--sl-primary)] bg-[var(--sl-primary-soft)]"
+                  : "border-[var(--sl-border)] bg-white hover:border-[var(--sl-border-strong)]"
               }`}
             >
-              <span className="block text-xs font-bold text-slate-950">
+              <span
+                className={`sl-nav block !font-bold ${
+                  mode === "email"
+                    ? "!text-[var(--sl-primary)]"
+                    : "!text-[var(--sl-text)]"
+                }`}
+              >
                 {t("register.modeEmail")}
               </span>
-              <span className="mt-0.5 block text-[11px] text-slate-500">
+              <span className="sl-small mt-0.5 block !text-[0.6875rem]">
                 {t("register.modeEmailHint")}
               </span>
             </button>
+
             <button
               type="button"
               onClick={() => switchMode("otp")}
               aria-pressed={mode === "otp"}
-              className={`rounded-xl border p-3 text-left transition-colors ${
+              className={`sl-v2-focus min-h-11 rounded-[var(--sl-radius-sm)] border p-3 text-left transition-colors ${
                 mode === "otp"
-                  ? "border-slate-950 bg-slate-50"
-                  : "border-slate-200 bg-white hover:border-slate-400"
+                  ? "border-[var(--sl-primary)] bg-[var(--sl-primary-soft)]"
+                  : "border-[var(--sl-border)] bg-white hover:border-[var(--sl-border-strong)]"
               }`}
             >
-              <span className="block text-xs font-bold text-slate-950">
+              <span
+                className={`sl-nav block !font-bold ${
+                  mode === "otp"
+                    ? "!text-[var(--sl-primary)]"
+                    : "!text-[var(--sl-text)]"
+                }`}
+              >
                 {t("register.modeOtp")}
               </span>
-              <span className="mt-0.5 block text-[11px] text-slate-500">
+              <span className="sl-small mt-0.5 block !text-[0.6875rem]">
                 {t("register.modeOtpHint")}
               </span>
             </button>
           </div>
         </fieldset>
 
+        {/* ---- Form-level feedback: designed surfaces, not raw text ---- */}
+        {error ? (
+          <div
+            role="alert"
+            className="mt-5 flex items-start gap-2.5 rounded-[var(--sl-radius-sm)] border border-[#f0c8c5] bg-[var(--sl-danger-soft)] p-3.5 text-sm text-[var(--sl-danger)]"
+          >
+            <svg
+              className="mt-0.5 h-4 w-4 shrink-0"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              aria-hidden
+            >
+              <circle cx="12" cy="12" r="9" />
+              <path d="M12 8v4.5M12 16h.01" />
+            </svg>
+            <span>{error}</span>
+          </div>
+        ) : null}
+
+        {message ? (
+          <div
+            role="status"
+            className="mt-5 flex items-start gap-2.5 rounded-[var(--sl-radius-sm)] border border-[#bfe3d4] bg-[var(--sl-success-soft)] p-3.5 text-sm text-[var(--sl-success)]"
+          >
+            <svg
+              className="mt-0.5 h-4 w-4 shrink-0"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+              strokeWidth="2.2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              aria-hidden
+            >
+              <circle cx="12" cy="12" r="9" />
+              <path d="M8 12.5l2.5 2.5L16 9.5" />
+            </svg>
+            <span>{message}</span>
+          </div>
+        ) : null}
+
         {mode === "email" ? (
-          <form onSubmit={handleEmailRegister} className="space-y-5" noValidate>
+          <form
+            onSubmit={handleEmailRegister}
+            className="mt-6 space-y-5"
+            noValidate
+          >
             <div>
-              <h1 className="text-xl font-bold text-slate-950 sm:text-2xl">
-                {t("register.emailHeading")}
-              </h1>
-              <p className="mt-1 text-xs text-slate-500">
-                {t("register.emailHint")}
-              </p>
+              <h2 className="sl-h3 !text-base">{t("register.emailHeading")}</h2>
+              <p className="sl-small mt-1">{t("register.emailHint")}</p>
             </div>
 
-            <div className="grid gap-4 sm:grid-cols-2">
-              <label className="block sm:col-span-2">
-                <span className="mb-1 block text-xs font-semibold text-slate-700">
-                  {t("register.fullName")} <span className="text-rose-500">*</span>
+            <div className="space-y-4">
+              <label className="block">
+                <span className="sl-label mb-1 block">
+                  {t("register.fullName")} <span className="!text-[var(--sl-danger)]">*</span>
                 </span>
                 <input
                   type="text"
@@ -513,16 +562,16 @@ export default function RegisterPage() {
                   placeholder={t("register.phName")}
                   className={fieldClass("fullName")}
                 />
-                {fieldError("fullName") && (
-                  <p className="mt-1.5 text-xs font-medium text-rose-600">
+                {fieldError("fullName") ? (
+                  <p className="sl-small mt-1.5 font-medium !text-[var(--sl-danger)]">
                     {fieldError("fullName")}
                   </p>
-                )}
+                ) : null}
               </label>
 
-              <label className="block sm:col-span-2">
-                <span className="mb-1 block text-xs font-semibold text-slate-700">
-                  {t("register.email")} <span className="text-rose-500">*</span>
+              <label className="block">
+                <span className="sl-label mb-1 block">
+                  {t("register.email")} <span className="!text-[var(--sl-danger)]">*</span>
                 </span>
                 <input
                   type="email"
@@ -533,60 +582,65 @@ export default function RegisterPage() {
                   placeholder={t("register.phEmail")}
                   className={fieldClass("email")}
                 />
-                {fieldError("email") && (
-                  <p className="mt-1.5 text-xs font-medium text-rose-600">
+                {fieldError("email") ? (
+                  <p className="sl-small mt-1.5 font-medium !text-[var(--sl-danger)]">
                     {fieldError("email")}
                   </p>
-                )}
+                ) : null}
               </label>
 
-              <label className="block sm:col-span-2">
-                <span className="mb-1 block text-xs font-semibold text-slate-700">
-                  {t("register.password")} <span className="text-rose-500">*</span>
-                </span>
-                <input
-                  type="password"
-                  autoComplete="new-password"
-                  required
-                  minLength={PASSWORD_MIN_LENGTH}
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  placeholder="â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢"
-                  aria-describedby="register-password-hint"
-                  className={fieldClass("password")}
-                />
-                <p id="register-password-hint" className="mt-1.5 text-xs text-slate-500">
-                  {t("register.passwordHint")}
-                </p>
-                {fieldError("password") && (
-                  <p className="mt-1.5 text-xs font-medium text-rose-600">
-                    {fieldError("password")}
+              {/* Credential group is visually separated so the form reads as
+                  two blocks: identity, then credentials. */}
+              <div className="space-y-4 border-t border-[var(--sl-border)] pt-4">
+                <label className="block">
+                  <span className="sl-label mb-1 block">
+                    {t("register.password")} <span className="!text-[var(--sl-danger)]">*</span>
+                  </span>
+                  <input
+                    type="password"
+                    autoComplete="new-password"
+                    required
+                    minLength={PASSWORD_MIN_LENGTH}
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    placeholder="••••••••"
+                    aria-describedby="register-password-hint"
+                    className={fieldClass("password")}
+                  />
+                  <p id="register-password-hint" className="sl-small mt-1.5">
+                    {t("register.passwordHint")}
                   </p>
-                )}
-              </label>
+                  {fieldError("password") ? (
+                    <p className="sl-small mt-1.5 font-medium !text-[var(--sl-danger)]">
+                      {fieldError("password")}
+                    </p>
+                  ) : null}
+                </label>
 
-              <label className="block sm:col-span-2">
-                <span className="mb-1 block text-xs font-semibold text-slate-700">
-                  {t("register.confirmPassword")} <span className="text-rose-500">*</span>
-                </span>
-                <input
-                  type="password"
-                  autoComplete="new-password"
-                  required
-                  value={confirmPassword}
-                  onChange={(e) => setConfirmPassword(e.target.value)}
-                  placeholder="â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢"
-                  className={fieldClass("confirmPassword")}
-                />
-                {fieldError("confirmPassword") && (
-                  <p className="mt-1.5 text-xs font-medium text-rose-600">
-                    {fieldError("confirmPassword")}
-                  </p>
-                )}
-              </label>
+                <label className="block">
+                  <span className="sl-label mb-1 block">
+                    {t("register.confirmPassword")}{" "}
+                    <span className="!text-[var(--sl-danger)]">*</span>
+                  </span>
+                  <input
+                    type="password"
+                    autoComplete="new-password"
+                    required
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    placeholder="••••••••"
+                    className={fieldClass("confirmPassword")}
+                  />
+                  {fieldError("confirmPassword") ? (
+                    <p className="sl-small mt-1.5 font-medium !text-[var(--sl-danger)]">
+                      {fieldError("confirmPassword")}
+                    </p>
+                  ) : null}
+                </label>
+              </div>
 
-              <label className="block sm:col-span-2">
-                <span className="mb-1 block text-xs font-semibold text-slate-700">
+              <label className="block">
+                <span className="sl-label mb-1 block">
                   {t("register.mobileOptional")}
                 </span>
                 <input
@@ -597,48 +651,31 @@ export default function RegisterPage() {
                   placeholder="+919876543210"
                   className={fieldClass("phoneNumber")}
                 />
-                {fieldError("phoneNumber") && (
-                  <p className="mt-1.5 text-xs font-medium text-rose-600">
+                {fieldError("phoneNumber") ? (
+                  <p className="sl-small mt-1.5 font-medium !text-[var(--sl-danger)]">
                     {fieldError("phoneNumber")}
                   </p>
-                )}
+                ) : null}
               </label>
             </div>
 
             {OptionalProfileFields()}
 
-            <button
-              type="submit"
-              disabled={loading}
-              className="btn-press flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-slate-950 text-sm font-bold text-white shadow-md transition-all hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-60"
-            >
+            <button type="submit" disabled={loading} className="sl-v2-btn sl-v2-btn-primary w-full">
               {loading ? t("register.submittingEmail") : t("register.submitEmail")}
             </button>
-
-            <div className="text-center pt-2 border-t border-slate-100">
-              <p className="text-xs text-slate-500">
-                {t("register.already")}{" "}
-                <Link href="/login" className="font-bold text-slate-900 underline hover:text-slate-700">
-                  {t("register.signIn")}
-                </Link>
-              </p>
-            </div>
           </form>
         ) : step === "details" ? (
-          <form onSubmit={handleSendOtp} className="space-y-5">
+          <form onSubmit={handleSendOtp} className="mt-6 space-y-5">
             <div>
-              <h1 className="text-xl font-bold text-slate-950 sm:text-2xl">
-                {t("register.heading")}
-              </h1>
-              <p className="mt-1 text-xs text-slate-500">
-                {t("register.hint")}
-              </p>
+              <h2 className="sl-h3 !text-base">{t("register.heading")}</h2>
+              <p className="sl-small mt-1">{t("register.hint")}</p>
             </div>
 
-            <div className="grid gap-4 sm:grid-cols-2">
-              <label className="block sm:col-span-2">
-                <span className="mb-1 block text-xs font-semibold text-slate-700">
-                  {t("register.fullName")} <span className="text-rose-500">*</span>
+            <div className="space-y-4">
+              <label className="block">
+                <span className="sl-label mb-1 block">
+                  {t("register.fullName")} <span className="!text-[var(--sl-danger)]">*</span>
                 </span>
                 <input
                   type="text"
@@ -646,13 +683,13 @@ export default function RegisterPage() {
                   value={fullName}
                   onChange={(e) => setFullName(e.target.value)}
                   placeholder={t("register.phName")}
-                  className="h-11 w-full rounded-xl border border-slate-200 bg-slate-50/50 px-3.5 text-sm font-medium outline-none focus:border-slate-950 focus:bg-white focus:ring-2 focus:ring-slate-950/10"
+                  className="sl-v2-input"
                 />
               </label>
 
-              <label className="block sm:col-span-2">
-                <span className="mb-1 block text-xs font-semibold text-slate-700">
-                  {t("register.mobile")} <span className="text-rose-500">*</span>
+              <label className="block">
+                <span className="sl-label mb-1 block">
+                  {t("register.mobile")} <span className="!text-[var(--sl-danger)]">*</span>
                 </span>
                 <input
                   type="tel"
@@ -660,45 +697,26 @@ export default function RegisterPage() {
                   value={phoneNumber}
                   onChange={(e) => setPhoneNumber(e.target.value)}
                   placeholder="+919876543210"
-                  className="h-11 w-full rounded-xl border border-slate-200 bg-slate-50/50 px-3.5 text-sm font-medium outline-none focus:border-slate-950 focus:bg-white focus:ring-2 focus:ring-slate-950/10"
+                  className="sl-v2-input"
                 />
               </label>
             </div>
 
             {OptionalProfileFields()}
 
-            <button
-              type="submit"
-              disabled={loading}
-              className="btn-press flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-slate-950 text-sm font-bold text-white shadow-md transition-all hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-60"
-            >
+            <button type="submit" disabled={loading} className="sl-v2-btn sl-v2-btn-primary w-full">
               {loading ? t("register.sending") : t("register.sendOtp")}
             </button>
-
-            <div className="text-center pt-2 border-t border-slate-100">
-              <p className="text-xs text-slate-500">
-                {t("register.already")}{" "}
-                <Link href="/login" className="font-bold text-slate-900 underline hover:text-slate-700">
-                  {t("register.signIn")}
-                </Link>
-              </p>
-            </div>
           </form>
         ) : (
-          <form onSubmit={handleVerifyOtp} className="space-y-5">
+          <form onSubmit={handleVerifyOtp} className="mt-6 space-y-5">
             <div>
-              <h2 className="text-xl font-bold text-slate-950 sm:text-2xl">
-                {t("register.otpTitle")}
-              </h2>
-              <p className="mt-1 text-xs text-slate-500">
-                {t("register.otpHint", { phone: phoneNumber })}
-              </p>
+              <h2 className="sl-h3 !text-base">{t("register.otpTitle")}</h2>
+              <p className="sl-small mt-1">{t("register.otpHint", { phone: phoneNumber })}</p>
             </div>
 
             <label className="block">
-              <span className="mb-1 block text-xs font-semibold text-slate-700">
-                {t("register.otpLabel")}
-              </span>
+              <span className="sl-label mb-1 block">{t("register.otpLabel")}</span>
               <input
                 type="text"
                 required
@@ -706,15 +724,11 @@ export default function RegisterPage() {
                 value={code}
                 onChange={(e) => setCode(e.target.value)}
                 placeholder="123456"
-                className="h-12 w-full font-mono text-center text-xl tracking-widest rounded-xl border border-slate-300 bg-slate-50 px-4 outline-none focus:border-slate-950 focus:bg-white"
+                className="sl-v2-input !text-center !font-mono !text-xl !tracking-[0.3em]"
               />
             </label>
 
-            <button
-              type="submit"
-              disabled={loading}
-              className="btn-press flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-slate-950 text-sm font-bold text-white shadow-md transition-all hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-60"
-            >
+            <button type="submit" disabled={loading} className="sl-v2-btn sl-v2-btn-primary w-full">
               {loading ? t("register.verifying") : t("register.verify")}
             </button>
 
@@ -725,16 +739,14 @@ export default function RegisterPage() {
                 setCode("");
                 setError("");
               }}
-              className="w-full text-center text-xs font-semibold text-slate-500 hover:text-slate-900"
+              className="sl-v2-btn sl-v2-btn-ghost w-full !min-h-11 !text-[0.8125rem]"
             >
               {t("register.edit")}
             </button>
           </form>
         )}
-      </div>
-    </main>
-    <SiteFooter />
+      </AuthShell>
+      <SiteFooter />
     </div>
   );
 }
-

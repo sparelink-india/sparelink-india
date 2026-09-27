@@ -20,7 +20,7 @@ export default async function HomePage({
     Number.isFinite(parsedPage) && parsedPage >= 1 ? Math.floor(parsedPage) : 1;
 
   return (
-    <Suspense fallback={<div className="min-h-screen bg-slate-50" />}>
+    <Suspense fallback={<div className="sl-page min-h-screen" />}>
       <HomePageContent initialQuery={initialQuery} initialPage={initialPage} />
     </Suspense>
   );

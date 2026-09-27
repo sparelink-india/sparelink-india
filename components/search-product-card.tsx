@@ -96,7 +96,7 @@ export function SearchProductCard({
 
   const priceBlock = listing ? (
     listing.isPensol ? (
-      <p className="text-sm font-extrabold text-slate-950">
+      <p className="sl-price">
         {listing.pricePaise > 0
           ? `₹${(listing.pricePaise / 100).toLocaleString("en-IN")}`
           : t("price.onRequest")}
@@ -112,7 +112,7 @@ export function SearchProductCard({
       />
     )
   ) : (
-    <p className="text-sm font-extrabold text-slate-800">{t("price.onRequest")}</p>
+    <p className="sl-h3">{t("price.onRequest")}</p>
   );
 
   if (layout === "mobile") {
@@ -124,11 +124,11 @@ export function SearchProductCard({
     ].join(" • ");
 
     return (
-      <article className="rounded-xl border border-[#7a1233] bg-white p-3 shadow-sm">
+      <article className="sl-v2-card sl-v2-card-hover p-3">
         <div className="flex items-start gap-3">
           <button
             type="button"
-            className="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-[#7a1233]"
+            className="sl-v2-focus flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-[var(--sl-radius-sm)] border border-[var(--sl-border)] bg-[var(--sl-surface-sunk)]100 bg-gradient-to-b from-white to-brand-50/60"
             onClick={onOpen}
             aria-label={title}
           >
@@ -155,28 +155,22 @@ export function SearchProductCard({
           <div className="min-w-0 flex-1">
             <button
               type="button"
-              className="block w-full truncate text-left text-[17px] font-extrabold leading-tight text-slate-950 hover:text-[#7a1233]"
+              className="sl-v2-focus block w-full truncate text-left text-[15px] font-bold leading-snug text-[var(--sl-text)] transition-colorslors duration-200 hover:text-[var(--sl-primary)]"
               onClick={onOpen}
               title={title}
             >
               <SearchHighlight text={title} query={query} />
             </button>
-            <p className="mt-1 truncate text-[11px] font-medium text-slate-600">{partMeta}</p>
+            <p className="sl-partno mt-1 truncate">{partMeta}</p>
             <div className="mt-3 flex flex-wrap items-center gap-1.5">
-              <span className="rounded-md bg-[#f5dfe3] px-2 py-1 text-[11px] font-bold text-[#7a1233]">
-                LIST {formatPaise(listPaise)}
-              </span>
-              <span className="rounded-md bg-slate-100 px-2 py-1 text-[11px] font-bold text-slate-700">
-                MRP {formatPaise(listing?.mrpPaise)}
-              </span>
-              <span className="rounded-md bg-[#e5f1d9] px-2 py-1 text-[11px] font-bold text-[#4b7d1c]">
-                DISC {discountText(listing)}
-              </span>
+              <span className="sl-v2-badge sl-v2-badge-brand">LIST {formatPaise(listPaise)}</span>
+              <span className="sl-v2-badge">MRP {formatPaise(listing?.mrpPaise)}</span>
+              <span className="sl-v2-badge sl-v2-badge-success">DISC {discountText(listing)}</span>
               <button
                 type="button"
                 disabled={!canAdd || addingId === listing?.id}
                 onClick={() => listing && onAddToCart(listing.id, title)}
-                className="ml-auto inline-flex min-h-9 items-center gap-1.5 rounded-lg bg-[#7a1233] px-3 text-xs font-bold text-white hover:bg-[#611029] disabled:cursor-not-allowed disabled:bg-slate-200 disabled:text-slate-500"
+                className="sl-v2-btn sl-v2-btn-primary ml-auto !min-h-9 !px-3 !text-xs disabled:!bg-[var(--sl-surface-sunk)]0 disabled:text-[var(--sl-muted)]"
                 aria-label={`${t("product.addToCart")}: ${title}`}
               >
                 {canAdd ? (
@@ -199,8 +193,8 @@ export function SearchProductCard({
 
   if (layout === "list") {
     return (
-      <article className="flex min-w-0 flex-col gap-3 border-b border-slate-100 bg-white px-3 py-3 sm:flex-row sm:px-4">
-        <button type="button" className="h-20 w-20 shrink-0 overflow-hidden rounded-lg bg-slate-50" onClick={onOpen}>
+      <article className="flex min-w-0 flex-col gap-3 border-b border-[var(--sl-border)] bg-white px-3 py-3 transition-colors duration-200 hover:bg-[var(--sl-primary-soft)]/30 sm:flex-row sm:px-4">
+        <button type="button" className="sl-v2-focus h-20 w-20 shrink-0 overflow-hidden rounded-[var(--sl-radius-sm)] border border-[var(--sl-border)] bg-[var(--sl-surface-sunk)]radient-to-b from-white to-brand-50/50" onClick={onOpen}>
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src={image}
@@ -222,28 +216,28 @@ export function SearchProductCard({
           />
         </button>
         <div className="min-w-0 flex-1">
-          <button type="button" className="block w-full text-left text-sm font-bold text-slate-950 hover:text-[#7a1233]" onClick={onOpen}>
+          <button type="button" className="sl-v2-focus block w-full text-left text-sm font-bold text-[var(--sl-text)] transition-colorsion-200 hover:text-[var(--sl-primary)]" onClick={onOpen} title={title}>
             <SearchHighlight text={title} query={query} />
           </button>
-          <p className="mt-1 text-xs text-slate-500">
+          <p className="sl-small mt-1">
             {[partData.brand, partData.part_number ? `${t("search.partNo")} ${partData.part_number}` : ""]
               .filter(Boolean)
               .join(" | ")}
           </p>
           {partData.category ? (
-            <span className="mt-1 inline-flex rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-semibold text-slate-600">
+            <span className="sl-v2-badge sl-v2-badge-brand mt-10">
               {partData.category}
             </span>
           ) : null}
         </div>
         <div className="flex min-w-0 shrink-0 flex-row items-end justify-between gap-2 sm:flex-col sm:items-end">
-          <p className={`text-[11px] font-bold ${canAdd ? "text-emerald-700" : "text-slate-500"}`}>{stock}</p>
+          <p className={`sl-v2-badge ${canAdd ? "sl-v2-badge-success" : "sl-v2-badge-danger"}`}>{stock}</p>
           {priceBlock}
           <button
             type="button"
             disabled={!canAdd || addingId === listing?.id}
             onClick={() => listing && onAddToCart(listing.id, title)}
-            className="min-h-9 rounded-lg bg-[#7a1233] px-3 text-[11px] font-bold text-white disabled:opacity-50"
+            className="sl-v2-btn sl-v2-btn-primary !min-h-9 !px-3 !text-[0.6875rem] disabled:opacity-50"
           >
             {canAdd ? t("product.addToCart") : t("price.onRequest")}
           </button>
@@ -253,8 +247,8 @@ export function SearchProductCard({
   }
 
   return (
-    <article className="flex h-full flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition hover:shadow-md">
-      <button type="button" className="relative aspect-square w-full bg-slate-50" onClick={onOpen} aria-label={title}>
+    <article className="sl-v2-card sl-v2-card-hover sl-v2-rule flex h-full flex-col overflow-hidden">
+      <button type="button" className="relative aspect-square w-full bg-gradient-to-b from-white to-brand-50/40" onClick={onOpen} aria-label={title}>
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
           src={image}
@@ -278,30 +272,30 @@ export function SearchProductCard({
       <div className="flex flex-1 flex-col p-3">
         <button
           type="button"
-          className="line-clamp-2 text-left text-sm font-bold leading-snug text-slate-950 hover:text-[#7a1233]"
+          className="line-clamp-2 text-left text-sm font-bold leading-snug text-slate-950 hover:text-[var(--sl-primary)]"
           onClick={onOpen}
         >
           <SearchHighlight text={title} query={query} />
         </button>
-        {partData.brand ? <p className="mt-1 text-xs font-semibold text-slate-600">{partData.brand}</p> : null}
+        {partData.brand ? <p className="mt-1 text-xs font-semibold text-[var(--sl-text-soft)]">{partData.brand}</p> : null}
         {partData.part_number ? (
-          <p className="mt-0.5 text-[11px] text-slate-500">
+          <p className="mt-0.5 text-[11px] text-[var(--sl-muted)]">
             {t("search.partNo")} {partData.part_number}
           </p>
         ) : null}
         {partData.category ? (
-          <span className="mt-2 w-fit rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-semibold text-slate-600">
+          <span className="mt-2 w-fit rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-semibold text-[var(--sl-text-soft)]">
             {partData.category}
           </span>
         ) : null}
         <div className="mt-auto pt-3">
-          <p className={`text-[11px] font-bold ${canAdd ? "text-emerald-700" : "text-slate-500"}`}>{stock}</p>
+          <p className={`text-[11px] font-bold ${canAdd ? "text-emerald-700" : "text-[var(--sl-muted)]"}`}>{stock}</p>
           <div className="mt-1">{priceBlock}</div>
           <button
             type="button"
             disabled={!canAdd || addingId === listing?.id}
             onClick={() => listing && onAddToCart(listing.id, title)}
-            className="mt-2 inline-flex min-h-10 w-full items-center justify-center rounded-lg bg-[#7a1233] px-3 text-xs font-bold text-white hover:bg-[#611029] disabled:opacity-50"
+            className="mt-2 inline-flex min-h-10 w-full items-center justify-center rounded-[var(--sl-radius-sm)] bg-[var(--sl-primary)] px-3 text-xs font-bold text-white hover:bg-[var(--sl-primary-dark)] disabled:opacity-50"
           >
             {canAdd ? t("product.addToCart") : t("price.onRequest")}
           </button>

@@ -130,11 +130,11 @@ export function QuickOrderPanel({
   return (
     <section
       aria-labelledby="quick-order-heading"
-      className="rounded-2xl border border-slate-200 bg-white p-3 shadow-xs sm:p-4"
+      className="rounded-[var(--sl-radius-lg)] border border-[var(--sl-border)] bg-white p-3 shadow-xs sm:p-4"
     >
       <div className="flex items-end justify-between gap-2">
         <div>
-          <p className="text-[11px] font-bold uppercase tracking-widest text-[#7a1233]">
+          <p className="text-[11px] font-bold uppercase tracking-widest text-[var(--sl-primary)]">
             {t("quickOrder.kicker")}
           </p>
           <h2 id="quick-order-heading" className="text-base font-bold text-slate-950">
@@ -143,16 +143,16 @@ export function QuickOrderPanel({
         </div>
         <button
           type="button"
-          className="min-h-10 rounded-lg border border-slate-200 px-3 text-xs font-semibold text-slate-700"
+          className="min-h-10 rounded-[var(--sl-radius-sm)] border border-[var(--sl-border)] px-3 text-xs font-semibold text-[var(--sl-text-soft)]"
           onClick={() => setRows((prev) => [...prev, createRow()])}
         >
           {t("quickOrder.addRow")}
         </button>
       </div>
-      <p className="mt-1 text-xs text-slate-500">{t("quickOrder.hint")}</p>
+      <p className="mt-1 text-xs text-[var(--sl-muted)]">{t("quickOrder.hint")}</p>
 
       <div className="mt-3 space-y-2">
-        <div className="grid grid-cols-[minmax(0,1fr)_4.5rem_2.25rem] gap-2 text-[11px] font-semibold uppercase tracking-wide text-slate-500">
+        <div className="grid grid-cols-[minmax(0,1fr)_4.5rem_2.25rem] gap-2 text-[11px] font-semibold uppercase tracking-wide text-[var(--sl-muted)]">
           <span>{t("quickOrder.partNumber")}</span>
           <span>{t("quickOrder.qty")}</span>
           <span className="sr-only">{t("quickOrder.removeRow")}</span>
@@ -168,7 +168,7 @@ export function QuickOrderPanel({
               onChange={(e) => updateRow(row.id, { partNumber: e.target.value })}
               placeholder="M-648"
               autoComplete="off"
-              className="min-h-11 rounded-xl border border-slate-200 bg-slate-50 px-3 font-mono text-sm outline-none focus:border-[#7a1233] focus:bg-white focus:ring-2 focus:ring-[#7a1233]/20"
+              className="min-h-11 rounded-[var(--sl-radius)] border border-[var(--sl-border)] bg-[var(--sl-surface-sunk)] px-3 font-mono text-sm outline-none focus:border-[var(--sl-primary)] focus:bg-white focus:ring-2 focus:ring-[var(--sl-primary)]/20"
             />
             <label className="sr-only" htmlFor={`qo-qty-${row.id}`}>
               {t("quickOrder.qty")}
@@ -182,12 +182,12 @@ export function QuickOrderPanel({
               onChange={(e) =>
                 updateRow(row.id, { qty: Math.max(1, Number(e.target.value) || 1) })
               }
-              className="min-h-11 rounded-xl border border-slate-200 bg-slate-50 px-2 text-center text-sm outline-none focus:border-[#7a1233] focus:bg-white focus:ring-2 focus:ring-[#7a1233]/20"
+              className="min-h-11 rounded-[var(--sl-radius)] border border-[var(--sl-border)] bg-[var(--sl-surface-sunk)] px-2 text-center text-sm outline-none focus:border-[var(--sl-primary)] focus:bg-white focus:ring-2 focus:ring-[var(--sl-primary)]/20"
             />
             <button
               type="button"
               aria-label={t("quickOrder.removeRow")}
-              className="inline-flex min-h-11 items-center justify-center rounded-xl border border-slate-200 text-slate-500"
+              className="inline-flex min-h-11 items-center justify-center rounded-[var(--sl-radius)] border border-[var(--sl-border)] text-[var(--sl-muted)]"
               onClick={() =>
                 setRows((prev) => (prev.length <= 1 ? [createRow()] : prev.filter((r) => r.id !== row.id)))
               }
@@ -213,7 +213,7 @@ export function QuickOrderPanel({
         type="button"
         disabled={busy}
         onClick={() => void addAll()}
-        className="btn-press mt-3 flex min-h-12 w-full items-center justify-center rounded-xl bg-[#7a1233] text-sm font-bold text-white disabled:opacity-60"
+        className="btn-press mt-3 flex min-h-12 w-full items-center justify-center rounded-[var(--sl-radius)] bg-[var(--sl-primary)] text-sm font-bold text-white disabled:opacity-60"
       >
         {busy ? t("quickOrder.adding") : t("quickOrder.addAll")}
       </button>

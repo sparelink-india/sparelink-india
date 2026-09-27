@@ -1,7 +1,8 @@
 @import "tailwindcss";
 
 :root {
-  --background: #f7f7f7;
+  /* Brand background is cream #f8f4f0, not grey and not burgundy. */
+  --background: #f8f4f0;
   --foreground: #1a1a1a;
   --brand: #7a1233;
   --brand-dark: #611029;
@@ -22,11 +23,1059 @@
   --safe-right: env(safe-area-inset-right, 0px);
 }
 
+/* ===================================================================
+   SPARELINK V2 — CANONICAL TOKEN LAYER
+   Every colour, radius, shadow, type step and container in the customer
+   storefront resolves to one of these. Nothing below hard-codes a brand
+   colour. Roles are explicit so burgundy is used as identity/action and
+   never as a surface coating.
+   =================================================================== */
+
+:root {
+  /* Brand */
+  --sl-primary: #7a1233;
+  --sl-primary-dark: #611029;
+  --sl-primary-soft: #fdf6f8;
+  --sl-primary-tint: #f5ccdb;
+  --sl-cream: #f8f4f0;
+  --sl-gold: #c99b4a;
+  --sl-gold-soft: #e2c48c;
+
+  /* Surfaces */
+  --sl-surface: #ffffff;
+  --sl-surface-sunk: #fbf8f7;
+
+  /* Text */
+  --sl-text: #17110f;
+  --sl-text-soft: #4a403c;
+  --sl-muted: #7a6f6a;
+
+  /* Lines + state */
+  --sl-border: #e8ded9;
+  --sl-border-strong: #d9c9c2;
+  --sl-success: #0f6b4f;
+  --sl-success-soft: #e7f5ef;
+  --sl-danger: #a3211b;
+  --sl-danger-soft: #fbeceb;
+  --sl-focus: rgba(122, 18, 51, 0.32);
+
+  /* Shape */
+  --sl-radius-sm: 0.5rem;
+  --sl-radius: 0.75rem;
+  --sl-radius-lg: 1rem;
+
+  /* Depth — deliberately restrained */
+  --sl-shadow-xs: 0 1px 2px rgba(23, 17, 15, 0.05);
+  --sl-shadow: 0 2px 6px -1px rgba(23, 17, 15, 0.07), 0 1px 2px rgba(23, 17, 15, 0.04);
+  --sl-shadow-lg: 0 14px 32px -14px rgba(23, 17, 15, 0.18);
+  --sl-shadow-brand: 0 8px 22px -10px rgba(122, 18, 51, 0.45);
+
+  /* Rhythm */
+  --sl-container: 1240px;
+  --sl-container-wide: 1360px;
+  --sl-band-y: 2.5rem;
+  --sl-band-y-lg: 3.5rem;
+
+  --sl-ease: cubic-bezier(0.16, 1, 0.3, 1);
+}
+
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  /* Devanagari was downloaded and loaded but never referenced in the stack,
+     so Hindi silently fell back to a system font. Folded in here so both
+     scripts render from the intended families. */
+  --font-sans: var(--font-geist-sans), var(--font-hi), system-ui, sans-serif;
+  --font-mono: var(--font-geist-mono), ui-monospace, monospace;
+}
+
+/* ===================================================================
+   SPARELINK CUSTOMER DESIGN SYSTEM — "Burgundy Premium"
+   Single source of truth for the customer-facing visual language.
+   Additive only: nothing here changes existing behaviour, it gives the
+   storefront one recognisable burgundy identity instead of ad-hoc greys.
+   =================================================================== */
+
+@theme {
+  /* Burgundy / wine ramp, anchored on the canonical --brand #7a1233. */
+  --color-brand-50: #fdf6f8;
+  --color-brand-100: #fbe9ef;
+  --color-brand-200: #f5ccdb;
+  --color-brand-300: #eba3bd;
+  --color-brand-400: #d9719a;
+  --color-brand-500: #c04374;
+  --color-brand-600: #9b1b4b;
+  --color-brand-700: #7a1233;
+  --color-brand-800: #611029;
+  --color-brand-900: #4a0c20;
+  --color-brand-950: #2a0812;
+
+  /* Charcoal neutrals used for body text and neutral surfaces. */
+  --color-ink-500: #64748b;
+  --color-ink-700: #334155;
+  --color-ink-900: #0f172a;
+
+  /* Brand gold #c99b4a, used sparingly for premium highlights. The lighter
+     tone is only the readable-on-burgundy variant. */
+  --color-gold-300: #e2c48c;
+  --color-gold-500: #c99b4a;
+}
+
+:root {
+  /* Burgundy gradient language */
+  --sl-grad-hero: linear-gradient(135deg, #2a0812 0%, #4a0c20 38%, #611029 68%, #7a1233 100%);
+  --sl-grad-brand: linear-gradient(135deg, #7a1233 0%, #9b1b4b 55%, #b02a5c 100%);
+  --sl-grad-brand-soft: linear-gradient(135deg, #fdf6f8 0%, #fbe9ef 100%);
+  --sl-grad-sheen: radial-gradient(
+    ellipse 80% 60% at 18% 8%,
+    rgba(217, 113, 154, 0.28) 0%,
+    transparent 62%
+  );
+
+  /* Premium surface + elevation language */
+  --sl-surface: #ffffff;
+  --sl-surface-sunk: #fbf7f8;
+  --sl-hairline: rgba(122, 18, 51, 0.1);
+  --sl-hairline-strong: rgba(122, 18, 51, 0.18);
+  --sl-ring-brand: rgba(122, 18, 51, 0.14);
+
+  --sl-shadow-xs: 0 1px 2px rgba(42, 8, 18, 0.05);
+  --sl-shadow-sm: 0 1px 3px rgba(42, 8, 18, 0.06), 0 1px 2px rgba(42, 8, 18, 0.04);
+  --sl-shadow-md: 0 6px 16px -4px rgba(42, 8, 18, 0.1), 0 2px 6px -2px rgba(42, 8, 18, 0.05);
+  --sl-shadow-lg: 0 18px 40px -12px rgba(42, 8, 18, 0.18), 0 4px 12px -4px rgba(42, 8, 18, 0.07);
+  --sl-shadow-brand: 0 10px 30px -10px rgba(122, 18, 51, 0.45);
+
+  --sl-radius-sm: 0.625rem;
+  --sl-radius-md: 0.875rem;
+  --sl-radius-lg: 1.125rem;
+  --sl-radius-xl: 1.5rem;
+
+  --sl-ease: cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* ------------------------------------------------------------ containers */
+
+/*
+ * ONE container + gutter + vertical rhythm for the whole storefront.
+ *
+ * Analysis found the header/footer running at max-w-[1688px] while every page
+ * invented its own width (3xl / 4xl / 5xl / 6xl / 7xl), so the logo left edge
+ * never lined up with page content on any route. These four classes are the
+ * only widths a customer page may use, and they all share one gutter and one
+ * vertical rhythm.
+ */
+.sl-container {
+  width: 100%;
+  margin-inline: auto;
+  padding-inline: 1rem;
+  max-width: 1240px;
+}
+
+@media (min-width: 640px) {
+  .sl-container {
+    padding-inline: 1.5rem;
+  }
+}
+
+/* Browse/grid pages: categories, brands, fitment, homepage, cart, checkout. */
+.sl-container-wide {
+  max-width: 1360px;
+}
+
+/* Prose pages: policies, about, contact, help. Keeps line length readable. */
+.sl-container-prose {
+  max-width: 760px;
+}
+
+/* About-us needs slightly more room for its firm sections. */
+.sl-container-prose-lg {
+  max-width: 900px;
+}
+
+/* Focused single-column: login, register, change password, track order. */
+.sl-container-narrow {
+  max-width: 480px;
+}
+
+/* One vertical rhythm for every page shell. */
+.sl-page-main {
+  padding-block: 1.5rem;
+}
+
+@media (min-width: 768px) {
+  .sl-page-main {
+    padding-block: 2.5rem;
+  }
+}
+
+/*
+ * ONE spacing rhythm for the whole storefront. Every major band uses
+ * .sl-band, every page shell uses .sl-page-main. These are deliberately
+ * tighter than the previous values, which left large dead gaps between
+ * sections on a 1900px viewport.
+ */
+.sl-band {
+  padding-block: 2rem;
+}
+
+@media (min-width: 768px) {
+  .sl-band {
+    padding-block: 2.75rem;
+  }
+}
+
+@media (min-width: 1280px) {
+  .sl-band {
+    padding-block: 3.25rem;
+  }
+}
+
+/* ------------------------------------------------------------ search field */
+
+/*
+ * ONE search geometry for the header, hero, order page and search page.
+ *
+ * Analysis found three different search products: the header dropped its
+ * border and radius on desktop (`md:rounded-none md:border-0`), the hero used
+ * a frosted pill, and the order page used a third structure. These tokens give
+ * every search the same height, radius, icon inset, focus treatment and button.
+ */
+.sl-search {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  height: 3rem;
+  padding-inline: 0.875rem  0.375rem;
+  background: #fff;
+  border: 1px solid var(--sl-hairline-strong);
+  border-radius: 999px;
+  box-shadow: var(--sl-shadow-xs);
+  transition:
+    border-color 0.18s var(--sl-ease),
+    box-shadow 0.18s var(--sl-ease);
+}
+
+.sl-search:hover {
+  border-color: var(--color-brand-300);
+}
+
+.sl-search:focus-within {
+  border-color: var(--color-brand-600);
+  box-shadow: 0 0 0 3px var(--sl-ring-brand);
+}
+
+/* Search on a dark/burgundy surface (hero). */
+.sl-search-invert {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.24);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  color: #fff;
+}
+
+.sl-search-invert:focus-within {
+  background: rgba(255, 255, 255, 0.16);
+  border-color: var(--color-gold-300);
+  box-shadow: 0 0 0 3px rgba(243, 217, 164, 0.28);
+}
+
+.sl-search-icon {
+  display: inline-flex;
+  flex-shrink: 0;
+  color: var(--color-ink-500);
+}
+
+.sl-search-invert .sl-search-icon {
+  color: rgba(255, 255, 255, 0.72);
+}
+
+.sl-search-input {
+  min-width: 0;
+  flex: 1;
+  height: 100%;
+  background: transparent;
+  border: 0;
+  font-size: 0.9375rem;
+  color: var(--color-ink-900);
+  outline: none;
+}
+
+.sl-search-input::placeholder {
+  color: var(--color-ink-500);
+}
+
+.sl-search-invert .sl-search-input {
+  color: #fff;
+}
+
+.sl-search-invert .sl-search-input::placeholder {
+  color: rgba(255, 255, 255, 0.62);
+}
+
+.sl-search-clear {
+  display: inline-flex;
+  height: 2rem;
+  width: 2rem;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  color: var(--color-ink-500);
+  background: transparent;
+  transition:
+    background-color 0.16s var(--sl-ease),
+    color 0.16s var(--sl-ease);
+}
+
+.sl-search-clear:hover {
+  background: var(--color-brand-50);
+  color: var(--color-brand-700);
+}
+
+.sl-search-submit {
+  display: inline-flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  gap: 0.375rem;
+  height: 2.5rem;
+  padding-inline: 1.125rem;
+  border-radius: 999px;
+  background: var(--sl-grad-brand);
+  color: #fff;
+  font-size: 0.875rem;
+  font-weight: 650;
+  box-shadow: var(--sl-shadow-brand);
+  transition:
+    filter 0.18s var(--sl-ease),
+    box-shadow 0.18s var(--sl-ease);
+}
+
+.sl-search-submit:hover {
+  filter: brightness(1.07);
+}
+
+.sl-search-submit:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
+/* Compact variant for the header. The hero owns the large search, so the
+   header field must read as a supporting control, not a second hero. */
+.sl-search-compact {
+  height: 2.5rem;
+  padding-inline: 0.625rem 0.25rem;
+}
+
+.sl-search-compact .sl-search-input {
+  font-size: 0.875rem;
+}
+
+.sl-search-submit-compact {
+  height: 2rem;
+  padding-inline: 0.75rem;
+  font-size: 0.8125rem;
+}
+
+/* --------------------------------------------------------------- surfaces */
+
+.sl-page {
+  background:
+    radial-gradient(ellipse 90% 60% at 50% 0%, rgba(122, 18, 51, 0.04) 0%, transparent 60%),
+    #f8f4f0;
+  color: var(--color-ink-900);
+}
+
+.sl-surface {
+  background: var(--sl-surface);
+  border: 1px solid var(--sl-hairline);
+  border-radius: var(--sl-radius-lg);
+  box-shadow: var(--sl-shadow-sm);
+}
+
+.sl-surface-sunk {
+  background: var(--sl-surface-sunk);
+  border: 1px solid var(--sl-hairline);
+  border-radius: var(--sl-radius-md);
+}
+
+/* Premium card: layered surface, soft brand hairline, restrained lift. */
+.sl-card {
+  position: relative;
+  background: var(--sl-surface);
+  border: 1px solid var(--sl-hairline);
+  border-radius: var(--sl-radius-lg);
+  box-shadow: var(--sl-shadow-sm);
+  transition:
+    transform 0.24s var(--sl-ease),
+    box-shadow 0.24s var(--sl-ease),
+    border-color 0.24s var(--sl-ease);
+}
+
+.sl-card-hover:hover {
+  transform: translateY(-3px);
+  border-color: var(--sl-hairline-strong);
+  box-shadow: var(--sl-shadow-lg);
+}
+
+/* Top-edge brand accent that appears on hover/focus. */
+.sl-card-accent::before {
+  content: "";
+  position: absolute;
+  inset: 0 0 auto 0;
+  height: 2px;
+  border-radius: var(--sl-radius-lg) var(--sl-radius-lg) 0 0;
+  background: var(--sl-grad-brand);
+  opacity: 0;
+  transition: opacity 0.24s var(--sl-ease);
+}
+
+.sl-card-accent:hover::before,
+.sl-card-accent:focus-within::before {
+  opacity: 1;
+}
+
+/* ------------------------------------------------------------- gradients */
+
+.sl-grad-hero {
+  background: var(--sl-grad-hero);
+  color: #fff;
+}
+
+.sl-grad-brand {
+  background: var(--sl-grad-brand);
+  color: #fff;
+}
+
+.sl-grad-brand-soft {
+  background: var(--sl-grad-brand-soft);
+  color: var(--color-brand-800);
+}
+
+/* Text that carries the brand gradient (headline accents). */
+.sl-text-grad {
+  background: linear-gradient(100deg, #f5ccdb 0%, #d9719a 38%, #f3d9a4 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+/* ===================================================================
+   SPARELINK V2 — TYPOGRAPHY SCALE + PRIMITIVE LAYER
+   Every step below resolves to a token in the canonical layer above.
+   Ten named type roles; nothing arbitrary. Display and H1 are the only
+   sizes permitted to be loud, so a dense catalogue page never shouts.
+   =================================================================== */
+
+.sl-display {
+  font-size: clamp(1.9rem, 1.15rem + 2.9vw, 3rem);
+  font-weight: 800;
+  line-height: 1.06;
+  letter-spacing: -0.032em;
+}
+
+.sl-h1 {
+  font-size: clamp(1.5rem, 1.2rem + 1.3vw, 2rem);
+  font-weight: 800;
+  line-height: 1.14;
+  letter-spacing: -0.024em;
+  color: var(--sl-text);
+}
+
+.sl-h2 {
+  font-size: clamp(1.2rem, 1.05rem + 0.75vw, 1.55rem);
+  font-weight: 750;
+  line-height: 1.2;
+  letter-spacing: -0.018em;
+  color: var(--sl-text);
+}
+
+.sl-h3 {
+  font-size: 1rem;
+  font-weight: 700;
+  line-height: 1.35;
+  letter-spacing: -0.01em;
+  color: var(--sl-text);
+}
+
+.sl-body {
+  font-size: 0.9375rem;
+  line-height: 1.6;
+  color: var(--sl-text-soft);
+}
+
+.sl-small {
+  font-size: 0.8125rem;
+  line-height: 1.5;
+  color: var(--sl-muted);
+}
+
+.sl-label {
+  font-size: 0.6875rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--sl-muted);
+}
+
+/* Part numbers are catalogue data, not prose: monospaced and visually distinct. */
+.sl-partno {
+  font-family: var(--font-mono), ui-monospace, monospace;
+  font-size: 0.75rem;
+  font-weight: 650;
+  letter-spacing: 0.01em;
+  color: var(--sl-text-soft);
+}
+
+.sl-price {
+  font-size: 1.125rem;
+  font-weight: 800;
+  letter-spacing: -0.015em;
+  color: var(--sl-text);
+  font-variant-numeric: tabular-nums;
+}
+
+.sl-price-strike {
+  font-size: 0.8125rem;
+  color: var(--sl-muted);
+  text-decoration: line-through;
+  font-variant-numeric: tabular-nums;
+}
+
+.sl-nav {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  letter-spacing: 0.005em;
+}
+
+/* ------------------------------------------------------------------ surfaces */
+
+/* Cards are white on cream. Nothing else is a card. */
+.sl-v2-card {
+  background: var(--sl-surface);
+  border: 1px solid var(--sl-border);
+  border-radius: var(--sl-radius);
+  box-shadow: var(--sl-shadow-xs);
+}
+
+.sl-v2-card-hover {
+  transition:
+    transform 0.22s var(--sl-ease),
+    box-shadow 0.22s var(--sl-ease),
+    border-color 0.22s var(--sl-ease);
+}
+
+.sl-v2-card-hover:hover {
+  transform: translateY(-2px);
+  border-color: var(--sl-border-strong);
+  box-shadow: var(--sl-shadow-lg);
+}
+
+/* Hairline brand rule on hover — quieter than the old accent bar. */
+.sl-v2-rule {
+  position: relative;
+}
+
+.sl-v2-rule::after {
+  content: "";
+  position: absolute;
+  inset: auto 0 0 0;
+  height: 2px;
+  background: var(--sl-primary);
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform 0.28s var(--sl-ease);
+}
+
+.sl-v2-rule:hover::after,
+.sl-v2-rule:focus-within::after {
+  transform: scaleX(1);
+}
+
+/* -------------------------------------------------------------------- buttons */
+
+/* One language, four intents. */
+.sl-v2-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  min-height: 2.75rem;
+  padding-inline: 1.125rem;
+  border: 1px solid transparent;
+  border-radius: var(--sl-radius-sm);
+  font-size: 0.875rem;
+  font-weight: 650;
+  line-height: 1;
+  white-space: nowrap;
+  transition:
+    background-color 0.18s var(--sl-ease),
+    border-color 0.18s var(--sl-ease),
+    color 0.18s var(--sl-ease),
+    box-shadow 0.18s var(--sl-ease),
+    transform 0.12s var(--sl-ease);
+}
+
+.sl-v2-btn:active {
+  transform: translateY(1px);
+}
+
+.sl-v2-btn-primary {
+  background: var(--sl-primary);
+  color: #fff;
+  box-shadow: var(--sl-shadow-brand);
+}
+
+.sl-v2-btn-primary:hover {
+  background: var(--sl-primary-dark);
+}
+
+.sl-v2-btn-secondary {
+  background: var(--sl-surface);
+  color: var(--sl-primary);
+  border-color: var(--sl-border-strong);
+}
+
+.sl-v2-btn-secondary:hover {
+  background: var(--sl-primary-soft);
+  border-color: var(--sl-primary-tint);
+}
+
+.sl-v2-btn-ghost {
+  background: transparent;
+  color: var(--sl-text-soft);
+}
+
+.sl-v2-btn-ghost:hover {
+  background: var(--sl-primary-soft);
+  color: var(--sl-primary);
+}
+
+.sl-v2-btn-danger {
+  background: var(--sl-danger);
+  color: #fff;
+}
+
+/*
+ * Inverse ghost button for use on a burgundy / dark field.
+ * It previously had no definition at all, so buttons on the dark closing band
+ * fell back to the base .sl-v2-btn colour (--sl-text, near-black) and were
+ * effectively unreadable against #7a1233.
+ */
+.sl-v2-btn-ghost-invert {
+  background: transparent;
+  color: #fff;
+  border-color: rgba(255, 255, 255, 0.55);
+}
+
+.sl-v2-btn-ghost-invert:hover {
+  background: rgba(255, 255, 255, 0.14);
+  border-color: #fff;
+  color: #fff;
+}
+
+.sl-v2-btn:disabled,
+.sl-v2-btn[aria-disabled="true"] {
+  opacity: 0.45;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
+/* --------------------------------------------------------------------- inputs */
+
+.sl-v2-input {
+  width: 100%;
+  min-height: 2.75rem;
+  padding-inline: 0.75rem;
+  background: var(--sl-surface);
+  border: 1px solid var(--sl-border-strong);
+  border-radius: var(--sl-radius-sm);
+  font-size: 0.9375rem;
+  color: var(--sl-text);
+  transition:
+    border-color 0.18s var(--sl-ease),
+    box-shadow 0.18s var(--sl-ease);
+}
+
+.sl-v2-input::placeholder {
+  color: var(--sl-muted);
+}
+
+.sl-v2-input:focus {
+  outline: none;
+  border-color: var(--sl-primary);
+  box-shadow: 0 0 0 3px var(--sl-focus);
+}
+
+.sl-v2-input:disabled {
+  background: var(--sl-surface-sunk);
+  color: var(--sl-muted);
+}
+
+.sl-v2-input[aria-invalid="true"] {
+  border-color: var(--sl-danger);
+}
+
+.sl-v2-input[aria-invalid="true"]:focus {
+  box-shadow: 0 0 0 3px rgba(163, 33, 27, 0.25);
+}
+
+/* --------------------------------------------------------------------- badges */
+
+/* Rendered only where the underlying data actually exists. */
+.sl-v2-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.125rem 0.4375rem;
+  border-radius: 0.3125rem;
+  border: 1px solid var(--sl-border);
+  background: var(--sl-surface-sunk);
+  font-size: 0.6875rem;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  color: var(--sl-text-soft);
+}
+
+.sl-v2-badge-brand {
+  background: var(--sl-primary-soft);
+  border-color: var(--sl-primary-tint);
+  color: var(--sl-primary);
+}
+
+.sl-v2-badge-success {
+  background: var(--sl-success-soft);
+  border-color: #bfe3d4;
+  color: var(--sl-success);
+}
+
+.sl-v2-badge-danger {
+  background: var(--sl-danger-soft);
+  border-color: #f0c8c5;
+  color: var(--sl-danger);
+}
+
+/* ------------------------------------------------------------------ focus ring */
+
+/* Single definition for the whole storefront. */
+.sl-v2-focus:focus-visible {
+  outline: 2px solid var(--sl-primary);
+  outline-offset: 2px;
+  border-radius: var(--sl-radius-sm);
+}
+
+.sl-v2-focus-invert:focus-visible {
+  outline: 2px solid #fff;
+  outline-offset: 2px;
+  border-radius: var(--sl-radius-sm);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sl-v2-card-hover,
+  .sl-v2-btn,
+  .sl-v2-input,
+  .sl-v2-rule::after {
+    transition: none;
+  }
+
+  .sl-v2-card-hover:hover {
+    transform: none;
+  }
+}
+
+/* ----------------------------------------------------------- typography */
+
+/*
+ * Controlled type scale. Premium means hierarchy, not oversized type
+ * everywhere: hero is the only place allowed to be loud.
+ */
+.sl-type-hero {
+  font-size: clamp(2rem, 1.35rem + 3.1vw, 3.6rem);
+  font-weight: 800;
+  line-height: 1.05;
+  letter-spacing: -0.03em;
+}
+
+.sl-type-page {
+  font-size: clamp(1.5rem, 1.2rem + 1.3vw, 2.15rem);
+  font-weight: 800;
+  line-height: 1.15;
+  letter-spacing: -0.022em;
+  color: var(--color-ink-900);
+}
+
+.sl-type-section {
+  font-size: clamp(1.25rem, 1.05rem + 0.9vw, 1.75rem);
+  font-weight: 800;
+  line-height: 1.18;
+  letter-spacing: -0.02em;
+  color: var(--color-ink-900);
+}
+
+.sl-type-card {
+  font-size: 0.9375rem;
+  font-weight: 700;
+  line-height: 1.35;
+  color: var(--color-ink-900);
+}
+
+.sl-type-label {
+  font-size: 0.6875rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--color-ink-500);
+}
+
+/* Critical automotive identifiers: part number / OEM / HSN. Monospace so
+   digits stay scannable and copyable. */
+.sl-type-partno {
+  font-family: var(--font-mono), ui-monospace, monospace;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  color: var(--color-ink-700);
+}
+
+.sl-type-price {
+  font-size: 1.0625rem;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+  color: var(--color-ink-900);
+}
+
+.sl-type-meta {
+  font-size: 0.75rem;
+  line-height: 1.45;
+  color: var(--color-ink-500);
+}
+
+.sl-eyebrow {
+  font-size: 0.6875rem;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--color-brand-600);
+}
+
+.sl-eyebrow-invert {
+  color: var(--color-brand-200);
+}
+
+.sl-section-title {
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  color: var(--color-ink-900);
+  line-height: 1.12;
+}
+
+.sl-hairline {
+  border-color: var(--sl-hairline);
+}
+
+/* -------------------------------------------------------------- buttons */
+
+.sl-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  min-height: 2.75rem;
+  padding: 0 1.25rem;
+  border-radius: 999px;
+  font-size: 0.875rem;
+  font-weight: 650;
+  line-height: 1;
+  white-space: nowrap;
+  border: 1px solid transparent;
+  transition:
+    transform 0.18s var(--sl-ease),
+    box-shadow 0.18s var(--sl-ease),
+    background-color 0.18s var(--sl-ease),
+    border-color 0.18s var(--sl-ease),
+    color 0.18s var(--sl-ease);
+}
+
+.sl-btn:active {
+  transform: translateY(1px) scale(0.99);
+}
+
+.sl-btn-primary {
+  background: var(--sl-grad-brand);
+  color: #fff;
+  box-shadow: var(--sl-shadow-brand);
+}
+
+.sl-btn-primary:hover {
+  box-shadow: 0 14px 34px -10px rgba(122, 18, 51, 0.6);
+  filter: brightness(1.06);
+}
+
+.sl-btn-secondary {
+  background: #fff;
+  color: var(--color-brand-700);
+  border-color: var(--sl-hairline-strong);
+  box-shadow: var(--sl-shadow-xs);
+}
+
+.sl-btn-secondary:hover {
+  border-color: var(--color-brand-300);
+  background: var(--color-brand-50);
+}
+
+.sl-btn-ghost-invert {
+  background: rgba(255, 255, 255, 0.1);
+  color: #fff;
+  border-color: rgba(255, 255, 255, 0.32);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+}
+
+.sl-btn-ghost-invert:hover {
+  background: rgba(255, 255, 255, 0.2);
+  border-color: rgba(255, 255, 255, 0.5);
+}
+
+.sl-btn:disabled,
+.sl-btn[aria-disabled="true"] {
+  opacity: 0.5;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
+/* --------------------------------------------------------------- badges */
+
+.sl-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  min-height: 2.125rem;
+  padding: 0 0.875rem;
+  border-radius: 999px;
+  border: 1px solid var(--sl-hairline-strong);
+  background: #fff;
+  color: var(--color-ink-700);
+  font-size: 0.8125rem;
+  font-weight: 550;
+  transition:
+    border-color 0.18s var(--sl-ease),
+    background-color 0.18s var(--sl-ease),
+    color 0.18s var(--sl-ease),
+    transform 0.18s var(--sl-ease);
+}
+
+.sl-chip:hover {
+  border-color: var(--color-brand-300);
+  background: var(--color-brand-50);
+  color: var(--color-brand-700);
+}
+
+.sl-chip-invert {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.22);
+  color: rgba(255, 255, 255, 0.94);
+}
+
+.sl-chip-invert:hover {
+  background: rgba(255, 255, 255, 0.18);
+  border-color: rgba(255, 255, 255, 0.45);
+  color: #fff;
+}
+
+.sl-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3125rem;
+  padding: 0.1875rem 0.5rem;
+  border-radius: 0.375rem;
+  font-size: 0.6875rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.sl-badge-brand {
+  background: var(--color-brand-50);
+  color: var(--color-brand-700);
+  border: 1px solid var(--color-brand-200);
+}
+
+.sl-badge-neutral {
+  background: #f4f4f6;
+  color: var(--color-ink-700);
+  border: 1px solid rgba(15, 23, 42, 0.08);
+}
+
+.sl-badge-success {
+  background: #ecfdf5;
+  color: #065f46;
+  border: 1px solid #a7f3d0;
+}
+
+/* ------------------------------------------------------- focus / motion */
+
+.sl-focus:focus-visible {
+  outline: 2px solid var(--color-brand-600);
+  outline-offset: 2px;
+  border-radius: var(--sl-radius-sm);
+}
+
+.sl-focus-invert:focus-visible {
+  outline: 2px solid #fff;
+  outline-offset: 2px;
+  border-radius: var(--sl-radius-sm);
+}
+
+/* Skeleton loading placeholder. */
+.sl-skeleton {
+  background: linear-gradient(
+    90deg,
+    rgba(122, 18, 51, 0.06) 25%,
+    rgba(122, 18, 51, 0.12) 37%,
+    rgba(122, 18, 51, 0.06) 63%
+  );
+  background-size: 400% 100%;
+  animation: sl-shimmer 1.4s ease-in-out infinite;
+  border-radius: var(--sl-radius-sm);
+}
+
+/* The shimmer is decorative motion. With reduced motion requested it becomes a
+   flat tint so loading states still read as loading, without animating. */
+@media (prefers-reduced-motion: reduce) {
+  .sl-skeleton {
+    animation: none;
+    background: rgba(122, 18, 51, 0.08);
+  }
+}
+
+@keyframes sl-shimmer {
+  0% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0 50%;
+  }
+}
+
+/* Premium section wrapper was superseded by .sl-band (single rhythm). */
+/* `.sl-divider` keeps the soft brand hairline. */
+.sl-divider {
+  height: 1px;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    var(--sl-hairline-strong) 22%,
+    var(--sl-hairline-strong) 78%,
+    transparent 100%
+  );
+}
+
+/* Dark surfaces (hero panels, footer) inherit the burgundy identity. */
+.sl-deep {
+  background: var(--sl-grad-hero);
+  color: #fff;
 }
 
 html,
@@ -135,6 +1184,9 @@ html.dark .text-emerald-700 {
 .hero-reference {
   isolation: isolate;
   height: auto;
+  /* Reduced so vehicle/category discovery is reachable in the first screen.
+     The previous 600px desktop block plus a 67px strip consumed the viewport. */
+  max-height: 460px;
   background: #12040a;
   color: #fff;
 }
@@ -179,12 +1231,14 @@ html.dark .text-emerald-700 {
 }
 
 .hero-headline {
-  margin-top: 0.7rem;
-  font-size: 2.15rem;
+  margin-top: 0.5rem;
+  /* Reduced from 2.15rem mobile / 3.15-3.6rem desktop. The headline was
+     competing with the search; it is now clearly secondary to it. */
+  font-size: 1.6rem;
   font-weight: 800;
-  line-height: 1.04;
-  letter-spacing: -0.03em;
-  text-shadow: 0 2px 18px rgba(0, 0, 0, 0.45);
+  line-height: 1.12;
+  letter-spacing: -0.025em;
+  text-shadow: 0 2px 14px rgba(0, 0, 0, 0.45);
 }
 
 .hero-subhead {
@@ -341,9 +1395,10 @@ html.dark .text-emerald-700 {
 
 @media (min-width: 1024px) {
   .hero-reference {
-    height: 600px;
-    min-height: 600px;
-    max-height: 610px;
+    /* Height adapts to content (the block is auto-height); this cap simply
+       stops it dominating the first screen on very large monitors. */
+    min-height: 400px;
+    max-height: 460px;
   }
 
   .hero-stage {
@@ -369,11 +1424,11 @@ html.dark .text-emerald-700 {
   }
 
   .hero-headline {
-    font-size: 3.15rem;
+    font-size: 2.1rem;
   }
 
   .hero-subhead {
-    font-size: 15px;
+    font-size: 14px;
   }
 
   .hero-badges {
@@ -397,7 +1452,7 @@ html.dark .text-emerald-700 {
   }
 
   .hero-headline {
-    font-size: 3.45rem;
+    font-size: 2.3rem;
   }
 }
 
@@ -407,7 +1462,7 @@ html.dark .text-emerald-700 {
   }
 
   .hero-headline {
-    font-size: 3.6rem;
+    font-size: 2.45rem;
   }
 }
 

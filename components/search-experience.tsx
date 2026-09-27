@@ -3,6 +3,11 @@
 import Link from "next/link";
 import { useMemo, useState } from "react";
 
+import {
+  EmptyState,
+  ErrorState,
+  StateIcons,
+} from "@/components/page-states";
 import { useI18n } from "@/components/preferences-provider";
 import { SearchHighlight } from "@/components/search-highlight";
 import { SearchProductCard } from "@/components/search-product-card";
@@ -101,9 +106,9 @@ function FacetChecks({
   return (
     <section>
       <div className="flex items-center justify-between gap-2">
-        <h3 className="text-[11px] font-bold uppercase tracking-widest text-slate-500">{title}</h3>
+        <h3 className="text-[11px] font-bold uppercase tracking-widest text-[var(--sl-muted)]">{title}</h3>
         {active ? (
-          <button type="button" className="text-[11px] font-semibold text-[#7a1233]" onClick={() => onToggle("")}>
+          <button type="button" className="text-[11px] font-semibold text-[var(--sl-primary)]" onClick={() => onToggle("")}>
             {tClear}
           </button>
         ) : null}
@@ -113,15 +118,15 @@ function FacetChecks({
           const checked = active === row.value;
           return (
             <li key={row.value}>
-              <label className="flex cursor-pointer items-center gap-2 rounded-lg px-1 py-1.5 text-sm text-slate-800 hover:bg-slate-50">
+              <label className="flex cursor-pointer items-center gap-2 rounded-[var(--sl-radius-sm)] px-1 py-1.5 text-sm text-slate-800 hover:bg-[var(--sl-surface-sunk)]">
                 <input
                   type="checkbox"
                   checked={checked}
                   onChange={() => onToggle(checked ? "" : row.value)}
-                  className="h-4 w-4 rounded border-slate-300 text-[#7a1233] accent-[#7a1233]"
+                  className="h-4 w-4 rounded border-[var(--sl-border-strong)] text-[var(--sl-primary)] accent-[var(--sl-primary)]"
                 />
                 <span className="min-w-0 flex-1 truncate">{row.value}</span>
-                <span className="shrink-0 text-xs text-slate-500">{row.count}</span>
+                <span className="shrink-0 text-xs text-[var(--sl-muted)]">{row.count}</span>
               </label>
             </li>
           );
@@ -130,7 +135,7 @@ function FacetChecks({
       {rows.length > 8 ? (
         <button
           type="button"
-          className="mt-1 text-[11px] font-semibold text-[#7a1233]"
+          className="mt-1 text-[11px] font-semibold text-[var(--sl-primary)]"
           onClick={() => setExpanded((value) => !value)}
         >
           {expanded ? "−" : "+"} {rows.length - 8}
@@ -171,13 +176,13 @@ function SearchFilters({
 }) {
   const { t } = useI18n();
   return (
-    <aside className="space-y-6 rounded-2xl border border-slate-200 bg-white p-4">
+    <aside className="space-y-6 rounded-[var(--sl-radius-lg)] border border-[var(--sl-border)] bg-white p-4">
       <div className="flex items-center justify-between">
-        <h2 className="text-sm font-bold text-slate-900">{t("search.filters")}</h2>
+        <h2 className="text-sm font-bold text-[var(--sl-text)]">{t("search.filters")}</h2>
         {activeBrand || activeCategory || activeStock !== "all" ? (
           <button
             type="button"
-            className="text-[11px] font-semibold text-[#7a1233]"
+            className="text-[11px] font-semibold text-[var(--sl-primary)]"
             onClick={onClearFilters}
           >
             {t("search.clearAll")}
@@ -185,7 +190,7 @@ function SearchFilters({
         ) : null}
       </div>
       <section className="border-b border-slate-100 pb-3">
-        <h3 className="text-[11px] font-bold uppercase tracking-widest text-slate-500">Browse</h3>
+        <h3 className="text-[11px] font-bold uppercase tracking-widest text-[var(--sl-muted)]">Browse</h3>
         <div className="mt-2 flex flex-wrap gap-1.5">
           {tabs.map((item) => (
             <button
@@ -195,8 +200,8 @@ function SearchFilters({
               onClick={() => onTabChange(item.id)}
               className={`rounded-full border px-2.5 py-1 text-[11px] font-semibold ${
                 activeTab === item.id
-                  ? "border-[#7a1233] bg-[#7a1233] text-white"
-                  : "border-slate-200 text-slate-700 hover:border-slate-300"
+                  ? "border-[var(--sl-primary)] bg-[var(--sl-primary)] text-white"
+                  : "border-[var(--sl-border)] text-[var(--sl-text-soft)] hover:border-[var(--sl-border-strong)]"
               }`}
             >
               {item.label} ({item.count})
@@ -205,13 +210,13 @@ function SearchFilters({
         </div>
       </section>
       <section>
-        <h3 className="text-[11px] font-bold uppercase tracking-widest text-slate-500">Stock</h3>
+        <h3 className="text-[11px] font-bold uppercase tracking-widest text-[var(--sl-muted)]">Stock</h3>
         <select
           value={activeStock}
           onChange={(event) =>
             onStockChange(event.target.value === "in_stock" ? "in_stock" : "all")
           }
-          className="mt-2 h-9 w-full rounded-lg border border-slate-200 bg-white px-2 text-xs font-semibold text-slate-700 outline-none focus:border-[#7a1233]"
+          className="mt-2 h-9 w-full rounded-[var(--sl-radius-sm)] border border-[var(--sl-border)] bg-white px-2 text-xs font-semibold text-[var(--sl-text-soft)] outline-none focus:border-[var(--sl-primary)]"
           aria-label="Stock filter"
         >
           <option value="all">All Stock</option>
@@ -234,7 +239,7 @@ function SearchFilters({
       />
       {vehicles.length ? (
         <section>
-          <h3 className="text-[11px] font-bold uppercase tracking-widest text-slate-500">
+          <h3 className="text-[11px] font-bold uppercase tracking-widest text-[var(--sl-muted)]">
             {t("search.tabVehicles")}
           </h3>
           <ul className="mt-2 space-y-1">
@@ -242,12 +247,12 @@ function SearchFilters({
               <li key={`${row.make}-${row.model}`}>
                 <Link
                   href={`/vehicle-fitment/${slugifyFitment(row.make)}/${slugifyFitment(row.model)}`}
-                  className="flex items-center justify-between rounded-lg px-1 py-1.5 text-sm text-slate-800 hover:bg-slate-50"
+                  className="flex items-center justify-between rounded-[var(--sl-radius-sm)] px-1 py-1.5 text-sm text-slate-800 hover:bg-[var(--sl-surface-sunk)]"
                 >
                   <span className="min-w-0 truncate">
                     {row.make} {row.model}
                   </span>
-                  <span className="text-xs text-slate-500">{row.count}</span>
+                  <span className="sl-small shrink-0 tabular-nums">{row.count}</span>
                 </Link>
               </li>
             ))}
@@ -314,7 +319,7 @@ export function SearchExperience({
   onAddToCart: (listingId: string, name: string) => void;
 }) {
   const { t } = useI18n();
-  const [filtersOpen] = useState(false);
+  const [filtersOpen, setFiltersOpen] = useState(false);
   const [sort, setSort] = useState<SortMode>("price-low-high");
   const sortedResults = useMemo(() => {
     const next =
@@ -381,17 +386,49 @@ export function SearchExperience({
   return (
     <section
       id="search-results"
-      className="border-b border-slate-200 bg-slate-50 pb-[calc(var(--mobile-nav-height)+0.5rem)] md:pb-0"
+      className="border-b border-[var(--sl-border)] bg-[var(--sl-surface-sunk)] pb-[calc(var(--mobile-nav-height)+0.5rem)] md:pb-0"
     >
-      <div className="mx-auto max-w-[1240px] px-4 py-6 sm:px-6">
-        <div className="mt-4 rounded-xl bg-white p-3 shadow-sm md:hidden">
-          <div className="flex items-center justify-between gap-3">
-            <p className="text-xs font-medium text-slate-700">
-              {loading ? t("search.searching") : `Showing ${visibleFound} items`}
-            </p>
-            <Toolbar sort={sort} onSort={setSort} />
+      {/* ---------- RESULTS HEADER ----------
+          States the query being answered and the live count in one place, so
+          the toolbar below does not have to repeat it. */}
+      <div className="sl-container sl-container-wide">
+        <div className="flex flex-wrap items-end justify-between gap-3 border-b border-[var(--sl-border)] pb-4">
+          <div className="min-w-0">
+            <p className="sl-label">{t("search.resultsFor")}</p>
+            <h2 className="sl-h2 mt-1 break-words">
+              <span className="sl-partno !text-[var(--sl-text)]">{query}</span>
+            </h2>
+          </div>
+          <div className="flex items-center gap-2">
+            {loading ? (
+              <div
+                className="sl-skeleton h-6 w-24"
+                role="status"
+                aria-live="polite"
+              />
+            ) : (
+              <span className="sl-v2-badge sl-v2-badge-brand">
+                {visibleFound} {visibleFound === 1 ? t("category.item") : t("category.items")}
+              </span>
+            )}
+            <button
+              type="button"
+              onClick={() => setFiltersOpen((value) => !value)}
+              aria-expanded={filtersOpen}
+              className="sl-v2-btn sl-v2-btn-secondary !min-h-11 !px-3.5 !text-[0.8125rem] md:hidden"
+            >
+              {t("search.filters")}
+            </button>
           </div>
         </div>
+
+        <div className="mt-3 md:hidden">
+          <Toolbar sort={sort} onSort={setSort} />
+        </div>
+      </div>
+
+      {/* Results body shares the same container as the header above. */}
+      <div className="sl-container sl-container-wide">
         {filtersOpen ? (
           <div className="mt-3 hidden md:block">
             <SearchFilters {...filterProps} />
@@ -400,32 +437,41 @@ export function SearchExperience({
 
         <div className="mt-4 min-w-0">
           {error ? (
-            <p className="mb-3 text-sm text-rose-700" role="alert">
-              {error}
-            </p>
+            <div className="mt-4">
+              <ErrorState
+                title={t("common.error")}
+                body={error}
+                /* Re-running the search means re-issuing the same query. The
+                   search state is owned by the parent, so retry is expressed as
+                   "go to page 1 of the same query" \u2014 which is idempotent and
+                   does not invent a refresh path the parent does not expose. */
+                onRetry={() => onPage(1)}
+                action={{ href: "/help-support", label: t("nav.help") }}
+              />
+            </div>
           ) : null}
 
             {tab === "brands" ? (
-              <ul className="overflow-hidden rounded-2xl border border-slate-200 bg-white">
+              <ul className="overflow-hidden rounded-[var(--sl-radius-lg)] border border-[var(--sl-border)] bg-white">
                 {brands.map((row) => {
                   const logo = getBrandLogo(row.value);
                   return (
-                    <li key={row.value} className="border-b border-slate-100 last:border-0">
+                    <li key={row.value} className="border-b border-[var(--sl-border)] last:border-0">
                       <button
                         type="button"
                         onClick={() => onBrand(row.value)}
-                        className="flex w-full items-center gap-3 px-4 py-3 text-left hover:bg-slate-50"
+                        className="flex w-full items-center gap-3 px-4 py-3 text-left hover:bg-[var(--sl-surface-sunk)]"
                       >
                         {logo ? (
                           // eslint-disable-next-line @next/next/no-img-element
                           <img src={logo} alt="" className="h-8 w-12 object-contain" />
                         ) : (
-                          <span className="flex h-8 w-12 items-center justify-center rounded bg-slate-100 text-[10px] font-bold text-slate-500">
+                          <span className="flex h-8 w-12 items-center justify-center rounded-[var(--sl-radius-sm)] bg-[var(--sl-surface-sunk)] text-[10px] font-bold text-[var(--sl-muted)]">
                             {row.value.slice(0, 2).toUpperCase()}
                           </span>
                         )}
-                        <span className="flex-1 font-semibold">{row.value}</span>
-                        <span className="text-xs text-slate-500">{row.count}</span>
+                        <span className="sl-nav flex-1 !font-semibold !text-[var(--sl-text)]">{row.value}</span>
+                        <span className="sl-small shrink-0 tabular-nums">{row.count}</span>
                       </button>
                     </li>
                   );
@@ -434,16 +480,16 @@ export function SearchExperience({
             ) : null}
 
             {tab === "categories" ? (
-              <ul className="overflow-hidden rounded-2xl border border-slate-200 bg-white">
+              <ul className="overflow-hidden rounded-[var(--sl-radius-lg)] border border-[var(--sl-border)] bg-white">
                 {categories.map((row) => (
-                  <li key={row.value} className="border-b border-slate-100 last:border-0">
+                  <li key={row.value} className="border-b border-[var(--sl-border)] last:border-0">
                     <button
                       type="button"
                       onClick={() => onCategory(row.value)}
-                      className="flex w-full items-center justify-between px-4 py-3 text-left hover:bg-slate-50"
+                      className="flex w-full items-center justify-between px-4 py-3 text-left hover:bg-[var(--sl-surface-sunk)]"
                     >
-                      <span className="font-semibold">{row.value}</span>
-                      <span className="text-xs text-slate-500">{row.count}</span>
+                      <span className="sl-nav !font-semibold !text-[var(--sl-text)]">{row.value}</span>
+                      <span className="sl-small shrink-0 tabular-nums">{row.count}</span>
                     </button>
                   </li>
                 ))}
@@ -451,17 +497,17 @@ export function SearchExperience({
             ) : null}
 
             {tab === "vehicles" ? (
-              <ul className="overflow-hidden rounded-2xl border border-slate-200 bg-white">
+              <ul className="overflow-hidden rounded-[var(--sl-radius-lg)] border border-[var(--sl-border)] bg-white">
                 {vehicles.map((row) => (
-                  <li key={`${row.make}-${row.model}`} className="border-b border-slate-100 last:border-0">
+                  <li key={`${row.make}-${row.model}`} className="border-b border-[var(--sl-border)] last:border-0">
                     <Link
                       href={`/vehicle-fitment/${slugifyFitment(row.make)}/${slugifyFitment(row.model)}`}
-                      className="flex items-center justify-between px-4 py-3 hover:bg-slate-50"
+                      className="flex items-center justify-between px-4 py-3 hover:bg-[var(--sl-surface-sunk)]"
                     >
                       <span className="font-semibold">
                         {row.make} {row.model}
                       </span>
-                      <span className="text-xs text-slate-500">{row.count}</span>
+                      <span className="sl-small shrink-0 tabular-nums">{row.count}</span>
                     </Link>
                   </li>
                 ))}
@@ -469,19 +515,31 @@ export function SearchExperience({
             ) : null}
 
             {showProducts && loading ? (
-              <div className="space-y-2" aria-hidden="true">
-                {Array.from({ length: 8 }, (_, item) => (
-                  <div key={item} className="h-16 animate-pulse rounded-lg bg-slate-200" />
-                ))}
+              <div role="status" aria-busy="true" aria-live="polite">
+          {Array.from({ length: 6 }, (_, item) => (
+            <div key={item} className="sl-v2-card mb-2 flex items-center gap-3 p-3">
+              <div className="sl-skeleton h-14 w-14 shrink-0" />
+              <div className="min-w-0 flex-1 space-y-2">
+                <div className="sl-skeleton h-2.5 w-20" />
+                <div className="sl-skeleton h-3.5 w-full" />
+                <div className="sl-skeleton h-3 w-2/5" />
               </div>
+              <div className="sl-skeleton hidden h-9 w-20 shrink-0 sm:block" />
+            </div>
+          ))}
+          <span className="sr-only">{t("common.loading")}</span>
+        </div>
             ) : null}
 
             {showProducts && !loading && sortedResults.length === 0 ? (
-              <div className="rounded-2xl border border-dashed border-slate-300 bg-white p-10 text-center">
-                <h3 className="text-lg font-bold">{t("search.noneTitle")}</h3>
-                <p className="mt-1 text-sm text-slate-500">{t("search.noneHint")}</p>
-              </div>
-            ) : null}
+              <EmptyState
+              icon={StateIcons.search}
+              title={t("search.noneTitle")}
+              body={t("search.noneHint")}
+              action={{ href: "/category/filters", label: t("category.categories") }}
+              secondaryAction={{ href: "/", label: t("search.searchAll") }}
+            />
+          ) : null}
 
             {showProducts && !loading && sortedResults.length > 0 ? (
               <>
@@ -517,22 +575,22 @@ export function SearchExperience({
                   totalPages > 1 ? "flex" : "hidden md:flex"
                 }`}
               >
-                <p className="hidden text-sm text-slate-600 md:block">
-                  Showing {visibleFound ? (page - 1) * perPage + 1 : 0} of {visibleFound} items
-                </p>
+                <p className="sl-small hidden md:block">
+              {(page - 1) * perPage + 1}–{Math.min(page * perPage, visibleFound)} {t("category.of")} {visibleFound}
+            </p>
                 {totalPages > 1 ? (
                   <div className="flex items-center gap-1.5">
                     <button
                       type="button"
                       disabled={page <= 1}
                       onClick={() => onPage(page - 1)}
-                      className="min-h-9 rounded-lg border border-slate-300 bg-white px-3 text-sm font-semibold text-slate-600 disabled:opacity-40"
+                      className="sl-v2-btn sl-v2-btn-secondary !min-h-9 !px-3 text-sm font-semibold text-[var(--sl-text-soft)] disabled:opacity-40"
                     >
                       {t("search.prev")}
                     </button>
                     {pageItems.map((item, index) =>
                       item === "ellipsis" ? (
-                        <span key={`ellipsis-${index}`} className="px-1 text-sm text-slate-500">
+                        <span key={`ellipsis-${index}`} className="px-1 text-sm text-[var(--sl-muted)]">
                           …
                         </span>
                       ) : (
@@ -541,10 +599,10 @@ export function SearchExperience({
                           type="button"
                           aria-current={item === page ? "page" : undefined}
                           onClick={() => onPage(item)}
-                          className={`min-h-9 min-w-9 rounded-lg px-2 text-sm font-semibold ${
+                          className={`min-h-9 min-w-9 rounded-[var(--sl-radius-sm)] px-2 text-sm font-semibold ${
                             item === page
-                              ? "bg-[#7a1233] text-white"
-                              : "border border-slate-300 bg-white text-slate-700"
+                              ? "bg-[var(--sl-primary)] text-white"
+                              : "border border-[var(--sl-border-strong)] bg-white text-[var(--sl-text-soft)]"
                           }`}
                         >
                           {item}
@@ -555,7 +613,7 @@ export function SearchExperience({
                       type="button"
                       disabled={page >= totalPages}
                       onClick={() => onPage(page + 1)}
-                      className="min-h-9 rounded-lg border border-slate-300 bg-white px-3 text-sm font-semibold text-slate-600 disabled:opacity-40"
+                      className="sl-v2-btn sl-v2-btn-secondary !min-h-9 !px-3 text-sm font-semibold text-[var(--sl-text-soft)] disabled:opacity-40"
                     >
                       {t("search.next")}
                     </button>
@@ -567,24 +625,35 @@ export function SearchExperience({
             {showProducts ? (
               <div className="sticky bottom-0 z-30 -mx-4 mt-4 border-t border-[#d8b9bc] bg-[#ead6d7]/95 px-4 py-3 shadow-[0_-4px_16px_rgba(15,23,42,0.08)] backdrop-blur sm:-mx-6 sm:px-6">
                 <div className="mx-auto flex max-w-[1240px] flex-col items-stretch gap-3 sm:flex-row sm:items-center sm:justify-between">
-                  <p className="min-w-0 text-xs font-semibold leading-5 text-slate-700 sm:text-sm">
+                  <p className="min-w-0 text-xs font-semibold leading-5 text-[var(--sl-text-soft)] sm:text-sm">
                     Selected: {selectedCount} items
-                    <span className="mx-1.5 text-slate-400">•</span>
+                    <span className="mx-1.5 text-[var(--sl-muted)]">•</span>
                     <span>Estimated Total: {formatTotalPaise(estimatedTotalPaise)}</span>
                   </p>
                   <div className="flex flex-wrap items-center justify-end gap-2 text-xs font-bold sm:shrink-0 sm:text-sm">
                     <Link
                       href="/cart"
-                      className="inline-flex min-h-10 items-center rounded-lg bg-[#7a1233] px-3 text-white hover:bg-[#611029]"
+                      className="inline-flex min-h-10 items-center rounded-[var(--sl-radius-sm)] bg-[var(--sl-primary)] px-3 text-white hover:bg-[var(--sl-primary-dark)]"
                     >
                       View Cart ({cartCount})
                     </Link>
-                    <span className="text-[#7a1233]">•</span>
+                    <svg
+                      className="h-4 w-4 text-[var(--sl-primary)]"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                      strokeWidth="2.2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      aria-hidden
+                    >
+                      <path d="M5 12h14M13 6l6 6-6 6" />
+                    </svg>
                     <Link
                       href="/checkout"
-                      className="inline-flex min-h-10 items-center gap-1 rounded-lg bg-[#7a1233] px-3 text-white hover:bg-[#611029]"
+                      className="sl-v2-btn sl-v2-btn-primary !min-h-10 !px-3 !text-[0.8125rem]"
                     >
-                      Proceed to Checkout <span aria-hidden="true">→</span>
+                      Proceed to Checkout
                     </Link>
                   </div>
                 </div>
@@ -623,9 +692,9 @@ function ProductTable({
 }) {
   const { t } = useI18n();
   return (
-    <div className="overflow-x-auto rounded-2xl bg-white shadow-[0_8px_24px_rgba(15,23,42,0.06)]">
+    <div className="overflow-x-auto rounded-[var(--sl-radius-lg)] bg-white shadow-[0_8px_24px_rgba(15,23,42,0.06)]">
       <table className="w-full min-w-[920px] table-fixed border-collapse text-left">
-        <thead className="bg-[#7a1233] text-sm font-bold text-white">
+        <thead className="bg-[var(--sl-primary)] text-sm font-bold text-white">
           <tr>
             <th className="w-[38%] px-3 py-2.5">Item Name</th>
             <th className="w-[13%] px-3 py-2.5">Part No.</th>
@@ -664,14 +733,14 @@ function ProductTable({
             return (
               <tr
                 key={hit.document?.id || hit.document?.part_number || index}
-                className="border-t border-slate-100 align-middle hover:bg-slate-50/70"
+                className="border-t border-slate-100 align-middle hover:bg-[var(--sl-surface-sunk)]/70"
               >
                 <td className="px-3 py-2">
                   <div className="flex min-w-0 items-center gap-2.5">
                     <button
                       type="button"
                       onClick={() => onOpenProduct(hit)}
-                      className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-full bg-[#7a1233]"
+                      className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-full bg-[var(--sl-primary)]"
                       aria-label={title}
                     >
                       {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -696,7 +765,7 @@ function ProductTable({
                     </button>
                     <button
                       type="button"
-                      className="min-w-0 flex-1 truncate text-left text-sm font-bold leading-tight text-slate-950 hover:text-[#7a1233]"
+                      className="min-w-0 flex-1 truncate text-left text-sm font-bold leading-tight text-slate-950 hover:text-[var(--sl-primary)]"
                       onClick={() => onOpenProduct(hit)}
                       title={title}
                     >
@@ -704,23 +773,23 @@ function ProductTable({
                     </button>
                   </div>
                 </td>
-                <td className="px-3 py-2 font-mono text-xs text-slate-700">
+                <td className="px-3 py-2 font-mono text-xs text-[var(--sl-text-soft)]">
                   <span className="text-sm font-semibold text-slate-800">{partData.part_number || "—"}</span>
                 </td>
-                <td className="px-3 py-2 text-xs text-slate-600">
+                <td className="px-3 py-2 text-xs text-[var(--sl-text-soft)]">
                   {listing?.gstRate != null ? `${listing.gstRate}%` : "—"}
                 </td>
-                <td className="px-3 py-2 font-mono text-[11px] text-slate-600">
+                <td className="px-3 py-2 font-mono text-[11px] text-[var(--sl-text-soft)]">
                   {listing?.hsn || "—"}
                 </td>
                 <td className="px-3 py-2 text-xs font-semibold text-slate-800">
                   {formatPaise(listPrice(listing))}
                 </td>
-                <td className="px-3 py-2 text-xs text-slate-500">
+                <td className="px-3 py-2 text-xs text-[var(--sl-muted)]">
                   {formatPaise(listing?.mrpPaise)}
                 </td>
                 <td className="px-3 py-2 text-sm font-semibold text-slate-800">
-                  <span className="rounded-md bg-[#7a1233] px-1.5 py-0.5 text-xs font-bold text-white">
+                  <span className="rounded-md bg-[var(--sl-primary)] px-1.5 py-0.5 text-xs font-bold text-white">
                     {typeof listing?.discountPercent === "number"
                       ? `${Math.round(listing.discountPercent)}%`
                       : "—"}
@@ -731,7 +800,7 @@ function ProductTable({
                     type="button"
                     disabled={!canAdd || addingId === listing?.id}
                     onClick={() => listing && onAddToCart(listing.id, title)}
-                    className="inline-flex min-h-9 items-center gap-1.5 rounded-lg bg-[#7a1233] px-3 text-xs font-bold text-white hover:bg-[#611029] disabled:cursor-not-allowed disabled:bg-slate-200 disabled:text-slate-500"
+                    className="inline-flex min-h-9 items-center gap-1.5 rounded-[var(--sl-radius-sm)] bg-[var(--sl-primary)] px-3 text-xs font-bold text-white hover:bg-[var(--sl-primary-dark)] disabled:cursor-not-allowed disabled:bg-slate-200 disabled:text-[var(--sl-muted)]"
                     aria-label={`${t("product.addToCart")}: ${title}`}
                   >
                     {canAdd ? (
@@ -764,7 +833,7 @@ function Toolbar({
 }) {
   const { t } = useI18n();
   return (
-    <label className="flex items-center gap-1 text-xs font-semibold text-slate-600">
+    <label className="flex items-center gap-1 text-xs font-semibold text-[var(--sl-text-soft)]">
       {t("search.sortBy")}:
       <select
         value={sort}
@@ -772,7 +841,7 @@ function Toolbar({
           const next = event.target.value;
           onSort(next === "name" || next === "relevance" ? next : "price-low-high");
         }}
-        className="rounded-md border border-slate-200 bg-white px-2 py-1 text-xs font-semibold text-slate-800"
+        className="rounded-md border border-[var(--sl-border)] bg-white px-2 py-1 text-xs font-semibold text-slate-800"
         aria-label="Sort results"
       >
         <option value="price-low-high">Price Low-High</option>

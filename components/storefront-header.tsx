@@ -1,13 +1,13 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useState } from "react";
 
 import { BrandLogo } from "@/components/brand-logo";
 import { CategoriesMenu } from "@/components/categories-menu";
 import { HeaderPreferenceToggle } from "@/components/header-preference-toggle";
-import { HeaderSearchField, type HeaderSearchProduct } from "@/components/header-search";
+import { HeaderSearchField, OrderSearchFilters, type HeaderSearchProduct } from "@/components/header-search";
 import { ProductDetailModal } from "@/components/product-detail-modal";
 import { useI18n } from "@/components/preferences-provider";
 import { WhatsAppCta } from "@/components/whatsapp-cta";
@@ -69,22 +69,6 @@ function HeartIcon() {
   );
 }
 
-function PeopleIcon() {
-  return (
-    <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.8">
-      <path strokeLinecap="round" strokeLinejoin="round" d="M16 11a4 4 0 10-8 0 4 4 0 008 0zM4 20a6 6 0 0112 0M16 14a4 4 0 014 6" />
-    </svg>
-  );
-}
-
-function TruckIcon() {
-  return (
-    <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.8">
-      <path strokeLinecap="round" strokeLinejoin="round" d="M3 7h11v8H3V7zm11 3h4l3 3v2h-7v-5zM7 18a1.5 1.5 0 100-3 1.5 1.5 0 000 3zm10 0a1.5 1.5 0 100-3 1.5 1.5 0 000 3z" />
-    </svg>
-  );
-}
-
 function HelpIcon() {
   return (
     <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.8">
@@ -97,9 +81,29 @@ function HelpIcon() {
 function CountBadge({ count }: { count: number }) {
   if (count <= 0) return null;
   return (
-    <span className="absolute -right-2 -top-2 inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-[#c81e1e] px-1 text-[10px] font-bold leading-none text-white">
-      {count}
+    <span className="absolute -right-2 -top-2 inline-flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-[var(--sl-primary)] px-1 text-[10px] font-bold leading-none text-white tabular-nums ring-2 ring-white">
+      {count > 99 ? "99+" : count}
     </span>
+  );
+}
+
+function MenuIcon({ open }: { open: boolean }) {
+  return (
+    <svg
+      className="h-5 w-5"
+      fill="none"
+      viewBox="0 0 24 24"
+      stroke="currentColor"
+      strokeWidth="1.9"
+      strokeLinecap="round"
+      aria-hidden
+    >
+      {open ? (
+        <path d="M6 6l12 12M18 6L6 18" />
+      ) : (
+        <path d="M3.5 6.5h17M3.5 12h17M3.5 17.5h17" />
+      )}
+    </svg>
   );
 }
 
@@ -124,6 +128,7 @@ export function StorefrontHeader({
 }: StorefrontHeaderProps) {
   const { t } = useI18n();
   const router = useRouter();
+  const pathname = usePathname() ?? "/";
   const whatsappHref = getWhatsAppChatUrl();
   const [internalMenuOpen, setInternalMenuOpen] = useState(false);
   const [localQuery, setLocalQuery] = useState(query);
@@ -159,9 +164,10 @@ export function StorefrontHeader({
     });
   }
 
-  function renderSearchField() {
+  function renderSearchField(compact = false, withFilterRow = false) {
     return (
-      <HeaderSearchField
+      <div className={compact ? "sl-search sl-search-compact" : "sl-search"}>
+        <HeaderSearchField
         value={searchValue}
         onChange={(value) => (onQueryChange ? onQueryChange(value) : setLocalQuery(value))}
         onSubmitSearch={submitSearch}
@@ -183,6 +189,7 @@ export function StorefrontHeader({
           }
         }}
         panelHost={panelHost}
+        suppressFilters={withFilterRow}
         orderMode={orderMode}
         orderPage={orderPage}
         categoryOptions={categoryOptions}
@@ -193,43 +200,50 @@ export function StorefrontHeader({
         onClearFilters={onClearFilters}
         mobileCartHref="/cart"
         mobileCartCount={cartCount + cartBump}
-      />
+        />
+      </div>
     );
   }
 
-  const navLink = (href: string, label: string) => (
-    <Link
-      href={href}
-      className="px-3 py-2 text-slate-800 hover:text-[#7a1233]"
-    >
-      {label}
-    </Link>
-  );
+  const navLink = (href: string, label: string) => {
+    const active =
+      href === "/" ? pathname === "/" : pathname === href || pathname.startsWith(`${href}/`);
+    return (
+      <Link
+        href={href}
+        aria-current={active ? "page" : undefined}
+        className={`sl-nav sl-v2-focus relative inline-flex h-9 shrink-0 items-center rounded-[var(--sl-radius-sm)] px-2.5 transition-colors duration-200 ${
+          active
+            ? "bg-[var(--sl-primary-soft)] font-bold text-[var(--sl-primary)]"
+            : "text-ink-700 hover:bg-[var(--sl-primary-soft)] hover:text-[var(--sl-primary)]"
+        }`}
+      >
+        {label}
+      </Link>
+    );
+  };
 
   if (orderPage) {
     return (
-      <header className="bg-[#f7f5f3] text-slate-900">
-        <div className="mx-auto max-w-[1240px] px-4 py-4 sm:px-6 md:py-8 lg:px-8">
-          <div className="hidden items-start justify-between gap-6 md:flex">
+      <header className="bg-[var(--sl-cream)] text-[var(--sl-text)]">
+        <div className="sl-container py-5 md:py-8">
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
             <div>
-              <h1 className="text-4xl font-extrabold tracking-tight text-[#4b0d20] sm:text-5xl">
+              <h1 className="sl-display !text-[clamp(1.6rem,1.2rem+1.8vw,2.4rem)]">
                 Order Spare Parts
               </h1>
-              <p className="mt-3 text-sm text-slate-600">
+              <p className="sl-body mt-2">
                 Search and add parts to your cart • All prices are inclusive of GST
               </p>
             </div>
             <Link
               href="/?focus=search"
-              className="inline-flex min-h-14 items-center rounded-xl bg-[#7a1233] px-6 text-lg font-bold text-white shadow-sm transition hover:bg-[#611029]"
+              className="sl-v2-btn sl-v2-btn-primary self-start"
             >
-              <span className="mr-2 text-2xl leading-none">+</span>
               Create New Order
             </Link>
           </div>
-          <div className="relative mt-0 md:mt-7 md:rounded-2xl md:bg-white md:p-3 md:shadow-[0_10px_30px_rgba(15,23,42,0.08)]">
-            {renderSearchField()}
-          </div>
+          <div className="sl-v2-card relative mt-5 p-3">{renderSearchField()}</div>
         </div>
         <ProductDetailModal
           key={detailTarget?.partId || detailTarget?.sku || "no-product"}
@@ -245,108 +259,182 @@ export function StorefrontHeader({
   }
 
   return (
-    <header className="sticky top-0 z-40 overflow-visible bg-white text-slate-900 shadow-sm">
-      <div className="bg-[#7a1233] px-4 py-[7px] text-[12px] font-medium text-white sm:px-6">
-        <div className="mx-auto flex max-w-[1688px] items-center gap-3">
-          <Link href="/" className="shrink-0 text-sm font-extrabold tracking-tight text-white hover:underline">
-            SpareParts Pro
-          </Link>
-          <nav className="hidden items-center gap-1 text-xs font-semibold text-white/90 sm:flex" aria-label="Primary order navigation">
-            <Link href="/profile" className="rounded px-2 py-1 hover:bg-white/10 hover:text-white">
-              Dashboard
-            </Link>
-            <Link href="/?focus=search" className="rounded px-2 py-1 hover:bg-white/10 hover:text-white">
-              Catalog
-            </Link>
-            <Link href="/orders" className="rounded px-2 py-1 hover:bg-white/10 hover:text-white">
-              Orders
-            </Link>
-          </nav>
-          <p className="ml-auto hidden min-w-0 truncate text-[11px] text-white/75 xl:block">{UTILITY_STRIP}</p>
-          <nav className="ml-auto hidden items-center gap-3 whitespace-nowrap text-[12px] font-medium text-white xl:flex">
-            <span className="inline-flex items-center gap-1.5">
-              <PeopleIcon />
-              {t("nav.trusted")}
-            </span>
-            <span className="inline-flex items-center gap-1.5">
-              <TruckIcon />
-              {t("nav.panIndia")}
-            </span>
-            <Link href="/help-support" className="inline-flex items-center gap-1.5 hover:underline">
+    <header className="sticky top-0 z-40 border-b border-[var(--sl-border)] bg-white/92 backdrop-blur-xl">
+      {/* ---------- V2 UTILITY STRIP ---------- */}
+      <div className="bg-[var(--sl-primary-dark)] text-white">
+        <div className="sl-container flex h-8 items-center gap-4">
+          <p className="sl-nav hidden min-w-0 truncate text-white/70 md:block">
+            {UTILITY_STRIP}
+          </p>
+          <nav
+            className="ml-auto flex items-center gap-4 whitespace-nowrap"
+            aria-label="Utility"
+          >
+            <Link
+              href="/help-support"
+              className="sl-nav sl-v2-focus-invert inline-flex items-center gap-1.5 rounded px-1 text-white/80 transition-colors hover:text-white"
+            >
               <HelpIcon />
-              {t("nav.needHelp")}
+              <span className="hidden sm:inline">{t("nav.needHelp")}</span>
             </Link>
-            <Link href="/login/dealer" className="hover:underline">
+            <Link
+              href="/track-order"
+              className="sl-nav sl-v2-focus-invert rounded px-1 text-white/80 transition-colors hover:text-white"
+            >
+              {t("nav.track")}
+            </Link>
+            <Link
+              href="/login/dealer"
+              className="sl-nav sl-v2-focus-invert inline-flex items-center gap-1.5 rounded border border-white/25 px-2 py-1 text-white transition-colors hover:bg-white/10"
+            >
               {t("nav.dealer")}
             </Link>
+            <div className="md:hidden">
+              <HeaderPreferenceToggle compact />
+            </div>
           </nav>
-          <div className="ml-auto shrink-0 sm:hidden">
-            <HeaderPreferenceToggle compact />
+        </div>
+      </div>
+
+      {/* ---------- V2 MAIN HEADER: logo | search | account | cart | lang ----------
+
+          RESPONSIVE ARCHITECTURE — three tiers, no font shrinking.
+
+          Row 2 previously held logo + a 42rem search + a LABELLED account link
+          + a LABELLED cart link + wishlist + the preference toggle: roughly
+          1186px of fixed content, against a ~992px container at 1024px. The
+          right-hand controls were pushed out of the container and clipped.
+
+          The band is now tiered:
+            lg  1024-1279  account and cart are icon-only; search cap drops
+            xl  1280+      text labels return and the search widens
+          Controls keep shrink-0 (never squeezed) and the search keeps
+          flex-1 min-w-0 (always absorbs the remainder), so the two groups
+          cannot collide at any viewport width.
+        */}
+      <div ref={setPanelHost} className="sl-container relative z-30">
+        <div className="flex items-center gap-2 py-2.5 sm:gap-3 xl:gap-5">
+          <button
+            type="button"
+            className="sl-v2-focus inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-[var(--sl-radius-sm)] border border-[var(--sl-border-strong)] text-[var(--sl-primary)] transition-colors hover:bg-[var(--sl-primary-soft)] lg:hidden"
+            aria-label={t("nav.menu")}
+            aria-expanded={menuOpen}
+            onClick={toggleMenu}
+          >
+            <MenuIcon open={menuOpen} />
+          </button>
+
+          <div className="shrink-0">
+            <BrandLogo />
+          </div>
+
+          {/* The search is a real flex child: `flex-1 min-w-0` with a max width,
+              so it absorbs the leftover space and can never push the controls
+              beside it. This is the fix for the earlier overlap. */}
+          <div className="hidden min-w-0 flex-1 lg:block">
+            <div className="mx-auto w-full max-w-[22rem] xl:max-w-[42rem]">
+              {renderSearchField(true, true)}
+            </div>
+          </div>
+
+          <div className="ml-auto flex shrink-0 items-center gap-0.5 sm:gap-1">
+            {/* Account. Icon-only on tablet, labelled from lg up. */}
+            <Link
+              href="/login"
+              className="sl-v2-focus inline-flex h-11 w-11 shrink-0 items-center justify-center gap-2 rounded-[var(--sl-radius-sm)] text-ink-700 transition-colors hover:bg-[var(--sl-primary-soft)] hover:text-[var(--sl-primary)] xl:w-auto xl:justify-start xl:px-2.5"
+            >
+              <UserIcon />
+              <span className="sl-nav hidden xl:inline">{t("nav.loginRegister")}</span>
+            </Link>
+            <Link
+              href="/wishlist"
+              className="sl-v2-focus relative hidden h-11 w-11 shrink-0 items-center justify-center rounded-[var(--sl-radius-sm)] text-ink-700 transition-colors hover:bg-[var(--sl-primary-soft)] hover:text-[var(--sl-primary)] sm:inline-flex"
+              aria-label={t("nav.wishlist")}
+            >
+              <span className="relative inline-flex">
+                <HeartIcon />
+                <CountBadge count={wishlistCount + wishBump} />
+              </span>
+            </Link>
+            <Link
+              href="/cart"
+              className="sl-v2-focus relative inline-flex h-11 w-11 shrink-0 items-center justify-center gap-2 rounded-[var(--sl-radius-sm)] bg-[var(--sl-primary)] text-white shadow-[var(--sl-shadow-brand)] transition-colors hover:bg-[var(--sl-primary-dark)] xl:w-auto xl:px-3"
+              aria-label={t("nav.cart")}
+            >
+              <span className="relative inline-flex">
+                <CartIcon />
+                <CountBadge count={cartCount + cartBump} />
+              </span>
+              <span className="sl-nav hidden xl:inline">{t("nav.cart")}</span>
+            </Link>
+            <div className="hidden shrink-0 lg:block">
+              <HeaderPreferenceToggle />
+            </div>
           </div>
         </div>
+
+        {/*
+          ROW 2 \u2014 ORDER-MODE FILTER ROW (Category / Stock / Clear Filters).
+
+          Rendered directly here, in a dedicated full-width row beneath the
+          search pill, instead of being a flex child of `.sl-search`.
+
+          That is the whole fix: as a child of the 3rem pill those ~520px of
+          shrink-0 controls consumed the row-1 budget on the homepage only
+          (the homepage always passes `orderMode`, inner routes do not), which
+          clipped the account label to "...gister" at the same viewport width
+          where inner routes showed the full "Login / Register".
+
+          `OrderSearchFilters` uses flex-nowrap with shrink-0 children, so the
+          three controls stay on ONE line at 1024px and above; the select widths
+          step down by breakpoint before the Clear Filters button could wrap.
+        */}
+        {orderMode ? (
+          <div className="hidden pb-2.5 lg:block">
+            <OrderSearchFilters
+              categories={categoryOptions}
+              activeCategory={activeCategory}
+              onCategoryChange={onCategoryChange}
+              stockFilter={stockFilter}
+              onStockFilterChange={onStockFilterChange}
+              onClearFilters={onClearFilters}
+            />
+          </div>
+        ) : null}
+
+        {/* Mobile search: a deliberate second row, not a squeezed one. On phones
+            the hero search sits far below the fold, so search must live here. */}
+        <div className="pb-2.5 lg:hidden">{renderSearchField(true)}</div>
       </div>
 
-      <div ref={setPanelHost} className="relative z-30 mx-auto w-full max-w-[1688px]">
-      <div className="grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-x-2 gap-y-2 px-3 py-2.5 lg:flex lg:min-w-0 lg:flex-wrap lg:gap-x-5 lg:gap-y-2 lg:px-6 lg:py-3">
-        <button
-          type="button"
-          className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-md border border-slate-300 lg:hidden"
-          aria-label={t("nav.menu")}
-          aria-expanded={menuOpen}
-          onClick={toggleMenu}
-        >
-          <span className="text-lg leading-none" aria-hidden>
-            {menuOpen ? "×" : "☰"}
-          </span>
-        </button>
-        <div className="min-w-0 justify-self-center lg:justify-self-auto lg:shrink-0">
-          <BrandLogo />
-        </div>
-        {orderMode ? null : (
-          <Link
-            href="/cart"
-            className="relative inline-flex h-10 w-10 items-center justify-center lg:hidden"
-            aria-label={t("nav.cart")}
-          >
-            <CartIcon />
-            <CountBadge count={cartCount + cartBump} />
-          </Link>
-        )}
-        <div className="col-span-3 min-w-0 w-full lg:order-3 lg:basis-full xl:order-3 xl:basis-full">{renderSearchField()}</div>
-        <div className="hidden min-w-0 shrink items-center justify-end gap-x-3 gap-y-2 text-[13px] font-semibold text-slate-800 lg:flex lg:flex-wrap xl:gap-5">
-          <Link href="/login" className="inline-flex min-h-11 items-center gap-1.5 hover:text-[#7a1233]">
-            <UserIcon />
-            {t("nav.loginRegister")}
-          </Link>
-          <Link href="/cart" className="relative inline-flex min-h-11 items-center gap-1.5 pr-1 hover:text-[#7a1233]">
-            <span className="relative inline-flex">
-              <CartIcon />
-              <CountBadge count={cartCount + cartBump} />
-            </span>
-            {t("nav.cart")}
-          </Link>
-          <Link href="/wishlist" className="relative inline-flex min-h-11 items-center gap-1.5 pr-1 hover:text-[#7a1233]">
-            <span className="relative inline-flex">
-              <HeartIcon />
-              <CountBadge count={wishlistCount + wishBump} />
-            </span>
-            {t("nav.wishlist")}
-          </Link>
-          <HeaderPreferenceToggle />
-        </div>
-      </div>
-      </div>
-
-      <nav className="hidden border-t border-slate-200 bg-white lg:block">
-        <div className="mx-auto flex max-w-[1688px] min-w-0 items-center gap-1 overflow-x-auto px-4 py-2 text-[13px] font-semibold xl:px-6">
+      {/* ---------- V2 PRIMARY NAV ---------- */}
+      <nav
+        className="hidden border-t border-[var(--sl-border)] bg-[var(--sl-surface-sunk)] lg:block"
+        aria-label="Primary"
+      >
+        <div className="sl-container flex min-w-0 items-center gap-0.5 overflow-x-auto py-1">
           <CategoriesMenu />
+          <span aria-hidden className="mx-1 h-4 w-px shrink-0 bg-[var(--sl-border)]" />
           {navLink("/", t("nav.home"))}
           {navLink("/brands", t("nav.brands"))}
           {navLink("/vehicle-fitment", t("nav.fitment"))}
           {navLink("/offers", t("nav.offers"))}
           {navLink("/about-us", t("nav.about"))}
           {navLink("/contact-us", t("nav.contact"))}
-          <WhatsAppCta href={whatsappHref} className="ml-auto px-3 py-2" />
+          <div className="ml-auto flex shrink-0 items-center gap-1.5 pl-2">
+            <Link
+              href="/wishlist"
+              className="sl-v2-focus relative inline-flex h-9 items-center gap-1.5 rounded-[var(--sl-radius-sm)] px-2 text-ink-700 transition-colors hover:bg-[var(--sl-primary-soft)] hover:text-[var(--sl-primary)]"
+              aria-label={t("nav.wishlist")}
+            >
+              <span className="relative inline-flex">
+                <HeartIcon />
+                <CountBadge count={wishlistCount + wishBump} />
+              </span>
+              <span className="sl-nav hidden xl:inline">{t("nav.wishlist")}</span>
+            </Link>
+            <WhatsAppCta href={whatsappHref} className="sl-v2-btn sl-v2-btn-primary !min-h-9 !px-3.5 !py-0 !text-[0.8125rem]" />
+          </div>
         </div>
       </nav>
 
@@ -360,22 +448,53 @@ export function StorefrontHeader({
         onWishlistChange={() => setWishBump((count) => count + 1)}
       />
 
+      {/* ---------- V2 MOBILE DRAWER ---------- */}
       {menuOpen ? (
-        <div className="border-t border-slate-200 bg-white px-4 py-3 lg:hidden">
-          <div className="flex flex-col gap-3 text-sm font-semibold">
+        <div className="max-h-[calc(100dvh-7rem)] overflow-y-auto border-t border-[var(--sl-border)] bg-white lg:hidden">
+          <div className="sl-container py-4">
             <CategoriesMenu />
-            <Link href="/">{t("nav.home")}</Link>
-            <Link href="/brands">{t("nav.brands")}</Link>
-            <Link href="/vehicle-fitment">{t("nav.fitment")}</Link>
-            <Link href="/offers">{t("nav.offers")}</Link>
-            <Link href="/about-us">{t("nav.about")}</Link>
-            <Link href="/contact-us">{t("nav.contact")}</Link>
-            <Link href="/login">{t("nav.loginRegister")}</Link>
-            <Link href="/wishlist">{t("nav.wishlist")}</Link>
-            <Link href="/track-order">{t("nav.track")}</Link>
-            <Link href="/help-support">{t("nav.help")}</Link>
-            <Link href="/login/dealer">{t("nav.dealer")}</Link>
-            <WhatsAppCta href={whatsappHref} />
+            <div className="mt-3 grid grid-cols-2 gap-1.5">
+              {[
+                { href: "/", label: t("nav.home") },
+                { href: "/brands", label: t("nav.brands") },
+                { href: "/vehicle-fitment", label: t("nav.fitment") },
+                { href: "/offers", label: t("nav.offers") },
+                { href: "/wishlist", label: t("nav.wishlist") },
+                { href: "/track-order", label: t("nav.track") },
+                { href: "/help-support", label: t("nav.help") },
+                { href: "/about-us", label: t("nav.about") },
+                { href: "/contact-us", label: t("nav.contact") },
+                { href: "/login/dealer", label: t("nav.dealer") },
+              ].map((item) => {
+                const active =
+                  item.href === "/"
+                    ? pathname === "/"
+                    : pathname === item.href || pathname.startsWith(`${item.href}/`);
+                return (
+                  <Link
+                    key={item.href}
+                    href={item.href}
+                    className={`sl-nav flex min-h-11 items-center rounded-[var(--sl-radius-sm)] border px-3 transition-colors ${
+                      active
+                        ? "border-[var(--sl-primary-tint)] bg-[var(--sl-primary-soft)] font-bold text-[var(--sl-primary)]"
+                        : "border-[var(--sl-border)] bg-[var(--sl-surface)] text-ink-700"
+                    }`}
+                  >
+                    {item.label}
+                  </Link>
+                );
+              })}
+            </div>
+            <div className="mt-3 flex flex-col gap-2">
+              <Link
+                href="/login"
+                className="sl-v2-btn sl-v2-btn-primary w-full"
+              >
+                <UserIcon />
+                {t("nav.loginRegister")}
+              </Link>
+              <WhatsAppCta href={whatsappHref} className="sl-v2-btn sl-v2-btn-secondary w-full" />
+            </div>
           </div>
         </div>
       ) : null}
