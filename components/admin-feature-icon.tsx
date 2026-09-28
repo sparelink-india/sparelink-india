@@ -9,6 +9,7 @@ import {
   IconCommand,
   IconDatabase,
   IconDealership,
+  IconEditStudio,
   IconInvoice,
   IconList,
   IconPackage,
@@ -67,6 +68,7 @@ const FEATURE_ICONS: Record<string, AdminIconComponent> = {
   import: IconUpload,
   "source-catalogue": IconDatabase,
   "ci-sync": IconSync,
+  "editing-studio": IconEditStudio,
   // Service
   warranty: IconShield,
   // Tools

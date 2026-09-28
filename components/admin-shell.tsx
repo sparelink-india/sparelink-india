@@ -34,6 +34,9 @@ import {
  * bar; it is not a shrunken desktop rail.
  */
 
+/** The Command Center route. The rail marks this active by default. */
+const DASHBOARD_HREF = "/admin";
+
 type NavEntry = AdminFeature | { id: "dashboard"; label: string; href: string; description: string };
 
 function NavRow({
@@ -116,10 +119,10 @@ function RailContent({
           entry={{
             id: "dashboard",
             label: "Dashboard",
-            href: "/admin",
+            href: DASHBOARD_HREF,
             description: "Command center overview",
           }}
-          active={activeHref === "/admin"}
+          active={activeHref === DASHBOARD_HREF}
           onNavigate={onNavigate}
         />
 
@@ -163,11 +166,18 @@ export function AdminShell({
   alertCount = 0,
   title = "Dashboard",
   subtitle = "Business command center overview",
+  activeHref = DASHBOARD_HREF,
 }: {
   children: React.ReactNode;
   alertCount?: number;
   title?: string;
   subtitle?: string;
+  /**
+   * Route the rail should mark active. Defaults to the Command Center, so the
+   * dashboard renders exactly as before; other admin pages pass their own route
+   * so the sidebar highlights the module you are actually in.
+   */
+  activeHref?: string;
 }) {
   const [drawerOpen, setDrawerOpen] = useState(false);
 
@@ -185,7 +195,7 @@ export function AdminShell({
     <div className="min-h-screen bg-zinc-100 text-zinc-900">
       {/* Persistent desktop rail */}
       <aside className="fixed inset-y-0 left-0 z-40 hidden w-[248px] lg:block">
-        <RailContent activeHref="/admin" alertCount={alertCount} />
+        <RailContent activeHref={activeHref} alertCount={alertCount} />
       </aside>
 
       {/* Mobile drawer */}
@@ -207,7 +217,7 @@ export function AdminShell({
               <IconX className="h-5 w-5" />
             </button>
             <RailContent
-              activeHref="/admin"
+              activeHref={activeHref}
               alertCount={alertCount}
               onNavigate={() => setDrawerOpen(false)}
             />

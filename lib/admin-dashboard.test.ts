@@ -784,7 +784,22 @@ describe("admin application shell", () => {
     const s = shell();
     assert.match(s, /aria-current=\{active \? "page" : undefined\}/);
     assert.match(s, /label: "Dashboard"/);
-    assert.match(s, /activeHref="\/admin"/);
+    // The Command Center route is the default, so the dashboard is unchanged.
+    assert.match(s, /const DASHBOARD_HREF = "\/admin"/);
+    assert.match(s, /activeHref = DASHBOARD_HREF/);
+    assert.match(s, /active=\{activeHref === DASHBOARD_HREF\}/);
+  });
+
+  it("highlights whichever module the current page belongs to", () => {
+    const s = shell();
+    // Every other admin page passes its own route, desktop rail and mobile
+    // drawer alike, so the sidebar never claims you are on the dashboard.
+    assert.match(s, /activeHref\?: string/);
+    assert.match(s, /active=\{activeHref === entry\.href\}/);
+    const railCalls = [...s.matchAll(/<RailContent/g)];
+    assert.equal(railCalls.length, 2, "desktop rail and mobile drawer");
+    const forwarded = [...s.matchAll(/activeHref=\{activeHref\}/g)];
+    assert.equal(forwarded.length, 2, "both rail instances must forward activeHref");
   });
 
   it("groups navigation by the same feature categories", () => {
