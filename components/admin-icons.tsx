@@ -370,6 +370,12 @@ export const IconMenu = (p: IconProps) => (
   </Svg>
 );
 
+export const IconCheck = (p: IconProps) => (
+  <Svg {...p}>
+    <path d="m4.5 12.5 5 5 10-11" />
+  </Svg>
+);
+
 export const IconX = (p: IconProps) => (
   <Svg {...p}>
     <path d="M6 6l12 12M18 6 6 18" />
@@ -407,5 +413,24 @@ export const IconExternal = (p: IconProps) => (
 export const IconSpark = (p: IconProps) => (
   <Svg {...p}>
     <path d="M12 3.5 13.9 9l5.6 1.9-5.6 1.9L12 18.5 10.1 12.8 4.5 10.9 10.1 9Z" />
+  </Svg>
+);
+
+/* ------------------------------------------------------------------- editing */
+
+/**
+ * Editing Studio: a content frame being edited.
+ *
+ * Distinct from IconSliders (configuration) and IconUpload (inbound transfer).
+ * The frame is the page being edited, the nib is the act of editing it, so the
+ * pair reads as "change what is on the site" rather than "move a setting".
+ */
+export const IconEditStudio = (p: IconProps) => (
+  <Svg {...p}>
+    <path d="M5.5 4.5h8.75a2 2 0 0 1 2 2v11" />
+    <path d="M18.25 20.5H5.5a2 2 0 0 1-2-2v-12a2 2 0 0 1 2-2" />
+    <path d="M7 9h5.5M7 12.5h3" />
+    <path d="M14.1 20.4l.55-2.5 5.9-5.9 1.95 1.95-5.9 5.9-2.5.55Z" />
+    <path d="M9.4 20.4h5.6" />
   </Svg>
 );

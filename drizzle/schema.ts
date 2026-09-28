@@ -247,6 +247,22 @@ export const partVehicleCompatibility = pgTable(
   (table) => [
     index("part_vehicle_compatibility_part_idx").on(table.partId),
     index("part_vehicle_compatibility_vehicle_idx").on(table.vehicleId),
+    /**
+     * A part may be compatible with a vehicle exactly once.
+     *
+     * The two single-column indexes above cannot express that rule: a
+     * (part_id, vehicle_id) pair can be inserted twice and both rows are legal,
+     * which would make a "link this part" action silently non-idempotent and
+     * make an unlink remove more rows than intended. This index is what lets the
+     * admin write path treat a link as a set membership rather than a count.
+     *
+     * Added once the table was confirmed to contain no duplicate pairs, so the
+     * index could be created without touching any existing row.
+     */
+    uniqueIndex("part_vehicle_compatibility_part_vehicle_unique").on(
+      table.partId,
+      table.vehicleId,
+    ),
   ],
 );
 
@@ -1538,5 +1554,52 @@ export const catalogueSyncRun = pgTable(
     index("catalogue_sync_run_source_idx").on(table.sourceKey),
     index("catalogue_sync_run_status_idx").on(table.status),
     index("catalogue_sync_run_started_idx").on(table.startedAt),
+  ],
+);
+
+/**
+ * PROMOTIONAL BANNERS — the storefront advertisement slider.
+ *
+ * Deliberately a separate system from vehicle compatibility and from the hero:
+ * it has no foreign key to `vehicle` or `part`, reads no compatibility table,
+ * and shares no code path with fitment. Nothing here can affect what a part
+ * fits.
+ *
+ * `imageKey` is the storage object key and is the source of truth. The public
+ * URL is DERIVED from it at render time rather than stored, so re-pointing the
+ * bucket or moving to a custom domain is a config change and not a data
+ * migration. `destinationUrl` is a raw admin-authored value and is sanitised by
+ * `lib/promotional-banners` on the way in AND on the way out, because a
+ * customer-facing `href` is an injection sink.
+ */
+export const promotionalBanner = pgTable(
+  "promotional_banner",
+  {
+    id: text("id").primaryKey(),
+    /** Admin-facing name for this banner. Not necessarily shown to customers. */
+    title: text("title").notNull(),
+    /** Storage object key, e.g. `banners/2026/03/<id>.webp`. */
+    imageKey: text("image_key").notNull(),
+    /** Alt text. Falls back to `title` when null. */
+    altText: text("alt_text"),
+    /**
+     * Optional click destination. Null means "display only" — the storefront
+     * must then render a non-interactive element, never an empty <a>.
+     */
+    destinationUrl: text("destination_url"),
+    isEnabled: boolean("is_enabled").default(false).notNull(),
+    /** Lower sorts first. Ties break on createdAt for a stable order. */
+    displayOrder: integer("display_order").default(0).notNull(),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+    updatedAt: timestamp("updated_at")
+      .defaultNow()
+      .$onUpdate(() => new Date())
+      .notNull(),
+  },
+  (table) => [
+    index("promotional_banner_enabled_order_idx").on(
+      table.isEnabled,
+      table.displayOrder,
+    ),
   ],
 );

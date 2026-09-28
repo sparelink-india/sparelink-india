@@ -1,0 +1,22 @@
+-- Vehicle compatibility: a part may be linked to a vehicle at most once.
+--
+-- The two existing indexes on this table are single-column
+-- (part_vehicle_compatibility_part_idx, part_vehicle_compatibility_vehicle_idx)
+-- and cannot express that rule, so the same (part_id, vehicle_id) pair can be
+-- inserted twice with both rows legal. That makes a future "link this part"
+-- admin action non-idempotent and an "unlink" ambiguous, so the uniqueness is
+-- enforced here rather than left to application code.
+--
+-- PLAIN TRANSACTIONAL INDEX, NOT CONCURRENTLY. The migration runner wraps every
+-- migration in a single transaction (drizzle-orm/pg-core/dialect.js:60 ->
+-- session.transaction), and Postgres rejects CREATE INDEX CONCURRENTLY inside a
+-- transaction block. The table holds 24 rows, so the build is instantaneous and
+-- the brief lock a plain CREATE INDEX takes is not a concern.
+--
+-- Verified against the live table before this file was written: 24 rows,
+-- 0 duplicate (part_id, vehicle_id) pairs, 0 orphan parts, 0 orphan vehicles.
+-- No dedupe or data cleanup is required, and this migration performs none: it
+-- creates an index and touches no rows.
+--
+-- This is the only statement in this file.
+CREATE UNIQUE INDEX "part_vehicle_compatibility_part_vehicle_unique" ON "part_vehicle_compatibility" USING btree ("part_id","vehicle_id");

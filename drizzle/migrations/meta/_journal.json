@@ -176,6 +176,20 @@
       "when": 1789610000000,
       "tag": "0024_phase7_ai_ci_sync",
       "breakpoints": true
+    },
+    {
+      "idx": 25,
+      "version": "7",
+      "when": 1789655000000,
+      "tag": "0025_promotional_banners",
+      "breakpoints": true
+    },
+    {
+      "idx": 26,
+      "version": "7",
+      "when": 1789900000000,
+      "tag": "0026_part_vehicle_compatibility_unique_link",
+      "breakpoints": true
     }
   ]
 }
