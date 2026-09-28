@@ -42,6 +42,7 @@ import {
   type ProductFilters,
   type VehicleOption,
 } from "@/lib/admin-vehicle-compatibility";
+import { BULK_CONFIRM_THRESHOLD } from "@/lib/admin-vehicle-compatibility-mutations";
 import { formatCount } from "@/lib/admin-dashboard";
 
 /**
@@ -227,6 +228,10 @@ export default function VehicleCompatibilityPage() {
     [filters.status, allMatchingSelected, pagination.total, selectedProducts],
   );
 
+  /* A filtered selection at or above this size is a bulk operation and the
+     confirmation dialog says so. Mirrors BULK_CONFIRM_THRESHOLD on the server. */
+  const isBulkScope = allMatchingSelected && pagination.total >= BULK_CONFIRM_THRESHOLD;
+
   function requestMutation(action: "link" | "unlink") {
     if (!selectedId || busy) return;
     setNotice("");
@@ -251,6 +256,11 @@ export default function VehicleCompatibilityPage() {
           vehicleId: selectedId,
           scope: "filtered",
           expectedCount: pagination.total,
+          /* Echoes the count for any scope at or above the bulk threshold. The
+             server rejects a filtered mutation above that size unless this
+             matches, so a bulk operation can never be committed by a dialog that
+             was opened against a different result set. */
+          confirmCount: pagination.total,
           filters: { ...filters },
         }
       : {
@@ -739,6 +749,13 @@ export default function VehicleCompatibilityPage() {
                 allMatchingSelected &&
                 !(pendingAction === "link" ? plans.link.exact : plans.unlink.exact)
                   ? "Some may already be in the requested state and will be skipped."
+                  : null,
+                /* A bulk scope reads as a deliberate catalogue-wide change, so it
+                   is named as one rather than as a row count. Added after the
+                   2026-09-28 incident, where a filtered link affected 184
+                   products without that being obvious. */
+                allMatchingSelected && isBulkScope
+                  ? "This is a bulk operation across the whole filtered set. Link or unlink many products one vehicle at a time unless you mean to change all of them."
                   : null,
                 "This cannot be undone from this screen.",
               ]

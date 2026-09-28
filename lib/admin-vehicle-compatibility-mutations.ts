@@ -34,6 +34,16 @@ export const MAX_EXPLICIT_PART_IDS = 500;
 export const MAX_FILTERED_SCOPE_PART_IDS = 2000;
 
 /**
+ * Filtered-scope size at which a mutation must be explicitly acknowledged.
+ *
+ * Anything at or above this many products is a bulk operation, so it requires
+ * `confirmCount` to echo the affected count. Introduced after the 2026-09-28
+ * incident, in which a filtered link silently affected 184 products. Bulk work
+ * is still permitted; it just cannot happen by accident.
+ */
+export const BULK_CONFIRM_THRESHOLD = 25;
+
+/**
  * Rows per SQL statement. The pool is `max: 1` (lib/db/index.ts), so a single
  * enormous statement would hold the only connection for the whole table scan.
  */
@@ -141,6 +151,22 @@ export function validateMutationRequest(
         `A filtered mutation is limited to ${MAX_FILTERED_SCOPE_PART_IDS} products. Narrow the filter, or select the products individually.`,
       );
     }
+    /* A filtered scope above this size is a bulk operation, not a correction.
+       The 2026-09-28 incident was exactly this: a filtered link that touched 184
+       products, which reads as a mis-click in a results grid and is not
+       something the admin intended. Legitimate bulk work still works — it now
+       has to be acknowledged deliberately, and the client echoes the count back
+       in `confirmCount` so a stale dialog can never confirm a changed result
+       set. The ceiling above is unchanged. */
+    if (expectedCount >= BULK_CONFIRM_THRESHOLD) {
+      const confirm = body.confirmCount;
+      if (typeof confirm !== "number" || Math.floor(confirm) !== expectedCount) {
+        return fail(
+          400,
+          `This affects ${expectedCount} products, so it is a bulk operation. Re-send with confirmCount: ${expectedCount} once the summary is confirmed.`,
+        );
+      }
+    }
     return {
       ok: true,
       value: {
@@ -241,9 +267,16 @@ export function chunk<T>(items: readonly T[], size: number): T[][] {
  * Built from the COMPLETE Postgres compatibility set for the part, never from
  * the vehicle the admin just touched. A part compatible with three vehicles
  * must be sent all three, or a one-vehicle link would erase the other two from
- * search. Parts absent from the map are omitted rather than sent as `[]`,
- * because an absent part has no known set and sending an empty list would
- * assert a state nobody verified.
+ * search.
+ *
+ * A part present in the map with an empty array means "Postgres is authoritative
+ * and this part genuinely has no vehicle links", which is a real, verified state
+ * and must be published as `[]` so the index stops advertising stale vehicles.
+ * A part ABSENT from the map has no known set, so it is omitted: asserting an
+ * empty list for a part nobody read would be fabricating state.
+ *
+ * The reader seeds every requested part it actually found, so the distinction
+ * above is carried by presence in the map rather than by array length.
  */
 export function buildVehicleIdsPayload(
   authoritative: ReadonlyMap<string, readonly string[]>,
@@ -251,9 +284,10 @@ export function buildVehicleIdsPayload(
 ): Array<{ id: string; vehicle_ids: string[] }> {
   const payload: Array<{ id: string; vehicle_ids: string[] }> = [];
   for (const partId of partIds) {
-    const vehicles = authoritative.get(partId);
-    if (!vehicles) continue;
-    payload.push({ id: partId, vehicle_ids: [...vehicles].sort() });
+    /* `has`, not truthiness: an empty array is a verified "no vehicles" state
+       and must be published, while an absent key means the part was never read. */
+    if (!authoritative.has(partId)) continue;
+    payload.push({ id: partId, vehicle_ids: [...(authoritative.get(partId) ?? [])].sort() });
   }
   return payload;
 }

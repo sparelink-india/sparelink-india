@@ -7,12 +7,14 @@ import {
   buildVehicleIdsPayload,
   chunk,
   DB_CHUNK_SIZE,
+  EMPTY_MUTATION_FILTERS,
   describeLinkResult,
   describeUnlinkResult,
   emptySyncState,
   isWellFormedId,
   MAX_EXPLICIT_PART_IDS,
   MAX_FILTERED_SCOPE_PART_IDS,
+  BULK_CONFIRM_THRESHOLD,
   planLink,
   planUnlink,
   summariseLink,
@@ -25,6 +27,7 @@ import {
   type MutationDeps,
 } from "./vehicle-compatibility-service";
 import { resolveActionAvailability } from "./admin-vehicle-compatibility";
+import { completeTypesenseDocument } from "./vehicle-compatibility-repository";
 
 /**
  * Mutation tests for the vehicle compatibility write path.
@@ -220,6 +223,45 @@ describe("validation: payload", () => {
       tooMany.ok === false && tooMany.error.includes(String(MAX_FILTERED_SCOPE_PART_IDS)),
       true,
     );
+  });
+
+  it("requires a bulk filtered mutation to acknowledge its size", () => {
+    /* The 2026-09-28 incident: a filtered link affecting 184 products was accepted
+       with nothing but a count, and the count was small enough not to look like a
+       bulk operation. Above the threshold the count must be echoed back, so the
+       request is only valid against the result set the admin actually confirmed. */
+    const bulk = BULK_CONFIRM_THRESHOLD;
+    const unconfirmed = validateMutationRequest(
+      { vehicleId: VEHICLE, scope: "filtered", expectedCount: 184 },
+      "link",
+    );
+    assert.equal(unconfirmed.ok, false, "a bulk filtered mutation must be acknowledged");
+    assert.equal(unconfirmed.ok === false && unconfirmed.error.includes("bulk operation"), true);
+
+    const confirmed = validateMutationRequest(
+      { vehicleId: VEHICLE, scope: "filtered", expectedCount: 184, confirmCount: 184 },
+      "link",
+    );
+    assert.equal(confirmed.ok, true, "an acknowledged bulk mutation is still allowed");
+
+    const stale = validateMutationRequest(
+      { vehicleId: VEHICLE, scope: "filtered", expectedCount: 184, confirmCount: 150 },
+      "link",
+    );
+    assert.equal(stale.ok, false, "a stale confirmation must not pass");
+
+    /* A small correction is not a bulk operation and stays one request. */
+    assert.equal(
+      validateMutationRequest({ vehicleId: VEHICLE, scope: "filtered", expectedCount: bulk - 1 }, "link").ok,
+      true,
+    );
+    /* An explicit id list is unaffected; the guard is on the filtered scope only.
+       The real explicit ceiling is 500, so 200 must still be accepted here. */
+    const explicit = validateMutationRequest(
+      { vehicleId: VEHICLE, scope: "ids", partIds: Array.from({ length: 200 }, (_, i) => `p${i}`) },
+      "link",
+    );
+    assert.equal(explicit.ok, true, explicit.ok === false ? explicit.error : "");
   });
 
   it("re-confirms when the filtered set changed since the admin saw it", async () => {
@@ -586,6 +628,40 @@ describe("planning and chunking", () => {
     ]);
   });
 
+  it("publishes an empty set for a part the database says has no vehicles", () => {
+    /* The 2026-09-28 incident: 184 parts were unlinked, so their authoritative
+       set is genuinely empty. Omitting them left the index advertising whatever
+       it already held, and the caller produced a zero-document sync that reported
+       success without ever correcting anything. */
+    const authoritative = new Map<string, string[]>([["p1", []], ["p2", ["v1"]]]);
+    assert.deepEqual(buildVehicleIdsPayload(authoritative, ["p1", "p2"]), [
+      { id: "p1", vehicle_ids: [] },
+      { id: "p2", vehicle_ids: ["v1"] },
+    ]);
+  });
+
+  it("publishes an emptied part instead of reporting a sync that sent nothing", async () => {
+    /* Regression for the 2026-09-28 incident: unlinking the last vehicle from a
+       part produced an empty payload, `documents === 0` short-circuited to
+       `ok: true`, and the admin was told the search index had been updated when
+       it had not been touched. The document must now be sent with an empty set. */
+    const { state, deps } = fakeDeps();
+    seed(state, ["p1"]);
+
+    const outcome = await performCompatibilityMutation(
+      "unlink",
+      { action: "unlink", vehicleId: VEHICLE, scope: "ids", partIds: ["p1"], filters: EMPTY_MUTATION_FILTERS },
+      "u1",
+      deps,
+    );
+
+    assert.equal(outcome.ok, true);
+    assert.equal(outcome.result.sync.attempted, true);
+    assert.equal(outcome.result.sync.ok, true);
+    assert.equal(state.syncCalls.length, 1, "the emptied part must still be published");
+    assert.deepEqual(state.syncCalls[0], [{ id: "p1", vehicle_ids: [] }]);
+  });
+
   it("summarises an untouched result without inventing numbers", () => {
     const sync = emptySyncState();
     const link = summariseLink({ vehicleId: VEHICLE, requested: 0, inserted: 0, alreadyLinked: 0, failed: 0, sync });
@@ -788,5 +864,59 @@ describe("the real boundaries are written safely", () => {
     assert.ok(repo.includes("isPublished"));
     assert.ok(repo.includes("APPROVED"));
     assert.ok(repo.includes('action: "upsert"'));
+  });
+
+  it("completes each upsert with the fields the collection requires", () => {
+    /* A bare `{id, vehicle_ids}` upsert is rejected with HTTP 400 because
+       `part_number` and `name` are declared in the schema, which failed the whole
+       batch on 2026-09-28 and left 184 documents unsynchronised. */
+    assert.ok(repo.includes("TYPESENSE_REQUIRED_FIELDS"));
+    assert.ok(repo.includes("completeTypesenseDocument"));
+    assert.ok(
+      repo.includes("batch.map((doc) => completeForTypesense(doc))"),
+      "each document must be completed before the batch is sent",
+    );
+    for (const field of ["part_number", "name"]) {
+      assert.ok(repo.includes(field), `schema field ${field} must be carried through`);
+    }
+  });
+});
+
+describe("Typesense document completion", () => {
+  it("keeps the vehicle set and backfills required fields from the stored copy", () => {
+    const out = completeTypesenseDocument(
+      { id: "p1", vehicle_ids: ["v1"] },
+      { id: "p1", name: "Air Filter", part_number: "SL-AIR-FILTER-001", description: "d", brand: "b", category: "c", part_number_search: "sl" },
+    );
+    assert.deepEqual(out.vehicle_ids, ["v1"]);
+    assert.equal(out.name, "Air Filter");
+    assert.equal(out.part_number, "SL-AIR-FILTER-001");
+  });
+
+  it("publishes an emptied vehicle set rather than dropping the document", () => {
+    const out = completeTypesenseDocument(
+      { id: "p1", vehicle_ids: [] },
+      { id: "p1", name: "Air Filter", part_number: "P1" },
+    );
+    assert.deepEqual(out.vehicle_ids, [], "an emptied part must still be published");
+    assert.equal(out.name, "Air Filter");
+  });
+
+  it("drops fields the collection does not declare and fills any that are absent", () => {
+    const out = completeTypesenseDocument(
+      { id: "p1", vehicle_ids: [] },
+      { id: "p1", name: "n", part_number: "p", stray_field: "should not survive" },
+    );
+    assert.equal("stray_field" in out, false, "unknown fields are rejected by Typesense");
+    assert.equal(out.description, "");
+    assert.equal(out.brand, "");
+    assert.equal(out.category, "");
+  });
+
+  it("still produces a valid document when nothing is stored", () => {
+    const out = completeTypesenseDocument({ id: "p1", vehicle_ids: [] }, null);
+    assert.equal(out.id, "p1");
+    assert.equal(out.name, "");
+    assert.equal(out.part_number, "");
   });
 });

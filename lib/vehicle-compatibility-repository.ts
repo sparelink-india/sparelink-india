@@ -13,6 +13,67 @@ import { writeAuditLog } from "@/lib/audit";
 import type { AuditRecord, MutationDeps } from "@/lib/vehicle-compatibility-service";
 
 /**
+ * The `parts` collection requires `part_number` and `name` on every write.
+ *
+ * A compatibility sync only knows `vehicle_ids`, so the remaining declared fields
+ * are read back from the stored document and carried through. Fields the
+ * collection does not declare are dropped, because Typesense rejects unknown
+ * fields outright.
+ */
+const TYPESENSE_REQUIRED_FIELDS = [
+  "part_number",
+  "name",
+  "description",
+  "brand",
+  "category",
+  "part_number_search",
+] as const;
+
+type TypesenseDocument = { id: string; vehicle_ids: string[] } & Record<string, unknown>;
+
+/** Exported for tests: the shape actually sent to Typesense. */
+export function completeTypesenseDocument(
+  patch: { id: string; vehicle_ids: string[] },
+  stored: Record<string, unknown> | null,
+): TypesenseDocument {
+  const out: TypesenseDocument = { ...(stored ?? {}), id: patch.id, vehicle_ids: patch.vehicle_ids };
+  for (const key of Object.keys(out)) {
+    if (key === "id" || key === "vehicle_ids") continue;
+    if (!(TYPESENSE_REQUIRED_FIELDS as readonly string[]).includes(key)) delete out[key];
+  }
+  for (const key of TYPESENSE_REQUIRED_FIELDS) {
+    if (out[key] === undefined) out[key] = "";
+  }
+  return out;
+}
+
+async function completeForTypesense(doc: { id: string; vehicle_ids: string[] }): Promise<TypesenseDocument> {
+  let stored: Record<string, unknown> | null = null;
+  try {
+    /* Unreachable with a null client: syncTypesense already refuses in that case,
+       so the assertion only narrows the type for the compiler. */
+    if (!typesense) return completeTypesenseDocument(doc, null);
+    stored = (await typesense.collections("parts").documents(doc.id).retrieve()) as Record<string, unknown>;
+  } catch {
+    /* No stored copy: the caller only syncs parts that are already indexed, so
+       this is defensive. An empty required field is preferable to failing the
+       batch, and Typesense reports the outcome either way. */
+  }
+  return completeTypesenseDocument(doc, stored);
+}
+
+/** Surfaces the first per-document reason, which the client otherwise buries. */
+function describeTypesenseFailure(error: unknown): string {
+  const results = (error as { importResults?: Array<{ error?: string }> })?.importResults;
+  if (Array.isArray(results) && results.length > 0) {
+    const first = results[0]?.error;
+    const head = typeof first === "string" ? first.slice(0, 300) : "unknown error";
+    return `${error instanceof Error ? error.message : "Typesense import failed."} First document error: ${head}`;
+  }
+  return error instanceof Error ? error.message : "Typesense import failed.";
+}
+
+/**
  * Real boundaries for the vehicle compatibility mutation service.
  *
  * Every function here is the production implementation of one member of
@@ -168,20 +229,30 @@ export function createCompatibilityMutationDeps(): MutationDeps {
       if (documents.length === 0) return { ok: true };
 
       try {
-        /* `upsert` is a partial update in Typesense, so only `vehicle_ids` is
-           touched on an existing document. Documents are chunked because the
-           import endpoint takes a JSON array. */
+        /* The `parts` collection declares non-optional `part_number` and `name`,
+           and a Typesense `upsert` must carry every declared field: omitting one
+           is rejected with HTTP 400 "Field `name` has been declared in the
+           schema, but is not found in the document", which fails the whole batch
+           and leaves the index stale. Each document is therefore completed from
+           the existing stored copy before it is sent, so the write stays limited
+           to `vehicle_ids` while still satisfying the schema.
+
+           `emit_doc`/`dirty_values` would sidestep this, but the client pins an
+           older Typesense where that option is unavailable, so the merge below
+           is the compatible route. Documents are chunked because the import
+           endpoint takes a JSON array. */
         for (const batch of chunk(documents, 200)) {
+          const completed = await Promise.all(batch.map((doc) => completeForTypesense(doc)));
           await typesense
             .collections("parts")
             .documents()
-            .import(batch, { action: "upsert" });
+            .import(completed, { action: "upsert" });
         }
         return { ok: true };
       } catch (error) {
         return {
           ok: false,
-          error: error instanceof Error ? error.message : "Typesense import failed.",
+          error: describeTypesenseFailure(error),
         };
       }
     },
