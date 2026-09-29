@@ -159,22 +159,41 @@ export default function QuotationsPage() {
               Search
             </button>
           </div>
-          {hits.map((h, i) => (
+          {hits.map((h) => (
             <button
-              key={i}
+              // Stable key: the listing id, so re-searching the same part never
+              // collides. Falls back to the part number, then the index.
+              key={h.listing?.listingId ?? h.partNumber ?? `hit-${hits.indexOf(h)}`}
               type="button"
               disabled={!h.listing}
               onClick={() => {
-                if (!h.listing) return;
-                setLines((prev) => [
-                  ...prev,
-                  {
-                    dealerListingId: h.listing!.listingId,
-                    partNumber: h.partNumber || "",
-                    partName: h.listing!.partName,
-                    quantity: 1,
-                  },
-                ]);
+                const listing = h.listing;
+                if (!listing) return;
+                setLines((prev) => {
+                  // De-duplicate by listing: adding the same part twice bumps
+                  // the quantity instead of creating a second line. Two lines
+                  // with the same dealerListingId would also produce duplicate
+                  // React keys and a duplicated order line on submit.
+                  const existing = prev.find(
+                    (line) => line.dealerListingId === listing.listingId,
+                  );
+                  if (existing) {
+                    return prev.map((line) =>
+                      line.dealerListingId === listing.listingId
+                        ? { ...line, quantity: line.quantity + 1 }
+                        : line,
+                    );
+                  }
+                  return [
+                    ...prev,
+                    {
+                      dealerListingId: listing.listingId,
+                      partNumber: h.partNumber || "",
+                      partName: listing.partName,
+                      quantity: 1,
+                    },
+                  ];
+                });
               }}
               className="block w-full rounded border px-2 py-1 text-left text-sm hover:bg-zinc-50 disabled:opacity-40"
             >

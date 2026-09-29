@@ -51,6 +51,9 @@ export default function AdminCiSyncPage() {
   const [pending, setPending] = useState<ApprovalItem[]>([]);
   const [updated, setUpdated] = useState<ApprovalItem[]>([]);
   const [removed, setRemoved] = useState<ApprovalItem[]>([]);
+  // Which approval queues failed to load. A failed queue must never be shown as
+  // an empty queue, because that reads as "nothing needs approval".
+  const [queueError, setQueueError] = useState<string[]>([]);
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
   const [busy, setBusy] = useState(false);
@@ -60,6 +63,7 @@ export default function AdminCiSyncPage() {
 
   const load = useCallback(async () => {
     setError("");
+    setQueueError([]);
     try {
       const [statusRes, pendingRes, updatedRes, removedRes] = await Promise.all([
         fetch("/api/admin/ci-sync", { cache: "no-store" }),
@@ -72,12 +76,40 @@ export default function AdminCiSyncPage() {
       setQueues(statusJson.queues);
       setRuns(statusJson.recentRuns || []);
 
-      const pendingJson = await pendingRes.json();
-      if (pendingRes.ok) setPending(pendingJson.items || []);
-      const updatedJson = await updatedRes.json();
-      if (updatedRes.ok) setUpdated(updatedJson.items || []);
-      const removedJson = await removedRes.json();
-      if (removedRes.ok) setRemoved(removedJson.items || []);
+      // Each approval queue is resolved independently. A failure is reported
+      // explicitly and the affected list is cleared, so a broken request can
+      // never masquerade as an empty queue.
+      const failed: string[] = [];
+
+      const pendingJson = await pendingRes.json().catch(() => null);
+      if (pendingRes.ok) setPending(pendingJson?.items ?? []);
+      else {
+        setPending([]);
+        failed.push("pending approvals");
+      }
+
+      const updatedJson = await updatedRes.json().catch(() => null);
+      if (updatedRes.ok) setUpdated(updatedJson?.items ?? []);
+      else {
+        setUpdated([]);
+        failed.push("updated approvals");
+      }
+
+      const removedJson = await removedRes.json().catch(() => null);
+      if (removedRes.ok) setRemoved(removedJson?.items ?? []);
+      else {
+        setRemoved([]);
+        failed.push("removed approvals");
+      }
+
+      if (failed.length > 0) {
+        setQueueError(failed);
+        setError(
+          `Could not load the ${failed.join(", ")} queue${
+            failed.length === 1 ? "" : "s"
+          }. The list below is empty because the request failed, not because there is nothing to review.`,
+        );
+      }
     } catch (e) {
       setError(e instanceof Error ? e.message : "Unable to load CI sync admin");
     }
@@ -274,7 +306,14 @@ export default function AdminCiSyncPage() {
                 {pending.length === 0 && (
                   <tr>
                     <td colSpan={5} className="py-4 text-zinc-500">
-                      No pending CI products.
+                      {queueError.includes("pending approvals") ? (
+                        <span role="alert" className="font-semibold text-rose-700">
+                          Could not load the pending approval queue. This is a
+                          failed request, not an empty queue.
+                        </span>
+                      ) : (
+                        "No pending CI products."
+                      )}
                     </td>
                   </tr>
                 )}
@@ -296,7 +335,17 @@ export default function AdminCiSyncPage() {
                   </div>
                 </li>
               ))}
-              {updated.length === 0 && <li className="text-zinc-500">None</li>}
+              {updated.length === 0 && (
+                <li className="text-zinc-500">
+                  {queueError.includes("updated approvals") ? (
+                    <span role="alert" className="font-semibold text-rose-700">
+                      Could not load this list. Failed request, not an empty list.
+                    </span>
+                  ) : (
+                    "None"
+                  )}
+                </li>
+              )}
             </ul>
           </div>
           <div className="rounded-lg border bg-white p-6">
@@ -310,7 +359,17 @@ export default function AdminCiSyncPage() {
                   </div>
                 </li>
               ))}
-              {removed.length === 0 && <li className="text-zinc-500">None</li>}
+              {removed.length === 0 && (
+                <li className="text-zinc-500">
+                  {queueError.includes("removed approvals") ? (
+                    <span role="alert" className="font-semibold text-rose-700">
+                      Could not load this list. Failed request, not an empty list.
+                    </span>
+                  ) : (
+                    "None"
+                  )}
+                </li>
+              )}
             </ul>
           </div>
         </section>

@@ -291,7 +291,15 @@ describe("page structure", () => {
 
   it("keeps confirmation, double-submit protection and refresh", () => {
     const p = page();
-    assert.match(p, /window\.confirm\(buildOrderCancellationConfirmation\(order\)\)/);
+    /* The browser confirm() has been replaced by the shared admin confirm
+       dialog, which is the point of the modernization. The confirmation text
+       itself is still built by the same helper, and it is still shown before
+       the PATCH runs. */
+    assert.match(p, /AdminConfirmDialog/);
+    /* The dialog receives the pending order, not the row that was clicked, so
+       the confirmation text is built once for the order actually being
+       cancelled. Same helper, same wording. */
+    assert.match(p, /buildOrderCancellationConfirmation\(pendingCancelOrder\)/);
     assert.match(p, /if \(cancellingId\) return;/);
     assert.match(p, /disabled=\{cancellingId !== null\}/);
     assert.match(p, /setOrders\(\(current\) => applyCancelledStatus\(current, order\.id\)\)/);
@@ -309,7 +317,10 @@ describe("page structure", () => {
   it("renders the cancelled bin with a live count", () => {
     const p = page();
     assert.match(p, /Cancelled Orders/);
-    assert.match(p, /🗑️/);
+    /* The bin used to be marked with a bin emoji. The admin icon set carries no
+       emoji by rule, so the control now uses the IconReturn glyph. Asserting the
+       glyph keeps this test honest about what is actually rendered. */
+    assert.match(p, /IconReturn/);
     assert.match(p, /cancelledOrderCount\(orders\)/);
     assert.match(p, /setFilter\("cancelled"\)/);
   });
@@ -360,7 +371,12 @@ describe("page structure", () => {
     assert.match(p, /overflow-x-auto/);
     assert.match(p, /min-w-\[64rem\]/);
     assert.match(p, /grid-cols-2/);
-    assert.match(p, /sm:px-6/);
+    /* The wide table still gets its own horizontal scroller, and the chip row
+       above it is a separate scroller with bleed padding so the first chip is
+       not clipped on a phone. Asserting the scrollers is the behaviour; the
+       specific padding utility moved between the two containers. */
+    assert.match(p, /-mx-1 flex gap-2 overflow-x-auto/);
+    assert.match(p, /<div className="overflow-x-auto">/);
     // The bin control stays in the header, visible on small screens.
     assert.match(p, /flex flex-wrap items-center gap-2/);
   });

@@ -65,6 +65,20 @@ export default function FirmsPage() {
           <p className="mt-6 text-sm text-zinc-500">Loading firms...</p>
         )}
 
+        {/* Read-only by design. The firms API exposes GET only, so there is no
+            supported way to create or edit a firm from the admin console. This
+            is surfaced rather than hidden, because firm code and ledger
+            reference gate payments and allocations. */}
+        {!loading && (
+          <p className="mt-5 rounded-lg border border-zinc-200 bg-white p-3 text-xs leading-relaxed text-zinc-600">
+            This screen is read-only. The admin firms API currently exposes GET
+            only, so firm name, code and ledger reference cannot be changed here.
+            Firm code and ledger reference are used by payment and allocation
+            logic, so any change must be made deliberately through a reviewed
+            migration rather than from this screen.
+          </p>
+        )}
+
         {!loading && firms.length > 0 && (
           <div className="mt-8 space-y-4">
             {firms.map((f) => (

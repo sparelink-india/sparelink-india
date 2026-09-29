@@ -102,6 +102,20 @@ export default function SourceCatalogueReviewPage() {
   );
   const selectedCount = selectedKeys.length;
 
+  // The free-text box is debounced so typing does not fire a request per
+  // keystroke. Every other filter is an explicit control and stays immediate.
+  // Submitting the form (or pressing Apply) flushes the value straight away.
+  const [debouncedQuery, setDebouncedQuery] = useState(query);
+
+  useEffect(() => {
+    const trimmed = query.trim();
+    // Always asynchronous: clearing the box should feel instant, and this keeps
+    // the state update out of the effect body.
+    const delay = trimmed ? 400 : 0;
+    const timer = window.setTimeout(() => setDebouncedQuery(trimmed), delay);
+    return () => window.clearTimeout(timer);
+  }, [query]);
+
   const queryString = useMemo(() => {
     const params = new URLSearchParams({
       page: String(page),
@@ -111,10 +125,10 @@ export default function SourceCatalogueReviewPage() {
       firm,
       issue,
     });
-    if (query.trim()) params.set("q", query.trim());
+    if (debouncedQuery) params.set("q", debouncedQuery);
     if (category) params.set("category", category);
     return params.toString();
-  }, [page, status, image, query, category, firm, issue]);
+  }, [page, status, image, debouncedQuery, category, firm, issue]);
 
   async function loadPage() {
     setLoading(true);
@@ -165,6 +179,8 @@ export default function SourceCatalogueReviewPage() {
 
   function handleSearch(event: FormEvent) {
     event.preventDefault();
+    // Flush the debounce so Apply filters is never decorative.
+    setDebouncedQuery(query.trim());
     setPage(1);
   }
 
@@ -208,6 +224,14 @@ export default function SourceCatalogueReviewPage() {
       for (const key of payload.keys || []) next[key] = true;
       setSelected(next);
       setMessage(`Selected ${count} filtered records.`);
+    } catch (selectError) {
+      // Without this the rejection escaped the async function and the caller
+      // invoked it with `void`, so a failure was completely silent.
+      setError(
+        selectError instanceof Error
+          ? selectError.message
+          : "Unable to select the filtered records.",
+      );
     } finally {
       setBusy(false);
     }

@@ -2,8 +2,19 @@
 
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { BrandLogo } from "@/components/brand-logo";
 import { InvoiceDownloadLinks } from "@/components/invoice-download-links";
+import {
+  IconAlert,
+  IconArrow,
+  IconChart,
+  IconCheck,
+  IconPackage,
+  IconReturn,
+  IconSearch,
+} from "@/components/admin-icons";
+import { AdminShell } from "@/components/admin-shell";
+import { AdminConfirmDialog, panelClass } from "@/components/admin-ui";
+import { BRAND_BURGUNDY } from "@/lib/admin-dashboard";
 import {
   applyCancelledStatus,
   buildOrderCancellationConfirmation,
@@ -27,7 +38,8 @@ import {
   type OrderFilter,
 } from "@/lib/admin-orders-dashboard";
 
-const BRAND = "#7a1233";
+/** The single brand accent, shared with the Command Center. */
+const BRAND = BRAND_BURGUNDY;
 
 const STATUS_TONE: Record<string, string> = {
   placed: "bg-sky-50 text-sky-700 ring-sky-600/20",
@@ -120,6 +132,7 @@ export default function OrdersPage() {
   const [filter, setFilter] = useState<OrderFilter>("active");
   const [query, setQuery] = useState("");
   const [cancellingId, setCancellingId] = useState<string | null>(null);
+  const [pendingCancelId, setPendingCancelId] = useState<string | null>(null);
   const [detailsId, setDetailsId] = useState<string | null>(null);
 
   const loadOrders = useCallback(async () => {
@@ -152,11 +165,14 @@ export default function OrdersPage() {
     () => orders.find((order) => order.id === detailsId) ?? null,
     [orders, detailsId],
   );
+  const pendingCancelOrder = useMemo(
+    () => orders.find((order) => order.id === pendingCancelId) ?? null,
+    [orders, pendingCancelId],
+  );
 
   const handleCancelOrder = async (order: AdminOrder) => {
     if (cancellingId) return;
     if (!isOrderCancellationAllowed(order)) return;
-    if (!window.confirm(buildOrderCancellationConfirmation(order))) return;
 
     setCancellingId(order.id);
     setError("");
@@ -201,94 +217,64 @@ export default function OrdersPage() {
   };
 
   return (
-    <div className="min-h-screen bg-zinc-50 text-zinc-900">
-      <header className="border-b border-zinc-200 bg-white">
-        <div className="mx-auto max-w-7xl px-4 py-5 sm:px-6">
-          <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-            <div className="flex items-start gap-4">
-              <div className="hidden shrink-0 sm:block">
-                <BrandLogo compact />
-              </div>
-              <div className="min-w-0">
-                <p
-                  className="text-[11px] font-semibold uppercase tracking-[0.18em]"
-                  style={{ color: BRAND }}
-                >
-                  SpareLink India
-                </p>
-                <h1 className="text-2xl font-bold tracking-tight text-zinc-950 sm:text-3xl">
-                  Customer Orders
-                </h1>
-                <p className="mt-1 text-sm text-zinc-500">
-                  Review placed orders, fulfillment status, payments and GST summaries
-                </p>
-              </div>
-            </div>
+    <AdminShell
+      title="Customer Orders"
+      subtitle="Review placed orders, fulfillment status, payments and GST summaries"
+      activeHref="/admin/orders"
+    >
+      <div className="flex flex-wrap items-center gap-2">
+        <a
+          href="/api/admin/orders/export"
+          download
+          className="inline-flex items-center gap-1.5 rounded-lg border border-zinc-200 bg-white px-3 py-2 text-xs font-bold text-zinc-700 shadow-sm transition-colors hover:bg-zinc-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#7a1233]/40"
+        >
+          <IconChart className="h-3.5 w-3.5" /> Export to Excel
+        </a>
 
-            <div className="flex flex-wrap items-center gap-2">
-              <a
-                href="/api/admin/orders/export"
-                download
-                className="inline-flex items-center gap-1.5 rounded-xl border border-zinc-200 bg-white px-3.5 py-2 text-xs font-bold text-zinc-700 shadow-sm transition-colors hover:bg-zinc-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#7a1233]/40"
-              >
-                <span aria-hidden="true">📊</span> Export to Excel
-              </a>
+        <button
+          type="button"
+          onClick={() => setFilter("cancelled")}
+          aria-pressed={filter === "cancelled"}
+          aria-label={`Cancelled orders bin, ${cancelled} order${cancelled === 1 ? "" : "s"}`}
+          className={`inline-flex items-center gap-2 rounded-lg border px-3 py-2 text-xs font-bold shadow-sm transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-rose-600/40 ${
+            filter === "cancelled"
+              ? "border-rose-300 bg-rose-50 text-rose-700"
+              : "border-zinc-200 bg-white text-zinc-700 hover:bg-zinc-50"
+          }`}
+        >
+          <IconReturn className="h-3.5 w-3.5" />
+          <span>Cancelled Orders</span>
+          <span
+            className={`inline-flex min-w-6 items-center justify-center rounded-full px-1.5 py-0.5 text-[11px] font-bold tabular-nums ${
+              filter === "cancelled"
+                ? "bg-rose-600 text-white"
+                : "bg-rose-50 text-rose-700"
+            }`}
+          >
+            {cancelled}
+          </span>
+        </button>
+      </div>
 
-              <button
-                type="button"
-                onClick={() => setFilter("cancelled")}
-                aria-pressed={filter === "cancelled"}
-                aria-label={`Cancelled orders bin, ${cancelled} order${cancelled === 1 ? "" : "s"}`}
-                className={`inline-flex items-center gap-2 rounded-xl border px-3.5 py-2 text-xs font-bold shadow-sm transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-rose-600/40 ${
-                  filter === "cancelled"
-                    ? "border-rose-300 bg-rose-50 text-rose-700"
-                    : "border-zinc-200 bg-white text-zinc-700 hover:bg-zinc-50"
-                }`}
-              >
-                <span aria-hidden="true">🗑️</span>
-                <span>Cancelled Orders</span>
-                <span
-                  className={`inline-flex min-w-6 items-center justify-center rounded-full px-1.5 py-0.5 text-[11px] font-bold tabular-nums ${
-                    filter === "cancelled"
-                      ? "bg-rose-600 text-white"
-                      : "bg-rose-50 text-rose-700"
-                  }`}
-                >
-                  {cancelled}
-                </span>
-              </button>
-
-              <Link
-                href="/admin"
-                className="text-xs font-semibold text-zinc-600 underline-offset-2 hover:underline"
-              >
-                ← Back to Admin
-              </Link>
-            </div>
-          </div>
+      {error && (
+        <div
+          role="alert"
+          className="mt-4 flex items-start gap-2 rounded-xl border border-rose-200 bg-rose-50 p-3 text-sm text-rose-800"
+        >
+          <IconAlert className="mt-0.5 h-4 w-4 shrink-0" />
+          <span>{error}</span>
         </div>
-      </header>
+      )}
 
-      <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 sm:py-8">
-        {error && (
-          <div
-            role="alert"
-            className="mb-4 flex items-start gap-2 rounded-xl border border-rose-200 bg-rose-50 p-3 text-sm text-rose-800"
-          >
-            <span aria-hidden="true" className="font-bold">✕</span>
-            <span>{error}</span>
-          </div>
-        )}
-
-        {notice && (
-          <div
-            role="status"
-            className="mb-4 flex items-start gap-2 rounded-xl border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-800"
-          >
-            <span aria-hidden="true" className="font-bold">✓</span>
-            <span>{notice}</span>
-          </div>
-        )}
+      {notice && (
+        <div
+          role="status"
+          className="mt-4 flex items-start gap-2 rounded-xl border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-800"
+        >
+          <IconCheck className="mt-0.5 h-4 w-4 shrink-0" />
+          <span>{notice}</span>
+        </div>
+      )}
 
         {/* Summary. Every value is derived from the loaded order list. */}
         <section aria-label="Order status summary" className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
@@ -357,19 +343,14 @@ export default function OrdersPage() {
                 Search orders
               </label>
               <div className="relative">
-                <span
-                  aria-hidden="true"
-                  className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400"
-                >
-                  🔍
-                </span>
+                <IconSearch className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-400" />
                 <input
                   id="admin-order-search"
                   type="search"
                   value={query}
                   onChange={(event) => setQuery(event.target.value)}
                   placeholder="Order #, buyer email, firm…"
-                  className="h-10 w-full rounded-xl border border-zinc-200 bg-zinc-50/60 pl-9 pr-3 text-sm outline-none transition-colors focus:border-[#7a1233] focus:bg-white focus:ring-2 focus:ring-[#7a1233]/15"
+                  className="h-10 w-full rounded-lg border border-zinc-200 bg-zinc-50/60 pl-9 pr-3 text-sm outline-none transition-colors focus:border-[#7a1233] focus:bg-white focus:ring-2 focus:ring-[#7a1233]/15"
                 />
               </div>
             </div>
@@ -377,20 +358,27 @@ export default function OrdersPage() {
         </section>
 
         {/* Table */}
-        <section className="mt-6 overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-sm">
+        <section className={`mt-6 overflow-hidden ${panelClass}`}>
           {loading ? (
             <div className="flex items-center gap-3 p-10 text-sm text-zinc-500">
               <span
                 aria-hidden="true"
-                className="h-4 w-4 animate-spin rounded-full border-2 border-zinc-300 border-t-[#7a1233]"
+                className="motion-safe:animate-spin h-4 w-4 rounded-full border-2 border-zinc-300 border-t-[#7a1233]"
               />
               Loading orders…
             </div>
           ) : visible.length === 0 ? (
             <div className="p-12 text-center">
-              <p aria-hidden="true" className="text-3xl">
-                {filter === "cancelled" ? "🗑️" : "📭"}
-              </p>
+              <span
+                className="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-zinc-100 text-zinc-400"
+                aria-hidden="true"
+              >
+                {filter === "cancelled" ? (
+                  <IconReturn className="h-6 w-6" />
+                ) : (
+                  <IconPackage className="h-6 w-6" />
+                )}
+              </span>
               <p className="mt-3 text-sm font-semibold text-zinc-900">
                 {filter === "cancelled"
                   ? "No cancelled orders"
@@ -424,7 +412,8 @@ export default function OrdersPage() {
                     ].map((label) => (
                       <th
                         key={label}
-                        className={`whitespace-nowrap px-4 py-3 text-xs font-semibold uppercase tracking-wide text-zinc-500 ${
+                        scope="col"
+                        className={`whitespace-nowrap px-4 py-3 text-[10px] font-bold uppercase tracking-[0.12em] text-zinc-500 ${
                           label === "Invoice" || label === "Actions" ? "text-right" : ""
                         }`}
                       >
@@ -449,7 +438,7 @@ export default function OrdersPage() {
                               {order.orderNumber}
                             </span>
                           </td>
-                          <td className="max-w-[16rem] truncate px-4 py-3 text-xs text-zinc-700">
+                          <td className="max-w-[16rem] truncate px-4 py-3 text-xs text-zinc-700" title={order.buyerEmail}>
                             {order.buyerEmail}
                           </td>
                           <td className="whitespace-nowrap px-4 py-3 text-xs text-zinc-700">
@@ -475,9 +464,9 @@ export default function OrdersPage() {
                               orderId={order.id}
                               allocations={order.firmAllocations ?? []}
                               className="inline-flex flex-wrap justify-end gap-1.5"
-                              linkClassName="inline-flex items-center gap-1 rounded-md border border-zinc-200 bg-white px-2.5 py-1 text-xs font-semibold text-zinc-700 hover:bg-zinc-100"
-                              singleLabel="🧾 Invoice"
-                              multiLabelPrefix="🧾"
+                              linkClassName="inline-flex items-center gap-1 rounded-md border border-zinc-200 bg-white px-2.5 py-1 text-xs font-semibold text-zinc-700 hover:bg-zinc-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#7a1233]/40"
+                              singleLabel="Invoice"
+                              multiLabelPrefix="Invoice"
                             />
                           </td>
                           <td className="px-4 py-3">
@@ -494,7 +483,7 @@ export default function OrdersPage() {
                               {cancellable ? (
                                 <button
                                   type="button"
-                                  onClick={() => void handleCancelOrder(order)}
+                                  onClick={() => setPendingCancelId(order.id)}
                                   disabled={cancellingId !== null}
                                   aria-label={`Cancel order ${order.orderNumber}`}
                                   className="inline-flex items-center gap-1 rounded-md border border-rose-200 bg-white px-2.5 py-1 text-xs font-semibold text-rose-700 transition-colors hover:bg-rose-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-rose-600/40 disabled:cursor-not-allowed disabled:opacity-50"
@@ -625,7 +614,41 @@ export default function OrdersPage() {
               : ""}
           </p>
         )}
-      </div>
-    </div>
+
+      {/* Cancellation is confirmed in an accessible dialog, not window.confirm.
+          The payload is unchanged: orderId + status only, never paymentStatus. */}
+      <AdminConfirmDialog
+        open={pendingCancelOrder !== null}
+        onClose={() => setPendingCancelId(null)}
+        onConfirm={() => {
+          const order = pendingCancelOrder;
+          setPendingCancelId(null);
+          if (order) void handleCancelOrder(order);
+        }}
+        title="Cancel this order?"
+        confirmLabel="Cancel order"
+        busy={cancellingId !== null}
+        description={
+          pendingCancelOrder ? (
+            <span className="space-y-2">
+              <span className="block">
+                {buildOrderCancellationConfirmation(pendingCancelOrder)}
+              </span>
+              <span className="block text-xs text-zinc-500">
+                This is the only cancellation path. Stock is restored automatically
+                where the order has not shipped.
+              </span>
+            </span>
+          ) : null
+        }
+      />
+
+      <p className="mt-6 flex flex-wrap items-center gap-2 border-t border-zinc-200 pt-4 text-[11px] text-zinc-500">
+        <IconArrow className="h-3 w-3" />
+        <Link href="/admin" className="font-semibold underline-offset-2 hover:underline">
+          Back to Command Center
+        </Link>
+      </p>
+    </AdminShell>
   );
 }

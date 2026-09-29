@@ -13,6 +13,9 @@ export default function WarehousesPage() {
   const [rows, setRows] = useState<Warehouse[]>([]);
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
+  // In-flight guard: without this, a double click fires two POSTs and could
+  // create the MAIN warehouse twice.
+  const [saving, setSaving] = useState(false);
 
   const load = async () => {
     const r = await fetch("/api/admin/warehouses", { cache: "no-store" });
@@ -31,6 +34,9 @@ export default function WarehousesPage() {
   }, []);
 
   const ensureMain = async () => {
+    // Guard first, so a rapid second click is a no-op rather than a second POST.
+    if (saving) return;
+    setSaving(true);
     setError("");
     setMessage("");
     try {
@@ -41,6 +47,8 @@ export default function WarehousesPage() {
       await load();
     } catch (e) {
       setError(e instanceof Error ? e.message : "Failed");
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -74,9 +82,11 @@ export default function WarehousesPage() {
         <button
           type="button"
           onClick={() => void ensureMain()}
-          className="mt-6 rounded bg-zinc-950 px-4 py-2 text-sm text-white"
+          disabled={saving}
+          aria-busy={saving}
+          className="mt-6 rounded bg-zinc-950 px-4 py-2 text-sm text-white disabled:cursor-not-allowed disabled:opacity-60"
         >
-          Ensure MAIN warehouse
+          {saving ? "Working…" : "Ensure MAIN warehouse"}
         </button>
         <div className="mt-8 space-y-3">
           {rows.map((w) => (

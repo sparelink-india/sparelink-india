@@ -1,6 +1,7 @@
 "use client";
 import Link from "next/link";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { buildLedgerIdempotencyKey } from "@/lib/admin-credit-idempotency";
 
 type Summary = {
   dealerId: string;
@@ -30,7 +31,13 @@ export default function CreditAdminPage() {
   const [amountPaise, setAmountPaise] = useState(0);
   const [notes, setNotes] = useState("");
   const [error, setError] = useState("");
+  const [message, setMessage] = useState("");
   const [saving, setSaving] = useState(false);
+  // Synchronous in-flight guard, so a double click cannot post twice.
+  const postInFlightRef = useRef(false);
+  // Submission counter backing the idempotency key. Not a clock reading: it
+  // advances only after a successful post, so retries collide by design.
+  const nonceRef = useRef(0);
 
   const loadDealers = useCallback(async () => {
     const r = await fetch("/api/admin/credit", { cache: "no-store" });
@@ -97,6 +104,38 @@ export default function CreditAdminPage() {
 
   const postEntry = async (e: React.FormEvent) => {
     e.preventDefault();
+    // Same-tick guard: `saving` state is applied asynchronously, so two rapid
+    // clicks could both pass a plain `if (saving) return`. The ref is set
+    // synchronously, so the second click is always dropped.
+    if (postInFlightRef.current) return;
+    if (!selected) {
+      setError("Select a dealer before posting an entry.");
+      return;
+    }
+    if (!Number.isFinite(amountPaise) || amountPaise === 0) {
+      setError("Enter a non-zero amount before posting an entry.");
+      return;
+    }
+
+    let idempotencyKey: string;
+    try {
+      idempotencyKey = buildLedgerIdempotencyKey({
+        dealerId: selected,
+        entryType,
+        amountPaise,
+        signedAmountPaise: entryType === "adjustment" ? amountPaise : undefined,
+        notes,
+        // Stable for the current form contents: a double click or a retry after
+        // a timeout reuses it, so the server returns the original entry
+        // (`created: false`) instead of writing a second one.
+        nonce: nonceRef.current,
+      });
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Could not build the entry key.");
+      return;
+    }
+
+    postInFlightRef.current = true;
     setSaving(true);
     setError("");
     try {
@@ -110,18 +149,27 @@ export default function CreditAdminPage() {
           amountPaise,
           signedAmountPaise: entryType === "adjustment" ? amountPaise : undefined,
           notes,
-          idempotencyKey: `admin-${selected}-${entryType}-${amountPaise}-${Date.now()}`,
+          idempotencyKey,
         }),
       });
       const d = await r.json();
       if (!r.ok) throw new Error(d.error);
       setSummary(d.summary);
+      // Advance the nonce so the admin can deliberately post the same amount
+      // and note again, and so a retry of THIS entry still collides.
+      nonceRef.current += 1;
+      setMessage(
+        d.created === false
+          ? "That entry was already posted. The existing ledger entry was kept."
+          : "Ledger entry posted.",
+      );
       setNotes("");
       setAmountPaise(0);
       await loadDealer(selected);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Post failed");
     } finally {
+      postInFlightRef.current = false;
       setSaving(false);
     }
   };
@@ -148,8 +196,14 @@ export default function CreditAdminPage() {
           zero until authorized entries are posted. Limit 0 = enforcement off.
         </p>
         {error && (
-          <p className="mt-5 rounded-lg bg-red-50 p-3 text-sm text-red-700">
+          <p role="alert" className="mt-5 rounded-lg bg-red-50 p-3 text-sm text-red-700">
             {error}
+          </p>
+        )}
+
+        {message && (
+          <p role="status" className="mt-5 rounded-lg bg-green-50 p-3 text-sm text-green-800">
+            {message}
           </p>
         )}
 

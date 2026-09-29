@@ -214,7 +214,13 @@ describe("admin orders page wiring", () => {
 
   it("confirms before cancelling", () => {
     const p = page();
-    assert.match(p, /window\.confirm\(buildOrderCancellationConfirmation\(order\)\)/);
+    /* The native window.confirm has been replaced by the shared admin confirm
+       dialog, which is the point of the modernization. What matters is
+       unchanged: the admin still confirms, the copy is still produced by the
+       same helper, and the PATCH only runs from the confirmed handler. */
+    assert.match(p, /AdminConfirmDialog/);
+    assert.match(p, /buildOrderCancellationConfirmation\(pendingCancelOrder\)/);
+    assert.match(p, /setPendingCancelId\(order\.id\)/);
   });
 
   it("prevents a double submit while cancelling", () => {

@@ -29,6 +29,11 @@ export default function ImportPage() {
     indexedCount: number;
   } | null>(null);
 
+  // `uploading` and `confirming` are real, reachable states. They must render
+  // visible progress, otherwise the page goes blank for the whole request.
+  const busy = state === "uploading" || state === "confirming";
+  const busyLabel = state === "uploading" ? "Processing" : "Importing";
+
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files?.length) {
       setFile(e.target.files[0]);
@@ -103,6 +108,8 @@ export default function ImportPage() {
       if (!r.ok) {
         setError(d.error || d.details || "Import failed");
         setMessage("");
+        // Drop the stale preview id so a retry cannot reuse a spent preview.
+        setPreviewId("");
         setState("error");
         return;
       }
@@ -165,6 +172,33 @@ export default function ImportPage() {
           <p className="mt-5 rounded-lg bg-blue-50 p-4 text-sm text-blue-700">
             {message}
           </p>
+        )}
+
+        {/* IN-FLIGHT: uploading or confirming. Previously these two states had
+            no render branch at all, so the page rendered blank mid-request. */}
+        {busy && (
+          <div
+            role="status"
+            aria-live="polite"
+            aria-busy="true"
+            className="mt-8 rounded-lg border border-zinc-200 bg-white p-10 text-center"
+          >
+            <span
+              aria-hidden="true"
+              className="motion-safe:animate-spin mx-auto block h-6 w-6 rounded-full border-2 border-zinc-300 border-t-[#7a1233]"
+            />
+            <p className="mt-4 text-sm font-semibold text-zinc-900">
+              {busyLabel}…
+            </p>
+            <p className="mt-1 text-xs text-zinc-500">
+              {state === "uploading"
+                ? "Uploading your file and validating every row. Large files can take a moment."
+                : "Writing the validated rows to the catalogue."}
+            </p>
+            <p className="mt-1 text-xs text-zinc-500">
+              Please keep this page open until the import finishes.
+            </p>
+          </div>
         )}
 
         {/* IDLE STATE - FILE UPLOAD */}
