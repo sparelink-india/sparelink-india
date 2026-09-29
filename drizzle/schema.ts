@@ -1,4 +1,4 @@
-﻿import { relations, sql } from "drizzle-orm";
+import { relations, sql } from "drizzle-orm";
 import {
   boolean,
   check,
@@ -1681,6 +1681,63 @@ export const heroVehicleCollectionItem = pgTable(
     index("hero_vehicle_collection_item_order_idx").on(
       table.slot,
       table.displayOrder,
+    ),
+  ],
+);
+
+/* ---------------------------------------------------------------------------
+   BRAND PRESENTATION OVERRIDES.
+
+   Brand MEMBERSHIP is config: PUBLIC_BRANDS in lib/public-brands.ts is the
+   authority for the nine customer-facing brands on /brands and the homepage
+   grid. Nothing here changes that, and an overlay row whose id is not in the
+   registry is discarded by lib/brand-admin.ts rather than rendered.
+
+   This table exists only because Vercel's filesystem is read-only at runtime,
+   so a config registry cannot be edited by an admin at all. Every column is
+   nullable and there are no rows yet, so every brand renders from its registry
+   value exactly as it does today.
+
+   NO FOREIGN KEY, DELIBERATELY. The registry is a code constant, not a table.
+   An anchor table to hang a key off would be a second brand taxonomy, and the
+   migration would fail against production because that table does not exist
+   there. Membership is enforced by the CHECK constraint below instead, which
+   gives the same guarantee and fails in the database rather than in
+   application code alone.
+
+   NOTHING HERE REFERENCES part.brand. That is free text on the catalogue and is
+   what Typesense facets on; rewriting it to match a display name would break
+   search facets and could not be undone from an audit record.
+   --------------------------------------------------------------------------- */
+
+export const brandProfile = pgTable(
+  "brand_profile",
+  {
+    id: text("id").primaryKey(),
+    /** NULL means "use the registry name", which is different from "". */
+    displayName: text("display_name"),
+    description: text("description"),
+    logoUrl: text("logo_url"),
+    relationship: text("relationship"),
+    searchQuery: text("search_query"),
+    displayOrder: integer("display_order"),
+    /** FALSE hides the brand from /brands and the homepage grid. */
+    isVisible: boolean("is_visible").default(true),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+    updatedAt: timestamp("updated_at")
+      .defaultNow()
+      .$onUpdate(() => new Date())
+      .notNull(),
+  },
+  (table) => [
+    index("brand_profile_visible_order_idx").on(table.isVisible, table.displayOrder),
+    check(
+      "brand_profile_id_check",
+      sql`${table.id} in ('01', 'meko', 'starlinks', '03', 'pensol', 'superseal', 'menon-brakes', 'shivaji-industries', 'akar')`,
+    ),
+    check(
+      "brand_profile_relationship_check",
+      sql`${table.relationship} is null or ${table.relationship} in ('distributor', 'trader')`,
     ),
   ],
 );
