@@ -6,6 +6,11 @@ import { PasswordChangeGuard } from "@/components/password-change-guard";
 import { PreferencesProvider } from "@/components/preferences-provider";
 import { LOCALE_COOKIE, PREFERENCE_BOOTSTRAP, THEME_COOKIE } from "@/lib/i18n";
 import "./globals.css";
+/* Phase A banner carousel styles. A scoped extraction from v3.css; see the file
+   header. Imported from the root layout because Next.js only permits global CSS
+   there. It is deliberately NOT app/v3.css: this ships the carousel's own rules
+   without adopting the V3 design system, and is removed when V3 lands. */
+import "./banner-carousel.css";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",

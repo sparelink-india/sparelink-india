@@ -13,6 +13,18 @@ export const en = {
 
   "nav.home": "Home",
   "nav.brands": "Brands",
+
+  /* Promotional banner carousel. The empty-state copy is deliberately visible
+     rather than collapsing the section: an admin who has not uploaded a banner
+     yet should see where one will appear, and a storefront with no banners
+     should read as a designed gap rather than a broken layout. */
+  "banners.label": "Promotional banners",
+  "banners.previous": "Previous banner",
+  "banners.next": "Next banner",
+  "banners.emptyTitle": "Banner / Advertisement Area",
+  "banners.emptyBody": "Add promotional banners from Admin",
+  "banners.slide": "Banner {n} of {total}: {title}",
+
   "nav.fitment": "Vehicle Fitment",
   "nav.offers": "Offers",
   "nav.about": "About Us",
@@ -777,6 +789,14 @@ export const hi: Record<keyof typeof en, string> = {
 
   "nav.home": "होम",
   "nav.brands": "ब्रांड",
+
+  "banners.label": "प्रचार बैनर",
+  "banners.previous": "पिछला बैनर",
+  "banners.next": "अगला बैनर",
+  "banners.emptyTitle": "बैनर / विज्ञापन क्षेत्र",
+  "banners.emptyBody": "एडमिन से प्रचार बैनर जोड़ें",
+  "banners.slide": "बैनर {n} / {total}: {title}",
+
   "nav.fitment": "वाहन फिटमेंट",
   "nav.offers": "ऑफ़र",
   "nav.about": "हमारे बारे में",

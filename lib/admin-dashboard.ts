@@ -456,6 +456,7 @@ export const ADMIN_FEATURES: readonly AdminFeature[] = [
   { id: "source-catalogue", label: "Source Catalogue", href: "/admin/source-catalogue", description: "Manufacturer catalogue sync", category: "catalogue", primary: false },
   { id: "ci-sync", label: "CI Sync", href: "/admin/ci-sync", description: "Catalogue integration approvals", category: "catalogue", primary: false },
   { id: "editing-studio", label: "Editing Studio", href: "/admin/editing", description: "Visual and content editing tools", category: "catalogue", primary: false },
+  { id: "promotional-banners", label: "Promotional Banners", href: "/admin/banners", description: "Storefront advertisement banners", category: "catalogue", primary: false },
 
   { id: "warranty", label: "Warranty & Claims", href: "/admin/credit", description: "Claims and dealer credit", category: "service", primary: true },
 

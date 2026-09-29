@@ -2,6 +2,7 @@
 
 import { createElement } from "react";
 import {
+  IconBanner,
   IconBoxes,
   IconBusiness,
   IconCart,
@@ -69,6 +70,7 @@ const FEATURE_ICONS: Record<string, AdminIconComponent> = {
   "source-catalogue": IconDatabase,
   "ci-sync": IconSync,
   "editing-studio": IconEditStudio,
+  "promotional-banners": IconBanner,
   // Service
   warranty: IconShield,
   // Tools

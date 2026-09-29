@@ -434,3 +434,21 @@ export const IconEditStudio = (p: IconProps) => (
     <path d="M9.4 20.4h5.6" />
   </Svg>
 );
+
+/* ------------------------------------------------------------------ banners */
+
+/**
+ * Promotional banners: stacked slides on a display rail.
+ *
+ * Distinct from IconList (rows of text) and IconGrid (a matrix of equal cells).
+ * Two offset rectangles read as "one of these, on a loop", which is what the
+ * storefront carousel is, so the admin glyph matches the thing being managed.
+ */
+export const IconBanner = (p: IconProps) => (
+  <Svg {...p}>
+    <path d="M4.75 6.25h14.5v8.5H4.75z" />
+    <path d="M6.75 17.25h10.5" />
+    <path d="M8.25 19.5h7.5" />
+    <path d="M7.25 9.25h3M7.25 12h1.5" />
+  </Svg>
+);

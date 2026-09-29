@@ -8,10 +8,12 @@ import { SiteFooter } from "@/components/site-footer";
 import { StorefrontHeader } from "@/components/storefront-header";
 import { HomeHero } from "@/components/home-hero";
 import { PublicBrandsSection } from "@/components/public-brand-grid";
+import { PromotionalBannerSlider } from "@/components/promotional-banner-slider";
 import { ProductDetailModal } from "@/components/product-detail-modal";
 import { SearchExperience, type SearchTab } from "@/components/search-experience";
 import { useI18n } from "@/components/preferences-provider";
 import { rememberSearch } from "@/lib/recent-searches";
+import type { PublicBanner } from "@/lib/promotional-banners";
 import { MobileBottomNav } from "@/components/mobile/mobile-bottom-nav";
 import { QuickOrderPanel } from "@/components/quick-order-panel";
 import { VehicleQuickSelector } from "@/components/vehicle-quick-selector";
@@ -153,9 +155,12 @@ type StockFilter = "all" | "in_stock";
 export function HomePageContent({
   initialQuery = "",
   initialPage = 1,
+  banners = [],
 }: {
   initialQuery?: string;
   initialPage?: number;
+  /** Enabled promotional banners, resolved on the server. */
+  banners?: PublicBanner[];
 }) {
   const { t } = useI18n();
   const router = useRouter();
@@ -550,6 +555,16 @@ export function HomePageContent({
             <div className="hidden md:block">
             <HomeHero onQuickSearch={(q) => commitSearch(q, 1)} />            </div>
             <PublicBrandsSection onSelect={(q) => commitSearch(q, 1)} />
+
+        {/* ============ PROMOTIONAL BANNERS ============
+            The admin-managed advertisement slider. Placed after the brand
+            directory and before the category grid, which is the slot the removed
+            duplicate Vehicle Fitment section used to occupy.
+
+            Banners are resolved on the server (see app/(public)/page.tsx) and
+            passed down, so the storefront never queries the banner table and the
+            carousel is present on first paint. */}
+        <PromotionalBannerSlider banners={banners} />
 
         {/* Categories Section */}
         <section id="categories" className="py-14 sm:py-18 bg-white border-b border-slate-200/80">

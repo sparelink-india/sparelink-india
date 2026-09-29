@@ -1,6 +1,7 @@
 import { Suspense } from "react";
 
 import { HomePageContent } from "./home-client";
+import { loadEnabledBanners } from "@/lib/promotional-banners";
 
 export const dynamic = "force-dynamic";
 
@@ -19,9 +20,19 @@ export default async function HomePage({
   const initialPage =
     Number.isFinite(parsedPage) && parsedPage >= 1 ? Math.floor(parsedPage) : 1;
 
+  /* Enabled banners are resolved HERE, on the server, and handed to the client
+     component. The banner table is never queried from the browser, and a
+     deployment without a configured image origin simply gets an empty list and
+     renders the empty state rather than failing the page. */
+  const banners = await loadEnabledBanners();
+
   return (
     <Suspense fallback={<div className="min-h-screen bg-slate-50" />}>
-      <HomePageContent initialQuery={initialQuery} initialPage={initialPage} />
+      <HomePageContent
+        initialQuery={initialQuery}
+        initialPage={initialPage}
+        banners={banners}
+      />
     </Suspense>
   );
 }
