@@ -103,11 +103,40 @@ type Module = {
 
 const ICON_CLASS = "h-5 w-5";
 
+/**
+ * The ten approved modules, in the order the brief lists them.
+ *
+ * STATUS IS THE WHOLE POINT OF THIS TABLE, so it is worth being precise about
+ * what each value claims:
+ *
+ *   available  a real screen exists at `href` and a real admin-only API backs
+ *              it. Clickable.
+ *   external   the capability is real but already lives somewhere else, so this
+ *              card links to THAT screen instead of duplicating it. Promotional
+ *              Banners is the case: the banner editor shipped and works, and
+ *              building a second one would give two places to manage the same
+ *              rows.
+ *   planned    no screen exists. Deliberately NOT a link. A card that navigates
+ *              to a 404 is worse than one that plainly says the work is not
+ *              built.
+ *
+ * `available` TRACKS SHIPPED SCREENS, NOT AVAILABLE DATA. Two modules are marked
+ * planned despite the data behind them being real, and both say why in their
+ * own copy. That distinction is the difference between an honest index and a
+ * wish list.
+ *
+ * NO DUPLICATE IDS. An earlier version of this table listed Hero Vehicle
+ * Collections twice, once available and once planned, and the admin feature test
+ * could not catch it because the second entry was simply ignored as a duplicate
+ * React key. A uniqueness assertion now runs at module load, so a repeated id is
+ * a startup error rather than a silently missing card.
+ */
 const MODULES: readonly Module[] = [
   {
     id: "hero-homepage",
     title: "Hero & Homepage",
-    description: "Replace the hero artwork and manage its hotspot targets.",
+    description:
+      "Replace the hero artwork and manage its hotspot targets. The artwork and its 15 anchors are deployed; no editor for them yet.",
     icon: <IconActivity className={ICON_CLASS} />,
     status: "planned",
   },
@@ -121,8 +150,9 @@ const MODULES: readonly Module[] = [
   {
     id: "hero-vehicle-collections",
     title: "Hero Vehicle Collections",
-    description: "Curate the product set each hero vehicle hotspot shows.",
-    icon: <IconBoxes className={ICON_CLASS} />,
+    description:
+      "Curate the product set each hero vehicle hotspot shows. Kept separate from fitment on purpose.",
+    icon: <IconTruck className={ICON_CLASS} />,
     status: "available",
     href: "/admin/editing/hero-collections",
   },
@@ -135,55 +165,76 @@ const MODULES: readonly Module[] = [
     href: "/admin/editing/vehicle-compatibility",
   },
   {
-    id: "hero-vehicle-collections",
-    title: "Hero Vehicle Collections",
-    description: "Curated marketing sets per vehicle class, kept separate from fitment.",
-    icon: <IconTruck className={ICON_CLASS} />,
-    status: "planned",
-  },
-  {
     id: "product-images",
     title: "Product Images",
-    description: "Primary image, gallery order and per-product previews.",
+    description:
+      "Derived image state for every product, with single-image replacement. Uploads need R2 credentials.",
     icon: <IconBoxes className={ICON_CLASS} />,
-    status: "planned",
+    status: "available",
+    href: "/admin/editing/product-images",
   },
   {
     id: "product-information",
     title: "Product Information",
-    description: "Names, part numbers, OEM references and classifications.",
+    description:
+      "Names, OEM references and classification, one product at a time. Price and stock live elsewhere by design.",
     icon: <IconPriceTag className={ICON_CLASS} />,
-    status: "planned",
+    status: "available",
+    href: "/admin/editing/product-information",
   },
   {
     id: "categories",
     title: "Categories",
-    description: "Catalogue category names, slugs and descriptions.",
+    description:
+      "The existing category table, with deletion refused while products depend on a category.",
     icon: <IconList className={ICON_CLASS} />,
-    status: "planned",
+    status: "available",
+    href: "/admin/editing/categories",
   },
   {
     id: "brands",
     title: "Brands",
-    description: "Brand values present across the catalogue and storefront.",
+    description:
+      "Presentation overrides for the nine approved brands. Membership stays in code and part.brand is never rewritten.",
     icon: <IconUsers className={ICON_CLASS} />,
-    status: "planned",
+    status: "available",
+    href: "/admin/editing/brands",
   },
   {
     id: "promotional-banners",
     title: "Promotional Banners",
-    description: "Existing banner editor: upload, order, enable and preview.",
+    description: "The existing banner editor: upload, order, enable and preview.",
     icon: <IconGrid className={ICON_CLASS} />,
-    status: "planned",
+    status: "external",
+    href: "/admin/banners",
   },
   {
     id: "homepage-content",
     title: "Homepage Content",
-    description: "Section visibility and ordering for the storefront home page.",
+    description:
+      "A single view of the hero, banners, brand and category settings, linking to the module that owns each one.",
     icon: <IconSliders className={ICON_CLASS} />,
-    status: "planned",
+    status: "available",
+    href: "/admin/editing/homepage",
   },
 ];
+
+/**
+ * Fail loudly on a repeated module id.
+ *
+ * A duplicate id is invisible at render time: React drops the second card and
+ * the grid quietly shows one fewer module than the table claims, with no error
+ * anywhere. That is exactly the "false absence" this page exists to prevent, so
+ * it is a startup assertion rather than a lint rule.
+ */
+const DUPLICATE_MODULE_IDS = MODULES.map((m) => m.id).filter(
+  (id, i, all) => all.indexOf(id) !== i,
+);
+if (DUPLICATE_MODULE_IDS.length > 0) {
+  throw new Error(
+    `Editing Studio module ids must be unique. Duplicated: ${[...new Set(DUPLICATE_MODULE_IDS)].join(", ")}`,
+  );
+}
 
 /**
  * One module card.
