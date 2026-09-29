@@ -1,9 +1,11 @@
-import { relations } from "drizzle-orm";
+﻿import { relations, sql } from "drizzle-orm";
 import {
   boolean,
+  check,
   index,
   integer,
   pgTable,
+  primaryKey,
   text,
   timestamp,
   uniqueIndex,
@@ -194,7 +196,7 @@ export const part = pgTable(
     seoTitle: text("seo_title"),
     seoDescription: text("seo_description"),
     isPublished: boolean("is_published").default(true).notNull(),
-    /** APPROVED | PENDING_ADMIN_APPROVAL | REJECTED — existing rows default APPROVED. */
+    /** APPROVED | PENDING_ADMIN_APPROVAL | REJECTED ΓÇö existing rows default APPROVED. */
     approvalStatus: text("approval_status").default("APPROVED").notNull(),
     createdAt: timestamp("created_at").defaultNow().notNull(),
     updatedAt: timestamp("updated_at")
@@ -782,7 +784,7 @@ export const customerAddress = pgTable(
   ],
 );
 
-/** Customer vehicle garage — "Meri Gaadi Ke Liye Parts". */
+/** Customer vehicle garage ΓÇö "Meri Gaadi Ke Liye Parts". */
 export const customerVehicle = pgTable(
   "customer_vehicle",
   {
@@ -1329,7 +1331,7 @@ export const pricingCategory = pgTable(
 
 /**
  * Configurable pricing rules. discount_percent is null until admin sets it.
- * Hierarchy (highest first): customer → dealer → pricing_category → listing.
+ * Hierarchy (highest first): customer ΓåÆ dealer ΓåÆ pricing_category ΓåÆ listing.
  */
 export const pricingRule = pgTable(
   "pricing_rule",
@@ -1484,7 +1486,7 @@ export const goodsReceiptItem = pgTable(
 );
 
 /**
- * CI / manufacturer source catalogue rows — commercial SpareLink price lives on dealer_listing.
+ * CI / manufacturer source catalogue rows ΓÇö commercial SpareLink price lives on dealer_listing.
  * Source price must never overwrite customer selling price.
  */
 export const catalogueSourceItem = pgTable(
@@ -1528,7 +1530,7 @@ export const catalogueSourceItem = pgTable(
   ],
 );
 
-/** Traceable CI sync runs — never interpret failed fetches as full catalogue deletion. */
+/** Traceable CI sync runs ΓÇö never interpret failed fetches as full catalogue deletion. */
 export const catalogueSyncRun = pgTable(
   "catalogue_sync_run",
   {
@@ -1558,7 +1560,7 @@ export const catalogueSyncRun = pgTable(
 );
 
 /**
- * PROMOTIONAL BANNERS — the storefront advertisement slider.
+ * PROMOTIONAL BANNERS ΓÇö the storefront advertisement slider.
  *
  * Deliberately a separate system from vehicle compatibility and from the hero:
  * it has no foreign key to `vehicle` or `part`, reads no compatibility table,
@@ -1583,7 +1585,7 @@ export const promotionalBanner = pgTable(
     /** Alt text. Falls back to `title` when null. */
     altText: text("alt_text"),
     /**
-     * Optional click destination. Null means "display only" — the storefront
+     * Optional click destination. Null means "display only" ΓÇö the storefront
      * must then render a non-interactive element, never an empty <a>.
      */
     destinationUrl: text("destination_url"),
@@ -1599,6 +1601,85 @@ export const promotionalBanner = pgTable(
   (table) => [
     index("promotional_banner_enabled_order_idx").on(
       table.isEnabled,
+      table.displayOrder,
+    ),
+  ],
+);
+
+/* ---------------------------------------------------------------------------
+   HERO VEHICLE COLLECTIONS - the curated product set behind each hero vehicle
+   class hotspot.
+
+   DELIBERATELY SEPARATE FROM VEHICLE COMPATIBILITY. A hero class is a marketing
+   label on a picture ("Earthmover"), not a vehicle row. There is no `vehicle`
+   table to join against, and nothing here may be written to
+   `part_vehicle_compatibility`: curating a heavy-truck product set must never
+   assert that a part fits a specific vehicle. The two systems share no foreign
+   key and no code path. `part_vehicle_compatibility` stays the authority for
+   fitment; these tables are the authority for what a marketing click shows.
+
+   EIGHT SLOTS, NOT SEVEN. Passenger Vehicle is drawn twice, on the red SUV and
+   the white saloon, and each needs its own curated set, so the slot is part of
+   the key rather than a column. The CHECK constraint keeps the set closed, so a
+   typo is a rejected insert rather than a collection nothing renders.
+   --------------------------------------------------------------------------- */
+
+export const HERO_COLLECTION_SLOTS = [
+  "heavy-commercial-vehicle",
+  "light-commercial-vehicle",
+  "passenger-red-suv",
+  "passenger-white-saloon",
+  "agriculture",
+  "earthmover",
+  "motorcycle",
+  "scooter",
+] as const;
+
+export type HeroCollectionSlot = (typeof HERO_COLLECTION_SLOTS)[number];
+
+export const heroVehicleCollection = pgTable(
+  "hero_vehicle_collection",
+  {
+    slot: text("slot").$type<HeroCollectionSlot>().primaryKey(),
+    label: text("label").notNull(),
+    /** A disabled slot falls back to /vehicle-fitment rather than showing an empty set. */
+    isEnabled: boolean("is_enabled").default(true).notNull(),
+    displayOrder: integer("display_order").default(0).notNull(),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+    updatedAt: timestamp("updated_at")
+      .defaultNow()
+      .$onUpdate(() => new Date())
+      .notNull(),
+  },
+  (table) => [
+    index("hero_vehicle_collection_enabled_order_idx").on(
+      table.isEnabled,
+      table.displayOrder,
+    ),
+    check(
+      "hero_vehicle_collection_slot_check",
+      sql`${table.slot} in ('heavy-commercial-vehicle', 'light-commercial-vehicle', 'passenger-red-suv', 'passenger-white-saloon', 'agriculture', 'earthmover', 'motorcycle', 'scooter')`,
+    ),
+  ],
+);
+
+export const heroVehicleCollectionItem = pgTable(
+  "hero_vehicle_collection_item",
+  {
+    slot: text("slot")
+      .$type<HeroCollectionSlot>()
+      .notNull()
+      .references(() => heroVehicleCollection.slot, { onDelete: "cascade" }),
+    partId: text("part_id")
+      .notNull()
+      .references(() => part.id, { onDelete: "cascade" }),
+    displayOrder: integer("display_order").default(0).notNull(),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+  },
+  (table) => [
+    primaryKey({ columns: [table.slot, table.partId] }),
+    index("hero_vehicle_collection_item_order_idx").on(
+      table.slot,
       table.displayOrder,
     ),
   ],
