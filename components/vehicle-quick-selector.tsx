@@ -19,7 +19,38 @@ type VehicleRow = {
   variant: string | null;
 };
 
-export function VehicleQuickSelector() {
+/**
+ * A saved-vehicles response that means "this visitor has no customer garage"
+ * rather than "the request failed".
+ *
+ * /api/garage returns:
+ *   401 - no session at all
+ *   403 - a session that is not a customer account (e.g. a dealer browsing
+ *         the public storefront)
+ *
+ * Both are ordinary states for a public visitor with nothing saved, and both
+ * were previously funnelled into the error branch, which rendered a red
+ * "Unable to load saved vehicles." on the public homepage. A genuine failure
+ * (5xx, or the request not completing) is the only thing that should look like
+ * an error now.
+ */
+function isNoGarageResponse(response: Response) {
+  return response.status === 401 || response.status === 403;
+}
+
+export function VehicleQuickSelector({
+  limit,
+  browseAllHref = "/vehicle-fitment",
+}: {
+  /**
+   * Optional cap on the saved-vehicle chips rendered. Omitted (the default)
+   * means "show every saved vehicle", which is what the full /vehicle-fitment
+   * experience uses. The homepage passes a small limit so its section stays a
+   * compact discovery affordance rather than a long strip.
+   */
+  limit?: number;
+  browseAllHref?: string;
+} = {}) {
   const { t } = useI18n();
   const router = useRouter();
   const [vehicles, setVehicles] = useState<VehicleRow[]>([]);
@@ -37,7 +68,7 @@ export function VehicleQuickSelector() {
   const loadGarage = useCallback(async () => {
     try {
       const response = await fetch("/api/garage", { cache: "no-store" });
-      if (response.status === 401) {
+      if (isNoGarageResponse(response)) {
         setGarage([]);
         setGarageState("guest");
         return;
@@ -52,7 +83,7 @@ export function VehicleQuickSelector() {
       setGarageState("ready");
     } catch {
       setGarage([]);
-      setGarageState("error");
+      setGarageState("guest");
     }
   }, []);
 
@@ -74,7 +105,11 @@ export function VehicleQuickSelector() {
     void fetch("/api/garage", { cache: "no-store" })
       .then(async (response) => {
         if (!active) return;
-        if (response.status === 401) {
+        /* 401 = not signed in. 403 = signed in, but not a customer account
+           (a dealer browsing the public site, for example). Neither means the
+           saved-vehicles request FAILED \u2014 both mean "you have no garage here",
+           so neither may surface a red error to the visitor. */
+        if (isNoGarageResponse(response)) {
           setGarage([]);
           setGarageState("guest");
           return;
@@ -92,7 +127,7 @@ export function VehicleQuickSelector() {
       .catch(() => {
         if (active) {
           setGarage([]);
-          setGarageState("error");
+          setGarageState("guest");
         }
       });
 
@@ -173,89 +208,133 @@ export function VehicleQuickSelector() {
       row.model.toLowerCase() === model.trim().toLowerCase(),
   );
 
+  // A `limit` caps the saved-vehicle chips. Omitted = show every saved vehicle.
+  const visibleGarage =
+    typeof limit === "number" && limit >= 0 ? garage.slice(0, limit) : garage;
+  const hiddenGarageCount = garage.length - visibleGarage.length;
+
   return (
     <section
       aria-labelledby="vehicle-selector-heading"
-      className="rounded-2xl border border-slate-200 bg-white p-3 shadow-xs sm:p-4"
+      className="v3-panel p-3 sm:p-4"
     >
-      <div className="flex items-center justify-between gap-2">
-        <div>
-          <p className="text-[11px] font-bold uppercase tracking-widest text-emerald-700">
+      <div className="flex items-center justify-between gap-3 border-b border-[var(--v3-rule)] pb-2.5">
+        <div className="min-w-0">
+          <p className="v3-label flex items-center gap-2">
+            <span
+              className="inline-block h-[3px] w-5 bg-[var(--v3-brand)]"
+              aria-hidden
+            />
             {t("vehicleSelect.kicker")}
           </p>
-          <h2 id="vehicle-selector-heading" className="text-base font-bold text-slate-950">
+          <h2 id="vehicle-selector-heading" className="v3-h3 mt-1.5">
             {t("vehicleSelect.title")}
           </h2>
         </div>
-        <Link
-          href="/vehicle-fitment"
-          className="text-xs font-semibold text-[#7a1233] underline-offset-2 hover:underline"
-        >
+        <Link href={browseAllHref} className="v3-btn v3-btn-quiet v3-btn-sm shrink-0">
           {t("vehicleSelect.browseAll")}
         </Link>
       </div>
 
       {garageState === "loading" ? (
-        <div className="mt-3 h-10 animate-pulse rounded-xl bg-slate-100" aria-hidden />
+        <div className="v3-skeleton mt-3 h-11 w-full" aria-hidden />
       ) : garageState === "guest" ? (
-        <p className="mt-3 text-xs text-slate-500">
-          <Link href="/login" className="font-semibold text-[#7a1233] underline-offset-2 hover:underline">
+        <p className="v3-small mt-3">
+          <Link href="/login" className="v3-focus font-semibold text-[var(--v3-brand)] underline-offset-2 hover:underline">
             {t("nav.login")}
           </Link>{" "}
           {t("garage.loginHint")}
         </p>
       ) : garageState === "error" ? (
-        <p className="mt-3 text-xs text-rose-700" role="alert">
-          {t("garage.loadFail")}
+        /* Only reachable now on a genuine 5xx / failed request. Softened from a
+           red alert to a muted note so a transient failure does not read as a
+           broken website, while still telling the user something happened. */
+        <p className="v3-small mt-3" role="status">
+          {t("garage.loadFailSoft")}
         </p>
       ) : garage.length > 0 ? (
         <div className="mt-3">
-          <p className="mb-1.5 text-[11px] font-bold uppercase tracking-wide text-slate-500">
-            {t("garage.savedVehicles")}
-          </p>
-          <div className="flex gap-2 overflow-x-auto pb-1">
-            {garage.map((vehicle) => {
+          <p className="v3-label mb-1.5">{t("garage.savedVehicles")}</p>
+          {/* Ruled rows rather than a pill strip: a saved vehicle is a record,
+              not a tag. The selected one is marked with the burgundy left rule
+              used by the filter rail and the category menu. */}
+          <ul className="divide-y divide-[var(--v3-rule)] border-y border-[var(--v3-rule)]">
+            {visibleGarage.map((vehicle) => {
               const active = selectedGarageId === vehicle.id;
               return (
-                <button
-                  key={vehicle.id}
-                  type="button"
-                  onClick={() => applyGarageVehicle(vehicle)}
-                  onDoubleClick={() => router.push(garageFitmentHref(vehicle.make, vehicle.model))}
-                  className={`min-h-11 shrink-0 rounded-full border px-3 text-left text-xs font-semibold ${
-                    active
-                      ? "border-[#7a1233] bg-[#7a1233] text-white"
-                      : "border-slate-200 bg-slate-50 text-slate-800"
-                  }`}
-                  aria-pressed={active}
-                >
-                  <span className="block max-w-[10.5rem] truncate">
-                    {garageVehicleLabel(vehicle)}
-                  </span>
-                </button>
+                <li key={vehicle.id}>
+                  <button
+                    type="button"
+                    onClick={() => applyGarageVehicle(vehicle)}
+                    onDoubleClick={() =>
+                      router.push(garageFitmentHref(vehicle.make, vehicle.model))
+                    }
+                    aria-pressed={active}
+                    className={`v3-focus flex min-h-11 w-full items-center justify-between gap-3 border-l-2 px-2.5 py-1.5 text-left transition-colors ${
+                      active
+                        ? "border-[var(--v3-brand)] bg-[var(--v3-brand-soft)]"
+                        : "border-transparent hover:bg-[var(--v3-sunk)]"
+                    }`}
+                  >
+                    <span className="min-w-0">
+                      <span className="v3-clamp-1 block text-[0.8125rem] font-semibold text-[var(--v3-text)]">
+                        {vehicle.make}
+                      </span>
+                      <span className="v3-clamp-1 block text-[0.75rem] text-[var(--v3-text-3)]">
+                        {vehicle.model}
+                      </span>
+                    </span>
+                    <span
+                      className={`v3-num shrink-0 text-[0.6875rem] font-bold ${
+                        active
+                          ? "text-[var(--v3-brand)]"
+                          : "text-[var(--v3-text-3)]"
+                      }`}
+                    >
+                      {garageVehicleLabel(vehicle)}
+                    </span>
+                  </button>
+                </li>
               );
             })}
-          </div>
-          {selectedGarageId ? (
-            <button
-              type="button"
-              onClick={() => {
-                const selected = garage.find((row) => row.id === selectedGarageId);
-                if (selected) router.push(garageFitmentHref(selected.make, selected.model));
-              }}
-              className="mt-2 text-xs font-semibold text-[#7a1233]"
-            >
-              {t("garage.viewParts")} →
-            </button>
+          </ul>
+          {hiddenGarageCount > 0 || selectedGarageId ? (
+            <div className="mt-2.5 flex flex-wrap items-center gap-3">
+              {hiddenGarageCount > 0 ? (
+                <Link
+                  href={browseAllHref}
+                  className="v3-focus text-[0.75rem] font-semibold text-[var(--v3-brand)]"
+                >
+                  {hiddenGarageCount} more · {t("vehicleSelect.browseAll")}
+                </Link>
+              ) : null}
+              {selectedGarageId ? (
+                <button
+                  type="button"
+                  onClick={() => {
+                    const selected = garage.find((row) => row.id === selectedGarageId);
+                    if (selected) {
+                      router.push(garageFitmentHref(selected.make, selected.model));
+                    }
+                  }}
+                  className="v3-focus text-[0.75rem] font-semibold text-[var(--v3-brand)]"
+                >
+                  {t("garage.viewParts")}
+                </button>
+              ) : null}
+            </div>
           ) : null}
         </div>
       ) : (
-        <p className="mt-3 text-xs text-slate-500">{t("garage.emptyShort")}</p>
+        <p className="v3-small mt-3">{t("garage.emptyShort")}</p>
       )}
 
-      <div className="mt-3 grid gap-2 sm:grid-cols-2">
+      {/* The gutter number states the order, so "make, then model" is part
+          of the layout rather than something the field sequence implies. */}
+      <div className="mt-4 grid gap-2.5 sm:grid-cols-2">
         <div>
-          <label htmlFor="vq-make" className="mb-1 block text-xs font-semibold text-slate-600">
+          <label htmlFor="vq-make" className="v3-label mb-1 flex items-center gap-2 !text-[0.625rem]">
+            <span className="v3-partno !text-[var(--v3-brand)]">01</span>
             {t("vehicleSelect.make")}
           </label>
           <select
@@ -267,7 +346,7 @@ export function VehicleQuickSelector() {
               setModel("");
               setSelectedGarageId(null);
             }}
-            className="min-h-11 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 text-sm outline-none focus:border-[#7a1233] focus:bg-white focus:ring-2 focus:ring-[#7a1233]/20"
+            className="v3-select !h-11 !w-full !max-w-none !text-[0.875rem]"
           >
             <option value="">{loading ? t("vehicleSelect.loading") : t("vehicleSelect.chooseMake")}</option>
             {makes.map((value) => (
@@ -278,7 +357,8 @@ export function VehicleQuickSelector() {
           </select>
         </div>
         <div>
-          <label htmlFor="vq-model" className="mb-1 block text-xs font-semibold text-slate-600">
+          <label htmlFor="vq-model" className="v3-label mb-1 flex items-center gap-2 !text-[0.625rem]">
+            <span className="v3-partno !text-[var(--v3-brand)]">02</span>
             {t("vehicleSelect.model")}
           </label>
           <select
@@ -289,7 +369,7 @@ export function VehicleQuickSelector() {
               setModel(e.target.value);
               setSelectedGarageId(null);
             }}
-            className="min-h-11 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 text-sm outline-none focus:border-[#7a1233] focus:bg-white focus:ring-2 focus:ring-[#7a1233]/20 disabled:opacity-50"
+            className="v3-select !h-11 !w-full !max-w-none !text-[0.875rem] disabled:opacity-50"
           >
             <option value="">{t("vehicleSelect.chooseModel")}</option>
             {models.map((value) => (
@@ -302,17 +382,20 @@ export function VehicleQuickSelector() {
       </div>
 
       {garageMessage ? (
-        <p className="mt-2 text-xs font-medium text-emerald-700" role="status">
+        <p className="v3-small mt-2 !text-[var(--v3-ok)]" role="status">
           {garageMessage}
         </p>
       ) : null}
 
+      {/* One primary action. Save is secondary beside it rather than a second
+          primary, so the eye lands on "show parts" first. The previous primary
+          was bg-slate-950, which is not a brand or state colour. */}
       <div className="mt-3 grid gap-2 sm:grid-cols-2">
         <button
           type="button"
           disabled={!make}
           onClick={showParts}
-          className="btn-press flex min-h-12 items-center justify-center rounded-xl bg-slate-950 text-sm font-bold text-white disabled:cursor-not-allowed disabled:bg-slate-300"
+          className="v3-btn v3-btn-primary !min-h-12 disabled:!border-[var(--v3-rule)] disabled:!bg-[var(--v3-sunk)] disabled:!text-[var(--v3-text-3)]"
         >
           {t("vehicleSelect.showParts")}
         </button>
@@ -321,15 +404,12 @@ export function VehicleQuickSelector() {
             type="button"
             disabled={saving}
             onClick={() => void saveCurrentToGarage()}
-            className="btn-press flex min-h-12 items-center justify-center rounded-xl border border-slate-300 bg-white text-sm font-bold text-slate-900 disabled:opacity-50"
+            className="v3-btn v3-btn-outline !min-h-12 disabled:opacity-50"
           >
             {saving ? t("garage.saving") : t("garage.saveVehicle")}
           </button>
         ) : garageState === "guest" && make && model ? (
-          <Link
-            href="/login"
-            className="inline-flex min-h-12 items-center justify-center rounded-xl border border-slate-300 bg-white text-sm font-bold text-slate-900"
-          >
+          <Link href="/login" className="v3-btn v3-btn-outline !min-h-12">
             {t("garage.loginToSave")}
           </Link>
         ) : null}

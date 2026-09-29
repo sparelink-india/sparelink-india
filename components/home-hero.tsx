@@ -1,309 +1,206 @@
-"use client";
-
-/* Hero uses pre-cut product rasters; next/image crop would clip edges. */
-/* eslint-disable @next/next/no-img-element */
-
-import type { ReactNode } from "react";
+import Image from "next/image";
 import Link from "next/link";
 
-import { useI18n } from "@/components/preferences-provider";
-import type { MessageKey } from "@/lib/i18n";
+/**
+ * V3 hero - final approved artwork with the interaction layer.
+ *
+ * THE ARTWORK
+ * -----------
+ * `public/images/hero/hero-final-reference.png`, 2158x729 (aspect 2.960),
+ * rendered as one composite bitmap and never reconstructed from parts. It bakes
+ * in its own left column (burgundy rule, "AUTO SPARE PARTS", the two headline
+ * lines, the supporting sentence) AND its own two CTA buttons, plus nine
+ * circular marker dots over the vehicles. None of that is redrawn in HTML -
+ * doing so would print the text twice. The visible headline is preserved for
+ * assistive technology with one `sr-only` heading.
+ *
+ * It is `object-contain` inside a container locked to the native ratio, and
+ * `max-w-[1600px]`, so the bitmap is never upscaled past a 0.74x downscale and
+ * never cropped. `object-cover` is deliberately not used: the vehicles and the
+ * Pensol range sit close to both edges, so a cover-crop would slice a wheel or
+ * a bottle.
+ *
+ * WHY THE MARKER DOTS WERE INERT
+ * ------------------------------
+ * The nine dots in the artwork are the vehicle interaction points, and each one
+ * now has a real anchor over it. The dot centres below were NOT eyeballed: the
+ * 2158x729 PNG was decoded in Node and the dots were found by ring template
+ * matching (a bright annulus with a dark core, scored as
+ * mean(ring luminance) - mean(core luminance)) with non-maximum suppression over
+ * the vehicle band only. The strongest score was 189; the accepted set sits
+ * above 153. Two candidates scoring 170.8 and 166.2 were rejected after
+ * cropping and inspecting them - both were false positives on the cream
+ * background beside the baked headline, not markers. Every accepted centre was
+ * then re-confirmed on a contact sheet with a crosshair drawn through it, and
+ * the eight vehicles were identified by eye from those crops.
+ *
+ * The white saloon carries TWO dots (1593,337 and 1619,367); one target spans
+ * both so the whole car is live rather than leaving a dead dot on screen.
+ *
+ * VEHICLE DESTINATIONS
+ * --------------------
+ * Every vehicle dot goes to `/vehicle-fitment`, which is the real, existing
+ * vehicle browsing experience. This application has no vehicle-class parts
+ * taxonomy: the only vehicle-class slugs that resolve
+ * (heavy-commercial-vehicle, passenger-vehicle, agriculture, earthmover) are
+ * water-pump segments, and they are either empty (heavy commercial returns 0
+ * products) or an accidental `nameContains` text match. The scooter
+ * specifically has no destination at all, and `/category/agriculture` resolves
+ * to a text search that really matches "Agriculture & Tractor Oils".
+ *
+ * `/vehicle-fitment` (the index) reads NO searchParams, so these links are bare
+ * paths. No query parameters were invented. The `aria-label`s still describe the
+ * vehicle class so assistive tech gets the right name; the destination is the
+ * fitment browser until a real vehicle-class taxonomy exists.
+ *
+ * THE CLICK LAYER
+ * ---------------
+ * The bitmap is decorative chrome and must never take a click, so it is
+ * `pointer-events-none`. All targets live in ONE dedicated overlay layer
+ * (`absolute inset-0 z-20 pointer-events-none`) above the image, and each anchor
+ * opts back in with `pointer-events-auto`. The artwork wrapper carries
+ * `isolate` so the hero owns a clean stacking context and cannot interleave
+ * with the sticky header or the All-Categories panel.
+ *
+ * The layer, not the anchors, carries the `hidden md:block` display gate. If
+ * `display` were declared on the anchors as well - once in the base layer and
+ * once as `hidden` - the winner would depend on the order the two utilities are
+ * emitted in the stylesheet rather than the order they appear in the class
+ * string. Gating display on the single wrapper removes that ambiguity.
+ *
+ * There is no visible chrome anywhere: no background, border, shadow, label,
+ * arrow, tooltip, dot or card. The only decoration is a `focus-visible` outline,
+ * which is not rendered until the element is focused and so never alters the
+ * artwork at rest.
+ *
+ * SIZING
+ * ------
+ * Boxes are in source pixels and converted to percentages, so a target stays
+ * welded to its object at every width without re-tuning. At a 1440px viewport
+ * (1440/2158 = 0.667 scale) every target is at least 44x44 CSS px - see the
+ * printed table in REPORT. No two boxes overlap.
+ */
 
-const QUICK_SEARCHES = [
-  { label: "Water Pump Bolero (M663)", q: "M663" },
-  { label: "Door Handle (113)", q: "113" },
-  { label: "Engine Oil Filter", q: "Engine Oil Filter" },
-  { label: "Brake Pads", q: "Brake Pad" },
-  { label: "Clutch Kit", q: "Clutch Kit" },
-  { label: "12V Battery", q: "Battery" },
-] as const;
+const HERO_SRC = "/images/hero/hero-final-reference.png";
+const HERO_WIDTH = 2158;
+const HERO_HEIGHT = 729;
 
-const VEHICLE_TYPES: {
-  key: MessageKey;
+type Target = {
   href: string;
-  icon: "car" | "suv" | "muv" | "lcv" | "hcv" | "bike" | "tractor" | "off";
-}[] = [
-  { key: "hero.vehCars", href: "/vehicle-fitment", icon: "car" },
-  { key: "hero.vehSuvs", href: "/vehicle-fitment", icon: "suv" },
-  { key: "hero.vehMuvs", href: "/vehicle-fitment", icon: "muv" },
-  { key: "hero.vehLcvs", href: "/vehicle-fitment", icon: "lcv" },
-  { key: "hero.vehHcvs", href: "/vehicle-fitment", icon: "hcv" },
-  { key: "hero.vehTwo", href: "/vehicle-fitment", icon: "bike" },
-  { key: "hero.vehTractors", href: "/vehicle-fitment", icon: "tractor" },
-  { key: "hero.vehOff", href: "/vehicle-fitment", icon: "off" },
+  label: string;
+  /** Bounds in 2158x729 source pixels: left, top, right, bottom. */
+  box: [number, number, number, number];
+  kind: "vehicle" | "part" | "cta";
+};
+
+const pct = (b: Target["box"]) => ({
+  left: `${(b[0] / HERO_WIDTH) * 100}%`,
+  top: `${(b[1] / HERO_HEIGHT) * 100}%`,
+  width: `${((b[2] - b[0]) / HERO_WIDTH) * 100}%`,
+  height: `${((b[3] - b[1]) / HERO_HEIGHT) * 100}%`,
+});
+
+const FITMENT = "/vehicle-fitment";
+
+const TARGETS: Target[] = [
+  /* ---- 8 vehicles, centred on the detected marker dot ---- */
+  { kind: "vehicle", href: FITMENT, label: "Heavy Commercial Vehicle Parts", box: [924, 233, 994, 303] },
+  { kind: "vehicle", href: FITMENT, label: "Light Commercial Vehicle Parts", box: [1093, 284, 1163, 354] },
+  { kind: "vehicle", href: FITMENT, label: "Passenger Vehicle Parts", box: [1292, 289, 1362, 359] },
+  /* the saloon has two dots; this spans both */
+  { kind: "vehicle", href: FITMENT, label: "Passenger Vehicle Parts", box: [1566, 310, 1646, 394] },
+  { kind: "vehicle", href: FITMENT, label: "Agriculture Vehicle Parts", box: [1721, 246, 1791, 316] },
+  { kind: "vehicle", href: FITMENT, label: "Earthmover Parts", box: [1980, 244, 2050, 314] },
+  { kind: "vehicle", href: FITMENT, label: "Motorcycle Parts", box: [1799, 379, 1869, 449] },
+  { kind: "vehicle", href: FITMENT, label: "Scooter Parts", box: [1999, 388, 2069, 458] },
+
+  /* ---- 5 part categories ---- */
+  { kind: "part", href: "/category/braking-system", label: "Brake Parts", box: [874, 444, 1010, 578] },
+  { kind: "part", href: "/category/filters", label: "Filters", box: [1059, 437, 1183, 578] },
+  /* corrected: the first pass sat on empty background above the ribbed damper
+     and clipped the AP-LR pail; the object is lower than estimated. */
+  { kind: "part", href: "/category/shock-absorbers-shockers", label: "Shockers", box: [1310, 468, 1400, 537] },
+  { kind: "part", href: "/category/greases", label: "Grease Products", box: [1190, 452, 1305, 618] },
+  { kind: "part", href: "/category/lubricants", label: "Oil and Lubricants", box: [1458, 396, 1566, 608] },
+
+  /* ---- the two baked-in CTA buttons ---- */
+  { kind: "cta", href: "#categories", label: "Shop Spare Parts", box: [52, 454, 346, 521] },
+  { kind: "cta", href: "/login/dealer", label: "Dealer Bulk Order", box: [367, 454, 665, 521] },
 ];
 
-export function HomeHero({
-  onQuickSearch,
-}: {
-  onQuickSearch: (query: string) => void;
-}) {
-  const { t } = useI18n();
-
+export function HomeHero() {
   return (
-    <section id="search" className="relative">
-      <div className="hero-reference relative overflow-hidden text-white">
-        <img
-          src="/images/hero/sparelink-clean-hero-bg.png?v=4"
-          alt=""
-          className="hero-scene-img pointer-events-none absolute inset-0 h-full w-full object-cover"
+    <section
+      id="search"
+      aria-labelledby="hero-heading"
+      className="border-b border-[var(--v3-rule)] bg-[var(--v3-page)]"
+    >
+      {/* `isolate` gives the hero its own stacking context. */}
+      <div
+        className="relative isolate mx-auto w-full max-w-[1600px]"
+        style={{ aspectRatio: `${HERO_WIDTH} / ${HERO_HEIGHT}` }}
+      >
+        <Image
+          src={HERO_SRC}
+          alt="SpareLink India catalogue: a container truck, mini truck, red SUV, white saloon, tractor and backhoe loader, a motorcycle and a scooter, above a display of Pensol lubricants and grease with brake parts, oil filters and a shock absorber."
+          fill
+          priority
+          sizes="100vw"
+          /* No `quality` override: this project does not configure
+             images.qualities, so Next's default of 75 applies. */
+          /* The bitmap is decorative. Without pointer-events-none the <img> is a
+             positioned sibling competing for the same area and swallows hits
+             that should reach an overlay. */
+          className="pointer-events-none select-none object-contain"
         />
-        <div className="pointer-events-none absolute inset-0 hero-scene-veil" aria-hidden />
 
-        <div className="hero-stage relative z-[3]">
-          <div className="hero-col hero-col-left hidden lg:flex">
-            <ProductPanel
-              side="left"
-              src="/images/hero/cutouts/outer-handles.png"
-              label={t("hero.labelHandles")}
-              imgClass="hero-cutout-lg"
-            />
-            <ProductPanel
-              side="left"
-              src="/images/hero/cutouts/cables.png"
-              label={t("hero.labelCables")}
-              imgClass="hero-cutout-lg"
-            />
-            <ProductPanel
-              side="left"
-              src="/images/hero/cutouts/window-regulators.png"
-              label={t("hero.labelRegulators")}
-              imgClass="hero-cutout-lg"
-            />
-          </div>
+        {/* The visible headline lives in the bitmap; this keeps it in the
+            accessibility tree and for crawlers without printing it twice. */}
+        <h1 id="hero-heading" className="sr-only">
+          Find the Right Part. Build the Right Vehicle.
+        </h1>
 
-          <div className="hero-center relative z-[4] mx-auto flex flex-col items-center justify-center px-3 text-center sm:px-4">
-            <p className="hero-eyebrow">{t("hero.eyebrow")}</p>
-            <h1 className="hero-headline">
-              <span className="block text-white">{t("hero.titleLine1")}</span>
-              <span className="block text-[#f0c14b]">{t("hero.titleAccent")}</span>
-              <span className="block text-white">{t("hero.titleLine3")}</span>
-            </h1>
-            <p className="hero-subhead">{t("hero.subtitle")}</p>
-            <div className="mt-5 flex flex-wrap items-center justify-center gap-3">
-              <Link href="#categories" className="hero-cta">
-                {t("hero.browse")}
-              </Link>
-              <Link href="/vehicle-fitment" className="hero-cta inline-flex items-center gap-2">
-                <CarIcon />
-                {t("hero.findVehicle")}
-              </Link>
-            </div>
-            <div className="hero-badges">
-              <HeroStat icon={<ShieldMini />} line1={t("hero.statGenuine1")} line2={t("hero.statGenuine2")} />
-              <HeroStat icon={<TruckMini />} line1={t("hero.statSupply1")} line2={t("hero.statSupply2")} />
-              <HeroStat icon={<RupeeMini />} line1={t("hero.statPrice1")} line2={t("hero.statPrice2")} />
-              <HeroStat icon={<HeadsetMini />} line1={t("hero.statDealer1")} line2={t("hero.statDealer2")} />
-            </div>
-          </div>
-
-          <div className="hero-col hero-col-right hidden lg:flex">
-            <PensolPanel label={t("hero.labelPensol")} />
-            <ProductPanel
-              side="right"
-              src="/images/hero/cutouts/uj-cross.png"
-              label={t("hero.labelUj")}
-              imgClass="hero-cutout-lg"
-            />
-            <WaterPumpPanel label={t("hero.labelPumps")} />
-          </div>
-
-          <div className="hero-mobile-panels z-[3] grid grid-cols-2 gap-2 px-2 pb-3 lg:hidden">
-            <ProductPanel
-              side="left"
-              src="/images/hero/cutouts/outer-handles.png"
-              label={t("hero.labelHandles")}
-              imgClass="hero-cutout-lg"
-            />
-            <ProductPanel
-              side="right"
-              src="/images/hero/cutouts/cables.png"
-              label={t("hero.labelCables")}
-              imgClass="hero-cutout-lg"
-            />
-            <ProductPanel
-              side="left"
-              src="/images/hero/cutouts/window-regulators.png"
-              label={t("hero.labelRegulators")}
-              imgClass="hero-cutout-lg"
-            />
-            <PensolPanel label={t("hero.labelPensol")} compact />
-            <ProductPanel
-              side="right"
-              src="/images/hero/cutouts/uj-cross.png"
-              label={t("hero.labelUj")}
-              imgClass="hero-cutout-lg"
-            />
-            <WaterPumpPanel label={t("hero.labelPumps")} compact />
-          </div>
-        </div>
-      </div>
-
-      <div className="hero-vehicle-strip border-b border-slate-200 bg-white">
-        <div className="mx-auto flex h-[67px] max-w-[1440px] items-center gap-3 overflow-x-auto px-3 sm:justify-center lg:px-6">
-          {VEHICLE_TYPES.map((item) => (
+        {/* ONE dedicated overlay layer above the artwork. The layer ignores
+            pointer events; each anchor opts back in. */}
+        <div className="pointer-events-none absolute inset-0 z-20 hidden md:block">
+          {TARGETS.map((target) => (
             <Link
-              key={item.key}
-              href={item.href}
-              className="flex min-w-[4.75rem] flex-col items-center gap-1 px-1 text-slate-800 hover:text-[#7a1233]"
-            >
-              <VehicleGlyph kind={item.icon} />
-              <span className="whitespace-nowrap text-center text-[10px] font-semibold uppercase tracking-wide">
-                {t(item.key)}
-              </span>
-            </Link>
+              key={`${target.kind}-${target.label}-${target.box.join("_")}`}
+              href={target.href}
+              /* aria-label only. A `title` attribute makes the browser paint a
+                 native tooltip over the artwork on hover, which is exactly the
+                 visible label these hotspots must not have. The accessible name
+                 is unaffected - aria-label wins over title anyway. */
+              aria-label={target.label}
+              data-hero-target={target.kind}
+              data-hero-label={target.label}
+              className="pointer-events-auto absolute cursor-pointer border-0 bg-transparent p-0 text-transparent shadow-none outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-0 focus-visible:outline-[var(--v3-brand)]"
+              style={pct(target.box)}
+            />
           ))}
         </div>
       </div>
 
-      <div className="border-b border-slate-200 bg-white">
-        <div className="mx-auto flex max-w-[1440px] flex-wrap items-center justify-center gap-2 px-4 py-4 lg:px-8">
-          <span className="text-xs font-semibold text-slate-700">{t("hero.quickSearches")}</span>
-          {QUICK_SEARCHES.map((item) => (
-            <button
-              key={item.q}
-              type="button"
-              onClick={() => onQuickSearch(item.q)}
-              className="rounded-full border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-800 shadow-sm hover:bg-slate-50"
-            >
-              {item.label}
-            </button>
-          ))}
-        </div>
+      {/* Phones: the artwork is a ~127px strip, so the overlays are removed and
+          the part categories are offered as a plain text row. Unchanged from
+          the previous pass; the vehicle markers are not repeated here because
+          the artwork's own dots are not tappable at that size either. */}
+      <div className="v3-container border-t border-[var(--v3-rule)] py-3 md:hidden">
+        <nav aria-label="Shop by part category">
+          <ul className="flex flex-wrap items-center gap-x-4 gap-y-1.5">
+            {TARGETS.filter((target) => target.kind === "part").map((target) => (
+              <li key={target.href}>
+                <Link
+                  href={target.href}
+                  className="v3-focus text-[0.8125rem] font-semibold text-[var(--v3-text-2)] transition-colors hover:text-[var(--v3-brand)]"
+                >
+                  {target.label}
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </nav>
       </div>
     </section>
-  );
-}
-
-function ProductPanel({
-  src,
-  label,
-  imgClass,
-  side,
-}: {
-  src: string;
-  label: string;
-  imgClass?: string;
-  side: "left" | "right";
-}) {
-  return (
-    <figure className={`hero-panel hero-panel-${side}`}>
-      <figcaption className="hero-product-label">{label}</figcaption>
-      <img src={src} alt="" className={`hero-panel-img ${imgClass ?? ""}`} />
-    </figure>
-  );
-}
-
-function PensolPanel({ label, compact = false }: { label: string; compact?: boolean }) {
-  return (
-    <figure className="hero-panel hero-panel-right">
-      <figcaption className="hero-product-label">{label}</figcaption>
-      <div className="hero-pensol-row">
-        <img
-          src="/images/hero/pensol-4st-extra.jpg"
-          alt=""
-          className={`w-auto max-w-[38%] object-contain hero-photo-knockout ${compact ? "h-[5.35rem]" : "h-[8.15rem]"}`}
-        />
-        <img
-          src="/images/hero/pensol-4st-extra-sl.jpg"
-          alt=""
-          className={`-ml-1 w-auto max-w-[42%] object-contain hero-photo-knockout ${compact ? "h-[6.1rem]" : "h-[8.85rem]"}`}
-        />
-        <img
-          src="/images/hero/pensol-ap-lr.jpg"
-          alt=""
-          className={`-ml-1 w-auto max-w-[34%] object-contain hero-photo-knockout ${compact ? "h-[4.5rem]" : "h-[6.85rem]"}`}
-        />
-      </div>
-    </figure>
-  );
-}
-
-function WaterPumpPanel({ label, compact = false }: { label: string; compact?: boolean }) {
-  const size = compact ? "h-[4.5rem]" : "h-[5.55rem]";
-  return (
-    <figure className="hero-panel hero-panel-right">
-      <figcaption className="hero-product-label">{label}</figcaption>
-      <div className="hero-pump-grid">
-        <img src="/images/hero/pumps/m-547.png" alt="" className={`hero-pump-img w-auto object-contain ${size}`} />
-        <img src="/images/hero/pumps/m-516.png" alt="" className={`hero-pump-img w-auto object-contain ${size}`} />
-        <img src="/images/hero/pumps/m-518.png" alt="" className={`hero-pump-img w-auto object-contain ${size}`} />
-        <img src="/images/hero/pumps/m-522.png" alt="" className={`hero-pump-img w-auto object-contain ${size}`} />
-      </div>
-    </figure>
-  );
-}
-
-function HeroStat({ icon, line1, line2 }: { icon: ReactNode; line1: string; line2: string }) {
-  return (
-    <div className="flex flex-col items-center gap-1.5 text-center">
-      <span className="hero-stat-badge inline-flex h-10 w-10 items-center justify-center rounded-full text-white">
-        {icon}
-      </span>
-      <p className="max-w-[8.5rem] text-[10px] font-semibold leading-tight text-white">
-        {line1}
-        <br />
-        {line2}
-      </p>
-    </div>
-  );
-}
-
-function VehicleGlyph({ kind }: { kind: (typeof VEHICLE_TYPES)[number]["icon"] }) {
-  const common = "h-7 w-7 text-slate-800";
-  return (
-    <svg className={common} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.6" aria-hidden>
-      {kind === "bike" ? (
-        <path strokeLinecap="round" strokeLinejoin="round" d="M5 17a3 3 0 100-6 3 3 0 000 6zm14 0a3 3 0 100-6 3 3 0 000 6zM8 14l4-7h3l2 4" />
-      ) : kind === "hcv" || kind === "lcv" ? (
-        <path strokeLinecap="round" strokeLinejoin="round" d="M3 16V8h11v8M14 10h4l3 4v2h-7M6 18a2 2 0 100-4 2 2 0 000 4zm10 0a2 2 0 100-4 2 2 0 000 4z" />
-      ) : kind === "tractor" ? (
-        <path strokeLinecap="round" strokeLinejoin="round" d="M4 17a3 3 0 106 0M14 17a4 4 0 108 0M7 17V8h6l3 4h4" />
-      ) : kind === "off" ? (
-        <path strokeLinecap="round" strokeLinejoin="round" d="M4 16l3-6h10l3 6M7 16a2 2 0 100 0zm10 0a2 2 0 100 0zM3 20h18" />
-      ) : (
-        <path strokeLinecap="round" strokeLinejoin="round" d="M3 13l2-5h14l2 5M5 17a1.5 1.5 0 100-3 1.5 1.5 0 000 3zm14 0a1.5 1.5 0 100-3 1.5 1.5 0 000 3zM4 13h16" />
-      )}
-    </svg>
-  );
-}
-
-function CarIcon() {
-  return (
-    <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.8">
-      <path strokeLinecap="round" strokeLinejoin="round" d="M3 13l2-5h14l2 5M5 17a1.5 1.5 0 100-3 1.5 1.5 0 000 3zm14 0a1.5 1.5 0 100-3 1.5 1.5 0 000 3zM4 13h16" />
-    </svg>
-  );
-}
-
-function ShieldMini() {
-  return (
-    <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.8">
-      <path strokeLinecap="round" strokeLinejoin="round" d="M12 3l8 3v6c0 5-3.5 8.5-8 10-4.5-1.5-8-5-8-10V6l8-3z" />
-    </svg>
-  );
-}
-
-function TruckMini() {
-  return (
-    <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.8">
-      <path strokeLinecap="round" strokeLinejoin="round" d="M3 16V7h11v9M14 10h4l3 3v3h-7M7 18a2 2 0 100-4 2 2 0 000 4zm10 0a2 2 0 100-4 2 2 0 000 4z" />
-    </svg>
-  );
-}
-
-function RupeeMini() {
-  return (
-    <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.8">
-      <path strokeLinecap="round" strokeLinejoin="round" d="M7 6h10M7 10h10M7 6c4 0 6 2 6 4s-2 4-6 4c2.5 0 6 2 8 4" />
-    </svg>
-  );
-}
-
-function HeadsetMini() {
-  return (
-    <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.8">
-      <path strokeLinecap="round" strokeLinejoin="round" d="M4 12a8 8 0 1116 0v5a2 2 0 01-2 2h-2v-7h4M4 12v5a2 2 0 002 2h2v-7H4" />
-    </svg>
   );
 }

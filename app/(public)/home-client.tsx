@@ -8,20 +8,42 @@ import { SiteFooter } from "@/components/site-footer";
 import { StorefrontHeader } from "@/components/storefront-header";
 import { HomeHero } from "@/components/home-hero";
 import { PublicBrandsSection } from "@/components/public-brand-grid";
-import { PromotionalBannerSlider } from "@/components/promotional-banner-slider";
 import { ProductDetailModal } from "@/components/product-detail-modal";
 import { SearchExperience, type SearchTab } from "@/components/search-experience";
 import { useI18n } from "@/components/preferences-provider";
 import { rememberSearch } from "@/lib/recent-searches";
-import type { PublicBanner } from "@/lib/promotional-banners";
 import { MobileBottomNav } from "@/components/mobile/mobile-bottom-nav";
-import { QuickOrderPanel } from "@/components/quick-order-panel";
+
 import { VehicleQuickSelector } from "@/components/vehicle-quick-selector";
+import { PromotionalBannerSlider } from "@/components/promotional-banner-slider";
+import type { PublicBanner } from "@/lib/promotional-banners";
 import {
   HomeOffersTeaser,
-  HomeTrustStrip,
   RecentlyViewedSection,
 } from "@/components/home-mobile-extras";
+import {
+  HomeDealerCta,
+  HomeOrderCta,
+} from "@/components/home-discovery-sections";
+
+/* Small tick used by the trust indicator list. Inline rather than imported so
+   the V3 list does not depend on a V2 icon module. */
+function CheckIcon() {
+  return (
+    <svg
+      className="h-4 w-4 shrink-0 text-[var(--v3-ok)]"
+      fill="none"
+      viewBox="0 0 24 24"
+      stroke="currentColor"
+      strokeWidth="2.4"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden
+    >
+      <path d="M4 12.5l5 5L20 6.5" />
+    </svg>
+  );
+}
 
 type Listing = {
   id: string;
@@ -494,7 +516,7 @@ export function HomePageContent({
   const isOrderSearchState = Boolean(searchedQuery || urlQuery || loading || error || message);
 
   return (
-    <div className="min-h-screen bg-slate-50 text-slate-900">
+    <div className="flex min-h-screen flex-col bg-[var(--v3-page)] text-[var(--v3-text)]">
       <StorefrontHeader
         cartCount={cartCount}
         wishlistCount={wishlistCount}
@@ -504,29 +526,6 @@ export function HomePageContent({
         searchLoading={loading}
         mobileMenuOpen={mobileMenuOpen}
         onMobileMenuToggle={() => setMobileMenuOpen(!mobileMenuOpen)}
-        orderMode
-        orderPage={isOrderSearchState}
-        categoryOptions={facetCategories}
-        activeCategory={categoryFilter}
-        onCategoryChange={(value) =>
-          commitSearch(searchedQuery || query, 1, {
-            categoryName: value,
-            stock: urlStock,
-            tab: "products",
-          })
-        }
-        stockFilter={urlStock}
-        onStockFilterChange={(value) =>
-          commitSearch(searchedQuery || query, 1, { stock: value })
-        }
-        onClearFilters={() =>
-          commitSearch(searchedQuery || query, 1, {
-            brand: "",
-            categoryName: "",
-            stock: "all",
-            tab: "all",
-          })
-        }
         onCartItemAdded={(_listingId, unitPaise) => {
           setCartCount((count) => count + 1);
           setSelectedCount((count) => count + 1);
@@ -538,52 +537,64 @@ export function HomePageContent({
       <main className="flex flex-col">
         {!searchedQuery && !urlQuery ? (
           <>
-            <div className="space-y-3 px-3 pt-3 md:hidden">
-              <VehicleQuickSelector />
-              <QuickOrderPanel
-                onCartChange={(delta) => {
-                  setCartCount((prev) => prev + delta);
-                  void refreshCartSummary();
-                }}
-              />
-            </div>
+            {/* ============ 1. HERO / GLOBAL SEARCH ============ */}
+            <HomeHero />
+
+            {/* ============ 2. QUICK VEHICLE FINDER ============
+                Sits directly under the hero, per the V3 brief: the highest-value
+                entry point for someone who already knows their vehicle. In V2
+                this band was desktop-only-placed-above-the-hero and read as an
+                afterthought; here it is the first thing after the headline. */}
+            <section
+              id="vehicle-type"
+              className="v3-band border-b border-[var(--v3-rule)] bg-white"
+              aria-labelledby="vehicle-type-heading"
+            >
+              <div className="v3-container">
+                <div className="v3-head">
+                  <h2 id="vehicle-type-heading" className="v3-h2">
+                    {t("hero.v3finderTitle")}
+                  </h2>
+                  <p className="v3-small ml-auto hidden sm:block">
+                    {t("hero.v3finderHint")}
+                  </p>
+                  <Link
+                    href="/vehicle-fitment"
+                    className="v3-btn v3-btn-quiet v3-btn-sm ml-auto shrink-0 sm:ml-0"
+                  >
+                    {t("nav.fitment")}
+                  </Link>
+                </div>
+                <div className="mt-4">
+                  <VehicleQuickSelector limit={8} />
+                </div>
+              </div>
+            </section>
 
             <div className="md:hidden">
               <HomeOffersTeaser />
             </div>
 
-            <div className="hidden md:block">
-            <HomeHero onQuickSearch={(q) => commitSearch(q, 1)} />            </div>
-            <PublicBrandsSection onSelect={(q) => commitSearch(q, 1)} />
-
-        {/* ============ PROMOTIONAL BANNERS ============
-            The admin-managed advertisement slider. Placed after the brand
-            directory and before the category grid, which is the slot the removed
-            duplicate Vehicle Fitment section used to occupy.
-
-            Banners are resolved on the server (see app/(public)/page.tsx) and
-            passed down, so the storefront never queries the banner table and the
-            carousel is present on first paint. */}
-        <PromotionalBannerSlider banners={banners} />
-
-        {/* Categories Section */}
-        <section id="categories" className="py-14 sm:py-18 bg-white border-b border-slate-200/80">
-          <div className="mx-auto max-w-7xl px-4 sm:px-6">
-            <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 border-b border-slate-100 pb-5">
-              <div>
-                <p className="text-xs font-bold uppercase tracking-widest text-emerald-600">
-                  {t("hero.productCategories")}
-                </p>
-                <h2 className="mt-1 text-2xl font-bold tracking-tight text-slate-950 sm:text-3xl">
-                  {t("hero.browseSystem")}
-                </h2>
-              </div>
-              <p className="text-xs text-slate-500 max-w-md">
+        {/* ============ 3. SHOP BY CATEGORY ============
+            Restrained tiles: a single square image stage, a name, one line of
+            description and a text affordance. V2 used 8 near-identical rounded
+            cards whose only difference was the padding of the image well. */}
+        <section id="categories" className="v3-band border-b border-[var(--v3-rule)]">
+          <div className="v3-container">
+            <div className="v3-head">
+              <h2 className="v3-h2">{t("hero.browseSystem")}</h2>
+              <p className="v3-small ml-auto hidden max-w-md text-right md:block">
                 {t("hero.browseHint")}
               </p>
+              <Link
+                href="/category/filters"
+                className="v3-btn v3-btn-quiet v3-btn-sm ml-auto shrink-0 md:ml-0"
+              >
+                {t("hero.v3browseAll")}
+              </Link>
             </div>
 
-            <div className="mt-8 flex gap-4 overflow-x-auto pb-2 sm:grid sm:grid-cols-2 sm:overflow-visible lg:grid-cols-4">
+            <div className="grid grid-cols-2 gap-px overflow-hidden rounded-[var(--v3-r)] border border-[var(--v3-rule)] bg-[var(--v3-rule)] sm:grid-cols-3 lg:grid-cols-4">
               {categoryCards.map((cat) => {
                 const isFilters = cat.slug === "filters";
                 const isLubricants = cat.slug === "lubricants";
@@ -591,17 +602,12 @@ export function HomePageContent({
                 <Link
                   key={cat.slug}
                   href={`/category/${cat.slug}`}
-                  className="card-hover group flex min-w-[260px] items-center gap-3 rounded-2xl border border-slate-200 bg-white p-4 text-left shadow-xs transition-all hover:border-slate-300 hover:shadow-md sm:min-w-0 sm:gap-4 sm:p-5"
+                  className="v3-focus group flex flex-col bg-white p-2.5 transition-colors hover:bg-[var(--v3-brand-soft)]"
                 >
-                  <div
-                    className={
-                      isFilters
-                        ? "relative flex h-[6rem] w-[6rem] shrink-0 items-center justify-center overflow-hidden rounded-full bg-[#f4f6f8] ring-1 ring-slate-200/90 sm:h-[6.5rem] sm:w-[6.5rem] lg:h-[8.5rem] lg:w-[8.5rem]"
-                        : isLubricants
-                          ? "relative flex h-[6.75rem] w-[6.75rem] shrink-0 items-center justify-center overflow-hidden rounded-full bg-[#f4f6f8] ring-1 ring-slate-200/90 sm:h-[7.5rem] sm:w-[7.5rem] lg:h-[8.75rem] lg:w-[8.75rem]"
-                        : "relative h-[6.25rem] w-[6.25rem] shrink-0 overflow-hidden rounded-full bg-[#f4f6f8] ring-1 ring-slate-200/90 sm:h-[7.5rem] sm:w-[7.5rem] lg:h-[8.75rem] lg:w-[8.75rem]"
-                    }
-                  >
+                  {/* One consistent square well for every category, so the
+                      row never looks ragged. The inset differs per asset
+                      because the source rasters have different margins. */}
+                  <div className="v3-stage aspect-square w-full">
                     <Image
                       src={cat.image}
                       alt={cat.name}
@@ -609,43 +615,34 @@ export function HomePageContent({
                       height={280}
                       className={
                         isFilters
-                          ? "h-full w-full object-contain object-center p-[0.875rem] sm:p-4 lg:p-5"
+                          ? "h-full w-full object-contain p-[18%]"
                           : isLubricants
-                            ? "h-full w-full object-contain object-center p-3 sm:p-3.5 lg:p-4"
-                          : "h-full w-full object-contain p-1.5 sm:p-2"
+                            ? "h-full w-full object-contain p-[14%]"
+                            : "h-full w-full object-contain p-[6%]"
                       }
-                      sizes={
-                        isFilters
-                          ? "(min-width: 1024px) 136px, (min-width: 640px) 104px, 96px"
-                          : isLubricants
-                            ? "(min-width: 1024px) 140px, (min-width: 640px) 120px, 108px"
-                          : "(min-width: 1024px) 140px, (min-width: 640px) 120px, 100px"
-                      }
+                      sizes="(min-width: 1024px) 280px, (min-width: 640px) 200px, 45vw"
                       unoptimized
                     />
                   </div>
-                  <div className="min-w-0 flex-1">
-                    <h3 className="font-bold text-slate-900 group-hover:text-slate-950">
+                  <div className="min-w-0 flex-1 px-1 pt-3">
+                    <h3 className="v3-h3 transition-colors group-hover:text-[var(--v3-brand)]">
                       {cat.name}
                     </h3>
-                    <p
-                      className={
-                        isFilters
-                          ? "mt-1 text-xs leading-relaxed text-pretty break-words text-slate-500"
-                          : "mt-1 text-xs text-slate-500 leading-relaxed"
-                      }
-                    >
-                      {cat.desc}
-                    </p>
-                    <span
-                      className={
-                        isFilters
-                          ? "mt-2.5 inline-flex items-center gap-1 whitespace-nowrap text-xs font-semibold text-emerald-700 group-hover:underline"
-                          : "mt-3 inline-flex items-center gap-1 text-xs font-semibold text-emerald-700 group-hover:underline"
-                      }
-                    >
-                      <span>{t("hero.explore")}</span>
-                      <span>→</span>
+                    <p className="v3-small v3-clamp-2 mt-1">{cat.desc}</p>
+                    <span className="mt-2.5 inline-flex items-center gap-1 whitespace-nowrap text-[0.75rem] font-bold text-[var(--v3-brand)]">
+                      {t("hero.explore")}
+                      <svg
+                        className="h-3 w-3"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                        strokeWidth="2.4"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        aria-hidden
+                      >
+                        <path d="M5 12h14M13 6l6 6-6 6" />
+                      </svg>
                     </span>
                   </div>
                 </Link>
@@ -654,6 +651,29 @@ export function HomePageContent({
             </div>
           </div>
         </section>
+
+        {/* ============ 4. SHOP BY BRAND ============
+            Brand directory before vehicle discovery. A customer arriving from
+            a known part usually knows the brand; a customer who knows only
+            their vehicle should meet fitment next, not a logo grid. V2 ran
+            fitment first and brands second, which inverted that intent. */}
+        <PublicBrandsSection onSelect={(q) => commitSearch(q, 1)} />
+
+        {/* ============ 5. PROMOTIONAL BANNERS ============
+            The admin-managed advertisement slider. It sits in exactly the slot
+            the removed duplicate Vehicle Fitment section occupied, and shares
+            the `v3-band` + `v3-container` device, so it reads as the next
+            section in the rhythm rather than as a replacement bolted in.
+
+            The banners are resolved on the server (see app/(public)/page.tsx)
+            and passed in, so the slot is server-rendered and occupies its
+            height on first paint. */}
+        <PromotionalBannerSlider banners={banners} />
+
+        {/* ============ 6. DEALER / BULK ORDER ============
+            Deliberately a different visual register from the retail sections
+            above it: charcoal field, gold rule, no product imagery. */}
+        <HomeDealerCta />
           </>
         ) : null}
 
@@ -667,7 +687,6 @@ export function HomePageContent({
                 })
               }
             />
-            <HomeTrustStrip />
           </div>
         ) : null}
         {(loading || error || message || results.length > 0 || searchedQuery.trim() || urlQuery) && (
@@ -720,32 +739,107 @@ export function HomePageContent({
         )}
 
         {!isOrderSearchState ? (
-          <section id="how-it-works" className="py-16 sm:py-20 bg-white border-t border-slate-200/80">
-          <div className="mx-auto max-w-4xl px-4 sm:px-6">
-            <div className="text-center">
-              <p className="text-xs font-bold uppercase tracking-widest text-emerald-600">
-                {t("fulfill.kicker")}
-              </p>
-              <h2 className="mt-2 text-2xl font-bold tracking-tight text-slate-950 sm:text-4xl">
-                {t("fulfill.title")}
-              </h2>
+          <>
+          {/* ============ 7. TRUST ============
+              Spec K: compact, factual, not over-designed.
+
+              V2 split this across two components — a three-item strip that was
+              `md:hidden` (so desktop and every dealer user never saw it) and a
+              separate "Why SpareLink" narrative card further down. They are one
+              section here, on all breakpoints, and the narrative sentence and
+              the four support CTAs from that card are kept rather than dropped.
+
+              Five indicators, all functional claims already true of the
+              storefront: catalogue parts, GST-inclusive billing, pan-India
+              supply, dealer support and Cashfree-backed payment. No counts, no
+              ratings, no "trusted by N" figures. */}
+          <section
+            className="v3-band border-t border-[var(--v3-rule)] bg-white"
+            aria-labelledby="trust-heading"
+          >
+            <div className="v3-container">
+              <div className="v3-head">
+                <h2 id="trust-heading" className="v3-h2">
+                  {t("trust.title")}
+                </h2>
+              </div>
+
+              <ul className="grid grid-cols-2 gap-px overflow-hidden rounded-[var(--v3-r)] border border-[var(--v3-rule)] bg-[var(--v3-rule)] sm:grid-cols-3 lg:grid-cols-5">
+                {[
+                  t("trust.genuine"),
+                  t("trust.gstBilling"),
+                  t("trust.panIndia"),
+                  t("trust.support"),
+                  t("trust.securePayments"),
+                ].map((item) => (
+                  <li
+                    key={item}
+                    className="flex min-h-[3.25rem] items-center gap-2 bg-white px-3 py-2.5 text-[0.8125rem] font-semibold text-[var(--v3-text-2)]"
+                  >
+                    <CheckIcon />
+                    <span className="min-w-0">{item}</span>
+                  </li>
+                ))}
+              </ul>
+
+              <p className="v3-body mt-4 max-w-3xl">{t("trust.fulfilledBy")}</p>
+
+              <div className="mt-4 flex flex-wrap items-center gap-2">
+                <Link href="/offers" className="v3-btn v3-btn-quiet v3-btn-sm">
+                  {t("nav.offers")}
+                </Link>
+                <Link href="/help-support" className="v3-btn v3-btn-quiet v3-btn-sm">
+                  {t("nav.help")}
+                </Link>
+                <Link href="/shipping-policy" className="v3-btn v3-btn-quiet v3-btn-sm">
+                  {t("legal.shipping")}
+                </Link>
+                <Link href="/contact-us" className="v3-btn v3-btn-quiet v3-btn-sm">
+                  {t("nav.contact")}
+                </Link>
+              </div>
             </div>
-            <div className="mt-8 space-y-4 text-sm leading-7 text-slate-700">
-              <p>{t("fulfill.p1")}</p>
-              <p>{t("fulfill.p2")}</p>
-              <h3 className="pt-4 text-lg font-bold text-slate-950">{t("fulfill.stockTitle")}</h3>
-              <p>{t("fulfill.stockP1")}</p>
-              <p>{t("fulfill.stockP2")}</p>
-              <h3 className="pt-4 text-lg font-bold text-slate-950">{t("fulfill.processTitle")}</h3>
-              <p>{t("fulfill.processP")}</p>
-              <h3 className="pt-4 text-lg font-bold text-slate-950">{t("fulfill.approachTitle")}</h3>
-              <p>{t("fulfill.approachP1")}</p>
-              <p>{t("fulfill.goalLabel")}</p>
-              <p className="font-bold text-slate-950">{t("fulfill.goal")}</p>
-              <p>{t("fulfill.close")}</p>
-            </div>
-          </div>
           </section>
+
+          {/* ============ 8. FIRM / DISTRIBUTION INFORMATION ============
+              A two-column reading layout: the copy on the left, a sticky
+              contents rail on the right. V2 ran this as one narrow centred
+              column with eight undifferentiated headings, which is why it read
+              as filler. */}
+          <section
+            id="how-it-works"
+            className="v3-band-lg border-t border-[var(--v3-rule)] bg-white"
+          >
+            <div className="v3-container grid gap-x-10 gap-y-6 lg:grid-cols-12">
+              <div className="lg:col-span-4">
+                <div className="lg:sticky lg:top-32">
+                  <p className="v3-label">{t("fulfill.kicker")}</p>
+                  <h2 className="v3-h1 mt-2">{t("fulfill.title")}</h2>
+                  <p className="v3-small mt-3">{t("fulfill.goalLabel")}</p>
+                  <p className="v3-h3">{t("fulfill.goal")}</p>
+                </div>
+              </div>
+
+              <div className="v3-body space-y-4 lg:col-span-8">
+                <p>{t("fulfill.p1")}</p>
+                <p>{t("fulfill.p2")}</p>
+
+                <h3 className="v3-h3 pt-3">{t("fulfill.stockTitle")}</h3>
+                <p>{t("fulfill.stockP1")}</p>
+                <p>{t("fulfill.stockP2")}</p>
+
+                <h3 className="v3-h3 pt-3">{t("fulfill.processTitle")}</h3>
+                <p>{t("fulfill.processP")}</p>
+
+                <h3 className="v3-h3 pt-3">{t("fulfill.approachTitle")}</h3>
+                <p>{t("fulfill.approachP1")}</p>
+                <p className="pt-3">{t("fulfill.close")}</p>
+              </div>
+            </div>
+          </section>
+
+          <HomeOrderCta />
+          </>
         ) : null}
       </main>
 

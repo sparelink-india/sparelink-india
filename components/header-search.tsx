@@ -158,9 +158,9 @@ function CompactPrice({ listing }: { listing?: Listing }) {
   const net = listing?.netInclusivePaise ?? list;
   const priced = isAuthoritativeSellingPricePaise(list, net, listing?.pricePaise);
   if (!priced) {
-    return <span className="text-sm font-extrabold text-slate-700">{t("price.onRequest")}</span>;
+    return <span className="text-sm font-extrabold text-[var(--v3-text-2)]">{t("price.onRequest")}</span>;
   }
-  return <span className="text-base font-extrabold text-slate-950">₹{rupees(net || list)}</span>;
+  return <span className="text-base font-extrabold text-[var(--v3-text)]">₹{rupees(net || list)}</span>;
 }
 
 function stockText(
@@ -190,7 +190,7 @@ function SidebarRow({
   return (
     <button
       type="button"
-      className="flex w-full items-center gap-3 px-2 py-2.5 text-left text-sm text-slate-800 hover:bg-slate-50"
+      className="flex w-full items-center gap-3 px-2 py-2.5 text-left text-sm text-slate-800 hover:bg-[var(--v3-sunk)]"
       onMouseDown={(event) => event.preventDefault()}
       onClick={onClick}
     >
@@ -198,10 +198,139 @@ function SidebarRow({
         {icon}
       </span>
       <span className="min-w-0 flex-1 truncate font-medium">{label}</span>
-      <span className="shrink-0 text-slate-400" aria-hidden>
+      <span className="shrink-0 text-[var(--v3-text-3)]" aria-hidden>
         ›
       </span>
     </button>
+  );
+}
+
+/**
+ * Order-mode search filters: Category, Stock and Clear Filters.
+ *
+ * Exported so the storefront header can place this in its OWN full-width row
+ * beneath the search pill. It used to be a flex child of `.sl-search` (a 3rem
+ * pill), which put ~520px of `shrink-0` controls inside a single-line row and,
+ * on the homepage only, pushed the account label out of the container so it
+ * clipped to "...gister". Inner routes never passed `orderMode`, so they showed
+ * the full "Login / Register" at the same viewport width — the inconsistency
+ * that was reported.
+ *
+ * `flex-nowrap` with `shrink-0` children keeps the row on a single line at
+ * 1024px and above. If space tightens, the SELECT widths step down by
+ * breakpoint; the Clear Filters button is never allowed to wrap.
+ *
+ * The option list, values and handlers are unchanged from the original inline
+ * markup — this is a placement change only, and the markup exists exactly once.
+ */
+export function OrderSearchFilters({
+  categories,
+  activeCategory,
+  onCategoryChange,
+  stockFilter,
+  onStockFilterChange,
+  onClearFilters,
+  orderPage = false,
+}: {
+  categories: FacetRow[];
+  activeCategory: string;
+  onCategoryChange?: (value: string) => void;
+  stockFilter: "all" | "in_stock";
+  onStockFilterChange?: (value: "all" | "in_stock") => void;
+  onClearFilters?: () => void;
+  orderPage?: boolean;
+}) {
+  /* This component had no translation hook, so the two selects below rendered
+     their labels and options in English regardless of the language setting. */
+  const { t } = useI18n();
+  return (
+    /* Every control in this row is the same height with the same 3px radius and
+       the same 1px `--v3-rule-strong` border, so the two dropdowns and the Clear
+       button read as one family. `leading-none` plus the flex centring in each
+       label is what stops the captions floating off the controls: a <span>, a
+       native <select> and a <button> all default to different UA line-heights,
+       so centring their boxes alone still leaves their text on different
+       baselines. Focus is a border colour change, not a ring, so a focused
+       control does not grow visual weight and appear to shift against its
+       neighbours.
+
+       ---- MOBILE ONLY, below the 640px `sm` breakpoint ----
+
+       This row was `flex-nowrap` at every width, which is fine on a desktop but
+       not on a phone. Measured against `.v3-container`'s 1rem gutter, the three
+       groups need 456px, so at 375px (343px available) the 113px overflow was
+       absorbed by flex-shrink on the two selects - crushing the Category
+       dropdown to ~72px and the Stock dropdown to ~41px, wide enough to hide
+       most of their own text. `min-w-0` is what let them shrink that far.
+
+       So below `sm` the row wraps instead: the Category group takes a full-width
+       line and the Stock group shares a second line with Clear filters
+       (143 + 8 + 104 = 255px, which fits 343px with room to spare). Nothing is
+       compressed, so each select is back to its natural width. The first
+       viewport at which the single line fits on its own is 640px, which is
+       exactly the `sm` breakpoint, so the switch is clean at every width.
+
+       From 640px up this is the previous layout, unchanged: `flex-nowrap`,
+       `gap-2.5`, `h-9` controls, the same `max-w-32` caps. */
+    <div className="flex flex-wrap items-center gap-2 sm:flex-nowrap sm:gap-2.5">
+      <label className="flex w-full shrink-0 items-center gap-1.5 whitespace-nowrap text-xs font-semibold leading-none text-[var(--v3-text-2)] sm:w-auto">
+        <span>{t("search.categoryLabel")}</span>
+        <select
+          value={activeCategory}
+          onChange={(event) => onCategoryChange?.(event.target.value)}
+          className={`h-11 w-auto min-w-0 max-w-32 rounded-[var(--v3-r)] border border-[var(--v3-rule-strong)] px-2 text-xs font-semibold leading-none text-[var(--v3-text)] outline-none transition-colors focus:border-[var(--v3-brand)] max-sm:max-w-40 sm:h-9 lg:max-w-32 xl:max-w-44 ${
+            orderPage ? "bg-[var(--v3-panel)]" : "bg-[var(--v3-sunk)]"
+          }`}
+          aria-label={t("search.ariaCategory")}
+        >
+          <option value="">{t("search.allCategories")}</option>
+          {categories.map((row) => (
+            <option key={row.value} value={row.value}>
+              {row.value}
+            </option>
+          ))}
+          {activeCategory && !categories.some((row) => row.value === activeCategory) ? (
+            <option value={activeCategory}>{activeCategory}</option>
+          ) : null}
+        </select>
+      </label>
+
+      {/* The Stock group keeps its natural width on the second line beside the
+          Clear button rather than growing, so the two controls on that line
+          keep the same size they have on desktop. */}
+      <label className="flex shrink-0 items-center gap-1.5 whitespace-nowrap text-xs font-semibold leading-none text-[var(--v3-text-2)]">
+        <span>{t("search.stockLabel")}</span>
+        <select
+          value={stockFilter}
+          onChange={(event) =>
+            onStockFilterChange?.(event.target.value === "in_stock" ? "in_stock" : "all")
+          }
+          className={`h-11 w-auto min-w-0 max-w-32 rounded-[var(--v3-r)] border border-[var(--v3-rule-strong)] px-2 text-xs font-semibold leading-none text-[var(--v3-text)] outline-none transition-colors focus:border-[var(--v3-brand)] sm:h-9 lg:max-w-32 xl:max-w-36 ${
+            orderPage ? "bg-[var(--v3-panel)]" : "bg-[var(--v3-sunk)]"
+          }`}
+          aria-label={t("search.ariaStock")}
+        >
+          <option value="all">{t("search.allStock")}</option>
+          <option value="in_stock">{t("search.inStock")}</option>
+        </select>
+      </label>
+
+      {/* h-11 below `sm` so the tap target clears the 44px V3 minimum on a
+          phone, matching the search button's own `min-h-11`; h-9 from 640px up,
+          identical to before. The stock select above takes the same h-11 so
+          both controls on this line stay the same height. */}
+      <button
+        type="button"
+        onClick={() => onClearFilters?.()}
+        className={`inline-flex h-11 shrink-0 items-center justify-center whitespace-nowrap rounded-[var(--v3-r)] border px-2 text-xs font-semibold leading-none outline-none transition-colors focus:border-[var(--v3-brand)] sm:h-9 ${
+          orderPage
+            ? "border-[var(--v3-brand)] text-[var(--v3-brand)] hover:bg-[var(--v3-brand-soft)]"
+            : "border-[var(--v3-rule-strong)] text-[var(--v3-text-2)] hover:bg-[var(--v3-sunk)] hover:text-[var(--v3-brand)]"
+        }`}
+      >
+        {t("common.clearFilters")}
+      </button>
+    </div>
   );
 }
 
@@ -213,6 +342,7 @@ export function HeaderSearchField({
   onOpenProduct,
   onAddToCart,
   panelHost,
+  searchClassName,
   orderMode = false,
   orderPage = false,
   categoryOptions = [],
@@ -231,6 +361,12 @@ export function HeaderSearchField({
   onOpenProduct?: (product: HeaderSearchProduct) => void;
   onAddToCart?: (listingId: string, unitPaise?: number) => Promise<void> | void;
   panelHost?: HTMLElement | null;
+  /**
+   * Class applied to the `<form>`, replacing the built-in `sl-search`.
+   * V3 pages pass `v3-search` so the field is a ruled square rather than a
+   * 999px pill. Behaviour, markup and the autocomplete panel are untouched.
+   */
+  searchClassName?: string;
   orderMode?: boolean;
   orderPage?: boolean;
   categoryOptions?: FacetRow[];
@@ -456,11 +592,11 @@ export function HeaderSearchField({
       ref={panelRef}
       role="listbox"
       aria-label={t("search.tabsLabel")}
-      className="absolute inset-x-3 z-[70] mt-1.5 flex max-h-[min(76dvh,720px)] min-h-[min(48dvh,480px)] w-auto flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-[0_18px_50px_rgba(15,23,42,0.18)] md:inset-x-6"
+      className="absolute inset-x-3 z-[70] mt-1.5 flex max-h-[min(76dvh,720px)] min-h-[min(48dvh,480px)] w-auto flex-col overflow-hidden rounded-[var(--v3-r-lg)] border border-[var(--v3-rule)] bg-white shadow-[0_18px_50px_rgba(15,23,42,0.18)] md:inset-x-6"
     >
       {showIdle ? (
         <div className="p-4">
-          <p className="mb-2 text-[11px] font-bold uppercase tracking-wide text-slate-500">
+          <p className="mb-2 text-[11px]  tracking-wide text-[var(--v3-text-3)]">
             {t("search.recentSearches")}
           </p>
           <div className="flex flex-wrap gap-2">
@@ -468,7 +604,7 @@ export function HeaderSearchField({
               <button
                 key={item}
                 type="button"
-                className="rounded-full border border-slate-200 bg-white px-3 py-1.5 text-sm text-slate-800 hover:border-[#7a1233]"
+                className="v3-chip text-sm"
                 onMouseDown={(event) => event.preventDefault()}
                 onClick={() => {
                   onChange(item);
@@ -482,7 +618,7 @@ export function HeaderSearchField({
         </div>
       ) : (
         <>
-          <div className="shrink-0 overflow-x-auto border-b border-slate-200 px-3 py-2.5" role="tablist">
+          <div className="shrink-0 overflow-x-auto border-b border-[var(--v3-rule)]/70 bg-[var(--v3-brand-soft)]/30 px-3 py-2.5" role="tablist">
             <div className="flex min-w-max gap-2">
               {panelTabs.map((item) => {
                 const active = panelTab === item.id;
@@ -494,10 +630,10 @@ export function HeaderSearchField({
                     aria-selected={active}
                     onMouseDown={(event) => event.preventDefault()}
                     onClick={() => setPanelTab(item.id)}
-                    className={`inline-flex h-10 items-center gap-2 rounded-xl px-3 text-xs font-bold ${
+                    className={`inline-flex h-10 items-center gap-2 rounded-[var(--v3-r)] px-3 text-xs font-bold transition-colors duration-200 ${
                       active
-                        ? "bg-[#7a1233] text-white"
-                        : "border border-slate-200 bg-slate-50 text-slate-700 hover:bg-white"
+                        ? "bg-[var(--v3-brand)] text-white shadow-[0_6px_16px_-8px_rgba(122,18,51,0.7)]"
+                        : "border border-[var(--v3-rule)] bg-[var(--v3-brand-soft)]/50 text-[var(--v3-text-2)] hover:bg-[var(--v3-brand-soft)] hover:text-[var(--v3-brand)]"
                     }`}
                   >
                     <TabIcon kind={item.id} />
@@ -511,9 +647,9 @@ export function HeaderSearchField({
           </div>
 
           <div className="grid min-h-0 min-w-0 flex-1 grid-cols-1 overflow-hidden md:grid-cols-[minmax(11rem,17.5rem)_minmax(0,1fr)]">
-            <aside className="hidden min-h-0 min-w-0 flex-col overflow-y-auto border-r border-slate-200 bg-white md:flex">
+            <aside className="hidden min-h-0 min-w-0 flex-col overflow-y-auto border-r border-[var(--v3-rule)] bg-white md:flex">
               <section className="shrink-0 px-3 pt-4">
-                <p className="px-2 text-[11px] font-bold uppercase tracking-[0.14em] text-slate-500">
+                <p className="px-2 text-[11px]  tracking-[0.14em] text-[var(--v3-text-3)]">
                   {t("search.relatedCategories")}
                 </p>
                 <div className="mt-1">
@@ -526,7 +662,7 @@ export function HeaderSearchField({
                         setOpen(true);
                       }}
                       icon={
-                        <svg className="h-4 w-4 text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.8">
+                        <svg className="h-4 w-4 text-[var(--v3-text-3)]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.8">
                           <path strokeLinecap="round" strokeLinejoin="round" d="M4 7h16M4 12h10M4 17h7" />
                         </svg>
                       }
@@ -534,9 +670,9 @@ export function HeaderSearchField({
                   ))}
                 </div>
               </section>
-              <div className="mx-5 my-2 border-t border-slate-200" />
+              <div className="mx-5 my-2 border-t border-[var(--v3-rule)]" />
               <section className="shrink-0 px-3">
-                <p className="px-2 text-[11px] font-bold uppercase tracking-[0.14em] text-slate-500">
+                <p className="px-2 text-[11px]  tracking-[0.14em] text-[var(--v3-text-3)]">
                   {t("search.popularBrands")}
                 </p>
                 <div className="mt-1">
@@ -555,7 +691,7 @@ export function HeaderSearchField({
                             // eslint-disable-next-line @next/next/no-img-element
                             <img src={logo} alt="" className="h-7 w-7 object-contain" />
                           ) : (
-                            <span className="text-[9px] font-bold text-slate-500">
+                            <span className="text-[9px] font-bold text-[var(--v3-text-3)]">
                               {row.value.slice(0, 2).toUpperCase()}
                             </span>
                           )
@@ -566,15 +702,15 @@ export function HeaderSearchField({
                 </div>
               </section>
               <div className="mt-auto p-3">
-                <div className="rounded-xl bg-slate-100 p-4">
-                  <div className="mb-2 flex items-center gap-2 text-slate-500">
+                <div className="rounded-[var(--v3-r)] bg-slate-100 p-4">
+                  <div className="mb-2 flex items-center gap-2 text-[var(--v3-text-3)]">
                     <SearchIcon className="h-4 w-4" />
-                    <p className="text-sm font-bold text-slate-900">{t("search.cantFindTitle")}</p>
+                    <p className="text-sm font-bold text-[var(--v3-text)]">{t("search.cantFindTitle")}</p>
                   </div>
-                  <p className="text-[12px] leading-relaxed text-slate-600">{t("search.cantFindHint")}</p>
+                  <p className="text-[12px] leading-relaxed text-[var(--v3-text-2)]">{t("search.cantFindHint")}</p>
                   <Link
                     href="/vehicle-fitment"
-                    className="mt-3 inline-flex min-h-10 w-full items-center justify-center gap-2 rounded-lg border-2 border-[#7a1233] bg-white px-3 text-xs font-bold text-[#7a1233]"
+                    className="mt-3 inline-flex min-h-10 w-full items-center justify-center gap-2 rounded-[2px] border-2 border-[var(--v3-brand-hover)] bg-white px-3 text-xs font-bold text-[var(--v3-brand)]"
                     onMouseDown={(event) => event.preventDefault()}
                   >
                     <SearchIcon className="h-3.5 w-3.5" />
@@ -595,10 +731,10 @@ export function HeaderSearchField({
               }}
             >
               {canSuggest && suggesting && suggestions.length === 0 ? (
-                <p className="px-5 py-8 text-sm text-slate-500">{t("search.searching")}</p>
+                <p className="px-5 py-8 text-sm text-[var(--v3-text-3)]">{t("search.searching")}</p>
               ) : null}
               {canSuggest && !suggesting && showProductRows && suggestions.length === 0 ? (
-                <p className="px-5 py-8 text-sm text-slate-500">{t("search.none", { query: value.trim() })}</p>
+                <p className="px-5 py-8 text-sm text-[var(--v3-text-3)]">{t("search.none", { query: value.trim() })}</p>
               ) : null}
 
               {panelTab === "brands"
@@ -608,7 +744,7 @@ export function HeaderSearchField({
                       <button
                         key={row.value}
                         type="button"
-                        className="flex w-full items-center gap-3 border-b border-slate-100 px-5 py-3 text-left hover:bg-slate-50"
+                        className="flex w-full items-center gap-3 border-b border-slate-100 px-5 py-3 text-left hover:bg-[var(--v3-sunk)]"
                         onMouseDown={(event) => event.preventDefault()}
                         onClick={() => {
                           onChange(row.value);
@@ -620,7 +756,7 @@ export function HeaderSearchField({
                           <img src={logo} alt="" className="h-8 w-12 object-contain" />
                         ) : null}
                         <span className="flex-1 font-semibold">{row.value}</span>
-                        <span className="text-xs text-slate-500">{row.count}</span>
+                        <span className="text-xs text-[var(--v3-text-3)]">{row.count}</span>
                       </button>
                     );
                   })
@@ -631,7 +767,7 @@ export function HeaderSearchField({
                     <button
                       key={row.value}
                       type="button"
-                      className="flex w-full items-center justify-between border-b border-slate-100 px-5 py-3 text-left hover:bg-slate-50"
+                      className="flex w-full items-center justify-between border-b border-slate-100 px-5 py-3 text-left hover:bg-[var(--v3-sunk)]"
                       onMouseDown={(event) => event.preventDefault()}
                       onClick={() => {
                         onChange(row.value);
@@ -639,7 +775,7 @@ export function HeaderSearchField({
                       }}
                     >
                       <span className="font-semibold">{row.value}</span>
-                      <span className="text-xs text-slate-500">{row.count}</span>
+                      <span className="text-xs text-[var(--v3-text-3)]">{row.count}</span>
                     </button>
                   ))
                 : null}
@@ -650,22 +786,22 @@ export function HeaderSearchField({
                         <Link
                           key={`${vehicle.make}-${vehicle.model}`}
                           href={`/vehicle-fitment/${slugifyFitment(vehicle.make)}`}
-                          className="flex items-center justify-between border-b border-slate-100 px-5 py-3 hover:bg-slate-50"
+                          className="flex items-center justify-between border-b border-slate-100 px-5 py-3 hover:bg-[var(--v3-sunk)]"
                           onMouseDown={(event) => event.preventDefault()}
                         >
                           <span className="font-semibold">
                             {vehicle.make} {vehicle.model}
                           </span>
-                          <span className="text-xs text-slate-500">{vehicle.count}</span>
+                          <span className="text-xs text-[var(--v3-text-3)]">{vehicle.count}</span>
                         </Link>
                       ))
                     : (
-                      <p className="px-5 py-8 text-sm text-slate-500">{t("search.none", { query: value.trim() })}</p>
+                      <p className="px-5 py-8 text-sm text-[var(--v3-text-3)]">{t("search.none", { query: value.trim() })}</p>
                     ))
                 : null}
 
               {panelTab === "articles" ? (
-                <p className="px-5 py-8 text-sm text-slate-500">{t("search.none", { query: value.trim() })}</p>
+                <p className="px-5 py-8 text-sm text-[var(--v3-text-3)]">{t("search.none", { query: value.trim() })}</p>
               ) : null}
 
               {showProductRows
@@ -686,7 +822,7 @@ export function HeaderSearchField({
                         role="option"
                         aria-selected={index === activeIndex}
                         className={`flex min-w-0 flex-col gap-3 border-b border-slate-100 px-3 py-3 sm:flex-row sm:items-center sm:gap-4 sm:px-4 sm:py-3.5 ${
-                          index === activeIndex ? "bg-slate-50" : "bg-white"
+                          index === activeIndex ? "bg-[var(--v3-sunk)]" : "bg-white"
                         }`}
                       >
                         <button
@@ -696,7 +832,7 @@ export function HeaderSearchField({
                           onMouseDown={(event) => event.preventDefault()}
                           onClick={() => chooseProduct(item)}
                         >
-                          <span className="relative h-16 w-16 shrink-0 overflow-hidden rounded-xl border border-slate-200 bg-slate-50 sm:h-[88px] sm:w-[88px]">
+                          <span className="relative h-16 w-16 shrink-0 overflow-hidden rounded-[var(--v3-r)] border border-[var(--v3-rule)] bg-[var(--v3-sunk)] sm:h-[88px] sm:w-[88px]">
                             <Image
                               src={
                                 item.thumbUrl ||
@@ -711,16 +847,16 @@ export function HeaderSearchField({
                             />
                           </span>
                           <span className="min-w-0 flex-1">
-                            <span className="block truncate text-[15px] font-bold text-slate-950">
+                            <span className="block truncate text-[15px] font-bold text-[var(--v3-text)]">
                               <SearchHighlight text={item.name} query={value} />
                             </span>
-                            <span className="mt-1 block truncate text-xs text-slate-500">
+                            <span className="mt-1 block truncate text-xs text-[var(--v3-text-3)]">
                               {[item.brand, item.partNumber ? `${t("search.partNo")} ${item.partNumber}` : ""]
                                 .filter(Boolean)
                                 .join(" | ")}
                             </span>
                             {item.category ? (
-                              <span className="mt-2 inline-flex rounded bg-slate-100 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-slate-600">
+                              <span className="mt-2 inline-flex rounded bg-slate-100 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-[var(--v3-text-2)]">
                                 {item.category}
                               </span>
                             ) : null}
@@ -730,10 +866,28 @@ export function HeaderSearchField({
                           {stock ? (
                             <span
                               className={`text-[11px] font-bold ${
-                                canAdd ? "text-emerald-700" : "text-slate-500"
+                                canAdd ? "text-[var(--v3-ok)]" : "text-[var(--v3-text-3)]"
                               }`}
                             >
-                              {canAdd ? `✓ ${stock}` : stock}
+                              {canAdd ? (
+                                <>
+                                  <svg
+                                    className="mr-1 inline-block h-3 w-3 align-[-0.05em]"
+                                    viewBox="0 0 24 24"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    strokeWidth="2.6"
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    aria-hidden
+                                  >
+                                    <path d="M5 13l4 4L19 7" />
+                                  </svg>
+                                  {stock}
+                                </>
+                              ) : (
+                                stock
+                              )}
                             </span>
                           ) : null}
                           <CompactPrice listing={item.listing} />
@@ -741,7 +895,7 @@ export function HeaderSearchField({
                             <button
                               type="button"
                               disabled={!canAdd || addingId === item.listing?.id}
-                              className="inline-flex min-h-9 items-center rounded-lg bg-[#7a1233] px-3 text-[11px] font-bold text-white disabled:opacity-50"
+                              className="inline-flex min-h-9 items-center rounded-[2px] bg-[var(--v3-brand)] px-3 text-[11px] font-bold text-white disabled:opacity-50"
                               onMouseDown={(event) => event.preventDefault()}
                               onClick={(event) => void addListing(item, event)}
                             >
@@ -755,14 +909,14 @@ export function HeaderSearchField({
                 : null}
 
               {loadingMore ? (
-                <p className="px-5 py-3 text-xs text-slate-500">{t("search.searching")}</p>
+                <p className="px-5 py-3 text-xs text-[var(--v3-text-3)]">{t("search.searching")}</p>
               ) : null}
             </div>
           </div>
 
-          <div className="flex shrink-0 flex-col gap-3 border-t border-slate-200 bg-slate-50 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex shrink-0 flex-col gap-3 border-t border-[var(--v3-rule)] bg-[var(--v3-sunk)] px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
             <div className="min-w-0">
-              <p className="mb-1.5 text-[11px] font-bold uppercase tracking-wide text-slate-500">
+              <p className="v3-label mb-1.5">
                 {t("search.recentSearches")}
               </p>
               <div className="flex gap-2 overflow-x-auto">
@@ -771,7 +925,7 @@ export function HeaderSearchField({
                     <button
                       key={item}
                       type="button"
-                      className="shrink-0 rounded-full border border-slate-200 bg-white px-3 py-1 text-xs font-semibold text-slate-700"
+                      className="shrink-0 rounded-[2px] border border-[var(--v3-rule)] bg-white px-3 py-1 text-xs font-semibold text-[var(--v3-text-2)]"
                       onMouseDown={(event) => event.preventDefault()}
                       onClick={() => {
                         onChange(item);
@@ -782,21 +936,21 @@ export function HeaderSearchField({
                     </button>
                   ))
                 ) : (
-                  <span className="text-xs text-slate-400">—</span>
+                  <span className="text-xs text-[var(--v3-text-3)]">—</span>
                 )}
               </div>
             </div>
             <div className="flex min-w-0 gap-2 overflow-x-auto">
               <Link
                 href="/vehicle-fitment"
-                className="inline-flex shrink-0 items-center gap-1 rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-bold text-slate-800"
+                className="inline-flex shrink-0 items-center gap-1 rounded-[2px] border border-[var(--v3-rule)] bg-white px-3 py-2 text-xs font-bold text-slate-800"
                 onMouseDown={(event) => event.preventDefault()}
               >
                 {t("search.byVehicle")} ›
               </Link>
               <button
                 type="button"
-                className="inline-flex shrink-0 items-center gap-1 rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-bold text-slate-800"
+                className="inline-flex shrink-0 items-center gap-1 rounded-[2px] border border-[var(--v3-rule)] bg-white px-3 py-2 text-xs font-bold text-slate-800"
                 onMouseDown={(event) => event.preventDefault()}
                 onClick={() => rootRef.current?.querySelector("input")?.focus()}
               >
@@ -804,7 +958,7 @@ export function HeaderSearchField({
               </button>
               <button
                 type="button"
-                className="inline-flex shrink-0 items-center gap-1 rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-bold text-slate-800"
+                className="inline-flex shrink-0 items-center gap-1 rounded-[2px] border border-[var(--v3-rule)] bg-white px-3 py-2 text-xs font-bold text-slate-800"
                 onMouseDown={(event) => event.preventDefault()}
                 onClick={() => rootRef.current?.querySelector("input")?.focus()}
               >
@@ -821,24 +975,17 @@ export function HeaderSearchField({
     <div ref={rootRef} className="relative min-w-0 w-full">
       <form
         data-storefront-search
-        className={`flex min-h-11 min-w-0 w-full items-stretch md:min-h-12 ${
-          orderPage
-            ? "gap-1 rounded-xl border border-[#7a1233] bg-white p-1.5 md:gap-2 md:rounded-none md:border-0 md:bg-transparent md:p-0"
-            : "overflow-hidden rounded-md border-y border-slate-300 bg-white"
-        }`}
+        className={`${searchClassName ?? "sl-search"} w-full min-w-0`}
         onSubmit={(event) => {
           event.preventDefault();
           submitForm();
         }}
       >
-        <div
-          className={`flex h-full min-w-0 flex-1 items-center ${
-            orderPage
-              ? "rounded-lg border-0 px-1 md:rounded-lg md:border md:border-slate-300 md:px-1"
-              : ""
-          }`}
-        >
-          <span className="pl-3 text-slate-400" aria-hidden>
+        <div className="flex h-full min-w-0 flex-1 items-center">
+          {/* No extra left padding here: `.v3-search` already provides a 10px
+              gutter, and the old `pl-1` on top of it left the icon 14px from
+              the edge while the filled button sat 4px from the other one. */}
+          <span className="sl-search-icon flex shrink-0 items-center" aria-hidden>
             <SearchIcon />
           </span>
           <input
@@ -905,13 +1052,13 @@ export function HeaderSearchField({
                   ? "Search by item name, part no., or HSN..."
                   : t("search.placeholderHeader")
             }
-            className="h-full min-w-0 flex-1 bg-white px-2 text-sm text-slate-900 outline-none placeholder:text-slate-400"
+            className="sl-search-input"
           />
           {value ? (
             <button
               type="button"
               aria-label={t("common.close")}
-              className="mr-1 flex h-8 w-8 items-center justify-center rounded-full text-slate-500 hover:bg-slate-100"
+              className="sl-search-clear"
               onClick={() => {
                 setHasUserEdited(true);
                 onChange("");
@@ -919,60 +1066,20 @@ export function HeaderSearchField({
                 setOpen(false);
               }}
             >
-              ×
+              <svg
+                className="h-4 w-4"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                aria-hidden
+              >
+                <path d="M6 6l12 12M18 6L6 18" />
+              </svg>
             </button>
           ) : null}
         </div>
-        {orderMode ? (
-          <div className="hidden min-h-full shrink-0 items-center gap-2 px-2 md:flex">
-            <label className="flex h-full items-center gap-1 whitespace-nowrap text-xs font-semibold text-slate-600">
-              <span>Category:</span>
-              <select
-                value={activeCategory}
-                onChange={(event) => onCategoryChange?.(event.target.value)}
-                className={`h-9 max-w-40 rounded-md px-2 text-xs font-semibold text-slate-800 outline-none focus:ring-2 focus:ring-[#7a1233]/20 ${
-                  orderPage ? "border border-slate-300 bg-white" : "bg-slate-50"
-                }`}
-                aria-label="Category"
-              >
-                <option value="">All Categories</option>
-                {orderCategories.map((row) => (
-                  <option key={row.value} value={row.value}>
-                    {row.value}
-                  </option>
-                ))}
-                {activeCategory && !orderCategories.some((row) => row.value === activeCategory) ? (
-                  <option value={activeCategory}>{activeCategory}</option>
-                ) : null}
-              </select>
-            </label>
-            <label className="flex h-full items-center gap-1 whitespace-nowrap text-xs font-semibold text-slate-600">
-              <span>Stock:</span>
-              <select
-                value={stockFilter}
-                onChange={(event) =>
-                  onStockFilterChange?.(event.target.value === "in_stock" ? "in_stock" : "all")
-                }
-                className={`h-9 rounded-md px-2 text-xs font-semibold text-slate-800 outline-none focus:ring-2 focus:ring-[#7a1233]/20 ${
-                  orderPage ? "border border-slate-300 bg-white" : "bg-slate-50"
-                }`}
-                aria-label="Stock"
-              >
-                <option value="all">All Stock</option>
-                <option value="in_stock">In Stock</option>
-              </select>
-            </label>
-            <button
-              type="button"
-              onClick={() => onClearFilters?.()}
-              className={`h-9 whitespace-nowrap rounded-md px-2 text-xs font-semibold text-slate-600 hover:bg-slate-50 hover:text-[#7a1233] ${
-                orderPage ? "border border-[#7a1233]" : ""
-              }`}
-            >
-              Clear Filters
-            </button>
-          </div>
-        ) : null}
         <button
           type="submit"
           disabled={searchLoading}
@@ -980,7 +1087,7 @@ export function HeaderSearchField({
           className={`${
             orderPage
               ? "hidden"
-              : "inline-flex min-h-11 shrink-0 items-center gap-1.5 bg-[#7a1233] px-2.5 text-sm font-bold text-white hover:bg-[#611029] disabled:opacity-60 sm:px-3"
+              : "inline-flex min-h-11 shrink-0 items-center gap-1.5 bg-[var(--v3-brand)] px-2.5 text-sm font-bold text-white hover:bg-[var(--v3-brand-hover)] disabled:opacity-60 sm:px-3"
           }`}
         >
           <SearchIcon />
@@ -990,20 +1097,49 @@ export function HeaderSearchField({
           <Link
             href={mobileCartHref}
             aria-label={t("nav.cart")}
-            className={`relative inline-flex min-h-11 shrink-0 items-center justify-center px-2.5 text-slate-700 hover:bg-slate-50 md:hidden ${
-              orderPage ? "rounded-lg" : ""
+            className={`relative inline-flex min-h-11 shrink-0 items-center justify-center px-2.5 text-[var(--v3-text-2)] hover:bg-[var(--v3-sunk)] md:hidden ${
+              orderPage ? "rounded-[2px]" : ""
             }`}
           >
             <CartIcon />
             {mobileCartCount > 0 ? (
-              <span className="absolute right-0.5 top-1 inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-[#c81e1e] px-1 text-[9px] font-bold leading-none text-white">
+              <span className="absolute right-0.5 top-1 inline-flex h-4 min-w-4 items-center justify-center rounded-[2px] bg-[#c81e1e] px-1 text-[9px] font-bold leading-none text-white">
                 {mobileCartCount > 99 ? "99+" : mobileCartCount}
               </span>
             ) : null}
           </Link>
         ) : null}
       </form>
-      {panelHost && typeof document !== "undefined" ? createPortal(panel, panelHost) : panel}
+
+        {/*
+         * Order-mode filters (Category / Stock / Clear Filters).
+         *
+         * Rendered into `filterRowHost` when the header supplies one, which gives
+         * them a FULL container width in their own row beneath the search pill.
+         * They used to be flex children of `.sl-search` — roughly 520px of
+         * shrink-0 controls inside a 3rem pill — and inline in the search wrapper
+         * they were capped at 22rem and wrapped. That made the fixed content in
+         * header row 1 differ between the homepage (orderMode) and inner routes,
+         * which clipped the account label to "...gister" on the homepage only.
+         *
+         * Controls, options, values and handlers are unchanged. Only placement
+         * differs, and `flex-nowrap` with shrink-0 children keeps the row on one
+         * line at every desktop width.
+         */}
+        {orderMode ? (
+          <OrderSearchFilters
+            categories={orderCategories}
+            activeCategory={activeCategory}
+            onCategoryChange={onCategoryChange}
+            stockFilter={stockFilter}
+            onStockFilterChange={onStockFilterChange}
+            onClearFilters={onClearFilters}
+            orderPage={orderPage}
+          />
+        ) : null}
+        {panelHost && typeof document !== "undefined"
+          ? createPortal(panel, panelHost)
+          : panel}
     </div>
   );
 }

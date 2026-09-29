@@ -1,0 +1,1006 @@
+/* ===================================================================
+   SPARELINK V3 \u2014 CUSTOMER STOREFRONT DESIGN SYSTEM
+   ===================================================================
+
+   A deliberately different visual language from V2. The goal is an
+   INDUSTRIAL-CATALOGUE feel, not a consumer-marketplace feel:
+
+     V2 (rejected)                      V3 (this system)
+     ------------------------------     ---------------------------------
+     soft 8-12px radii, pill buttons    2-4px radii, squared controls
+     floating white cards on cream     hairline-ruled panels on white
+     centred eyebrow + big heading     left burgundy rule + compact title
+     large editorial type              tight, dense, information-first
+     gradients as decoration           colour as state, never decoration
+     rounded images everywhere          one consistent square image stage
+
+   Burgundy is a STATE colour in V3: it marks the active item, the primary
+   action and the brand rule. It is never a surface and never a wash.
+
+   Loaded after globals.css so V2 pages keep working while they migrate.
+   =================================================================== */
+
+:root {
+  /* --- surfaces ---------------------------------------------------
+     The page is the brand cream (#f8f4f0) per the V3 brief. Content sits
+     on WHITE ruled panels, so the cream only ever shows in the gutters and
+     between bands. That is what stops it reading as one flat wash. */
+  --v3-page: #f8f4f0;
+  --v3-panel: #ffffff;
+  --v3-sunk: #f4efea;          /* cream-derived inset, one step down */
+  --v3-sunk-deep: #ede6e0;
+  --v3-inverse: #17110f;        /* charcoal, not black */
+
+  /* --- brand --- */
+  --v3-brand: #7a1233;
+  --v3-brand-hover: #611029;
+  --v3-brand-soft: #fdf5f7;
+  --v3-brand-line: #e8cdd7;
+  --v3-gold: #c99b4a;
+  --v3-gold-soft: #f6efe1;
+
+  /* --- footer: the one light-ground band on the storefront ---------
+     The footer is deliberately COOL where the page is warm. `--v3-page`
+     is a cream, so a cream footer would dissolve into the last panel;
+     a light cool grey reads as a separate band without needing a colour
+     of its own, and it lets the existing dark logo sit on it unaltered.
+
+     The ink pair is navy rather than the warm `--v3-text` family for the
+     same reason: on a cool ground, warm brown text looks like dirt.
+     Both steps clear 4.5:1 against the surface.
+
+     `--v3-footer-gold` is a deeper, warmer amber than `--v3-gold`: the
+     firm-identity bar is a filled surface, and the hairline gold used for
+     text on cream has almost no body when it becomes 48px of background. */
+  --v3-footer-surface: #f2f4f7;
+  --v3-footer-rule: #dde1e7;
+  --v3-footer-rule-strong: #c2c9d2;
+  --v3-footer-ink: #1b2430;
+  --v3-footer-ink-2: #4a5563;
+  --v3-footer-gold: #c47a08;
+  --v3-footer-gold-ink: #241705;
+
+  /* --- lines & text: hairline rules carry the structure --- */
+  --v3-rule: #e4ddd8;
+  --v3-rule-strong: #cfc4bd;
+  --v3-text: #1b1512;          /* dark charcoal, never #000 */
+  --v3-text-2: #554b45;
+  --v3-text-3: #857972;
+
+  /* --- state --- */
+  --v3-ok: #0f6b4f;
+  --v3-ok-soft: #e7f4ee;
+  --v3-ok-line: #bfe0d1;
+  --v3-warn: #8a5a12;
+  --v3-warn-soft: #fbf1df;
+  --v3-warn-line: #ecd7ab;
+  --v3-bad: #9b1c17;
+  --v3-bad-soft: #fbeceb;
+  --v3-bad-line: #eec4c1;
+
+  /* --- shape: tight. This is the single biggest departure from V2. --- */
+  --v3-r: 3px;
+  --v3-r-lg: 5px;
+
+  /* --- depth: almost none. Rules replace shadows. --- */
+  --v3-lift: 0 1px 0 var(--v3-rule);
+  --v3-lift-hi: 0 6px 18px -12px rgba(27, 21, 18, 0.28);
+
+  --v3-container: 1280px;
+  --v3-ease: cubic-bezier(0.2, 0, 0, 1);
+
+  /* Height of the sticky site header on desktop: utility bar (48px) + main row
+     (96px) + primary nav (64px) = 208px. Sticky in-page rails offset by this so
+     their first row is never hidden behind the header.
+
+     This was 140px, which described the previous header (30 + 66 + 44). The
+     header restructure made the real height 208px, so every sticky rail that
+     reads this token - the vehicle-fitment make selector, the category
+     filter rail, the policy sidebar, the quick-order panel - was sticking 68px
+     too high and sliding under the header. */
+
+  --v3-header-h: 208px;
+}
+@media (max-width: 1023px) {
+  :root {
+    /* Below lg the primary nav row is not rendered, so the header is two rows:
+       utility bar (32px) + main row (64px) = 96px. Unchanged and still correct. */
+    --v3-header-h: 96px;
+  }
+}
+
+/* ===================================================================
+   TYPE \u2014 tight, catalogue-dense. Headings do not shout.
+   =================================================================== */
+
+.v3-display {
+  font-size: clamp(1.85rem, 1.15rem + 2.4vw, 2.85rem);
+  font-weight: 800;
+  line-height: 1.04;
+  letter-spacing: -0.035em;
+  color: var(--v3-text);
+}
+
+.v3-h1 {
+  font-size: clamp(1.35rem, 1.12rem + 0.9vw, 1.75rem);
+  font-weight: 800;
+  line-height: 1.1;
+  letter-spacing: -0.028em;
+  color: var(--v3-text);
+}
+
+.v3-h2 {
+  font-size: clamp(1.1rem, 1rem + 0.45vw, 1.3rem);
+  font-weight: 750;
+  line-height: 1.2;
+  letter-spacing: -0.02em;
+  color: var(--v3-text);
+}
+
+.v3-h3 {
+  font-size: 0.9375rem;
+  font-weight: 700;
+  line-height: 1.3;
+  letter-spacing: -0.01em;
+  color: var(--v3-text);
+}
+
+.v3-body {
+  font-size: 0.9375rem;
+  line-height: 1.6;
+  color: var(--v3-text-2);
+}
+
+.v3-small {
+  font-size: 0.8125rem;
+  line-height: 1.45;
+  color: var(--v3-text-3);
+}
+
+/* Section labels: small, tracked, muted \u2014 a shelf label, not an eyebrow. */
+.v3-label {
+  font-size: 0.6875rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--v3-text-3);
+}
+
+/* Part numbers are catalogue data: monospaced, tracked, unmistakable. */
+.v3-partno {
+  font-family: var(--font-mono), ui-monospace, SFMono-Regular, monospace;
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  color: var(--v3-text-2);
+  font-variant-numeric: tabular-nums;
+}
+
+.v3-price {
+  font-size: 1.125rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  color: var(--v3-text);
+  font-variant-numeric: tabular-nums;
+}
+
+.v3-price-was {
+  font-size: 0.75rem;
+  color: var(--v3-text-3);
+  text-decoration: line-through;
+  font-variant-numeric: tabular-nums;
+}
+
+.v3-num {
+  font-variant-numeric: tabular-nums;
+}
+
+/* ===================================================================
+   LAYOUT PRIMITIVES
+   =================================================================== */
+
+.v3-container {
+  width: 100%;
+  max-width: var(--v3-container);
+  margin-inline: auto;
+  padding-inline: 1rem;
+}
+@media (min-width: 640px) {
+  .v3-container { padding-inline: 1.5rem; }
+}
+@media (min-width: 1024px) {
+  .v3-container { padding-inline: 2rem; }
+}
+
+.v3-band {
+  padding-block: 1.75rem;
+  border-top: 1px solid var(--v3-rule);
+}
+@media (min-width: 768px) {
+  .v3-band { padding-block: 2.5rem; }
+}
+.v3-band-lg {
+  padding-block: 2.25rem;
+  border-top: 1px solid var(--v3-rule);
+}
+@media (min-width: 768px) {
+  .v3-band-lg { padding-block: 3.5rem; }
+}
+
+/* Section heading: a burgundy rule in the left margin. This is the
+   signature V3 heading device and replaces V2's centred eyebrow. */
+.v3-head {
+  display: flex;
+  align-items: baseline;
+  gap: 0.75rem;
+  border-bottom: 1px solid var(--v3-rule);
+  padding-bottom: 0.75rem;
+  margin-bottom: 1.25rem;
+}
+.v3-head::before {
+  content: "";
+  align-self: stretch;
+  width: 3px;
+  background: var(--v3-brand);
+  flex: none;
+  transform: translateY(1px);
+}
+
+/* ===================================================================
+   SURFACES \u2014 ruled panels, square image stages
+   =================================================================== */
+
+.v3-panel {
+  background: var(--v3-panel);
+  border: 1px solid var(--v3-rule);
+  border-radius: var(--v3-r);
+}
+
+.v3-panel-hover {
+  transition:
+    border-color 0.16s var(--v3-ease),
+    box-shadow 0.16s var(--v3-ease),
+    transform 0.16s var(--v3-ease);
+}
+.v3-panel-hover:hover {
+  border-color: var(--v3-rule-strong);
+  box-shadow: var(--v3-lift-hi);
+}
+
+.v3-sunk {
+  background: var(--v3-sunk);
+  border-radius: var(--v3-r);
+}
+
+/* One image stage for every product, category and vehicle tile. */
+.v3-stage {
+  position: relative;
+  overflow: hidden;
+  background: var(--v3-sunk);
+  border-radius: var(--v3-r);
+}
+
+/* ===================================================================
+   CONTROLS \u2014 squared, 44px minimum
+   =================================================================== */
+
+.v3-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  min-height: 2.75rem;
+  padding-inline: 1rem;
+  border: 1px solid transparent;
+  border-radius: var(--v3-r);
+  font-size: 0.875rem;
+  font-weight: 650;
+  line-height: 1;
+  white-space: nowrap;
+  transition:
+    background-color 0.14s var(--v3-ease),
+    border-color 0.14s var(--v3-ease),
+    color 0.14s var(--v3-ease);
+}
+.v3-btn:active { transform: translateY(1px); }
+
+.v3-btn-primary {
+  background: var(--v3-brand);
+  color: #fff;
+}
+.v3-btn-primary:hover { background: var(--v3-brand-hover); }
+
+.v3-btn-outline {
+  background: var(--v3-panel);
+  color: var(--v3-brand);
+  border-color: var(--v3-brand-line);
+}
+.v3-btn-outline:hover { background: var(--v3-brand-soft); }
+
+.v3-btn-quiet {
+  background: transparent;
+  color: var(--v3-text-2);
+  border-color: var(--v3-rule);
+}
+.v3-btn-quiet:hover { background: var(--v3-sunk); color: var(--v3-text); }
+
+.v3-btn-inverse {
+  background: rgba(255, 255, 255, 0.1);
+  color: #fff;
+  border-color: rgba(255, 255, 255, 0.45);
+}
+.v3-btn-inverse:hover { background: rgba(255, 255, 255, 0.2); }
+
+.v3-btn:disabled,
+.v3-btn[aria-disabled="true"] {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+.v3-btn-sm { min-height: 2.25rem; padding-inline: 0.75rem; font-size: 0.8125rem; }
+
+.v3-input {
+  width: 100%;
+  min-height: 2.75rem;
+  padding-inline: 0.75rem;
+  background: var(--v3-panel);
+  border: 1px solid var(--v3-rule-strong);
+  border-radius: var(--v3-r);
+  font-size: 0.9375rem;
+  color: var(--v3-text);
+  transition:
+    border-color 0.14s var(--v3-ease),
+    box-shadow 0.14s var(--v3-ease);
+}
+.v3-input::placeholder { color: var(--v3-text-3); }
+.v3-input:focus {
+  outline: none;
+  border-color: var(--v3-brand);
+  box-shadow: 0 0 0 3px rgba(122, 18, 51, 0.14);
+}
+.v3-input[aria-invalid="true"] { border-color: var(--v3-bad); }
+
+.v3-select {
+  min-height: 2.25rem;
+  padding: 0 1.75rem 0 0.5rem;
+  background-color: var(--v3-panel);
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20' fill='%23857972'%3E%3Cpath fill-rule='evenodd' d='M5.23 7.21a.75.75 0 011.06.02L10 10.94l3.71-3.71a.75.75 0 111.06 1.06l-4.24 4.24a.75.75 0 01-1.06 0L5.21 8.29a.75.75 0 01.02-1.08z' clip-rule='evenodd'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 0.375rem center;
+  background-size: 1.125rem;
+  border: 1px solid var(--v3-rule-strong);
+  border-radius: var(--v3-r);
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--v3-text);
+  appearance: none;
+  cursor: pointer;
+  max-width: 11rem;
+}
+.v3-select:focus {
+  outline: none;
+  border-color: var(--v3-brand);
+  box-shadow: 0 0 0 3px rgba(122, 18, 51, 0.14);
+}
+
+/* ===================================================================
+   BADGES \u2014 rectangular, state-coloured
+   =================================================================== */
+
+.v3-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.0625rem 0.375rem;
+  border: 1px solid var(--v3-rule);
+  border-radius: 2px;
+  background: var(--v3-sunk);
+  font-size: 0.625rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--v3-text-2);
+  white-space: nowrap;
+}
+.v3-badge-brand {
+  background: var(--v3-brand-soft);
+  border-color: var(--v3-brand-line);
+  color: var(--v3-brand);
+}
+.v3-badge-ok {
+  background: var(--v3-ok-soft);
+  border-color: #bfe0d1;
+  color: var(--v3-ok);
+}
+.v3-badge-warn {
+  background: var(--v3-warn-soft);
+  border-color: #ecd7ab;
+  color: var(--v3-warn);
+}
+.v3-badge-bad {
+  background: var(--v3-bad-soft);
+  border-color: #eec4c1;
+  color: var(--v3-bad);
+}
+.v3-badge-gold {
+  background: var(--v3-gold-soft);
+  border-color: #e6d3ac;
+  color: #7a5a17;
+}
+
+/* ===================================================================
+   SEARCH \\u2014 squared, ruled, with a burgundy commit key
+   -------------------------------------------------------------------
+   Replaces V2's 999px pill. Same markup, same behaviour, different
+   geometry: a ruled input with a square burgundy action on the right.
+   =================================================================== */
+
+.v3-search {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  min-height: 2.75rem;
+  /* 10px of gutter on BOTH sides, so the icon on the left and the filled
+     button on the right sit the same distance from their edges. This was
+     0.25rem right against 0.625rem left, which is what made the row look
+     lopsided. Vertical padding stays 0.25rem, so the content box is still
+     2.25rem and the button below still fills it exactly. */
+  padding: 0.25rem 0.625rem 0.25rem 0.625rem;
+  background: var(--v3-panel);
+  border: 1px solid var(--v3-rule-strong);
+  border-radius: var(--v3-r);
+  transition:
+    border-color 0.14s var(--v3-ease),
+    box-shadow 0.14s var(--v3-ease);
+}
+.v3-search:focus-within {
+  border-color: var(--v3-brand);
+  box-shadow: 0 0 0 3px rgba(122, 18, 51, 0.12);
+}
+.v3-search input {
+  flex: 1 1 auto;
+  min-width: 0;
+  /* Both children of the row stretch to the same content box. Before this the
+     input collapsed to its intrinsic ~18px line box while the submit button
+     stood at 44px on its `min-h-11`, so the two controls in one row were
+     visibly different heights. */
+  align-self: stretch;
+  border: 0;
+  background: transparent;
+  font-size: 0.9375rem;
+  /* A fixed line-height rather than `normal`, so the row cannot grow and the
+     value cannot drift relative to the icon. */
+  line-height: 1.5rem;
+  color: var(--v3-text);
+}
+.v3-search input::placeholder { color: var(--v3-text-3); }
+.v3-search input:focus { outline: none; }
+.v3-search .sl-search-input {
+  height: auto;
+  font-size: 0.9375rem;
+  color: var(--v3-text);
+}
+.v3-search .sl-search-input::placeholder { color: var(--v3-text-3); }
+.v3-search .sl-search-icon { color: var(--v3-text-3); }
+.v3-search .sl-search-clear {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.75rem;
+  height: 1.75rem;
+  flex: none;
+  border: 0;
+  border-radius: 2px;
+  background: transparent;
+  color: var(--v3-text-3);
+  cursor: pointer;
+}
+.v3-search .sl-search-clear:hover {
+  background: var(--v3-sunk);
+  color: var(--v3-text);
+}
+.v3-search button {
+  /* Fills the row's content box, the same as the input, so the two are always
+     the same height whatever the type scale does.
+
+     This deliberately does NOT set a `height`. The submit button carries
+     Tailwind's `min-h-11` (44px, the V3 minimum touch target) in its className,
+     and a CSS `min-height` always beats a CSS `height` - so an earlier attempt
+     to pin it to 2.25rem here was silently overridden and left two
+     contradictory sources of truth. `align-self: stretch` needs no fixed value:
+     the row's own `min-height` plus that 44px floor set the content box, and
+     both children fill it. */
+  align-self: stretch;
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding-inline: 0.875rem;
+  background: var(--v3-brand);
+  color: #fff;
+  border-radius: 2px;
+  font-size: 0.8125rem;
+  font-weight: 700;
+  line-height: 1;
+  white-space: nowrap;
+}
+.v3-search button:hover { background: var(--v3-brand-hover); }
+.v3-search button:disabled { opacity: 0.6; }
+
+/* ===================================================================
+   LAYOUT HELPERS used by the shell
+   =================================================================== */
+
+/* Horizontal rule of section data, e.g. a spec strip. */
+.v3-specstrip {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(9rem, 1fr));
+  border: 1px solid var(--v3-rule);
+  border-radius: var(--v3-r);
+  background: var(--v3-panel);
+  overflow: hidden;
+}
+.v3-specstrip > * {
+  padding: 0.75rem 0.875rem;
+  border-right: 1px solid var(--v3-rule);
+}
+.v3-specstrip > *:last-child { border-right: 0; }
+
+/* A hard vertical rule between columns, replaced in V2 by whitespace. */
+.v3-divided > * + * {
+  border-left: 1px solid var(--v3-rule);
+}
+
+/* ===================================================================
+   FOOTER — light reference strip, gold identity bar
+   -------------------------------------------------------------------
+   Three bands, and the palette is the entire point of this revision:
+
+     1. DIRECTORY  brand + four link columns on a very light COOL grey.
+     2. UTILITY    one horizontal row of seven inline links, on the same
+                   grey, split off from band 1 by a single hairline.
+     3. BAR        warm amber-gold, carrying the three-firm identity on
+                   the left and the copyright on the right.
+
+   WHY THE GROUND IS LIGHT. On charcoal the footer read as a separate
+   black slab bolted under the product grid, and every accent inside it
+   had to be re-derived against that dark: burgundy rules, gold text, a
+   burgundy tick per heading. On a light ground the logo, the headings
+   and the links are all one quiet block using the same tokens as the
+   page, the only saturated colour left in the whole component is the
+   gold bar, and that bar is finally free to be an accent instead of
+   the third competing dark surface.
+
+   WHERE THE COLOUR IS ALLOWED. Amber, on band 3 only. Burgundy,
+   nowhere: not as a top rule, not as a band separator, and not as a
+   tick in the left margin of a heading. The previous revision's four
+   burgundy heading bars were a bar chart, not a structure. Separation
+   here is a neutral hairline plus the grid.
+
+   THE GEOMETRY IS A BUDGET. Main band ~225px, utility row ~55px, gold
+   bar ~55px: roughly 335px of footer against a 208px sticky header. So
+   links are 13px on a 1.4 line box, headings 11px, and the vertical
+   padding is 32px top and bottom rather than the 48px+ a content band
+   would take. A footer that grows is a footer nobody can budget for.
+   =================================================================== */
+
+/* The band-1/band-2 ground. Set once on the <footer> so the utility row
+   and the two columns cannot drift onto the page cream. */
+.v3-footer {
+  background: var(--v3-footer-surface);
+  color: var(--v3-footer-ink);
+}
+
+/* Band separator inside the light ground. A hairline, not a rule-mark:
+   band 2 is the same colour as band 1, so the line is all that says
+   "this is a separate band", and it has to be quiet enough to say it
+   without announcing itself. */
+.v3-footer-rule {
+  border-color: var(--v3-footer-rule);
+}
+
+/* Band-1 column heading. Plain tracked caps: no ::before, no tick, no
+   rule, no colour of its own. Bold uppercase navy at 11px is what the
+   reference uses and it separates the four columns from their links
+   through weight and tracking alone. */
+.v3-footer-heading {
+  font-size: 0.6875rem;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  line-height: 1.2;
+  text-transform: uppercase;
+  color: var(--v3-footer-ink);
+  white-space: nowrap;
+}
+
+/* One footer link. Not a pill, not a card, no icon: a line of text that
+   darkens on hover. The min-height exists only below lg, where it is
+   what keeps a phone tap target off the text's own line box. */
+.v3-footer-link {
+  display: inline-flex;
+  align-items: center;
+  min-height: 1.75rem;
+  font-size: 0.8125rem;
+  line-height: 1.4;
+  color: var(--v3-footer-ink-2);
+  /* Reset rather than inherit: `WhatsAppCta` and a few legacy call sites
+     add an underline and a green colour, neither of which belongs in a
+     catalogue index. v3.css is unlayered and loads after Tailwind's
+     utility layer, so these win over both. */
+  text-decoration: none;
+  transition: color 0.14s var(--v3-ease);
+}
+.v3-footer-link:hover {
+  color: var(--v3-footer-ink);
+  text-decoration: none;
+}
+@media (min-width: 1024px) {
+  .v3-footer-link {
+    min-height: 0;
+  }
+}
+
+/* The `|` divider between links in the utility row. Its own padding is
+   the ONLY thing setting the spacing in that row - the container
+   deliberately has no column gap, so there is one place that decides
+   how far apart two links sit and it is 14px. */
+.v3-footer-sep {
+  padding-inline: 0.4375rem;
+  color: var(--v3-footer-rule-strong);
+  user-select: none;
+}
+
+/* The brand blurb is the only prose in the footer, so it runs a step
+   above the link size and is clamped to two lines. Two lines is a hard
+   ceiling: the footer's height is a budget, and a paragraph that can
+   grow is a paragraph that will. */
+.v3-footer-blurb {
+  font-size: 0.75rem;
+  line-height: 1.5;
+  color: var(--v3-footer-ink-2);
+}
+
+/* ---------- BAND 3: the gold bar ----------
+   Both lines are set in the same deep warm ink rather than white.
+   White on #c47a08 is about 3.4:1, which is a fail for 12px text, and
+   the two lines here are exactly that small. #241705 is 5.2:1. */
+.v3-footer-bar {
+  background: var(--v3-footer-gold);
+  color: var(--v3-footer-gold-ink);
+}
+
+/* The three-firm identity. The most important string in the footer, so
+   it gets the weight and the tracking; everything else on this bar
+   steps back. */
+.v3-footer-firms {
+  font-size: 0.6875rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  line-height: 1.5;
+}
+
+.v3-footer-note {
+  font-size: 0.75rem;
+  line-height: 1.5;
+  opacity: 0.82;
+}
+
+/* ===================================================================
+   PROMOTIONAL BANNER CAROUSEL
+   -------------------------------------------------------------------
+   The one place on the storefront whose geometry is set by a CSS
+   aspect-ratio rather than by content, because a carousel must never
+   change the page's height as it advances. `.v3-carousel-viewport`
+   reserves the full stage height before any image has loaded, so there
+   is no layout shift on first paint and none between slides.
+
+   3:1 on desktop and 16:9 on a phone. That keeps the desktop box
+   inside the 3:1-4:1 range the brief asked for while letting a phone -
+   which has far less width - keep a readable height. Images are
+   object-contain on a neutral stage, so artwork outside the ratio is
+   letterboxed rather than cropped.
+   =================================================================== */
+
+.v3-carousel {
+  position: relative;
+}
+
+.v3-carousel-viewport {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  overflow: hidden;
+  background: var(--v3-sunk);
+  border: 1px solid var(--v3-rule);
+  border-radius: var(--v3-r);
+}
+@media (min-width: 768px) {
+  .v3-carousel-viewport {
+    aspect-ratio: 3 / 1;
+  }
+}
+
+/* The track is a flex row of full-width slides, shifted by a percentage of its
+   own width — so the transform is exact at any slide count and needs no
+   measurement, and no resize observer. */
+.v3-carousel-track {
+  display: flex;
+  height: 100%;
+  width: 100%;
+  transition: transform 0.6s var(--v3-ease);
+  will-change: transform;
+}
+
+.v3-carousel-slide {
+  position: relative;
+  flex: 0 0 100%;
+  width: 100%;
+  height: 100%;
+}
+
+/* Arrows. Inside the stage, vertically centred, squared, and revealed on hover
+   or keyboard focus rather than always on - a permanently visible pair of
+   floating circles is the single loudest tell of a generic template. */
+.v3-carousel-arrow {
+  position: absolute;
+  top: 50%;
+  z-index: 2;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.25rem;
+  height: 2.25rem;
+  transform: translateY(-50%);
+  background: rgba(255, 255, 255, 0.92);
+  border: 1px solid var(--v3-rule-strong);
+  border-radius: var(--v3-r);
+  color: var(--v3-text);
+  opacity: 0;
+  transition: opacity 0.16s var(--v3-ease);
+}
+.v3-carousel-arrow-previous { left: 0.5rem; }
+.v3-carousel-arrow-next { right: 0.5rem; }
+.v3-carousel:hover .v3-carousel-arrow,
+.v3-carousel:focus-within .v3-carousel-arrow {
+  opacity: 1;
+}
+/* Below md the arrows would sit on top of the artwork at thumb size, and touch
+   users have swipe plus dots; the dots remain. */
+@media (max-width: 767px) {
+  .v3-carousel-arrow {
+    display: none;
+  }
+}
+@media (hover: none) {
+  .v3-carousel-arrow {
+    opacity: 1;
+  }
+}
+
+.v3-carousel-dots {
+  position: absolute;
+  z-index: 2;
+  left: 0;
+  right: 0;
+  bottom: 0.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.375rem;
+}
+
+.v3-carousel-dot {
+  width: 0.5rem;
+  height: 0.5rem;
+  padding: 0;
+  border: 1px solid var(--v3-rule-strong);
+  border-radius: 2px;
+  background: rgba(255, 255, 255, 0.85);
+  transition:
+    background-color 0.16s var(--v3-ease),
+    border-color 0.16s var(--v3-ease);
+}
+/* A 28px touch target around an 8px dot. The visual stays 8px; the hit area
+   does not, which is what keeps the dots usable on a phone. */
+.v3-carousel-dot::after {
+  content: "";
+  position: absolute;
+  width: 1.75rem;
+  height: 1.75rem;
+  margin: -0.625rem;
+}
+.v3-carousel-dot {
+  position: relative;
+}
+.v3-carousel-dot.is-active {
+  background: var(--v3-brand);
+  border-color: var(--v3-brand);
+}
+
+/* The zero-banner state. Same ruled panel, same radius, no dashed drop-zone:
+   an empty slot has to read as a quiet area, not as a broken component. */
+.v3-carousel-empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  aspect-ratio: auto;
+  min-height: 8rem;
+  padding: 1.5rem;
+  background: var(--v3-panel);
+  text-align: left;
+}
+@media (min-width: 768px) {
+  .v3-carousel-empty {
+    min-height: 10rem;
+  }
+}
+
+/* Reduced motion. The slide is still reachable by arrow and by dot; only the
+   automatic advance and the sliding transition are removed. `transition: none`
+   rather than a short duration, because a 1ms slide is still a visual jump. */
+@media (prefers-reduced-motion: reduce) {
+  .v3-carousel-track {
+    transition: none;
+  }
+  .v3-carousel-arrow,
+  .v3-carousel-dot {
+    transition: none;
+  }
+}
+
+/* One-line clamp helpers */
+.v3-clamp-1,
+.v3-clamp-2 {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.v3-clamp-1 { -webkit-line-clamp: 1; }
+.v3-clamp-2 { -webkit-line-clamp: 2; }
+
+/* ===================================================================
+   PAGE ROOTS
+   -------------------------------------------------------------------
+   `.v3-page-root` is the document shell every migrated route uses; the two
+   modifier variants exist because the reading pages and the transaction pages
+   need different measure limits, and forcing one width on both is what made
+   V2 policy pages either too narrow or full-bleed.
+   =================================================================== */
+
+.v3-page-root {
+  min-height: 100%;
+  background: var(--v3-page);
+  color: var(--v3-text);
+}
+
+/* Main column for transactional pages: cart, checkout, account, orders. */
+.v3-page-root-main {
+  flex: 1;
+  background: var(--v3-page);
+  color: var(--v3-text);
+}
+
+/* Reading measure for policy / about / help. ~68ch, the width long-form text
+   is actually readable at. */
+.v3-container-narrow {
+  width: 100%;
+  max-width: 74ch;
+  margin-inline: auto;
+}
+
+/* ===================================================================
+   NAVIGATION LABEL
+   -------------------------------------------------------------------
+   The V2 `sl-nav` role was a small UI label used in ~40 places (nav items,
+   buttons, metadata). V3 keeps it as a distinct role so those places do not
+   all collapse into one size.
+   =================================================================== */
+
+.v3-nav {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  line-height: 1.2;
+}
+
+/* A compact inline filter chip. Rectangular, not a pill: the V2 chip was a
+   fully-rounded pill and a row of them read as a toolbar of tags. */
+.v3-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  min-height: 2rem;
+  padding-inline: 0.625rem;
+  border: 1px solid var(--v3-rule);
+  border-radius: 2px;
+  background: var(--v3-panel);
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--v3-text-2);
+  white-space: nowrap;
+  transition:
+    border-color 0.14s var(--v3-ease),
+    background-color 0.14s var(--v3-ease),
+    color 0.14s var(--v3-ease);
+}
+.v3-chip:hover {
+  border-color: var(--v3-brand-line);
+  background: var(--v3-brand-soft);
+  color: var(--v3-brand);
+}
+.v3-chip-invert {
+  border-color: rgba(255, 255, 255, 0.3);
+  background: rgba(255, 255, 255, 0.08);
+  color: #fff;
+}
+.v3-chip-invert:hover {
+  border-color: rgba(255, 255, 255, 0.55);
+  background: rgba(255, 255, 255, 0.16);
+  color: #fff;
+}
+
+/* Flat inverse field. Replaces the V2 `sl-grad-*` decorative gradients on the
+   dealer band: the same visual weight with no gradient to maintain. */
+.v3-flat-inverse {
+  background: var(--v3-inverse);
+  color: #fff;
+}
+.v3-rule-gold {
+  background: var(--v3-gold);
+}
+
+/* Auth footer note. The note is authored per page and carries its own colours,
+   so the dealer variant (charcoal ground) needs one scoped contrast rule
+   rather than every auth page knowing which surface it sits on. */
+[data-auth-footer="dark"] .v3-small {
+  color: rgba(255, 255, 255, 0.6);
+}
+[data-auth-footer="dark"] a {
+  color: var(--v3-gold);
+}
+[data-auth-footer="dark"] a:hover {
+  color: #fff;
+}
+[data-auth-footer="light"] a {
+  color: var(--v3-brand);
+}
+
+/* ===================================================================
+   FOCUS + MOTION
+   =================================================================== */
+
+.v3-focus:focus-visible {
+  outline: 2px solid var(--v3-brand);
+  outline-offset: 2px;
+  border-radius: var(--v3-r);
+}
+.v3-focus-invert:focus-visible {
+  outline: 2px solid #fff;
+  outline-offset: 2px;
+  border-radius: var(--v3-r);
+}
+
+.v3-skeleton {
+  background: linear-gradient(
+    90deg,
+    rgba(27, 21, 18, 0.06) 25%,
+    rgba(27, 21, 18, 0.11) 37%,
+    rgba(27, 21, 18, 0.06) 63%
+  );
+  background-size: 400% 100%;
+  animation: v3-shimmer 1.5s var(--v3-ease) infinite;
+  border-radius: 2px;
+}
+@keyframes v3-shimmer {
+  0% { background-position: 100% 0; }
+  100% { background-position: 0 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .v3-skeleton { animation: none; background: rgba(27, 21, 18, 0.08); }
+  .v3-panel-hover,
+  .v3-btn,
+  .v3-input,
+  .v3-select { transition: none; }
+  .v3-panel-hover:hover { transform: none; }
+  .v3-btn:active { transform: none; }
+}

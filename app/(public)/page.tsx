@@ -1,7 +1,7 @@
 import { Suspense } from "react";
 
-import { HomePageContent } from "./home-client";
 import { loadEnabledBanners } from "@/lib/promotional-banners";
+import { HomePageContent } from "./home-client";
 
 export const dynamic = "force-dynamic";
 
@@ -21,13 +21,20 @@ export default async function HomePage({
     Number.isFinite(parsedPage) && parsedPage >= 1 ? Math.floor(parsedPage) : 1;
 
   /* Enabled banners are resolved HERE, on the server, and handed to the client
-     component. The banner table is never queried from the browser, and a
-     deployment without a configured image origin simply gets an empty list and
-     renders the empty state rather than failing the page. */
-  const banners = await loadEnabledBanners();
+     component. Two reasons, both of which the client-fetch version got wrong:
+     the carousel's stage has to occupy its height on the very first paint or
+     the page jumps, and "only ENABLED banners appear on the storefront" is a
+     filter that belongs on the server path rather than in a client effect.
+
+     A failure here must never take the homepage down, so it degrades to the
+     empty state rather than propagating. */
+  const banners = await loadEnabledBanners().catch((error) => {
+    console.error("Promotional banners could not be loaded:", error);
+    return [];
+  });
 
   return (
-    <Suspense fallback={<div className="min-h-screen bg-slate-50" />}>
+    <Suspense fallback={<div className="v3-page-root min-h-screen" />}>
       <HomePageContent
         initialQuery={initialQuery}
         initialPage={initialPage}
