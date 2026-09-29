@@ -7,7 +7,8 @@ import { useMemo, useState } from "react";
 import { useI18n } from "@/components/preferences-provider";
 import { StorefrontBreadcrumbs } from "@/components/storefront-breadcrumbs";
 import { EmptyState, StateIcons } from "@/components/page-states";
-import { PUBLIC_BRANDS, type PublicBrand } from "@/lib/public-brands";
+import type { PublicBrand } from "@/lib/public-brands";
+import { useResolvedBrands } from "@/components/use-resolved-brands";
 
 /**
  * Brand directory used by /brands.
@@ -51,6 +52,11 @@ export function PublicBrandDirectory({
 }) {
   const { t } = useI18n();
   const [query, setQuery] = useState("");
+  /* The registry merged with the admin's presentation overrides. Shared with the
+     homepage grid so the two can never disagree about what a brand looks like,
+     and it falls back to the static registry rather than depending on the
+     fetch. See the hook for the full reasoning. */
+  const brands = useResolvedBrands();
 
   /**
    * Same matching rule as before — brand name or relationship/tagline — so the
@@ -59,15 +65,15 @@ export function PublicBrandDirectory({
    */
   const matched = useMemo(() => {
     const needle = query.trim().toLowerCase();
-    if (!needle) return PUBLIC_BRANDS;
-    return PUBLIC_BRANDS.filter((brand) => {
+    if (!needle) return brands;
+    return brands.filter((brand) => {
       const tagline = relationshipLabel(t, brand);
       return (
         brand.name.toLowerCase().includes(needle) ||
         tagline.toLowerCase().includes(needle)
       );
     }).sort((a, b) => a.name.localeCompare(b.name));
-  }, [query, t]);
+  }, [query, t, brands]);
 
   return (
     <div>
@@ -206,10 +212,14 @@ export function PublicBrandGrid({
   onSelect?: (query: string) => void;
 }) {
   const { t } = useI18n();
+  /* Same override-aware source as the /brands directory. The homepage grid and
+     the brands page used to read the registry independently, which is how a
+     storefront ends up showing a brand name the admin never saved. */
+  const brands = useResolvedBrands();
 
   return (
     <ul className="grid grid-cols-3 gap-1.5 sm:grid-cols-4 lg:grid-cols-6">
-      {PUBLIC_BRANDS.map((brand) => {
+      {brands.map((brand) => {
         const href = `/?q=${encodeURIComponent(brand.searchQuery)}`;
         const tagline = relationshipLabel(t, brand);
         const label = `${brand.name}, ${tagline}`;
