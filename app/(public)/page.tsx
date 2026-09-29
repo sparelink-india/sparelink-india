@@ -1,6 +1,7 @@
 import { Suspense } from "react";
 
 import { loadEnabledBanners } from "@/lib/promotional-banners";
+import { readHeroSlotAvailability } from "@/lib/hero-slot-availability";
 import { HomePageContent } from "./home-client";
 
 export const dynamic = "force-dynamic";
@@ -33,12 +34,21 @@ export default async function HomePage({
     return [];
   });
 
+  /* Which hero vehicle classes have a curated set, resolved HERE for the same
+     reason banners are: the hero lives inside a client component, so it cannot
+     read the database itself, and a client fetch would put the fallback decision
+     behind a round-trip that can fail visibly. A hero dot that 404s is worse than
+     one that goes to the fitment browser, so this degrades to "no collections"
+     rather than throwing. */
+  const heroSlots = await readHeroSlotAvailability();
+
   return (
     <Suspense fallback={<div className="v3-page-root min-h-screen" />}>
       <HomePageContent
         initialQuery={initialQuery}
         initialPage={initialPage}
         banners={banners}
+        heroSlots={heroSlots}
       />
     </Suspense>
   );

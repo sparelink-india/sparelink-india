@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import Image from "next/image";
 import Link from "next/link";
@@ -6,7 +6,7 @@ import { Suspense, useCallback, useEffect, useLayoutEffect, useRef, useState } f
 import { useRouter, useSearchParams } from "next/navigation";
 import { SiteFooter } from "@/components/site-footer";
 import { StorefrontHeader } from "@/components/storefront-header";
-import { HomeHero } from "@/components/home-hero";
+import { HomeHero, type HeroSlotAvailability } from "@/components/home-hero";
 import { PublicBrandsSection } from "@/components/public-brand-grid";
 import { ProductDetailModal } from "@/components/product-detail-modal";
 import { SearchExperience, type SearchTab } from "@/components/search-experience";
@@ -178,11 +178,18 @@ export function HomePageContent({
   initialQuery = "",
   initialPage = 1,
   banners = [],
+  heroSlots,
 }: {
   initialQuery?: string;
   initialPage?: number;
   /** Enabled promotional banners, resolved on the server. */
   banners?: PublicBanner[];
+  /**
+   * Which hero vehicle classes have a curated set, resolved on the server.
+   * Undefined means "none known", which sends every vehicle hotspot to the
+   * fitment browser rather than to a page that would render nothing.
+   */
+  heroSlots?: HeroSlotAvailability;
 }) {
   const { t } = useI18n();
   const router = useRouter();
@@ -538,7 +545,7 @@ export function HomePageContent({
         {!searchedQuery && !urlQuery ? (
           <>
             {/* ============ 1. HERO / GLOBAL SEARCH ============ */}
-            <HomeHero />
+            <HomeHero availability={heroSlots} />
 
             {/* ============ 2. QUICK VEHICLE FINDER ============
                 Sits directly under the hero, per the V3 brief: the highest-value

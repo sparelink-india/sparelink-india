@@ -1,5 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
+import { HERO_COLLECTION_SLOTS, heroCollectionHref } from "@/lib/hero-collections";
 
 /**
  * V3 hero - final approved artwork with the interaction layer.
@@ -91,6 +92,8 @@ type Target = {
   /** Bounds in 2158x729 source pixels: left, top, right, bottom. */
   box: [number, number, number, number];
   kind: "vehicle" | "part" | "cta";
+  /** Present on vehicle hotspots only: which hero class this dot represents. */
+  slot?: HeroSlot;
 };
 
 const pct = (b: Target["box"]) => ({
@@ -102,17 +105,34 @@ const pct = (b: Target["box"]) => ({
 
 const FITMENT = "/vehicle-fitment";
 
+/**
+ * Every vehicle hotspot carries its hero class slot, and its href is resolved
+ * from that slot rather than hard-coded.
+ *
+ * A slot with a curated, enabled, non-empty collection goes to
+ * `/hero/<slot>`. Everything else falls back to `/vehicle-fitment`, which is the
+ * real, existing fitment browser. The fallback is the point: a curation mistake
+ * must cost the click, never become a dead dot on the homepage. `heroCollectionHref`
+ * holds that rule and is unit tested, so it is called here rather than
+ * re-implemented.
+ *
+ * The eight slots are NOT seven: Passenger Vehicle is drawn twice, on the red
+ * SUV and on the white saloon, and each has its own curated set. That is why the
+ * slot is part of the collection key rather than a column.
+ */
+type HeroSlot = (typeof HERO_COLLECTION_SLOTS)[number];
+
 const TARGETS: Target[] = [
   /* ---- 8 vehicles, centred on the detected marker dot ---- */
-  { kind: "vehicle", href: FITMENT, label: "Heavy Commercial Vehicle Parts", box: [924, 233, 994, 303] },
-  { kind: "vehicle", href: FITMENT, label: "Light Commercial Vehicle Parts", box: [1093, 284, 1163, 354] },
-  { kind: "vehicle", href: FITMENT, label: "Passenger Vehicle Parts", box: [1292, 289, 1362, 359] },
+  { kind: "vehicle", slot: "heavy-commercial-vehicle", href: FITMENT, label: "Heavy Commercial Vehicle Parts", box: [924, 233, 994, 303] },
+  { kind: "vehicle", slot: "light-commercial-vehicle", href: FITMENT, label: "Light Commercial Vehicle Parts", box: [1093, 284, 1163, 354] },
+  { kind: "vehicle", slot: "passenger-red-suv", href: FITMENT, label: "Passenger Vehicle Parts", box: [1292, 289, 1362, 359] },
   /* the saloon has two dots; this spans both */
-  { kind: "vehicle", href: FITMENT, label: "Passenger Vehicle Parts", box: [1566, 310, 1646, 394] },
-  { kind: "vehicle", href: FITMENT, label: "Agriculture Vehicle Parts", box: [1721, 246, 1791, 316] },
-  { kind: "vehicle", href: FITMENT, label: "Earthmover Parts", box: [1980, 244, 2050, 314] },
-  { kind: "vehicle", href: FITMENT, label: "Motorcycle Parts", box: [1799, 379, 1869, 449] },
-  { kind: "vehicle", href: FITMENT, label: "Scooter Parts", box: [1999, 388, 2069, 458] },
+  { kind: "vehicle", slot: "passenger-white-saloon", href: FITMENT, label: "Passenger Vehicle Parts", box: [1566, 310, 1646, 394] },
+  { kind: "vehicle", slot: "agriculture", href: FITMENT, label: "Agriculture Vehicle Parts", box: [1721, 246, 1791, 316] },
+  { kind: "vehicle", slot: "earthmover", href: FITMENT, label: "Earthmover Parts", box: [1980, 244, 2050, 314] },
+  { kind: "vehicle", slot: "motorcycle", href: FITMENT, label: "Motorcycle Parts", box: [1799, 379, 1869, 449] },
+  { kind: "vehicle", slot: "scooter", href: FITMENT, label: "Scooter Parts", box: [1999, 388, 2069, 458] },
 
   /* ---- 5 part categories ---- */
   { kind: "part", href: "/category/braking-system", label: "Brake Parts", box: [874, 444, 1010, 578] },
@@ -128,7 +148,35 @@ const TARGETS: Target[] = [
   { kind: "cta", href: "/login/dealer", label: "Dealer Bulk Order", box: [367, 454, 665, 521] },
 ];
 
-export function HomeHero() {
+/**
+ * A plain, serialisable description of which hero slots are curated.
+ *
+ * Passed in from the server rather than read inside this component, because the
+ * hero renders inside `app/(public)/home-client.tsx`, which is a CLIENT
+ * component. A client component cannot read the database, and a client-side
+ * fetch for eight link targets would put the fallback decision behind a
+ * round-trip that can fail visibly — a hero dot that 404s is worse than one that
+ * goes to the fitment browser. So `app/(public)/page.tsx` resolves the slots on
+ * the server and hands the answer down.
+ */
+export type HeroSlotAvailability = {
+  counts: Partial<Record<HeroSlot, number>>;
+  enabled: HeroSlot[];
+};
+
+export function HomeHero({ availability }: { availability?: HeroSlotAvailability }) {
+  /* An absent prop means "no collections", which resolves every slot to the
+     fitment fallback. That is exactly the pre-collections behaviour, so a caller
+     that forgets to pass it degrades safely rather than producing dead links. */
+  const counts = new Map<HeroSlot, number>(Object.entries(availability?.counts ?? {}) as [HeroSlot, number][]);
+  const enabled = new Set<HeroSlot>(availability?.enabled ?? []);
+
+  /* Resolved here rather than in the table, so the fallback rule lives in one
+     tested function and the table stays a plain description of the artwork. */
+  const targets = TARGETS.map((target) =>
+    target.slot ? { ...target, href: heroCollectionHref(target.slot, counts, enabled) } : target,
+  );
+
   return (
     <section
       id="search"
@@ -163,7 +211,7 @@ export function HomeHero() {
         {/* ONE dedicated overlay layer above the artwork. The layer ignores
             pointer events; each anchor opts back in. */}
         <div className="pointer-events-none absolute inset-0 z-20 hidden md:block">
-          {TARGETS.map((target) => (
+          {targets.map((target) => (
             <Link
               key={`${target.kind}-${target.label}-${target.box.join("_")}`}
               href={target.href}
