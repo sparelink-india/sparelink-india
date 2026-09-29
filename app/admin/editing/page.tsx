@@ -119,6 +119,14 @@ const MODULES: readonly Module[] = [
     status: "planned",
   },
   {
+    id: "hero-vehicle-collections",
+    title: "Hero Vehicle Collections",
+    description: "Curate the product set each hero vehicle hotspot shows.",
+    icon: <IconBoxes className={ICON_CLASS} />,
+    status: "available",
+    href: "/admin/editing/hero-collections",
+  },
+  {
     id: "vehicle-compatibility",
     title: "Vehicle Compatibility",
     description: "Read-only: inspect which parts are linked to each fitment vehicle.",
