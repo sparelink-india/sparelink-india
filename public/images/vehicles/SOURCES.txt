@@ -1,79 +1,129 @@
-Vehicle Fitment visual assets — source and licence
+Vehicle Fitment visual assets - source and licence
 
-Logos are Wikimedia Commons PD-textlogo files (simple geometry/text, below copyright originality).
-They remain trademarks of the manufacturers. Used here only to identify vehicles in the catalogue.
+GENERATED FILE. Written by scripts/prepare-vehicle-fitment-images.py from
+data/vehicle-fitment-image-sources.json. Edit the manifest, not this file.
 
-hyundai.svg
-  File:Hyundai Motor Company logo.svg
-  https://commons.wikimedia.org/wiki/File:Hyundai_Motor_Company_logo.svg
-  Licence: Public domain (PD-textlogo). Trademark: Hyundai Motor Company.
+Vehicle model images
+---------------------
+Every model photograph is a Creative Commons or public-domain work from
+Wikimedia Commons. Each was chosen by EXACT model; no image is reused for
+an unrelated model. The background was removed and the cutout standardised
+(trimmed, evenly padded, 1600px long edge, WebP) - the car itself is
+unaltered apart from that cropping.
 
-mahindra.svg
-  File:Mahindra logo.svg
-  https://commons.wikimedia.org/wiki/File:Mahindra_logo.svg
-  Source noted on Commons: converted from https://www.mahindra.com/newsroom/logos
-  Licence: Public domain (PD-textlogo). Trademark: Mahindra & Mahindra Limited.
+hyundai-creta.webp
+  Make / model: Hyundai Creta
+  Commons file: File:2024 Hyundai Creta 1.5 MPi SX(O) (India) front view.png
+  File page:    https://commons.wikimedia.org/wiki/File:2024_Hyundai_Creta_1.5_MPi_SX(O)_(India)_front_view.png
+  Author:       CARS WORLD Kannada
+  Licence:      CC BY 3.0  (https://creativecommons.org/licenses/by/3.0)
+  Source type:  Wikimedia Commons (openly licensed, commercial use permitted)
+  Retrieved:    2026-09-28
+  Note:         Indian-market 2024 facelift Creta SX(O), 1.5 petrol - matches the catalogue's 1.5 Petrol variant.
 
-maruti-suzuki.svg
-  File:Maruti Suzuki logo.svg
-  https://commons.wikimedia.org/wiki/File:Maruti_Suzuki_logo.svg
-  Source noted on Commons: https://www.marutisuzuki.com
-  Licence: Public domain (PD-textlogo). Trademark: Maruti Suzuki.
+hyundai-i20.webp
+  Make / model: Hyundai i20
+  Commons file: File:2020 Hyundai i20 1.5 Asta (O) Diesel (India) front view.png
+  File page:    https://commons.wikimedia.org/wiki/File:2020_Hyundai_i20_1.5_Asta_(O)_Diesel_(India)_front_view.png
+  Author:       The Drivers Hub
+  Licence:      CC BY 3.0  (https://creativecommons.org/licenses/by/3.0)
+  Source type:  Wikimedia Commons (openly licensed, commercial use permitted)
+  Retrieved:    2026-09-28
+  Note:         Indian-market i20 (BI3 generation) N Line trim.
 
-tata.svg
-  File:Tata Motors Logo.svg
-  https://commons.wikimedia.org/wiki/File:Tata_Motors_Logo.svg
-  Licence: Public domain (PD-textlogo). Trademark: Tata Motors.
+mahindra-bolero.webp
+  Make / model: Mahindra Bolero
+  Commons file: File:Mahindra Bolero GLX Front.JPG
+  File page:    https://commons.wikimedia.org/wiki/File:Mahindra_Bolero_GLX_Front.JPG
+  Author:       Ominae
+  Licence:      CC BY-SA 4.0  (https://creativecommons.org/licenses/by-sa/4.0)
+  Source type:  Wikimedia Commons (openly licensed, commercial use permitted)
+  Retrieved:    2026-09-28
+  Note:         Bolero GLX, the volume Indian variant.
 
-universal
-  No manufacturer logo. Catalogue grouping only. Placeholder not used.
+mahindra-reva.webp
+  Make / model: Mahindra Reva
+  Commons file: File:Reva Electric Car 2008.jpg
+  File page:    https://commons.wikimedia.org/wiki/File:Reva_Electric_Car_2008.jpg
+  Author:       Premkudva
+  Licence:      Public domain
+  Source type:  Wikimedia Commons (openly licensed, commercial use permitted)
+  Retrieved:    2026-09-28
+  Note:         Mahindra Reva two-door electric city car. The REVAi/REVA NXG derivatives are different vehicles and were rejected.
 
-Photographs are Wikimedia Commons works with documented Creative Commons licences.
-Resized for web use; no other creative changes.
+maruti-suzuki-baleno.webp
+  Make / model: Maruti Suzuki Baleno
+  Commons file: File:2022 Maruti Suzuki Baleno Alpha (India) front view.jpg
+  File page:    https://commons.wikimedia.org/wiki/File:2022_Maruti_Suzuki_Baleno_Alpha_(India)_front_view.jpg
+  Author:       Milind Kwatra
+  Licence:      CC BY 3.0  (https://creativecommons.org/licenses/by/3.0)
+  Source type:  Wikimedia Commons (openly licensed, commercial use permitted)
+  Retrieved:    2026-09-28
+  Note:         Indian-market Alpha trim, badged Maruti Suzuki (not Suzuki-only export trim).
 
-hyundai-creta.jpg
-  File:2022 Hyundai Creta 1.5 IVT orange and black front view in Brunei.jpg
-  Author: AIMHO'S REBELLION 8490s. CC BY-SA 4.0.
+maruti-suzuki-swift.webp
+  Make / model: Maruti Suzuki Swift
+  Commons file: File:Maruti Suzuki Swift 4456.JPG
+  File page:    https://commons.wikimedia.org/wiki/File:Maruti_Suzuki_Swift_4456.JPG
+  Author:       Premnath Kudva
+  Licence:      CC BY-SA 3.0  (https://creativecommons.org/licenses/by-sa/3.0)
+  Source type:  Wikimedia Commons (openly licensed, commercial use permitted)
+  Retrieved:    2026-09-28
+  Note:         Indian-market Swift badged Maruti Suzuki. Three-quarter FRONT view; the rear and side views from the same photo series were rejected.
 
-hyundai-i20.jpg
-  File:Hyundai i20 1.0 T-GDi 48V MHEV BC3 Atlas White (1).jpg
-  Author: Damian B Oh. CC BY-SA 4.0.
+tata-ace.webp
+  Make / model: Tata Ace
+  Commons file: File:Tata Ace EX2 (21729583101).jpg
+  File page:    https://commons.wikimedia.org/wiki/File:Tata_Ace_EX2_(21729583101).jpg
+  Author:       Everyone Sinks Starco
+  Licence:      CC BY-SA 2.0  (https://creativecommons.org/licenses/by-sa/2.0)
+  Source type:  Wikimedia Commons (openly licensed, commercial use permitted)
+  Retrieved:    2026-09-28
+  Note:         Tata Ace EX2, the unladen van/estate body. Cargo-boxed and loaded Ace photos were rejected.
 
-mahindra-bolero.jpg
-  File:Mahindra Bolero GLX Front.JPG
-  Author: Ominae. CC BY-SA 4.0.
+tata-magic.webp
+  Make / model: Tata Magic
+  Commons file: File:Tata Magic à Keur Massar.png
+  File page:    https://commons.wikimedia.org/wiki/File:Tata_Magic_%C3%A0_Keur_Massar.png
+  Author:       Lisa Coulaud
+  Licence:      CC BY-SA 4.0  (https://creativecommons.org/licenses/by-sa/4.0)
+  Source type:  Wikimedia Commons (openly licensed, commercial use permitted)
+  Retrieved:    2026-09-28
+  Note:         Tata Magic passenger van. Not to be confused with the Tata Winger or the Tata Xenon.
 
-mahindra-reva.jpg
-  File:REVAi, London (LRM 20240515 134545).jpg
-  Author: Matti Blume. CC BY-SA 4.0.
-  (Mahindra Reva Electric / REVAi)
+tata-nexon.webp
+  Make / model: Tata Nexon
+  Commons file: File:2023 Tata Nexon XZA+ front view.jpg
+  File page:    https://commons.wikimedia.org/wiki/File:2023_Tata_Nexon_XZA%2B_front_view.jpg
+  Author:       Dairokkan9
+  Licence:      CC BY-SA 4.0  (https://creativecommons.org/licenses/by-sa/4.0)
+  Source type:  Wikimedia Commons (openly licensed, commercial use permitted)
+  Retrieved:    2026-09-28
+  Note:         2023 Nexon facelift XZA+ petrol, matching the catalogue's 1.2 Petrol variant.
 
-maruti-suzuki-baleno.jpg
-  File:2017 Suzuki Baleno SZ3 Dualjet 1.2 Front.jpg
-  Author: Vauxford. CC BY-SA 4.0.
-  (Suzuki Baleno = Maruti Suzuki Baleno)
+tata-sumo.webp
+  Make / model: Tata Sumo
+  Commons file: File:Tata Sumo EX 2.0 TDi 4x4 2001 (15260028476).jpg
+  File page:    https://commons.wikimedia.org/wiki/File:Tata_Sumo_EX_2.0_TDi_4x4_2001_(15260028476).jpg
+  Author:       order_242 from Chile
+  Licence:      CC BY-SA 2.0  (https://creativecommons.org/licenses/by-sa/2.0)
+  Source type:  Wikimedia Commons (openly licensed, commercial use permitted)
+  Retrieved:    2026-09-28
+  Note:         Tata Sumo EX, the full-size SUV rather than the Sumo Grande variant.
 
-maruti-suzuki-swift.jpg
-  File:2018 Suzuki Swift SZ5 Boosterjet SHVS 1.0 Front.jpg
-  Author: Vauxford. CC BY-SA 4.0.
-  (Suzuki Swift = Maruti Suzuki Swift)
+Models with no image
+--------------------
+Universal Car  ->  universal-car.webp (absent)
+  'Universal / Car' is a catalogue grouping for parts with no vehicle-specific fitment, not a real vehicle. Inventing a car for it would misrepresent the grouping, so it renders the branded placeholder like any other model without an image.
 
-tata-ace.jpg
-  File:Tata Ace Mini Truck (1).JPG
-  Author: SnapMeUp. CC BY-SA 4.0.
+Manufacturer logos
+-------------------
+Wikimedia Commons PD-textlogo files (simple geometry/text, below copyright
+originality). They remain trademarks of the manufacturers. Used here only to
+identify vehicles in the catalogue.
 
-tata-magic.jpg
-  File:Tata Magic à Keur Massar.png
-  Author: Lisa Coulaud. CC BY-SA 4.0.
-  Converted to JPEG for file size only.
-
-tata-nexon.jpg
-  File:2023 Tata Nexon XZA+ front view.jpg
-  Author: Dairokkan9. CC BY-SA 4.0.
-
-tata-sumo.jpg
-  File:Tata Sumo Victa Turbo DI.jpg
-  Author: shankar s. CC BY 2.0.
-
-universal-car
-  Not added. Model identity is generic "Car". Placeholder retained.
+hyundai.svg      Hyundai Motor Company logo.svg            PD-textlogo, Hyundai Motor Company
+mahindra.svg     Mahindra logo.svg                        PD-textlogo, Mahindra & Mahindra Ltd
+maruti-suzuki.svg  Maruti Suzuki logo.svg                 PD-textlogo, Maruti Suzuki
+tata.svg         Tata Motors Logo.svg                     PD-textlogo, Tata Motors
+universal        no manufacturer logo - catalogue grouping only
