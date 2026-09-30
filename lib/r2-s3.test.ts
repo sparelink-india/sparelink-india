@@ -1,15 +1,25 @@
 import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
+import { dirname, join } from "node:path";
 import { describe, it } from "node:test";
+import { fileURLToPath } from "node:url";
 
 import {
   ALGORITHM,
   buildAuthorization,
   canonicalUri,
   deriveSigningKey,
+  r2UploadErrorMessage,
   sha256Hex,
   signedRequestHeaders,
   uriEncode,
 } from "./r2-s3";
+
+const root = join(dirname(fileURLToPath(import.meta.url)), "..");
+
+function source(relativePath: string): string {
+  return readFileSync(join(root, relativePath), "utf8");
+}
 
 /**
  * These are the tests that make "the upload signs correctly" a checkable claim.
@@ -195,5 +205,165 @@ describe("R2 SigV4 signing", () => {
     assert.equal(canonicalUri("banners/a.webp"), "/banners/a.webp");
     assert.equal(canonicalUri("/"), "/");
     assert.equal(canonicalUri("/a b/c.webp"), "/a%20b/c.webp");
+  });
+});
+
+/**
+ * Diagnostics for a refused upload.
+ *
+ * A `403 AccessDenied` with no Cloudflare request id is unactionable: there is
+ * nothing to quote in a support ticket. These tests pin both halves of the
+ * change - that the trace identifiers ARE captured, and that capturing them
+ * cannot leak a credential.
+ */
+describe("R2 upload failure diagnostics", () => {
+  const S3_BODY = "<Error><Code>AccessDenied</Code><Message>Access Denied</Message></Error>";
+
+  const message = (headers: Headers, body: string = S3_BODY) =>
+    r2UploadErrorMessage({ status: 403, statusText: "Forbidden", body, headers });
+
+  it("reports status, status text, the S3 body and all three trace ids", () => {
+    const result = message(
+      new Headers({
+        "cf-ray": "8f3c1a2b4d5e6f70-SIN",
+        "x-amz-request-id": "4A1B2C3D4E5F60718",
+        "x-amz-id-2": "s3-eu-1/9zYxWvUtSrQpOnMlK",
+      }),
+    );
+
+    assert.match(result, /^R2 upload failed \(403 Forbidden\)/);
+    assert.ok(result.includes(S3_BODY), `body missing from: ${result}`);
+    assert.ok(result.includes("cf-ray=8f3c1a2b4d5e6f70-SIN"), result);
+    assert.ok(result.includes("x-amz-request-id=4A1B2C3D4E5F60718"), result);
+    assert.ok(result.includes("x-amz-id-2=s3-eu-1/9zYxWvUtSrQpOnMlK"), result);
+  });
+
+  it("leaves the message byte-identical when the response carries no trace ids", () => {
+    // Backward compatibility: a failure with nothing to report must render
+    // exactly as it did before this change, so no existing log line or admin
+    // message changes shape.
+    assert.equal(message(new Headers()), `R2 upload failed (403 Forbidden): ${S3_BODY}`);
+  });
+
+  it("looks the identifiers up case-insensitively, as HTTP requires", () => {
+    const result = message(new Headers({ "CF-RAY": "8f3c1a2b4d5e6f70-SIN" }));
+    assert.ok(result.includes("cf-ray=8f3c1a2b4d5e6f70-SIN"), result);
+  });
+
+  it("omits blank identifiers instead of emitting empty fields", () => {
+    const result = message(new Headers({ "cf-ray": "   ", "x-amz-request-id": "" }));
+    assert.equal(result, `R2 upload failed (403 Forbidden): ${S3_BODY}`);
+  });
+
+  it("truncates the S3 body to 300 characters, as before", () => {
+    const result = message(new Headers(), "x".repeat(5000));
+    const body = result.slice(result.indexOf("): ") + 3);
+    assert.equal(body.length, 300);
+  });
+
+  it("caps a pathological identifier value", () => {
+    const result = message(new Headers({ "cf-ray": "y".repeat(5000) }));
+    assert.equal(result.includes("y".repeat(201)), false, "value must be capped at 200");
+    assert.ok(result.includes("y".repeat(200)), "the cap must retain the value");
+  });
+
+  /**
+   * The security property, stated as a denylist so a reviewer can audit it.
+   *
+   * Only three response header names are read. `authorization` is the one that
+   * matters: it is present on the REQUEST, never on the response, but asserting
+   * it here means that if anyone ever echoes request headers into this message
+   * the test fails rather than the leak reaching production.
+   */
+  it("never echoes a response header that is not on the allowlist", () => {
+    const result = message(
+      new Headers({
+        "cf-ray": "8f3c1a2b4d5e6f70-SIN",
+        authorization: "AWS4-HMAC-SHA256 Credential=leaked/20260930/auto/s3/aws4_request",
+        "x-amz-access-key-id": "AKIADIAGNOSTICFAKEKEY00",
+        "x-amz-secret-access-key": "diagnosticSecretMustNeverBeLogged",
+        "set-cookie": "session=diagnostic-cookie",
+        "x-amz-meta-secret": "diagnostic-meta",
+      }),
+    );
+
+    assert.ok(result.includes("cf-ray=8f3c1a2b4d5e6f70-SIN"), "the allowlisted id must survive");
+    for (const leaked of [
+      "AWS4-HMAC-SHA256",
+      "AKIADIAGNOSTICFAKEKEY00",
+      "diagnosticSecretMustNeverBeLogged",
+      "diagnostic-cookie",
+      "diagnostic-meta",
+      "authorization",
+    ]) {
+      assert.equal(result.includes(leaked), false, `leaked ${leaked} into: ${result}`);
+    }
+  });
+
+  /**
+   * The same property, proved against a genuinely signed request rather than a
+   * hand-written string: sign a real PutObject, then assert that nothing the
+   * signer produced appears in the failure message.
+   */
+  it("cannot leak any part of a real signed request", () => {
+    const ACCESS_KEY = "AKIADIAGNOSTICFAKEKEY00";
+    const SECRET = "diagnosticSecretMustNeverBeLogged0000000000000000";
+    const signed = signedRequestHeaders({
+      config: { accessKeyId: ACCESS_KEY, secretAccessKey: SECRET, region: "auto" },
+      method: "PUT",
+      path: "/sparelink-india-assets/banners/2026/09/diagnostic.webp",
+      headers: {
+        host: "0000000000000000000000000000dead.r2.cloudflarestorage.com",
+        "content-type": "image/webp",
+        "cache-control": "public, max-age=31536000, immutable",
+      },
+      payloadHash: sha256Hex("diagnostic body"),
+      timestamp: new Date(Date.UTC(2026, 8, 30, 12, 0, 0)),
+    });
+
+    const result = message(
+      new Headers({ "cf-ray": "8f3c1a2b4d5e6f70-SIN", "x-amz-request-id": "4A1B2C3D4E5F60718" }),
+    );
+
+    for (const secretish of [
+      ACCESS_KEY,
+      SECRET,
+      signed.authorization,
+      ...Object.values(signed.headers).filter((v) => /[0-9a-f]{32,}/.test(v)),
+      "AWS4",
+    ]) {
+      assert.equal(result.includes(secretish), false, `leaked into: ${result}`);
+    }
+  });
+
+  /**
+   * Makes the allowlist an enforced invariant rather than a comment, so adding a
+   * fourth header name is a deliberate act that fails here first.
+   */
+  it("reads exactly three response header names, no more", () => {
+    const declared =
+      source("lib/r2-s3.ts").match(/DIAGNOSTIC_RESPONSE_HEADERS = \[([^\]]*)\]/)?.[1] ?? "";
+    const names = declared
+      .split(",")
+      .map((n) => n.trim().replace(/^["']|["']$/g, ""))
+      .filter(Boolean);
+    assert.deepEqual(names, ["cf-ray", "x-amz-request-id", "x-amz-id-2"]);
+  });
+
+  /**
+   * putObject must pass the response through, and must not re-derive the message
+   * inline - otherwise the allowlist above stops being the whole story.
+   */
+  it("routes the putObject failure path through the allowlisted builder", () => {
+    const impl = source("lib/r2-s3.ts");
+    assert.ok(
+      impl.includes("r2UploadErrorMessage({"),
+      "putObject must delegate to r2UploadErrorMessage",
+    );
+    assert.equal(
+      /R2 upload failed \(\$\{response\.status\}/.test(impl),
+      false,
+      "the message must not be rebuilt inline in putObject",
+    );
   });
 });

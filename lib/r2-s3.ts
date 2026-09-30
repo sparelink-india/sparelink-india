@@ -265,6 +265,64 @@ function endpointFor(config: R2Config, path: string): string {
 
 export type PutResult = { key: string; etag: string | null };
 
+/**
+ * The only response headers carried into an upload failure message.
+ *
+ * A bare `403 AccessDenied` from R2 is unactionable: there is nothing to quote
+ * when opening a Cloudflare support ticket. `cf-ray` is the edge POP's
+ * correlation id; `x-amz-request-id` and `x-amz-id-2` are the S3-layer ids.
+ * Any one of them lets support locate the exact request in R2's logs.
+ *
+ * This is an ALLOWLIST of three names, read only from the RESPONSE, so an
+ * unexpected header can never reach a log or the admin UI. Headers that would
+ * be dangerous to echo — `authorization` above all — are excluded by omission
+ * rather than by filtering, which means a new dangerous header needs no review
+ * to stay excluded.
+ */
+const DIAGNOSTIC_RESPONSE_HEADERS = ["cf-ray", "x-amz-request-id", "x-amz-id-2"] as const;
+
+/** Cap per value, so a pathological header cannot bloat a log line. */
+const DIAGNOSTIC_VALUE_MAX = 200;
+
+/** Body cap, unchanged from the original behaviour. */
+const ERROR_BODY_MAX = 300;
+
+/**
+ * Compose the message for a failed upload.
+ *
+ * Reports only: HTTP status, status text, the truncated S3 error body, and the
+ * three Cloudflare trace identifiers when the response carries them.
+ *
+ * NOTE THE PARAMETER TYPE. There is no R2Config, no access key, no secret and
+ * no signed value anywhere in it. That is deliberate and is the strongest
+ * guarantee available here: this function is structurally incapable of leaking
+ * a credential, rather than being trusted not to. The caller passes the
+ * response, and the response does not contain the request's Authorization
+ * header. No request header is ever read.
+ */
+export function r2UploadErrorMessage(params: {
+  status: number;
+  statusText: string;
+  body: string;
+  headers: Headers;
+}): string {
+  const { status, statusText, body, headers } = params;
+
+  const trace: string[] = [];
+  for (const name of DIAGNOSTIC_RESPONSE_HEADERS) {
+    const value = headers.get(name)?.trim();
+    if (value) trace.push(`${name}=${value.slice(0, DIAGNOSTIC_VALUE_MAX)}`);
+  }
+
+  const detail = body.slice(0, ERROR_BODY_MAX);
+
+  return (
+    `R2 upload failed (${status} ${statusText})` +
+    (detail ? `: ${detail}` : "") +
+    (trace.length > 0 ? ` [${trace.join(" ")}]` : "")
+  );
+}
+
 /** Upload (or overwrite) an object. Content type is sent as-is. */
 export async function putObject(params: {
   config: R2Config;
@@ -296,9 +354,14 @@ export async function putObject(params: {
   });
 
   if (!response.ok) {
-    const detail = await response.text().catch(() => "");
+    const body = await response.text().catch(() => "");
     throw new Error(
-      `R2 upload failed (${response.status} ${response.statusText})${detail ? `: ${detail.slice(0, 300)}` : ""}`,
+      r2UploadErrorMessage({
+        status: response.status,
+        statusText: response.statusText,
+        body,
+        headers: response.headers,
+      }),
     );
   }
   return { key, etag: response.headers.get("etag") };
