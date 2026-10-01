@@ -363,16 +363,17 @@ describe("dark mode: the allow-list gaps this phase closed", () => {
   }
 
   it("has no global bg-white/<alpha> override", () => {
-    // Guard for the one item deliberately left out. `bg-white/95` is the
-    // storefront's sticky bars AND the admin sidebar's light logo plate,
-    // in one class token, and CSS cannot distinguish them - so darkening
-    // it globally would hide the admin wordmark. Tier 2 moves the four
-    // storefront call sites to var(--v3-panel) instead. If this assertion
-    // ever fails, that migration has landed and the override must go.
+    // Historical guard. `bg-white/95` was the storefront's sticky bars AND
+    // the admin sidebar's light logo plate in one class token, and CSS cannot
+    // distinguish them, so darkening it globally would have hidden the admin
+    // wordmark. Tier 2 moved the four storefront sites to var(--v3-panel);
+    // the fifth was the admin logo plate, removed when the dark logo artwork
+    // landed. No live call site remains, so this can only pass - which is the
+    // point: the colliding-surface pattern cannot be reintroduced.
     const alphaOverride = /html\.dark\s+\.bg-white\\?\/\d+/;
     assert.ok(
       !alphaOverride.test(GLOBALS),
-      "globals.css must not remap bg-white/<alpha> globally: it would darken the admin logo plate in components/admin-shell.tsx",
+      "globals.css must not remap bg-white/<alpha> globally",
     );
   });
 

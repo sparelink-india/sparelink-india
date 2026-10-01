@@ -72,31 +72,20 @@ html.dark {
   --surface-muted: #161b24;
   --border-subtle: #2d3545;
 
-  /* --- the logo plate ---
-     `sparelink-india-logo.svg` is a raster-traced lockup: 287 pure
-     #000000 fills, a dark navy wordmark, red and orange accents, and three
-     light surround fills. It is artwork authored for a LIGHT ground and
-     there is no dark variant of it, so no token or colour choice can make
-     it work on a dark surface - the only correct move is to put a light
-     ground back under it. That is the same decision
-     `.fitment-logo-plate` already makes for the vehicle brand logos,
-     fifteen lines below.
-
-     Defined in dark mode only, so the light storefront header is untouched.
-     #f8fafc rather than pure white, so the plate does not read as a
-     brighter object than the header it sits on. */
-  --logo-plate: #f8fafc;
+  /* The logo no longer contributes a token here.
+     `--logo-plate` painted a light box behind the mark in dark mode, which
+     was the only correct move while the asset was a raster-traced SVG with no
+     dark variant. A matched light/dark artwork pair now exists
+     (`sparelink-india-logo.webp` / `sparelink-india-logo-dark.webp`, both
+     exactly 2:1), so dark mode swaps the artwork instead of the background
+     and no plate is needed in either theme. */
 }
 
-/* The plate itself, applied only in dark mode. A class rather than a
-   `dark:` utility so the light mode rule stays exactly as it was: the
-   wrapper renders `inline-flex` in light and picks up padding and a
-   background only here. */
-html.dark .brand-logo-plate {
-  background: var(--logo-plate);
-  border-radius: 0.375rem;
-  padding: 0.25rem 0.375rem;
-}
+/* The logo plate is gone. `.brand-logo-plate` and `--logo-plate` both existed
+   only to put a light ground under a light-ground-only mark; the dark
+   artwork removes the need, and the wrapper is a bare `inline-flex` in both
+   themes. `.fitment-logo-plate` is untouched - those are the vehicle brand
+   logos and still have no dark variant. */
 
 html.dark .bg-white {
   background-color: #161b24;
@@ -212,22 +201,25 @@ html.dark .text-emerald-700 {
    them. Translucent-white-over-dark is the intended effect and is correct
    in both themes; turning them into dark solids would erase the pill.
 
-   `bg-white/95` is different, and genuinely broken: it is the sticky
-   mobile total bar on /cart and /checkout and the whole command header of
-   /orders/[id]/payment, all of which pair it with a remapped light text
-   colour for 1.4:1. But it is ALSO the deliberate light plate around the
-   logo in the admin sidebar (`components/admin-shell.tsx:95`, on a
-   hardcoded `bg-[#0f172a]`), and that plate is exactly what keeps the
-   dark-navy wordmark readable. A global remap makes the admin logo
-   invisible, and the two call sites share one class token, so CSS cannot
-   tell them apart.
+   `bg-white/95` had five call sites and they are now all gone. It was the
+   sticky mobile total bar on /cart and /checkout, the command header of
+   /orders/[id]/payment and the product detail modal - all of which pair it
+   with a remapped light text colour for 1.4:1 - plus the deliberate light
+   plate around the logo in the admin sidebar (`admin-shell.tsx:95`, on a
+   hardcoded `bg-[#0f172a]`). The two groups shared one class token on
+   purpose-colliding surfaces, so CSS could not tell them apart and no global
+   remap was safe.
 
-   Since this phase may not touch Admin, the near-opaque alphas are left
-   alone here and the four storefront call sites move to
-   `bg-[var(--v3-panel)]` in Tier 2 - one token per site, and it leaves the
-   admin plate alone. `lib/dark-mode-tokens.test.ts` asserts this file
-   contains no global `bg-white/<alpha>` override, so the regression cannot
-   be reintroduced by accident. */
+   Tier 2 moved the four storefront sites to `bg-[var(--v3-panel)]`, one token
+   per site. The fifth is the admin logo plate, and it is obsolete rather than
+   migrated: the dark logo artwork means the sidebar no longer needs a light
+   ground under the mark, so the wrapper was removed instead. There is
+   therefore no live `bg-white/<alpha>` anywhere.
+
+   `lib/dark-mode-tokens.test.ts` still asserts this file contains no global
+   `bg-white/<alpha>` override. With nothing left to remap it can only ever
+   pass, which is the point: the colliding-surface pattern cannot be
+   reintroduced by accident. */
 
 /* ---- zinc grounds -------------------------------------------------
    `bg-zinc-50` is the page shell on /dealer, /dealer/orders,

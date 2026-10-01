@@ -113,12 +113,25 @@ describe("dark mode: Phase 1 + Tier 2 stay intact", () => {
     }
   });
 
-  it("no global bg-white/<alpha> override, so Admin's logo plate survives", () => {
+  it("no global bg-white/<alpha> override, and no live call site either", () => {
+    // The class was kept unmapped because it meant two opposite things at
+    // once - a light storefront bar and Admin's light logo plate - and CSS
+    // could not tell them apart. Both problems are gone: the four storefront
+    // bars use var(--v3-panel), and the admin plate went with the light-only
+    // artwork. So there is no override and nothing left to override.
     assert.ok(
       !/html\.dark\s+\.bg-white\\?\/\d+/.test(src("app/globals.css")),
       "globals.css must not remap bg-white/<alpha>",
     );
-    assert.match(src("components/admin-shell.tsx"), /bg-white\/95/);
+    assert.ok(
+      !/\bbg-white\/95\b/.test(codeOf(src("components/admin-shell.tsx"))),
+      "the admin logo plate must be gone",
+    );
+    assert.match(
+      src("components/admin-shell.tsx"),
+      /<BrandLogo\s+compact\s+forceTheme="dark"/,
+      "admin's hardcoded dark rail must pin the dark artwork",
+    );
   });
 });
 

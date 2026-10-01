@@ -13,7 +13,7 @@
  * screenshot test could only check by being run by a human.
  *
  * The assertions are grouped by the failure they prevent:
- *   1. the logo plate, and Admin staying out of it
+ *   1. the logo artwork pair, and no plate behind it in either theme
  *   2. no global bg-white/<alpha> override, and the storefront call sites
  *   3. burgundy-as-ink migrated, burgundy-as-fill untouched
  *   4. the hardcoded light chips, and the ones that must survive
@@ -69,11 +69,48 @@ function walk(dir: string, out: string[] = []): string[] {
  */
 const codeOf = (s: string) => s.replace(/\/\*[\s\S]*?\*\//g, "").replace(/\/\/.*$/gm, "");
 
+/**
+ * Reads a WebP's canvas size straight out of its RIFF header.
+ *
+ * Three chunk types carry dimensions, at three different offsets, and the
+ * point of the assertion is that the derivative is still 2:1 - so the value
+ * has to come from the file rather than from the generator's own log. No
+ * image dependency: this is the only WebP layout needed for a static asset.
+ */
+function webpSize(buf: Buffer): { width: number; height: number } {
+  assert.equal(buf.toString("ascii", 0, 4), "RIFF", "not a RIFF container");
+  assert.equal(buf.toString("ascii", 8, 12), "WEBP", "not a WebP payload");
+  // 0-3 RIFF | 4-7 size | 8-11 WEBP | 12-15 chunk FourCC | 16-19 chunk SIZE.
+  // Chunk data therefore starts at 20, not 12 - the size field is what makes
+  // the naive reading of the spec land four bytes early.
+  const chunk = buf.toString("ascii", 12, 16);
+  if (chunk === "VP8 ") {
+    // 3-byte frame tag, then the 9d 01 2a start code, then 14-bit dimensions.
+    assert.deepEqual(
+      [buf[23], buf[24], buf[25]],
+      [0x9d, 0x01, 0x2a],
+      "VP8 start code is not where the spec puts it",
+    );
+    return { width: buf.readUInt16LE(26) & 0x3fff, height: buf.readUInt16LE(28) & 0x3fff };
+  }
+  if (chunk === "VP8L") {
+    const bits = buf.readUInt32LE(21);
+    return { width: (bits & 0x3fff) + 1, height: ((bits >> 14) & 0x3fff) + 1 };
+  }
+  if (chunk === "VP8X") {
+    // 1 flag byte + 3 reserved, then two 24-bit (value + 1) dimensions.
+    const w = buf[24] | (buf[25] << 8) | (buf[26] << 16);
+    const h = buf[27] | (buf[28] << 8) | (buf[29] << 16);
+    return { width: w + 1, height: h + 1 };
+  }
+  throw new Error(`unsupported WebP chunk ${chunk}`);
+}
+
 /* ================================================================= *
- * 1. THE LOGO PLATE
+ * 1. THE LOGO ARTWORK
  * ================================================================= */
 
-describe("tier 2: the logo plate", () => {
+describe("tier 2: the logo artwork", () => {
   /**
    * Strips block comments before a literal is searched for.
    *
@@ -82,90 +119,93 @@ describe("tier 2: the logo plate", () => {
    * and friends while explaining what was replaced. Searching the raw
    * source would therefore report a fix as still present.
    */
-  it("gives the normal storefront logo a dark-mode light plate", () => {
-    // The SVG is a raster-traced lockup with 287 pure #000000 fills and a
-    // dark navy wordmark. No colour choice makes dark artwork readable on a
-    // dark surface; the only fix is a light ground under it.
-    assert.match(
-      GLOBALS,
-      /html\.dark \.brand-logo-plate\s*\{/,
-      "globals.css must define html.dark .brand-logo-plate",
+  it("paints no plate behind the logo in either theme", () => {
+    // The plate existed only because the asset was a raster-traced SVG with no
+    // dark variant. A matched artwork pair removes the reason for it, and a
+    // white box in dark mode is exactly what the brief forbids.
+    //
+    // Both sources are read through codeOf: each keeps a comment naming the
+    // selectors it retired, which is the whole point of those comments.
+    assert.ok(
+      !/brand-logo-plate/.test(codeOf(GLOBALS)),
+      "globals.css must no longer define .brand-logo-plate",
     );
-    assert.match(
-      GLOBALS,
-      /html\.dark \.brand-logo-plate\s*\{[^}]*background:\s*var\(--logo-plate\)/,
-      "the plate must be painted with --logo-plate, not a bare hex",
+    assert.ok(
+      !/brand-logo-plate/.test(codeOf(BRAND_LOGO)),
+      "brand-logo.tsx must no longer apply the brand-logo-plate class",
     );
+    assert.ok(
+      !/--logo-plate/.test(codeOf(GLOBALS)),
+      "the --logo-plate token is obsolete and must not linger",
+    );
+    // The whole ternary in one match, deliberately: a lazy capture across
+    // `className={` would start on the image-failed fallback span and run on
+    // to the next "inline-flex", dragging the invert branch's `bg-white` into
+    // the group and reporting a plate that is not there. Matching the literal
+    // pins the normal branch to exactly "inline-flex" - no bg-*, no padding,
+    // no background - and re-checks the invert plate in the same breath.
     assert.match(
-      BRAND_LOGO,
-      /brand-logo-plate/,
-      "brand-logo.tsx must apply the brand-logo-plate class to the normal branch",
+      codeOf(BRAND_LOGO),
+      /invert\s*\?\s*"inline-flex rounded-md bg-white px-1\.5 py-1"\s*:\s*"inline-flex"\s*\}/,
+      "the wrapper must keep the invert plate and resolve to a bare inline-flex everywhere else",
     );
   });
 
-  it("declares --logo-plate in dark mode only, so light is untouched", () => {
-    const darkBlock = /html\.dark\s*\{([\s\S]*?)\n\}/.exec(GLOBALS);
-    assert.ok(darkBlock, "globals.css must have an html.dark token block");
-    assert.match(darkBlock[1], /--logo-plate:\s*#[0-9a-f]{6};/i);
-    // A `:root` value would paint a plate in light mode too.
-    const lightBlock = /\n:root\s*\{([\s\S]*?)\n\}/.exec(GLOBALS);
-    if (lightBlock) {
-      assert.ok(
-        !/--logo-plate/.test(lightBlock[1]),
-        "--logo-plate must not be declared in :root; the light header has no plate today and must not gain one",
-      );
+  it("selects a distinct dark artwork rather than recolouring the light one", () => {
+    assert.match(BRAND_LOGO, /sparelink-india-logo\.webp/);
+    assert.match(BRAND_LOGO, /sparelink-india-logo-dark\.webp/);
+    const code = codeOf(BRAND_LOGO);
+    assert.ok(
+      !/brightness|invert\(|filter\s*:/.test(code),
+      "the dark mark must be real artwork, not a CSS filter over the light one",
+    );
+    // Driven by the preference that already toggles html.dark, so there is
+    // no second theme mechanism.
+    assert.match(BRAND_LOGO, /const logoSrc = LOGO_SRC\[forceTheme \?\? theme\]/);
+    assert.match(BRAND_LOGO, /const \{ t, theme \} = useI18n\(\)/);
+  });
+
+  it("ships both web assets at the master's 2:1 ratio, so a swap cannot reflow", () => {
+    // The header sizes the mark by height and lets the width follow, so the
+    // intrinsic ratio IS the layout. A stretched or cropped derivative would
+    // move the row, and this is the assertion that catches it.
+    const dims = ["sparelink-india-logo.webp", "sparelink-india-logo-dark.webp"].map((f) =>
+      webpSize(readFileSync(join(root, "public/images/brand", f))),
+    );
+    for (const d of dims) {
+      assert.equal(d.width, 1200, "the derivative is the 1200px proportional scale");
+      assert.equal(d.height, 600, "height must be 1200/2, i.e. the master's 2:1");
     }
-  });
-
-  it("keeps the plate dark enough to read as a plate, and light enough for the mark", () => {
-    const hex = /--logo-plate:\s*(#[0-9a-f]{6})/i.exec(GLOBALS)?.[1];
-    assert.ok(hex, "--logo-plate must be a 6-digit hex");
-    const lin = (c: number) => {
-      const v = c / 255;
-      return v <= 0.04045 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4);
-    };
-    const lum = (h: string) => {
-      const n = parseInt(h.slice(1), 16);
-      return (
-        0.2126 * lin((n >> 16) & 255) + 0.7152 * lin((n >> 8) & 255) + 0.0722 * lin(n & 255)
-      );
-    };
-    const ratio = (a: string, b: string) => {
-      const [hi, lo] = lum(a) > lum(b) ? [lum(a), lum(b)] : [lum(b), lum(a)];
-      return (hi + 0.05) / (lo + 0.05);
-    };
-    // The wordmark is #000000, so the plate is what it is read against.
-    assert.ok(ratio(hex, "#000000") >= 4.5, `${hex} must read against the black wordmark`);
-    // And it must not read as pure white, or it becomes the brightest thing
-    // in a dark header.
-    assert.ok(ratio(hex, "#ffffff") < 1.2, `${hex} should be slightly off-white, matching .fitment-logo-plate`);
+    assert.deepEqual(dims[0], dims[1], "both themes must render in the same box");
   });
 
   it("preserves the invert branch exactly", () => {
     // The auth pages sit on a dark ground already; that branch had its own
-    // `bg-white` plate before this phase and must keep it.
+    // `bg-white` plate before this phase and must keep it. It is still the
+    // right pairing, because `html.dark .bg-white` remaps that token in step
+    // with the theme, so the plate and the artwork stay matched.
     assert.match(
       BRAND_LOGO,
       /invert\s*\?\s*"inline-flex rounded-md bg-white px-1\.5 py-1"/,
       "the invert branch must keep its own unconditional bg-white plate",
     );
-    // Scoped to the className expression, not the whole file: the
-    // explanatory comment above it names both branches, and the non-invert
-    // branch legitimately does carry the plate class.
-    const ternary = /className=\{\s*invert\s*\?([\s\S]*?)"brand-logo-plate/.exec(
-      codeOf(BRAND_LOGO),
-    );
-    assert.ok(ternary, "the plate is applied in the non-invert branch of the ternary");
-    assert.ok(
-      !/brand-logo-plate/.test(ternary[1]),
-      "the invert branch must not pick up the dark-only plate",
-    );
   });
 
-  it("leaves Admin's own logo plate alone", () => {
-    // Admin supplies `bg-white/95` on a hardcoded `bg-[#0f172a]` sidebar.
-    // It is a different mechanism and must not gain the storefront class.
-    assert.match(ADMIN_SHELL, /bg-white\/95/, "admin's logo plate must be unchanged");
+  it("removes Admin's light plate and pins the dark artwork there", () => {
+    // The admin sidebar is a hardcoded `bg-[#0f172a]` in both themes. It had
+    // a `bg-white/95` plate so the light-ground-only mark could read on it;
+    // with a real dark artwork the plate is not just unnecessary but wrong,
+    // because the light artwork would drop its own white plate onto a dark
+    // rail. So the plate goes and the artwork is pinned.
+    assert.ok(
+      !/bg-white\/95/.test(ADMIN_SHELL),
+      "admin must no longer paint a light plate behind the logo",
+    );
+    assert.match(
+      ADMIN_SHELL,
+      /<BrandLogo\s+compact\s+forceTheme="dark"/,
+      "admin must pin the dark artwork, since its rail is dark in both themes",
+    );
     assert.ok(
       !/brand-logo-plate/.test(ADMIN_SHELL),
       "admin must not use the storefront plate class",
@@ -187,15 +227,21 @@ describe("tier 2: the logo plate", () => {
  * ================================================================= */
 
 describe("tier 2: bg-white/95", () => {
-  it("has no global override, because Admin needs that class to mean 'light plate'", () => {
+  it("has no global override, because the class token spanned colliding surfaces", () => {
     assert.ok(
       !/html\.dark\s+\.bg-white\\?\/\d+/.test(GLOBALS),
-      "globals.css must not remap bg-white/<alpha>: admin-shell.tsx uses it as a light logo plate",
+      "globals.css must not remap bg-white/<alpha> globally",
     );
   });
 
-  it("Admin's usage is untouched", () => {
-    assert.match(ADMIN_SHELL, /bg-white\/95 px-1 py-0\.5/);
+  it("has no live bg-white/<alpha> call site left to remap", () => {
+    // Four storefront bars moved to var(--v3-panel); the fifth was the admin
+    // logo plate, removed with the dark artwork. Nothing is left, so the
+    // assertion above can only pass and the old collision cannot return.
+    assert.ok(
+      !/\bbg-white\/95\b/.test(ADMIN_SHELL),
+      "the admin logo plate must be gone",
+    );
   });
 
   it("all four storefront call sites are theme-aware", () => {

@@ -106,7 +106,7 @@ export default function OrdersPage() {
   return (
     <div className="storefront-mobile-pad min-h-screen bg-slate-50 text-slate-950">
       <StorefrontHeader />
-      <main className="mx-auto max-w-5xl px-3 py-5 sm:px-6 sm:py-10">
+      <main id="main-content" className="mx-auto max-w-5xl px-3 py-5 sm:px-6 sm:py-10">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <h1 className="text-2xl font-bold tracking-tight sm:text-3xl">{t("orders.title")}</h1>
           <div className="flex items-center gap-3">

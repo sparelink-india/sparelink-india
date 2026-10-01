@@ -92,9 +92,15 @@ function RailContent({
     <div className="flex h-full flex-col bg-[#0f172a] text-white">
       {/* Brand + identity */}
       <div className="flex items-center gap-2.5 border-b border-white/10 px-4 py-4">
-        <span className="rounded-md bg-white/95 px-1 py-0.5">
-          <BrandLogo compact />
-        </span>
+        {/* No plate. This sidebar is a hardcoded `bg-[#0f172a]` in BOTH
+              themes, so the mark sits directly on it and `forceTheme` pins
+              the dark artwork there instead of following the site cookie -
+              otherwise a visitor whose preference is light would get the
+              light artwork's own white plate dropped onto a dark rail.
+              `shrink-0` keeps the original wrapper's flex behaviour. */}
+          <span className="shrink-0">
+            <BrandLogo compact forceTheme="dark" />
+          </span>
         <span className="min-w-0 leading-tight">
           <span className="block text-[9px] font-bold uppercase tracking-[0.18em] text-white/45">
             SpareLink India
