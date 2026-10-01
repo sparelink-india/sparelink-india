@@ -1,0 +1,51 @@
+# Repository line-ending policy.
+#
+# WHY THIS FILE EXISTS. This repository was developed on Windows with
+# core.autocrlf=true and no .gitattributes. That combination caused a real
+# deployment defect twice: `git archive` exported 740 text files with CRLF even
+# though the committed blobs are LF, so a "clean checkout of the commit" was not
+# byte-identical to the commit. Any tooling that materialises the tree from a
+# commit (CI, a release archive, a deploy) inherited the wrong line endings.
+#
+# WHAT IT DOES - deliberately the minimum.
+#
+#   text=auto   Git decides text vs binary from content, so binary assets
+#               (PNG, JPG, WebP, ICO, the catalogue JSON) are never touched.
+#   eol=lf      Text files are checked out and archived with LF, whatever
+#               core.autocrlf says on the machine. This is the line ending the
+#               blobs already use, so it changes nothing that is committed.
+#
+# WHAT IT DELIBERATELY DOES NOT DO. This commit does NOT run
+# `git add --renormalize .` and does NOT re-save a single existing file. Adding
+# the policy changes no blob and, because every blob is already LF, marks
+# nothing as modified. Anyone who wants a bulk renormalisation should do it as
+# its own reviewed change; folding hundreds of file rewrites into a release
+# commit would make the diff unreviewable.
+* text=auto eol=lf
+
+# Binary assets: never end-of-line converted, never diffed as text.
+*.png    binary
+*.jpg    binary
+*.jpeg   binary
+*.webp   binary
+*.gif    binary
+*.ico    binary
+*.pdf    binary
+*.woff   binary
+*.woff2  binary
+*.ttf    binary
+*.otf    binary
+*.mp4    binary
+*.webm   binary
+
+# Lockfiles are generated and must match the registry byte for byte.
+package-lock.json -text
+
+# The catalogue exports and the MEKO/PDF/OCR artefacts are large generated
+# inputs. They are stored as-is and must never be line-ending converted.
+catalogue-source/** binary
+data/source-catalogue/** binary
+data/meko-*/** binary
+data/menon-brakes-catalogue/** binary
+data/pensol-catalogue/** binary
+CATALOGUE binary

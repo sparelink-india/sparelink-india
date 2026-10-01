@@ -232,7 +232,7 @@ export default function CartPage() {
       <StorefrontHeader cartCount={cart?.itemCount ?? 0} />
 
       {/* Main Content */}
-      <main className="mx-auto max-w-6xl px-3 py-5 sm:px-6 sm:py-8 lg:py-10">
+      <main id="main-content" className="mx-auto max-w-6xl px-3 py-5 sm:px-6 sm:py-8 lg:py-10">
         {/* Title & Stats */}
         <div className="flex flex-wrap items-baseline justify-between gap-2 border-b border-slate-200 pb-5">
           <div>

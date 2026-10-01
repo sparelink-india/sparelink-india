@@ -50,7 +50,7 @@ export default function ChangePasswordPage() {
   return (
     <div className="flex min-h-screen flex-col bg-slate-50">
       <StorefrontHeader />
-      <main className="flex flex-1 items-center justify-center px-6 py-12">
+      <main id="main-content" className="flex flex-1 items-center justify-center px-6 py-12">
         <div className="w-full max-w-md rounded-2xl border border-zinc-200 bg-white p-8 shadow-sm">
           <BrandLogo />
           <h1 className="mt-4 text-lg font-semibold text-zinc-900">{t("account.passwordTitle")}</h1>

@@ -345,7 +345,7 @@ export default function OrderPaymentPage() {
   if (loading) {
     return (
       <div className="min-h-screen bg-slate-50 text-slate-900">
-        <main className="mx-auto max-w-4xl px-4 py-16 sm:px-6">
+        <main id="main-content" className="mx-auto max-w-4xl px-4 py-16 sm:px-6">
           <div className="rounded-2xl border border-slate-200 bg-white p-8 text-center text-sm text-slate-500 shadow-xs">
             Loading payment details...
           </div>

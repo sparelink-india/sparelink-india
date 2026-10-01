@@ -88,7 +88,7 @@ export default function DealerSalesOrdersPage() {
   };
 
   return (
-    <main className="min-h-screen bg-zinc-50 text-zinc-950">
+    <main id="main-content" className="min-h-screen bg-zinc-50 text-zinc-950">
       <header className="border-b bg-white">
         <div className="mx-auto flex max-w-6xl justify-between px-6 py-4">
           <Link href="/dealer" className="text-xl font-bold">

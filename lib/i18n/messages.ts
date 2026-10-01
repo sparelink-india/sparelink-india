@@ -2,6 +2,7 @@ export const locales = ["en", "hi"] as const;
 export type Locale = (typeof locales)[number];
 
 export const en = {
+  "a11y.skipToContent": "Skip to main content",
   "settings.aria": "SpareLink India settings",
   "settings.appearance": "Appearance",
   "settings.theme": "Theme",
@@ -952,6 +953,7 @@ export const en = {
 } as const;
 
 export const hi: Record<keyof typeof en, string> = {
+  "a11y.skipToContent": "मुख्य सामग्री पर जाएँ",
   "settings.aria": "SpareLink India सेटिंग्स",
   "settings.appearance": "दिखावट",
   "settings.theme": "थीम",

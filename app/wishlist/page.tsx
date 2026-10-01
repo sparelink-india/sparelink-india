@@ -96,7 +96,7 @@ export default function WishlistPage() {
   return (
     <div className="flex min-h-screen flex-col bg-slate-50">
       <StorefrontHeader />
-      <main className="mx-auto w-full max-w-5xl flex-1 px-4 py-10">
+      <main id="main-content" className="mx-auto w-full max-w-5xl flex-1 px-4 py-10">
         <h1 className="text-2xl font-bold text-slate-900">{t("wishlist.title")}</h1>
         {loading ? <p className="mt-6 text-sm text-slate-500">{t("wishlist.loading")}</p> : null}
         {needsLogin ? (

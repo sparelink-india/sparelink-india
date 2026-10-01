@@ -58,7 +58,7 @@ export default function OffersPage() {
   return (
     <div className="flex min-h-screen flex-col bg-slate-50">
       <StorefrontHeader />
-      <main className="mx-auto w-full max-w-5xl flex-1 px-4 py-10">
+      <main id="main-content" className="mx-auto w-full max-w-5xl flex-1 px-4 py-10">
         <h1 className="text-2xl font-bold text-slate-900">{t("offers.title")}</h1>
         {error ? <p className="mt-4 text-sm text-red-700">{error}</p> : null}
         {message ? <p className="mt-4 text-sm text-emerald-700">{message}</p> : null}

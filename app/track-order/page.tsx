@@ -62,7 +62,7 @@ export default function TrackOrderPage() {
   return (
     <div className="flex min-h-screen flex-col bg-slate-50">
       <StorefrontHeader />
-      <main className="mx-auto w-full max-w-3xl flex-1 px-4 py-10">
+      <main id="main-content" className="mx-auto w-full max-w-3xl flex-1 px-4 py-10">
         <h1 className="text-2xl font-bold text-slate-900">{t("track.title")}</h1>
         <p className="mt-2 text-sm text-slate-600">{t("track.hint")}</p>
         <form onSubmit={handleTrack} className="mt-6 flex flex-col gap-3 sm:flex-row">

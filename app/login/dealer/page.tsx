@@ -113,7 +113,7 @@ export default function DealerLoginPage() {
   return (
     <div className="flex min-h-screen flex-col bg-slate-50">
       <StorefrontHeader />
-      <main className="flex flex-1 items-center justify-center px-6 py-12">
+      <main id="main-content" className="flex flex-1 items-center justify-center px-6 py-12">
         <div className="w-full max-w-md rounded-2xl border border-zinc-200 bg-white p-8 shadow-sm">
           <Link href="/" className="text-xs font-semibold text-[var(--v3-brand-ink)] hover:underline">
             {t("search.catalog")}

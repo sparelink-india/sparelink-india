@@ -16,7 +16,7 @@ function CategoryShell({ children }: { children: React.ReactNode }) {
   return (
     <div className="storefront-mobile-pad flex min-h-screen flex-col bg-slate-50">
       <StorefrontHeader />
-      <main className="flex-1">
+      <main id="main-content" className="flex-1">
         <div className="mx-auto w-full max-w-7xl px-3 py-5 sm:px-6 sm:py-10">{children}</div>
       </main>
       <SiteFooter />

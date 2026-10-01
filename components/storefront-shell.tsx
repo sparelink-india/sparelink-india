@@ -36,7 +36,7 @@ export function StorefrontShell({
   return (
     <div className="storefront-mobile-pad v3-page-root flex min-h-screen flex-col">
       <StorefrontHeader cartCount={cartCount} />
-      <main className="v3-container v3-page-root-main flex-1">{children}</main>
+      <main id="main-content" className="v3-container v3-page-root-main flex-1">{children}</main>
       {showFooter ? <SiteFooter /> : null}
       <Suspense fallback={null}>
         <MobileBottomNav cartCount={cartCount} />

@@ -416,7 +416,7 @@ export default function RegisterPage() {
   return (
     <div className="min-h-screen bg-slate-50/70 text-slate-900">
     <StorefrontHeader />
-    <main className="px-4 py-12 sm:px-6">
+    <main id="main-content" className="px-4 py-12 sm:px-6">
       <div className="mx-auto mb-8 flex max-w-xl flex-col items-center text-center">
         <BrandLogo />
         <h1 className="sr-only">SpareLink India</h1>

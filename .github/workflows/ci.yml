@@ -2,7 +2,13 @@ name: CI
 
 on:
   push:
-    branches: [main]
+    branches:
+      - main
+      # The release branch. Production is deployed from
+      # phase-3-vehicle-compatibility, so a change landing there must be
+      # validated by the same four gates before it can be treated as a release,
+      # rather than only when it eventually merges into main.
+      - phase-3-vehicle-compatibility
   pull_request:
 
 jobs:

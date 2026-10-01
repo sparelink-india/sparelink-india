@@ -505,7 +505,7 @@ export function HomePageContent({
         }}
       />
 
-      <main className="flex flex-col">
+      <main id="main-content" className="flex flex-col">
         {!searchedQuery && !urlQuery ? (
           <>
             {/* ============ 1. HERO / GLOBAL SEARCH ============ */}

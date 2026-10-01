@@ -153,7 +153,7 @@ export default function ProfilePage() {
         </div>
       </div>
 
-      <main className="mx-auto max-w-4xl px-3 py-5 sm:px-6 sm:py-10">
+      <main id="main-content" className="mx-auto max-w-4xl px-3 py-5 sm:px-6 sm:py-10">
         <section className="mb-6 md:hidden" aria-labelledby="account-hub-heading">
           <h1 id="account-hub-heading" className="text-2xl font-bold text-slate-950">
             {t("account.hubTitle")}

@@ -282,7 +282,7 @@ export function AdminShell({
           </div>
         </header>
 
-        <main className="px-4 py-5 sm:px-6 sm:py-6">{children}</main>
+        <main id="main-content" className="px-4 py-5 sm:px-6 sm:py-6">{children}</main>
       </div>
     </div>
   );

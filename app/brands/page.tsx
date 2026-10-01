@@ -15,7 +15,7 @@ export default function BrandsPage() {
   return (
     <div className="storefront-mobile-pad v3-page-root flex min-h-screen flex-col">
       <StorefrontHeader />
-      <main className="flex-1">
+      <main id="main-content" className="flex-1">
         <PublicBrandsDirectorySection />
       </main>
       <SiteFooter />

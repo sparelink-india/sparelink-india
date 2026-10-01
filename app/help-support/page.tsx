@@ -69,7 +69,7 @@ export default function HelpSupportPage() {
   return (
     <div className="flex min-h-screen flex-col bg-slate-50">
       <StorefrontHeader />
-      <main className="mx-auto w-full max-w-3xl flex-1 px-4 py-10">
+      <main id="main-content" className="mx-auto w-full max-w-3xl flex-1 px-4 py-10">
         <h1 className="text-2xl font-bold text-slate-900">{t("help.title")}</h1>
         <dl className="mt-4 space-y-2 text-sm">
           <div>
