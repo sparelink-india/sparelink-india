@@ -834,7 +834,7 @@ export default function CheckoutPage() {
             </div>
 
             {/* Authoritative Order Summary Sidebar */}
-            <aside aria-label="Order breakdown" className="min-w-0">
+            <aside aria-label={t("checkout.orderBreakdownAria")} className="min-w-0">
               <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-6 lg:sticky lg:top-20">
                 <h2 className="text-base font-bold text-slate-950 sm:text-lg">
                   {t("checkout.summary")}
@@ -1003,7 +1003,13 @@ export default function CheckoutPage() {
       </div>
       <SiteFooter />
       {showMobileCheckoutCta && cart ? (
-        <div className="fixed inset-x-0 bottom-[calc(var(--mobile-nav-height)+var(--safe-bottom))] z-40 border-t border-slate-200 bg-white/95 px-3 py-2 backdrop-blur md:hidden">
+        <div
+          className="fixed inset-x-0 bottom-[calc(var(--mobile-nav-height)+var(--safe-bottom))] z-40 border-t border-[var(--v3-rule)] bg-[var(--v3-panel)]/95 px-3 py-2 backdrop-blur md:hidden"
+          /* See the note on the identical bar in app/cart/page.tsx: the V3
+             panel token replaces a hardcoded `bg-white/95` so this bar
+             follows the theme, without a global override that would
+             collide with Admin's light logo plate. */
+        >
           <div className="mx-auto flex max-w-lg items-center gap-2.5 min-[360px]:gap-3">
             <div className="min-w-0 flex-1">
               <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">

@@ -431,7 +431,7 @@ export default function RegisterPage() {
             role="alert"
             className="mb-6 flex items-start gap-2.5 rounded-xl border border-rose-200 bg-rose-50 p-4 text-xs font-medium text-rose-800"
           >
-            <span className="text-rose-600 font-bold">âœ•</span>
+            <span className="text-rose-600 font-bold">✕</span>
             <span>{error}</span>
           </div>
         )}
@@ -441,7 +441,7 @@ export default function RegisterPage() {
             role="status"
             className="mb-6 flex items-start gap-2.5 rounded-xl border border-emerald-200 bg-emerald-50 p-4 text-xs font-medium text-emerald-800"
           >
-            <span className="text-emerald-600 font-bold">âœ“</span>
+            <span className="text-emerald-600 font-bold">✓</span>
             <span>{message}</span>
           </div>
         )}
@@ -551,7 +551,7 @@ export default function RegisterPage() {
                   minLength={PASSWORD_MIN_LENGTH}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  placeholder="â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢"
+                  placeholder="••••••••"
                   aria-describedby="register-password-hint"
                   className={fieldClass("password")}
                 />
@@ -575,7 +575,7 @@ export default function RegisterPage() {
                   required
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
-                  placeholder="â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢"
+                  placeholder="••••••••"
                   className={fieldClass("confirmPassword")}
                 />
                 {fieldError("confirmPassword") && (

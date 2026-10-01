@@ -41,6 +41,19 @@ export function StorefrontShell({
       <Suspense fallback={null}>
         <MobileBottomNav cartCount={cartCount} />
       </Suspense>
+      {/* NO floating WhatsApp control here.
+
+          It used to be mounted in this shell, which meant it appeared on the
+          six routes that use StorefrontShell and on no other route - 17 of 23
+          storefront routes had no floating button at all, and the HOMEPAGE was
+          one of them.
+
+          The control now lives in `StorefrontHeader`, because that is the one
+          component every customer-facing storefront route renders: this shell
+          renders it, `fitment-shell` renders it, and the routes that hand-
+          compose the chrome render it directly. One mount, one instance, every
+          page. Mounting it here as well would have produced two buttons on
+          every shell route. */}
     </div>
   );
 }

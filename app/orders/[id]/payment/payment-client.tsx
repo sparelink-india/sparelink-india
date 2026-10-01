@@ -1,10 +1,11 @@
-"use client";
+﻿"use client";
 
 import Link from "next/link";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { FormEvent, useCallback, useEffect, useRef, useState } from "react";
 import { SignOutButton } from "@/components/sign-out-button";
 import { openCashfreeCheckout } from "@/lib/cashfree-browser";
+import { useI18n } from "@/components/preferences-provider";
 
 type BankConfig = {
   isConfigured: boolean;
@@ -113,6 +114,7 @@ function sleep(ms: number) {
 }
 
 export default function OrderPaymentPage() {
+  const { t } = useI18n();
   const params = useParams();
   const searchParams = useSearchParams();
   const router = useRouter();
@@ -378,7 +380,14 @@ export default function OrderPaymentPage() {
 
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900">
-      <header className="sticky top-0 z-30 border-b border-slate-200 bg-white/95 backdrop-blur-md">
+      {/* The V3 panel token replaces a hardcoded `bg-white/95`. A global
+          override of that class is not possible: `admin-shell.tsx:95` uses it
+          as a deliberate light plate around the logo on a hardcoded
+          `bg-[#0f172a]` sidebar, and one class token cannot mean two
+          opposite things. Tokenising the storefront call site is the fix
+          that leaves Admin alone. --v3-panel is #ffffff in light mode, so
+          this header is unchanged there. */}
+      <header className="sticky top-0 z-30 border-b border-[var(--v3-rule)] bg-[var(--v3-panel)]/95 backdrop-blur-md">
         <div className="mx-auto flex max-w-5xl items-center justify-between px-4 py-3.5 sm:px-6">
           <Link href="/" className="flex items-center gap-2">
             <span className="text-lg font-bold tracking-tight text-slate-950">
@@ -683,7 +692,7 @@ export default function OrderPaymentPage() {
                               required
                               value={utrReference}
                               onChange={(e) => setUtrReference(e.target.value)}
-                              placeholder="UTR / UPI reference"
+                              placeholder={t("payment.utrPlaceholder")}
                               className="h-11 w-full rounded-xl border border-slate-200 bg-white px-3.5 font-mono text-sm outline-none focus:border-slate-950"
                             />
                             <input
@@ -734,3 +743,4 @@ export default function OrderPaymentPage() {
     </div>
   );
 }
+

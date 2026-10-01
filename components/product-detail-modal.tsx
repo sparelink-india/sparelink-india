@@ -343,7 +343,11 @@ export function ProductDetailModal({
           type="button"
           onClick={onClose}
           aria-label={t("common.close")}
-          className="absolute right-3 top-3 z-40 flex h-9 w-9 items-center justify-center rounded-full border border-slate-200 bg-white text-lg text-slate-600 shadow-sm hover:bg-slate-50"
+          /* Same reason as the five gallery controls: this chip is `bg-white`
+             on the modal shell, and `html.dark .bg-white` remaps BOTH to
+             #161b24, so without an explicit edge the close button becomes
+             invisible against its own background. */
+          className="absolute right-3 top-3 z-40 flex h-9 w-9 items-center justify-center rounded-full border border-[var(--v3-rule-strong)] bg-[var(--v3-panel)] text-lg text-[var(--v3-text-2)] shadow-sm hover:bg-[var(--v3-sunk)]"
         >
           ×
         </button>
@@ -356,7 +360,21 @@ export function ProductDetailModal({
           <div className="flex flex-1 items-center justify-center p-10 text-sm text-rose-700">{error}</div>
         ) : payload ? (
           <div className="grid min-h-0 min-w-0 flex-1 grid-cols-1 overflow-y-auto md:grid-cols-[minmax(0,1.27fr)_minmax(0,1fr)] md:overflow-hidden">
-            <div className="flex min-h-0 min-w-0 flex-col bg-[#f6f7f9] p-3 sm:p-4">
+            {/* THE GALLERY COLUMN.
+                Was `bg-[#f6f7f9]`, a hardcoded near-white that no theme
+                token could reach. It is the one surface in this modal that
+                carried every product image, so leaving it light while the
+                rest of the modal went dark produced a bright column in a
+                dark box - and, because the description and the three trust
+                tiles sat on it, made that text invisible too.
+
+                `v3-sunk` is the system's inset surface, one step below the
+                panel, and in light mode it is #f4efea against the old
+                #f6f7f9: a difference no one can see behind a product photo.
+                The product stage inside it is now `v3-panel`, which keeps
+                the near-white backdrop that light product photography needs
+                in BOTH themes. */}
+            <div className="flex min-h-0 min-w-0 flex-col bg-[var(--v3-sunk)] p-3 sm:p-4">
               <div className="flex min-h-0 min-w-0 flex-1 gap-2 sm:gap-3">
                 {!view360 && images.length > 1 ? (
                   <div className="hidden w-[clamp(4.25rem,8vw,5.75rem)] shrink-0 flex-col gap-2 overflow-y-auto md:flex">
@@ -366,7 +384,7 @@ export function ProductDetailModal({
                         type="button"
                         onClick={() => setImageIndex(index)}
                         className={`aspect-square w-full shrink-0 overflow-hidden rounded-xl border bg-white ${
-                          index === imageIndex ? "border-[#7a1233] ring-1 ring-[#7a1233]/30" : "border-slate-200"
+                          index === imageIndex ? "border-[#7a1233] ring-1 ring-[#7a1233]/30" : "border-[var(--v3-rule)]"
                         }`}
                       >
                         {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -387,7 +405,15 @@ export function ProductDetailModal({
 
                 <div className="flex min-h-0 min-w-0 flex-1 flex-col">
                   <div
-                    className="relative flex min-h-[220px] min-w-0 flex-1 items-center justify-center overflow-hidden rounded-2xl bg-white md:min-h-0"
+                    /* The product stage. Deliberately `v3-panel`, not
+                       `v3-sunk`: this is the one surface that must stay
+                       near-white in BOTH themes, because most product
+                       photography is shot on white and a dark stage turns
+                       a white-background photo into a white rectangle
+                       floating on black. The gallery column around it is
+                       the dark `v3-sunk`, so the stage reads as a lit
+                       product bay - which is what it is. */
+                    className="relative flex min-h-[220px] min-w-0 flex-1 items-center justify-center overflow-hidden rounded-2xl bg-[var(--v3-panel)] md:min-h-0"
                     onPointerDown={(event) => {
                       if (!view360) return;
                       event.currentTarget.setPointerCapture(event.pointerId);
@@ -435,9 +461,17 @@ export function ProductDetailModal({
                           setView360((value) => !value);
                           setFrame(imageIndex);
                         }}
-                        className="absolute left-3 top-3 inline-flex items-center gap-1.5 rounded-full bg-white px-3 py-1.5 text-[11px] font-bold text-slate-800 shadow"
+                        /* The five gallery controls below share one reason
+                           for a border. Each is a `bg-white` chip sitting on
+                           a surface that is now `v3-panel`; `html.dark
+                           .bg-white` remaps both to the SAME #161b24, so the
+                           control and its stage became indistinguishable and
+                           the control disappeared. A hairline edge restores
+                           the boundary in both themes without changing the
+                           light appearance. */
+                        className="absolute left-3 top-3 inline-flex items-center gap-1.5 rounded-full border border-[var(--v3-rule-strong)] bg-[var(--v3-panel)] px-3 py-1.5 text-[11px] font-bold text-[var(--v3-text)] shadow"
                       >
-                        <span className="text-[#7a1233]">360°</span>
+                        <span className="text-[var(--v3-brand-ink)]">360°</span>
                         {view360 ? t("product.exit360") : t("product.view360")}
                       </button>
                     ) : null}
@@ -446,7 +480,7 @@ export function ProductDetailModal({
                       type="button"
                       aria-label={t("product.enlarge", { name: payload.part.title })}
                       onClick={() => setEnlarged(true)}
-                      className="absolute right-3 top-3 flex h-9 w-9 items-center justify-center rounded-xl bg-white text-slate-700 shadow"
+                      className="absolute right-3 top-3 flex h-9 w-9 items-center justify-center rounded-xl border border-[var(--v3-rule-strong)] bg-[var(--v3-panel)] text-[var(--v3-text-2)] shadow"
                     >
                       ↗
                     </button>
@@ -457,7 +491,7 @@ export function ProductDetailModal({
                           type="button"
                           aria-label={t("product.prevImage")}
                           onClick={() => cycle(-1)}
-                          className="absolute left-2 top-1/2 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full bg-white text-lg text-slate-800 shadow"
+                          className="absolute left-2 top-1/2 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full border border-[var(--v3-rule-strong)] bg-[var(--v3-panel)] text-lg text-[var(--v3-text)] shadow"
                         >
                           ‹
                         </button>
@@ -465,7 +499,7 @@ export function ProductDetailModal({
                           type="button"
                           aria-label={t("product.nextImage")}
                           onClick={() => cycle(1)}
-                          className="absolute right-2 top-1/2 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full bg-white text-lg text-slate-800 shadow"
+                          className="absolute right-2 top-1/2 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full border border-[var(--v3-rule-strong)] bg-[var(--v3-panel)] text-lg text-[var(--v3-text)] shadow"
                         >
                           ›
                         </button>
@@ -478,7 +512,7 @@ export function ProductDetailModal({
                           type="button"
                           aria-label={t("product.prevImage")}
                           onClick={() => cycleFrame(-1)}
-                          className="absolute left-2 top-1/2 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full bg-white text-lg text-slate-800 shadow"
+                          className="absolute left-2 top-1/2 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full border border-[var(--v3-rule-strong)] bg-[var(--v3-panel)] text-lg text-[var(--v3-text)] shadow"
                         >
                           ‹
                         </button>
@@ -486,7 +520,7 @@ export function ProductDetailModal({
                           type="button"
                           aria-label={t("product.nextImage")}
                           onClick={() => cycleFrame(1)}
-                          className="absolute right-2 top-1/2 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full bg-white text-lg text-slate-800 shadow"
+                          className="absolute right-2 top-1/2 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full border border-[var(--v3-rule-strong)] bg-[var(--v3-panel)] text-lg text-[var(--v3-text)] shadow"
                         >
                           ›
                         </button>
@@ -494,7 +528,7 @@ export function ProductDetailModal({
                     ) : null}
 
                     {view360 ? (
-                      <span className="pointer-events-none absolute bottom-3 left-1/2 -translate-x-1/2 rounded-full bg-white/95 px-2.5 py-1 text-[10px] font-semibold text-slate-500 shadow">
+                      <span className="pointer-events-none absolute bottom-3 left-1/2 -translate-x-1/2 rounded-full border border-[var(--v3-rule)] bg-[var(--v3-panel)]/95 px-2.5 py-1 text-[10px] font-semibold text-[var(--v3-text-2)] shadow">
                         {frame + 1} / {images.length}
                       </span>
                     ) : null}
@@ -508,8 +542,18 @@ export function ProductDetailModal({
                           type="button"
                           aria-label={`${index + 1}`}
                           onClick={() => setImageIndex(index)}
+                          /* The active dot stays a burgundy FILL - white on
+                             #7a1233 is 10.7:1 and it reads on both the light
+                             and the dark stage. The inactive dot was
+                             `bg-slate-300`, which no dark rule remapped, so
+                             it stayed #cbd5e1: a row of pale dots that never
+                             read as inactive. --v3-rule-strong is the
+                             system's own "quiet boundary" and is 3.38:1
+                             against the input ground. */
                           className={`h-1.5 rounded-full ${
-                            index === imageIndex ? "w-5 bg-[#7a1233]" : "w-1.5 bg-slate-300"
+                            index === imageIndex
+                              ? "w-5 bg-[var(--v3-brand)]"
+                              : "w-1.5 bg-[var(--v3-rule-strong)]"
                           }`}
                         />
                       ))}
@@ -524,7 +568,7 @@ export function ProductDetailModal({
                           type="button"
                           onClick={() => setImageIndex(index)}
                           className={`h-14 w-14 shrink-0 overflow-hidden rounded-xl border bg-white ${
-                            index === imageIndex ? "border-[#7a1233]" : "border-slate-200"
+                            index === imageIndex ? "border-[#7a1233]" : "border-[var(--v3-rule)]"
                           }`}
                         >
                           {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -545,18 +589,23 @@ export function ProductDetailModal({
                 </div>
               </div>
 
+              {/* The three trust tiles. These sat on the old hardcoded
+                  #f6f7f9 gallery column as `bg-white`; with the column now
+                  `v3-sunk`, a bare `bg-white` would place a panel-coloured
+                  tile on a sunk ground, which is correct in both themes. The
+                  ink moves to the v3 tokens so it follows the surface. */}
               <ul className="mt-3 grid grid-cols-3 gap-2">
-                <li className="rounded-xl bg-white px-2 py-2 text-center">
-                  <p className="text-[11px] font-bold text-slate-800">{t("product.genuineQuality")}</p>
-                  <p className="text-[10px] text-slate-500">{t("product.genuineQualityHint")}</p>
+                <li className="rounded-xl bg-[var(--v3-panel)] px-2 py-2 text-center">
+                  <p className="text-[11px] font-bold text-[var(--v3-text)]">{t("product.genuineQuality")}</p>
+                  <p className="text-[10px] text-[var(--v3-text-3)]">{t("product.genuineQualityHint")}</p>
                 </li>
-                <li className="rounded-xl bg-white px-2 py-2 text-center">
-                  <p className="text-[11px] font-bold text-slate-800">{t("product.fastDispatch")}</p>
-                  <p className="text-[10px] text-slate-500">{t("product.fastDispatchHint")}</p>
+                <li className="rounded-xl bg-[var(--v3-panel)] px-2 py-2 text-center">
+                  <p className="text-[11px] font-bold text-[var(--v3-text)]">{t("product.fastDispatch")}</p>
+                  <p className="text-[10px] text-[var(--v3-text-3)]">{t("product.fastDispatchHint")}</p>
                 </li>
-                <li className="rounded-xl bg-white px-2 py-2 text-center">
-                  <p className="text-[11px] font-bold text-slate-800">{t("product.easyReturns")}</p>
-                  <p className="text-[10px] text-slate-500">{t("product.easyReturnsHint")}</p>
+                <li className="rounded-xl bg-[var(--v3-panel)] px-2 py-2 text-center">
+                  <p className="text-[11px] font-bold text-[var(--v3-text)]">{t("product.easyReturns")}</p>
+                  <p className="text-[10px] text-[var(--v3-text-3)]">{t("product.easyReturnsHint")}</p>
                 </li>
               </ul>
             </div>
@@ -574,18 +623,27 @@ export function ProductDetailModal({
                       />
                     </div>
                   ) : payload.part.brand ? (
-                    <p className="text-sm font-extrabold tracking-tight text-[#7a1233]">{payload.part.brand}</p>
+                    <p className="text-sm font-extrabold tracking-tight text-[var(--v3-brand-ink)]">{payload.part.brand}</p>
                   ) : null}
                 </div>
                 <span
+                  /* Stock tone. Kept on the Tailwind state utilities rather
+                     than moved to the v3 tokens, because the SEMANTICS are
+                     the point and they already work: globals.css remaps
+                     `.bg-emerald-50` / `.bg-amber-50` / `.bg-rose-50` to one
+                     dark ground, and the ink tiers were lifted in Phase 1.
+                     What was broken is only `text-emerald-800`, which the
+                     existing rule mapped to PINK #fecdd3 - so an in-stock
+                     pill rendered rose. --v3-ok is the same green hue, at
+                     10.06:1 on the panel. */
                   className={`shrink-0 rounded-full px-3 py-1 text-[11px] font-bold ${
                     stockUi.tone === "ok"
-                      ? "bg-emerald-50 text-emerald-800"
+                      ? "bg-[var(--v3-ok-soft)] text-[var(--v3-ok)]"
                       : stockUi.tone === "warn"
-                        ? "bg-amber-50 text-amber-800"
+                        ? "bg-[var(--v3-warn-soft)] text-[var(--v3-warn)]"
                         : stockUi.tone === "danger"
-                          ? "bg-rose-50 text-rose-700"
-                          : "bg-slate-100 text-slate-600"
+                          ? "bg-[var(--v3-bad-soft)] text-[var(--v3-bad)]"
+                          : "bg-[var(--v3-sunk)] text-[var(--v3-text-2)]"
                   }`}
                 >
                   {stockUi.tone === "ok" ? `✓ ${stockUi.label}` : stockUi.label}
@@ -600,14 +658,14 @@ export function ProductDetailModal({
 
               {payload.part.description ? (
                 <>
-                  <div className="my-3 h-px bg-slate-200" />
+                  <div className="my-3 h-px bg-[var(--v3-rule)]" />
                   <p className="text-sm leading-relaxed text-slate-600">{payload.part.description}</p>
                 </>
               ) : null}
 
               {infoCards.length ? (
                 <>
-                  <div className="my-3 h-px bg-slate-200" />
+                  <div className="my-3 h-px bg-[var(--v3-rule)]" />
                   <div className="grid grid-cols-1 gap-2 min-[420px]:grid-cols-3">
                     {infoCards.map((card) => (
                       <div key={card.label} className="rounded-xl bg-slate-50 px-3 py-2.5">
@@ -686,7 +744,7 @@ export function ProductDetailModal({
                 </div>
               ) : null}
 
-              <div className="mt-4 border-t border-slate-200 pt-3">
+              <div className="mt-4 border-t border-[var(--v3-rule)] pt-3">
                 {listing ? (
                   listing.isPensol ? (
                     <div className="text-sm font-bold text-slate-900">
@@ -716,10 +774,16 @@ export function ProductDetailModal({
                 {error ? <p className="mt-2 text-xs text-rose-700">{error}</p> : null}
 
                 <div className="mt-3 flex min-w-0 flex-wrap items-center gap-3">
+                  {/* Quantity stepper. `border-slate-200` IS remapped by
+                      globals.css, so the box itself is fine; the stepper
+                      input and its glyphs carry no colour class and inherit
+                      `--foreground`, which is correct in both themes. Left
+                      alone deliberately - the controls work and the audit
+                      found no failure here. */}
                   <div className="flex items-center rounded-xl border border-slate-200">
                     <button
                       type="button"
-                      aria-label="Decrease quantity"
+                      aria-label={t("product.decreaseQuantity")}
                       className="h-12 w-11 text-lg"
                       onClick={() => setQuantity((value) => Math.max(1, value - 1))}
                     >
@@ -728,7 +792,7 @@ export function ProductDetailModal({
                     <span className="min-w-8 text-center text-sm font-bold">{quantity}</span>
                     <button
                       type="button"
-                      aria-label="Increase quantity"
+                      aria-label={t("product.increaseQuantity")}
                       className="h-12 w-11 text-lg"
                       onClick={() => setQuantity((value) => Math.min(Math.max(stock, 1), value + 1))}
                     >
@@ -756,7 +820,16 @@ export function ProductDetailModal({
                       href={whatsappHref}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="inline-flex min-h-11 min-w-0 items-center justify-center gap-2 rounded-xl border border-emerald-200 bg-emerald-50 px-3 text-center text-sm font-bold text-emerald-800 hover:bg-emerald-100"
+                      /* WhatsApp branding is INTENTIONAL and stays: the
+                         WhatsAppIcon is a fixed #25D366 glyph (brand-legal
+                         colour, correct on any ground) and the label keeps a
+                         green. What was broken is the chrome around it -
+                         `border-emerald-200` and `hover:bg-emerald-100`
+                         are not in any dark allow-list, so a mint outline
+                         and a mint hover flash on a dark panel. Those become
+                         the ok-soft pair, which is the same green family at
+                         a dark value. --v3-ok is 10.06:1 on the panel. */
+                      className="inline-flex min-h-11 min-w-0 items-center justify-center gap-2 rounded-xl border border-[var(--v3-ok-line)] bg-[var(--v3-ok-soft)] px-3 text-center text-sm font-bold text-[var(--v3-ok)] hover:bg-[var(--v3-ok-line)] hover:bg-opacity-30"
                     >
                       <WhatsAppIcon className="h-5 w-5" />
                       {t("product.enquireWhatsApp")}
@@ -769,7 +842,11 @@ export function ProductDetailModal({
                     disabled={wishlistBusy}
                     aria-label={t("product.addWishlist")}
                     onClick={() => void addWishlist()}
-                    className="inline-flex min-h-11 min-w-0 items-center justify-center gap-2 rounded-xl border border-rose-200 bg-white px-3 text-sm font-bold text-rose-700 hover:bg-rose-50 disabled:opacity-50"
+                    /* `border-rose-200` is a hardcoded pale pink that no
+                       dark rule remapped, so the button wore a bright pink
+                       outline around a dark surface. The bad-soft pair keeps
+                       the same meaning - --v3-bad is #f87171, 6.24:1. */
+                    className="inline-flex min-h-11 min-w-0 items-center justify-center gap-2 rounded-xl border border-[var(--v3-bad-line)] bg-[var(--v3-panel)] px-3 text-sm font-bold text-[var(--v3-bad)] hover:bg-[var(--v3-bad-soft)] disabled:opacity-50"
                   >
                     <HeartIcon className="h-4 w-4" />
                     {t("product.addWishlist")}

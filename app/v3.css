@@ -34,6 +34,15 @@
   /* --- brand --- */
   --v3-brand: #7a1233;
   --v3-brand-hover: #611029;
+  /* INK, not fill. Identical to `--v3-brand` in light mode on purpose, so
+     light mode is byte-for-byte unchanged. It exists because the same
+     burgundy is doing two incompatible jobs: `bg-[var(--v3-brand)]` with
+     `text-white` is a FILL and is correct as-is (10.7:1, and #7a1233 is
+     dark in both themes), while `text-[var(--v3-brand)]` is INK, and on a
+     dark ground #7a1233 measures 1.61:1. Rather than weaken the fill,
+     dark mode redefines ONLY this token (see the `html.dark` block) and
+     Tier 2 migrates the text usages onto it. */
+  --v3-brand-ink: #7a1233;
   --v3-brand-soft: #fdf5f7;
   --v3-brand-line: #e8cdd7;
   --v3-gold: #c99b4a;
@@ -107,6 +116,212 @@
        utility bar (32px) + main row (64px) = 96px. Unchanged and still correct. */
     --v3-header-h: 96px;
   }
+}
+
+/* ===================================================================
+   DARK THEME
+   -------------------------------------------------------------------
+   Until this block existed, EVERY `--v3-*` token above was light-only:
+   the file had no `html.dark` / `.dark` rule of any kind. The site
+   still switched two things in dark mode - `--background` and
+   `--foreground` in globals.css, and an allow-list of a few dozen Tailwind
+   utility classes - and one of those allowed `.bg-white` to #161b24.
+
+   That is the whole bug. 207 storefront elements use `bg-white`, so they
+   went dark, while the text on them is a `--v3-*` token that never
+   switched. Measured on #161b24: `--v3-text` 1.05:1, `--v3-brand` 1.61:1,
+   `--v3-bad` 2.11:1, `--v3-text-2` 2.04:1, `--v3-ok` 2.66:1. The whole
+   header row, the primary nav, the mobile drawer, the search results and
+   the three lower homepage bands were rendering as dark ink on dark ink.
+
+   The dark grounds here are the same four values globals.css already
+   established, so the two stylesheets cannot drift:
+   page #0c0e12 = --background, panel #161b24 = the dark `bg-white`,
+   sunk #10141c = the dark `bg-slate-50`, rules #2d3545 / #5b6a85.
+
+   DELIBERATELY UNCHANGED. `--v3-brand` and `--v3-brand-hover` stay
+   #7a1233 / #611029: burgundy is a dark colour in BOTH themes, white on it
+   is 10.7:1 either way, and a burgundy that lightened for a dark page
+   would break every filled button and badge on the site. `--v3-inverse`
+   stays #17110f - the charcoal dealer and closing bands are dark-on-dark
+   BY DESIGN (`.v3-flat-inverse`, `.v3-btn-inverse`, `home-discovery-
+   sections`) and were already correct. `--v3-gold` stays #c99b4a: it reads
+   7.61:1 on the page ground and 7.36:1 on the inverse band, so it needs
+   nothing. Only the tokens that are SURFACES or INK are remapped here.
+
+   Every pairing below is asserted in lib/dark-mode-contrast.test.ts.
+   =================================================================== */
+
+html.dark {
+  /* --- surfaces --- */
+  --v3-page: #0c0e12;
+  --v3-panel: #161b24;
+  --v3-sunk: #10141c;
+  --v3-sunk-deep: #0a0d12;
+
+  /* --- lines --- */
+  /* `--v3-rule` is a decorative hairline (a band separator, a column rule),
+     which WCAG 1.4.11 exempts, so it is held to "visible but quiet" at
+     1.40:1. `--v3-rule-strong` DOES identify a control - it is the border
+     on every `.v3-input` and `.v3-select` - so it is held to 3:1 and
+     measured against the ground an input actually sits on, #10141c,
+     where globals.css forces it. 3.38:1. */
+  --v3-rule: #2d3545;
+  --v3-rule-strong: #5b6a85;
+
+  /* --- text --- */
+  --v3-text: #f1f5f9;   /* 17.63:1 on page, 15.76:1 on panel */
+  --v3-text-2: #cbd5e1; /* 13.01:1 on page, 11.63:1 on panel */
+  --v3-text-3: #94a3b8; /*  7.53:1 on page,  6.73:1 on panel */
+
+  /* --- brand --- */
+  /* See the note at `--v3-brand-ink` in :root. This is the only place a
+     burgundy is allowed to become a lighter colour, and it never touches
+     a fill. 9.34:1 on page, 8.35:1 on panel. */
+  --v3-brand-ink: #e8a0b8;
+  --v3-brand-soft: #22151c;
+  --v3-brand-line: #a04a6d; /* 3.04:1 on panel - it is a control border */
+
+  --v3-gold-soft: #241d10; /* --v3-gold on it: 6.57:1 */
+
+  /* --- state ---
+     These three families are used as `color:` and, for --v3-bad, as an
+     invalid-input `border-color`. None is ever a fill with white text on
+     it, so lifting them is safe; in light they were #0f6b4f / #8a5a12 /
+     #9b1c17, all of which measure 2.1-2.9:1 on a dark ground. */
+  --v3-ok: #4ade9f;       /* 10.06:1 on panel, 9.94:1 on ok-soft */
+  --v3-ok-soft: #0f1f1a;
+  --v3-ok-line: #4a9c78;  /* 5.13:1 on ok-soft */
+
+  --v3-warn: #f5c26b;     /* 10.53:1 on panel, 10.27:1 on warn-soft */
+  --v3-warn-soft: #241c0e;
+  --v3-warn-line: #a3853a; /* 4.79:1 on warn-soft */
+
+  --v3-bad: #f87171;      /*  6.24:1 on panel, 6.44:1 on bad-soft,
+                              6.67:1 as an input border on #10141c */
+  --v3-bad-soft: #241314;
+  --v3-bad-line: #b85a54; /* 3.93:1 on bad-soft */
+
+  /* --- footer ---
+     The light values were chosen against a light cool grey, and the
+     comment at the `:root` block explains that choice at length. These
+     remap the band to the dark panel while keeping the same ink hierarchy,
+     so the directory band, the utility row and the gold bar stay three
+     distinct bands in dark mode. See the Tier 2 note in the audit report:
+     darkening the footer is the one change here that is a look-and-feel
+     decision rather than a pure legibility repair. */
+  --v3-footer-surface: #161b24;
+  --v3-footer-rule: #2d3545;
+  --v3-footer-rule-strong: #5b6a85;
+  --v3-footer-ink: #e8eef6;     /* 14.79:1 on the footer surface */
+  --v3-footer-ink-2: #a9b4c4;   /*  8.23:1 on the footer surface */
+  --v3-footer-gold: #d99023;    /*  7.33:1 against the page */
+  --v3-footer-gold-ink: #12161d; /* 6.88:1 on the gold bar */
+
+  /* --- depth ---
+     `--v3-lift` is a hairline shadow built from `--v3-rule` and follows it
+     for free. `--v3-lift-hi` was a near-BROWN shadow, which is invisible
+     on a dark surface; it becomes a black shadow with real presence. */
+  --v3-lift: 0 1px 0 var(--v3-rule);
+  --v3-lift-hi: 0 6px 18px -12px rgba(0, 0, 0, 0.75);
+}
+
+/* ===================================================================
+   DARK THEME - the places a token cannot reach
+   -------------------------------------------------------------------
+   The block above fixes everything that goes through a variable. These are
+   the three the audit named, plus the guards that the token flip itself
+   would otherwise break. Each one is a hardcoded colour sitting next to a
+   token that just changed, so the token change alone turns it into a
+   regression. They are grouped here, in one place, rather than scattered
+   into the sections that own them, because they only exist as a set.
+   =================================================================== */
+
+/* ---- TRAP A: the carousel arrow ------------------------------------
+   `.v3-carousel-arrow` is a hardcoded `rgba(255,255,255,0.92)` chip whose
+   icon inherits `color: var(--v3-text)`. With `--v3-text` lifted, that is
+   #f1f5f9 on a near-white chip: 1.09:1. The arrows vanished.
+
+   The dark arrow gets a dark-theme surface (#1a2130, one step above the
+   #10141c stage) with a light icon (#f1f5f9, 14.70:1). The fill alone is
+   only 1.15:1 against the stage, so the visible edge is carried by the
+   border, which is lifted to #7d8ba3 - 5.35:1. A border is the right
+   mechanism here because the arrow floats over admin-uploaded banner
+   artwork of unknown brightness, and an outline survives that far better
+   than a fill does. */
+html.dark .v3-carousel-arrow {
+  background: #1a2130;
+  border-color: #7d8ba3;
+  color: #f1f5f9;
+}
+
+/* ---- TRAP B: the select chevron ------------------------------------
+   `.v3-select` draws its chevron as an inline SVG data URI with the hex
+   #857972 BAKED INTO THE IMAGE. No custom property can reach it, because
+   by the time the browser has the paint it is a bitmap. Left alone, the
+   arrow would stay a fixed light grey against the new #161b24 box.
+
+   So the same path is re-encoded once with the dark-theme ink, #94a3b8
+   (6.73:1 on the panel, 7.19:1 on the sunken input ground). This is the
+   only duplication in the file, and it is duplication of a PATH, not of a
+   colour: the fill is the single value the dark block needs. */
+html.dark .v3-select {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20' fill='%2394a3b8'%3E%3Cpath fill-rule='evenodd' d='M5.23 7.21a.75.75 0 011.06.02L10 10.94l3.71-3.71a.75.75 0 111.06 1.06l-4.24 4.24a.75.75 0 01-1.06 0L5.21 8.29a.75.75 0 01.02-1.08z' clip-rule='evenodd'/%3E%3C/svg%3E");
+}
+
+/* ---- GUARD: the state badges ---------------------------------------
+   `.v3-badge-ok/-warn/-bad` take their background and colour from tokens -
+   so those follow the dark block - but their BORDER is a hardcoded light
+   hex (#bfe0d1, #ecd7ab, #eec4c1), which would have left a glaring pale
+   outline around a dark pill. `.v3-badge-gold` is worse: its colour is
+   also hardcoded (#7a5a17), which is invisible on the remapped
+   `--v3-gold-soft` at roughly 1.7:1. */
+html.dark .v3-badge-ok {
+  border-color: var(--v3-ok-line);
+}
+html.dark .v3-badge-warn {
+  border-color: var(--v3-warn-line);
+}
+html.dark .v3-badge-bad {
+  border-color: var(--v3-bad-line);
+}
+html.dark .v3-badge-gold {
+  border-color: #8a6c2f;
+  color: var(--v3-gold);
+}
+
+/* ---- GUARD: the loading skeleton -----------------------------------
+   `.v3-skeleton` is a shimmer built from rgba(27,21,18,.06->.11), a
+   near-black on cream. On the dark panel it became a near-black on
+   near-black, so every skeleton in the catalogue, the search panel and
+   the vehicle selector rendered as empty space. */
+html.dark .v3-skeleton {
+  background: linear-gradient(
+    90deg,
+    #1f2734 25%,
+    #2c3547 37%,
+    #1f2734 63%
+  );
+}
+@media (prefers-reduced-motion: reduce) {
+  html.dark .v3-skeleton {
+    background: #232c3a;
+  }
+}
+
+/* ---- GUARD: keyboard focus -----------------------------------------
+   `.v3-focus`, `.v3-input:focus` and `.v3-select:focus` all ring
+   themselves in `var(--v3-brand)`. That token is deliberately NOT lifted -
+   it is a fill - so on a dark ground the ring measured 1.61:1 and
+   WCAG 2.4.7 failed for every V3 control on the site. The ring is ink, so
+   it takes `--v3-brand-ink` instead. */
+html.dark .v3-focus:focus-visible {
+  outline-color: var(--v3-brand-ink);
+}
+html.dark .v3-input:focus,
+html.dark .v3-select:focus {
+  border-color: var(--v3-brand-ink);
+  box-shadow: 0 0 0 3px rgba(232, 160, 184, 0.22);
 }
 
 /* ===================================================================

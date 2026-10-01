@@ -1,19 +1,21 @@
-"use client";
+﻿"use client";
 
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useMemo, useSyncExternalStore, useState } from "react";
 
-import {
-  EmptyState,
-  ErrorState,
-  StateIcons,
-} from "@/components/page-states";
+import { CatalogueProductTable } from "@/components/catalogue-product-table";
+import { CatalogueViewSwitcher } from "@/components/catalogue-view-switcher";
+import { EmptyState, ErrorState, StateIcons } from "@/components/page-states";
 import { useI18n } from "@/components/preferences-provider";
-import { SearchHighlight } from "@/components/search-highlight";
 import { SearchProductCard } from "@/components/search-product-card";
+import {
+  type CatalogueViewMode,
+  getCatalogueViewServerSnapshot,
+  getCatalogueViewSnapshot,
+  setCatalogueView,
+  subscribeCatalogueView,
+} from "@/lib/catalogue-view";
 import { getBrandLogo } from "@/lib/brand-logo";
-import { displayProductTitle } from "@/lib/product-detail-fields";
-import { isAuthoritativeSellingPricePaise } from "@/lib/storefront-price-display";
 import { selectPreferredStorefrontListing } from "@/lib/storefront-listing-selection";
 import { slugifyFitment } from "@/lib/vehicle-fitment";
 
@@ -55,12 +57,6 @@ export type VehicleRow = { make: string; model: string; count: number };
 export type SearchTab = "all" | "products" | "brands" | "categories" | "vehicles";
 type StockFilter = "all" | "in_stock";
 type SortMode = "relevance" | "name" | "price-low-high";
-
-function formatPaise(value: number | null | undefined) {
-  return typeof value === "number" && Number.isFinite(value) && value > 0
-    ? `₹${(value / 100).toLocaleString("en-IN")}`
-    : "—";
-}
 
 function formatTotalPaise(value: number) {
   return `₹${(Math.max(0, value) / 100).toLocaleString("en-IN", {
@@ -108,7 +104,7 @@ function FacetChecks({
       <div className="flex items-center justify-between gap-2">
         <h3 className="text-[11px] font-bold  text-[var(--v3-text-3)]">{title}</h3>
         {active ? (
-          <button type="button" className="text-[11px] font-semibold text-[var(--v3-brand)]" onClick={() => onToggle("")}>
+          <button type="button" className="text-[11px] font-semibold text-[var(--v3-brand-ink)]" onClick={() => onToggle("")}>
             {tClear}
           </button>
         ) : null}
@@ -123,7 +119,7 @@ function FacetChecks({
                   type="checkbox"
                   checked={checked}
                   onChange={() => onToggle(checked ? "" : row.value)}
-                  className="h-4 w-4 rounded border-[var(--v3-rule-strong)] text-[var(--v3-brand)] accent-[var(--v3-brand)]"
+                  className="h-4 w-4 rounded border-[var(--v3-rule-strong)] text-[var(--v3-brand-ink)] accent-[var(--v3-brand)]"
                 />
                 <span className="min-w-0 flex-1 truncate">{row.value}</span>
                 <span className="shrink-0 text-xs text-[var(--v3-text-3)]">{row.count}</span>
@@ -135,7 +131,7 @@ function FacetChecks({
       {rows.length > 8 ? (
         <button
           type="button"
-          className="mt-1 text-[11px] font-semibold text-[var(--v3-brand)]"
+          className="mt-1 text-[11px] font-semibold text-[var(--v3-brand-ink)]"
           onClick={() => setExpanded((value) => !value)}
         >
           {expanded ? "−" : "+"} {rows.length - 8}
@@ -182,7 +178,7 @@ function SearchFilters({
         {activeBrand || activeCategory || activeStock !== "all" ? (
           <button
             type="button"
-            className="text-[11px] font-semibold text-[var(--v3-brand)]"
+            className="text-[11px] font-semibold text-[var(--v3-brand-ink)]"
             onClick={onClearFilters}
           >
             {t("search.clearAll")}
@@ -190,7 +186,7 @@ function SearchFilters({
         ) : null}
       </div>
       <section className="border-b border-[var(--v3-rule)] pb-3">
-        <h3 className="text-[11px] font-bold  text-[var(--v3-text-3)]">Browse</h3>
+        <h3 className="text-[11px] font-bold  text-[var(--v3-text-3)]">{t("search.browseHeading")}</h3>
         <div className="mt-2 flex flex-wrap gap-1.5">
           {tabs.map((item) => (
             <button
@@ -210,14 +206,14 @@ function SearchFilters({
         </div>
       </section>
       <section>
-        <h3 className="text-[11px] font-bold  text-[var(--v3-text-3)]">Stock</h3>
+        <h3 className="text-[11px] font-bold  text-[var(--v3-text-3)]">{t("search.stockHeading")}</h3>
         <select
           value={activeStock}
           onChange={(event) =>
             onStockChange(event.target.value === "in_stock" ? "in_stock" : "all")
           }
           className="mt-2 h-9 w-full rounded-[2px] border border-[var(--v3-rule)] bg-white px-2 text-xs font-semibold text-[var(--v3-text-2)] outline-none focus:border-[var(--v3-brand)]"
-          aria-label="Stock filter"
+          aria-label={t("search.stockFilterAria")}
         >
           <option value="all">{t("search.allStock")}</option>
           <option value="in_stock">{t("search.inStock")}</option>
@@ -321,6 +317,22 @@ export function SearchExperience({
   const { t } = useI18n();
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [sort, setSort] = useState<SortMode>("price-low-high");
+  /* Catalogue presentation only. GRID is the default, which is what makes
+     pressing Enter in the header search land on a grid rather than a table.
+
+     Read from localStorage through `useSyncExternalStore` rather than copied
+     into state from an effect, so the server and the first client render agree
+     (no hydration mismatch, no flash of the wrong view).
+
+     Deliberately NOT in the URL: the query, filters, sort and page all stay in
+     their existing parameters, and adding a view parameter would have changed
+     the search URL contract the brief said to preserve. */
+  const view = useSyncExternalStore(
+    subscribeCatalogueView,
+    getCatalogueViewSnapshot,
+    getCatalogueViewServerSnapshot,
+  );
+  const changeView = setCatalogueView;
   const sortedResults = useMemo(() => {
     const next =
       activeStock === "in_stock"
@@ -403,7 +415,13 @@ export function SearchExperience({
                 className="inline-block h-3 w-[3px] shrink-0 bg-[var(--v3-brand)]"
                 aria-hidden
               />
-              {t("search.resultsFor")}
+              {/* The heading label. The {query} placeholder is filled from
+                  the live query so the sentence is complete on its own line;
+                  the query is also rendered below in `v3-partno`, which is
+                  the larger typographic treatment. The dictionary string
+                  carries no surrounding quotes - a quoted part number in a
+                  heading read as a truncated string rather than a part. */}
+              {t("search.resultsFor", { query })}
             </p>
             <p className="v3-partno mt-1.5 break-words !text-[1.125rem] !font-bold !text-[var(--v3-text)]">
               {query}
@@ -433,8 +451,16 @@ export function SearchExperience({
           </div>
         </div>
 
-        <div className="mt-3 md:hidden">
+        {/* Sort + view switcher.
+
+            This row used to be `md:hidden`, which left desktop with no sort
+            control at all. It is now visible at every breakpoint so the view
+            switcher has exactly one home and works on both phone and desktop.
+            The sort control appearing on desktop is additive - nothing is
+            removed - and the sort state itself is unchanged. */} 
+        <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
           <Toolbar sort={sort} onSort={setSort} />
+          <CatalogueViewSwitcher value={view} onChange={changeView} />
         </div>
       </div>
 
@@ -553,31 +579,14 @@ export function SearchExperience({
           ) : null}
 
             {showProducts && !loading && sortedResults.length > 0 ? (
-              <>
-                <div className="hidden md:block">
-                  <ProductTable
-                    results={sortedResults}
-                    query={query}
-                    addingId={addingId}
-                    onOpenProduct={onOpenProduct}
-                    onAddToCart={onAddToCart}
-                  />
-                </div>
-                <div className="space-y-3 md:hidden">
-                  {sortedResults.map((hit, index) => (
-                    <SearchProductCard
-                      key={hit.document?.id || hit.document?.part_number || index}
-                      hit={hit}
-                      query={query}
-                      addingId={addingId}
-                      layout="mobile"
-                      index={index}
-                      onOpen={() => onOpenProduct(hit)}
-                      onAddToCart={onAddToCart}
-                    />
-                  ))}
-                </div>
-              </>
+              <CatalogueResults
+                view={view}
+                results={sortedResults}
+                query={query}
+                addingId={addingId}
+                onOpenProduct={onOpenProduct}
+                onAddToCart={onAddToCart}
+              />
             ) : null}
 
             {showProducts ? (
@@ -634,7 +643,7 @@ export function SearchExperience({
             ) : null}
 
             {showProducts ? (
-              <div className="sticky bottom-0 z-30 -mx-4 mt-4 border-t border-[#d8b9bc] bg-[#ead6d7]/95 px-4 py-3 shadow-[0_-4px_16px_rgba(15,23,42,0.08)] backdrop-blur sm:-mx-6 sm:px-6">
+              <div className="sticky bottom-0 z-30 -mx-4 mt-4 border-t border-[var(--v3-brand-line)] bg-[var(--v3-brand-soft)]/95 px-4 py-3 shadow-[0_-4px_16px_rgba(15,23,42,0.08)] backdrop-blur sm:-mx-6 sm:px-6">
                 <div className="mx-auto flex max-w-[1240px] flex-col items-stretch gap-3 sm:flex-row sm:items-center sm:justify-between">
                   <p className="min-w-0 text-xs font-semibold leading-5 text-[var(--v3-text-2)] sm:text-sm">
                     Selected: {selectedCount} items
@@ -649,7 +658,7 @@ export function SearchExperience({
                       View Cart ({cartCount})
                     </Link>
                     <svg
-                      className="h-4 w-4 text-[var(--v3-brand)]"
+                      className="h-4 w-4 text-[var(--v3-brand-ink)]"
                       fill="none"
                       viewBox="0 0 24 24"
                       stroke="currentColor"
@@ -676,163 +685,88 @@ export function SearchExperience({
   );
 }
 
-function TableCartIcon({ className = "h-4 w-4" }: { className?: string }) {
-  return (
-    <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.8" aria-hidden>
-      <path
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        d="M3 4h2l1.4 10.2a2 2 0 0 0 2 1.8h7.8a2 2 0 0 0 1.9-1.4L20 8H6.2M9 20h.01M17 20h.01"
-      />
-    </svg>
-  );
-}
-
-function ProductTable({
+/**
+ * Renders a catalogue listing in the selected view mode.
+ *
+ * GRID is the default, and its desktop column count is the requirement:
+ * exactly 4 products per row, 3 on tablet, 2 on a phone. The numbers live in
+ * `CATALOGUE_GRID_COLUMNS` so "4 on desktop" has one definition.
+ *
+ * Mobile is no longer a separate presentation. The page used to render a table
+ * on desktop and compact rows on mobile with no way to choose; now the chosen
+ * mode is honoured everywhere and each mode reflows instead of overflowing.
+ * LIST is the one mode that cannot reflow - its table carries a 920px minimum
+ * width - so below `md` it degrades to stacked rows rather than scrolling
+ * sideways.
+ */
+function CatalogueResults({
+  view,
   results,
   query,
   addingId,
   onOpenProduct,
   onAddToCart,
 }: {
+  view: CatalogueViewMode;
   results: SearchHit[];
   query: string;
   addingId: string;
   onOpenProduct: (hit: SearchHit) => void;
   onAddToCart: (listingId: string, name: string) => void;
 }) {
-  const { t } = useI18n();
-  return (
-    <div className="overflow-x-auto rounded-[var(--v3-r-lg)] bg-white shadow-[0_8px_24px_rgba(15,23,42,0.06)]">
-      <table className="w-full min-w-[920px] table-fixed border-collapse text-left">
-        <thead className="bg-[var(--v3-brand)] text-sm font-bold text-white">
-          <tr>
-            <th className="w-[38%] px-3 py-2.5">{t("search.itemName")}</th>
-            <th className="w-[13%] px-3 py-2.5">{t("search.partNoShort")}</th>
-            <th className="w-[7%] px-3 py-2.5">GST</th>
-            <th className="w-[11%] px-3 py-2.5">HSN</th>
-            <th className="w-[10%] px-3 py-2.5">LIST</th>
-            <th className="w-[10%] px-3 py-2.5">MRP</th>
-            <th className="w-[7%] px-3 py-2.5">DISC</th>
-            <th className="w-[10%] px-3 py-2.5 text-right">Action</th>
-          </tr>
-        </thead>
-        <tbody>
-          {results.map((hit, index) => {
-            const partData = hit.document ?? {};
-            const listing = selectPreferredStorefrontListing(hit.listings);
-            const title = displayProductTitle(
-              partData.name || t("product.partFallback"),
-              partData.part_number,
-            );
-            const image =
-              hit.thumbUrl ||
-              listing?.thumbUrl ||
-              hit.imageUrl ||
-              listing?.imageUrl ||
-              "/images/products/placeholder.svg";
-            const priced = isAuthoritativeSellingPricePaise(
-              listing?.listInclusivePaise,
-              listing?.netInclusivePaise,
-              listing?.pricePaise,
-            );
-            const canAdd =
-              Boolean(listing) &&
-              listing?.status === "active" &&
-              (listing?.stock ?? 0) > 0 &&
-              priced;
-            return (
-              <tr
-                key={hit.document?.id || hit.document?.part_number || index}
-                className="border-t border-[var(--v3-rule)] align-middle hover:bg-[var(--v3-sunk)]/70"
-              >
-                <td className="px-3 py-2">
-                  <div className="flex min-w-0 items-center gap-2.5">
-                    <button
-                      type="button"
-                      onClick={() => onOpenProduct(hit)}
-                      className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-[2px] bg-[var(--v3-brand)]"
-                      aria-label={title}
-                    >
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img
-                        src={image}
-                        alt=""
-                        width={40}
-                        height={40}
-                        loading={index < 4 ? "eager" : "lazy"}
-                        decoding="async"
-                        className="h-full w-full object-contain p-1"
-                        onError={(event) => {
-                          const el = event.currentTarget as HTMLImageElement;
-                          const original = hit.imageUrl || listing?.imageUrl;
-                          if (original && el.src !== original) {
-                            el.src = original;
-                            return;
-                          }
-                          el.src = "/images/products/placeholder.svg";
-                        }}
-                      />
-                    </button>
-                    <button
-                      type="button"
-                      className="min-w-0 flex-1 truncate text-left text-sm font-bold leading-tight text-[var(--v3-text)] hover:text-[var(--v3-brand)]"
-                      onClick={() => onOpenProduct(hit)}
-                      title={title}
-                    >
-                      <SearchHighlight text={title} query={query} />
-                    </button>
-                  </div>
-                </td>
-                <td className="px-3 py-2 font-mono text-xs text-[var(--v3-text-2)]">
-                  <span className="text-sm font-semibold text-slate-800">{partData.part_number || "—"}</span>
-                </td>
-                <td className="px-3 py-2 text-xs text-[var(--v3-text-2)]">
-                  {listing?.gstRate != null ? `${listing.gstRate}%` : "—"}
-                </td>
-                <td className="px-3 py-2 font-mono text-[11px] text-[var(--v3-text-2)]">
-                  {listing?.hsn || "—"}
-                </td>
-                <td className="px-3 py-2 text-xs font-semibold text-slate-800">
-                  {formatPaise(listPrice(listing))}
-                </td>
-                <td className="px-3 py-2 text-xs text-[var(--v3-text-3)]">
-                  {formatPaise(listing?.mrpPaise)}
-                </td>
-                <td className="px-3 py-2 text-sm font-semibold text-slate-800">
-                  <span className="rounded-md bg-[var(--v3-brand)] px-1.5 py-0.5 text-xs font-bold text-white">
-                    {typeof listing?.discountPercent === "number"
-                      ? `${Math.round(listing.discountPercent)}%`
-                      : "—"}
-                  </span>
-                </td>
-                <td className="px-3 py-2 text-right">
-                  <button
-                    type="button"
-                    disabled={!canAdd || addingId === listing?.id}
-                    onClick={() => listing && onAddToCart(listing.id, title)}
-                    className="inline-flex min-h-9 items-center gap-1.5 rounded-[2px] bg-[var(--v3-brand)] px-3 text-xs font-bold text-white hover:bg-[var(--v3-brand-hover)] disabled:cursor-not-allowed disabled:bg-slate-200 disabled:text-[var(--v3-text-3)]"
-                    aria-label={`${t("product.addToCart")}: ${title}`}
-                  >
-                    {canAdd ? (
-                      <>
-                        <TableCartIcon />
-                        {t("product.addToCart")}
-                      </>
-                    ) : priced ? (
-                      t("product.outOfStock")
-                    ) : (
-                      t("price.onRequest")
-                    )}
-                  </button>
-                </td>
-              </tr>
-            );
-          })}
-        </tbody>
-      </table>
+  const cards = (layout: "grid" | "tiles" | "detailed", gap: string) => (
+    <div className={gap}>
+      {results.map((hit, index) => (
+        <SearchProductCard
+          key={hit.document?.id || hit.document?.part_number || index}
+          hit={hit}
+          query={query}
+          addingId={addingId}
+          layout={layout}
+          index={index}
+          onOpen={() => onOpenProduct(hit)}
+          onAddToCart={onAddToCart}
+        />
+      ))}
     </div>
   );
+
+  if (view === "list") {
+    return (
+      <>
+        <div className="hidden md:block">
+          <CatalogueProductTable
+            results={results}
+            query={query}
+            addingId={addingId}
+            onOpenProduct={onOpenProduct}
+            onAddToCart={onAddToCart}
+          />
+        </div>
+        <div className="space-y-3 md:hidden">
+          {results.map((hit, index) => (
+            <SearchProductCard
+              key={hit.document?.id || hit.document?.part_number || index}
+              hit={hit}
+              query={query}
+              addingId={addingId}
+              layout="mobile"
+              index={index}
+              onOpen={() => onOpenProduct(hit)}
+              onAddToCart={onAddToCart}
+            />
+          ))}
+        </div>
+      </>
+    );
+  }
+  if (view === "tiles") {
+    return cards("tiles", "grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4");
+  }
+  if (view === "detailed") {
+    return cards("detailed", "grid grid-cols-1 gap-4 lg:grid-cols-2");
+  }
+  return cards("grid", "grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4");
 }
 
 function Toolbar({
@@ -853,7 +787,7 @@ function Toolbar({
           onSort(next === "name" || next === "relevance" ? next : "price-low-high");
         }}
         className="rounded-md border border-[var(--v3-rule)] bg-white px-2 py-1 text-xs font-semibold text-slate-800"
-        aria-label="Sort results"
+        aria-label={t("search.sortAria")}
       >
         <option value="price-low-high">{t("search.priceLowHigh")}</option>
         <option value="relevance">{t("search.relevance")}</option>

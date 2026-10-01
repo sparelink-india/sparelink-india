@@ -90,14 +90,21 @@ export default function LoginPage() {
             <GoogleSignInButton />
           </div>
 
+          {/* No Dealer Login link beside Register.
+
+              A visitor who reaches /login is a customer or a retailer by
+              definition - they followed a customer-facing prompt. Offering
+              them a trade-portal login on the same screen made the two
+              audiences indistinguishable, and it is the surface where the
+              reported "This account cannot use this login." error is most
+              likely to be met by an admin who signs in here first.
+
+              The ROUTE is untouched. /login/dealer still resolves on direct
+              navigation, and the dealer layout still redirects there. */}
           <div className="pt-4 text-center text-xs text-zinc-500">
             {t("login.new")}{" "}
             <Link href="/register" className="font-bold text-zinc-900 underline hover:text-zinc-700">
               {t("login.register")}
-            </Link>
-            <span className="mx-1">·</span>
-            <Link href="/login/dealer" className="font-bold text-zinc-900 underline hover:text-zinc-700">
-              {t("login.dealerLink")}
             </Link>
           </div>
 

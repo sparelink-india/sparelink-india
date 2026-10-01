@@ -59,7 +59,7 @@ export function StorefrontBreadcrumbs({
               {crumb.href && !isLast ? (
                 <Link
                   href={crumb.href}
-                  className="rounded font-medium text-[var(--v3-brand)] underline-offset-2 transition-colors duration-200 hover:text-[var(--v3-brand-hover)] hover:underline"
+                  className="rounded font-medium text-[var(--v3-brand-ink)] underline-offset-2 transition-colors duration-200 hover:text-[var(--v3-brand-hover)] hover:underline"
                 >
                   {crumb.label}
                 </Link>

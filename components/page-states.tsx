@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import Link from "next/link";
 import { T } from "@/components/t";
+import { useI18n } from "@/components/preferences-provider";
 
 /**
  * V2 global page states.
@@ -50,12 +51,13 @@ export function ProductGridSkeleton({ count = 8 }: { count?: number }) {
 
 /** Generic skeleton for non-catalogue panels (forms, tables, sidebars). */
 export function PanelSkeleton({ rows = 3, className = "" }: { rows?: number; className?: string }) {
+  const { t } = useI18n();
   return (
     <div className={`space-y-3 ${className}`} role="status" aria-busy="true" aria-live="polite">
       {Array.from({ length: rows }, (_, index) => (
         <Skeleton key={index} className="h-4 w-full" />
       ))}
-      <span className="sr-only">Loading</span>
+      <span className="sr-only">{t("states.loading")}</span>
     </div>
   );
 }
@@ -81,7 +83,7 @@ export function EmptyState({
   return (
     <div className="v3-panel flex flex-col items-center px-6 py-14 text-center">
       {icon ? (
-        <span className="mb-5 inline-flex h-14 w-14 items-center justify-center rounded-[var(--v3-r)] bg-[var(--v3-brand-soft)] text-[var(--v3-brand)]">
+        <span className="mb-5 inline-flex h-14 w-14 items-center justify-center rounded-[var(--v3-r)] bg-[var(--v3-brand-soft)] text-[var(--v3-brand-ink)]">
           {icon}
         </span>
       ) : null}
@@ -125,7 +127,7 @@ export function ErrorState({
   return (
     <div
       role="alert"
-      className="rounded-[var(--v3-r)] border border-[#eec4c1] bg-[var(--v3-bad-soft)] px-5 py-6"
+      className="rounded-[var(--v3-r)] border border-[var(--v3-bad-line)] bg-[var(--v3-bad-soft)] px-5 py-6"
     >
       <div className="flex items-start gap-3.5">
         <svg
@@ -181,8 +183,8 @@ export function Notice({
 }) {
   const map = {
     success:
-      "border-[#bfe0d1] bg-[var(--v3-ok-soft)] text-[var(--v3-ok)]",
-    error: "border-[#eec4c1] bg-[var(--v3-bad-soft)] text-[var(--v3-bad)]",
+      "border-[var(--v3-ok-line)] bg-[var(--v3-ok-soft)] text-[var(--v3-ok)]",
+    error: "border-[var(--v3-bad-line)] bg-[var(--v3-bad-soft)] text-[var(--v3-bad)]",
     info: "border-[var(--v3-rule-strong)] bg-[var(--v3-sunk)] text-[var(--v3-text-2)]",
   } as const;
   return (

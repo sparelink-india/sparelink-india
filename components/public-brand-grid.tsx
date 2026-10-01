@@ -1,10 +1,11 @@
-"use client";
+﻿"use client";
 
 import Image from "next/image";
 import Link from "next/link";
 import { useMemo, useState } from "react";
 
 import { useI18n } from "@/components/preferences-provider";
+import { getBrandDisplayName } from "@/lib/brand-display-names";
 import { StorefrontBreadcrumbs } from "@/components/storefront-breadcrumbs";
 import { EmptyState, StateIcons } from "@/components/page-states";
 import type { PublicBrand } from "@/lib/public-brands";
@@ -50,7 +51,7 @@ export function PublicBrandDirectory({
 }: {
   onSelect?: (query: string) => void;
 }) {
-  const { t } = useI18n();
+  const { t, locale } = useI18n();
   const [query, setQuery] = useState("");
   /* The registry merged with the admin's presentation overrides. Shared with the
      homepage grid so the two can never disagree about what a brand looks like,
@@ -115,7 +116,12 @@ export function PublicBrandDirectory({
           {matched.map((brand) => {
             const href = `/?q=${encodeURIComponent(brand.searchQuery)}`;
             const tagline = relationshipLabel(t, brand);
-            const label = `${brand.name}, ${tagline}`;
+            /* Display name only. The href above still uses `searchQuery`, the
+               exact string Typesense and the catalogue match on, so switching to
+               Hindi changes what a customer READS and never what a search
+               MATCHES. */
+            const displayName = getBrandDisplayName(brand.name, locale);
+            const label = `${displayName}, ${tagline}`;
 
             const shell =
               "v3-panel v3-panel-hover group flex h-full w-full flex-col p-3.5 text-left";
@@ -136,8 +142,8 @@ export function PublicBrandDirectory({
                 </span>
 
                 <span className="mt-3 block">
-                  <span className="v3-nav v3-clamp-1 block text-[var(--v3-text)] transition-colors group-hover:text-[var(--v3-brand)]">
-                    {brand.name}
+                  <span className="v3-nav v3-clamp-1 block text-[var(--v3-text)] transition-colors group-hover:text-[var(--v3-brand-ink)]">
+                    {displayName}
                   </span>
                   <span className="v3-small mt-1 block">{tagline}</span>
                 </span>
@@ -154,7 +160,7 @@ export function PublicBrandDirectory({
 
                 {/* The action points at the same search query the old row did,
                     so clicking the card is byte-for-byte identical behaviour. */}
-                <span className="mt-auto flex items-center gap-1.5 border-t border-[var(--v3-rule)] pt-3 text-[0.8125rem] font-semibold text-[var(--v3-brand)]">
+                <span className="mt-auto flex items-center gap-1.5 border-t border-[var(--v3-rule)] pt-3 text-[0.8125rem] font-semibold text-[var(--v3-brand-ink)]">
                   {t("brands.viewProducts")}
                   <svg
                     className="h-3.5 w-3.5 shrink-0 transition-transform group-hover:translate-x-0.5"
@@ -211,7 +217,7 @@ export function PublicBrandGrid({
 }: {
   onSelect?: (query: string) => void;
 }) {
-  const { t } = useI18n();
+  const { t, locale } = useI18n();
   /* Same override-aware source as the /brands directory. The homepage grid and
      the brands page used to read the registry independently, which is how a
      storefront ends up showing a brand name the admin never saved. */
@@ -222,7 +228,8 @@ export function PublicBrandGrid({
       {brands.map((brand) => {
         const href = `/?q=${encodeURIComponent(brand.searchQuery)}`;
         const tagline = relationshipLabel(t, brand);
-        const label = `${brand.name}, ${tagline}`;
+        const displayName = getBrandDisplayName(brand.name, locale);
+        const label = `${displayName}, ${tagline}`;
 
         const shell =
           "v3-panel v3-panel-hover group flex h-full w-full flex-col items-center justify-center gap-2 px-2 py-3 text-center";
@@ -239,8 +246,30 @@ export function PublicBrandGrid({
                 unoptimized
               />
             </span>
-            <span className="v3-label v3-clamp-2 !text-[0.5625rem] !leading-tight transition-colors group-hover:text-[var(--v3-brand)]">
-              {brand.name}
+            {/* Brand name.
+
+                This was `v3-label !text-[0.5625rem]`, i.e. 9px, uppercase,
+                letter-spaced 0.14em, clamped to two lines. All four of those
+                were wrong for the job:
+
+                  9px        unreadable on a phone and marginal on a laptop
+                  uppercase   a no-op for Devanagari, and brand wordmarks are
+                             proper nouns that should not be shouted
+                  0.14em     the worst attribute here: Devanagari is an
+                             abugida, so inter-character tracking pulls the
+                             matra and the consonant apart and makes
+                             conjuncts look misspelled
+                  clamp-2    a two-word brand was being silently truncated
+
+                So the size is now stepped per breakpoint rather than fixed, the
+                tracking/case utilities are dropped in favour of the plain body
+                treatment, and the line-height is generous enough that the
+                Devanagari ascenders and the descenders of ज/ड/ष are not
+                clipped. Two lines are still allowed, because
+                "शिवाजी इंडस्ट्रीज़ / सिप्पी" genuinely needs them - the fix
+                is legibility, not truncation. */}
+            <span className="v3-clamp-2 block text-[0.8125rem] font-semibold leading-[1.5] tracking-normal text-[var(--v3-text)] transition-colors group-hover:text-[var(--v3-brand-ink)] sm:text-[0.875rem] lg:text-[0.9375rem]">
+              {displayName}
             </span>
           </>
         );
@@ -359,3 +388,4 @@ export function PublicBrandsDirectorySection() {
     </section>
   );
 }
+

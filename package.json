@@ -11,6 +11,7 @@
     "prepare-catalogue-images": "node scripts/prepare-catalogue-images.mjs",
     "generate-catalogue-derivatives": "node scripts/generate-catalogue-derivatives.mjs",
     "prebuild": "node scripts/prepare-catalogue-images.mjs",
+    "frame:category-images": "node scripts/frame-category-images.mjs",
     "postbuild": "node scripts/strip-catalogue-image-traces.mjs",
     "build": "next build",
     "start": "next start",

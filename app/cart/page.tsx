@@ -334,7 +334,7 @@ export default function CartPage() {
 
         {!loading && cart?.requiresLogin && (
           <div className="mt-10 rounded-2xl border border-dashed border-slate-300 bg-white p-12 text-center shadow-sm sm:p-16">
-            <h2 className="text-xl font-bold text-slate-900">Sign in to view your cart</h2>
+            <h2 className="text-xl font-bold text-slate-900">{t("cart.signInToView")}</h2>
             <p className="mx-auto mt-2 max-w-sm text-sm text-slate-500">
               Your cart is saved to your SpareLink account.
             </p>
@@ -400,7 +400,7 @@ export default function CartPage() {
           <div className="mt-8 grid gap-8 lg:grid-cols-[1fr_360px]">
             {/* Cart Items List */}
             <section
-              aria-label="Cart items"
+              aria-label={t("cart.itemsAria")}
               className="space-y-4"
             >
               {cart.items.map((item) => {
@@ -677,7 +677,7 @@ export default function CartPage() {
             </section>
 
             {/* Order Summary Sidebar */}
-            <aside aria-label="Order summary">
+            <aside aria-label={t("cart.orderSummaryAria")}>
               <div className="sticky top-20 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
                 <h2 className="text-lg font-bold text-slate-950">
                   {t("cart.summary")}
@@ -805,7 +805,7 @@ export default function CartPage() {
                         clipRule="evenodd"
                       />
                     </svg>
-                    <span>GST Compliant Invoicing</span>
+                    <span>{t("cart.gstInvoicing")}</span>
                   </div>
                   <div className="flex items-center gap-2">
                     <svg
@@ -888,7 +888,14 @@ export default function CartPage() {
       )}
       <SiteFooter />
       {!loading && !isCartEmpty && cart && !hasUnpricedItems ? (
-        <div className="fixed inset-x-0 bottom-[calc(var(--mobile-nav-height)+var(--safe-bottom))] z-40 border-t border-slate-200 bg-white/95 px-3 py-2 backdrop-blur md:hidden">
+        <div
+          className="fixed inset-x-0 bottom-[calc(var(--mobile-nav-height)+var(--safe-bottom))] z-40 border-t border-[var(--v3-rule)] bg-[var(--v3-panel)]/95 px-3 py-2 backdrop-blur md:hidden"
+          /* `bg-white/95` was a hardcoded near-white surface, and it could
+             not be remapped in globals.css because Admin uses the same
+             class as a deliberate light logo plate. The V3 panel token
+             carries the same near-white value in light mode and the dark
+             panel in dark mode, so this bar follows the theme. */
+        >
           <div className="mx-auto flex max-w-lg items-center gap-3">
             <div className="min-w-0 flex-1">
               <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">{t("cart.total")}</p>

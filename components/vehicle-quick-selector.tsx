@@ -240,7 +240,7 @@ export function VehicleQuickSelector({
         <div className="v3-skeleton mt-3 h-11 w-full" aria-hidden />
       ) : garageState === "guest" ? (
         <p className="v3-small mt-3">
-          <Link href="/login" className="v3-focus font-semibold text-[var(--v3-brand)] underline-offset-2 hover:underline">
+          <Link href="/login" className="v3-focus font-semibold text-[var(--v3-brand-ink)] underline-offset-2 hover:underline">
             {t("nav.login")}
           </Link>{" "}
           {t("garage.loginHint")}
@@ -287,7 +287,7 @@ export function VehicleQuickSelector({
                     <span
                       className={`v3-num shrink-0 text-[0.6875rem] font-bold ${
                         active
-                          ? "text-[var(--v3-brand)]"
+                          ? "text-[var(--v3-brand-ink)]"
                           : "text-[var(--v3-text-3)]"
                       }`}
                     >
@@ -303,7 +303,7 @@ export function VehicleQuickSelector({
               {hiddenGarageCount > 0 ? (
                 <Link
                   href={browseAllHref}
-                  className="v3-focus text-[0.75rem] font-semibold text-[var(--v3-brand)]"
+                  className="v3-focus text-[0.75rem] font-semibold text-[var(--v3-brand-ink)]"
                 >
                   {hiddenGarageCount} more · {t("vehicleSelect.browseAll")}
                 </Link>
@@ -317,7 +317,7 @@ export function VehicleQuickSelector({
                       router.push(garageFitmentHref(selected.make, selected.model));
                     }
                   }}
-                  className="v3-focus text-[0.75rem] font-semibold text-[var(--v3-brand)]"
+                  className="v3-focus text-[0.75rem] font-semibold text-[var(--v3-brand-ink)]"
                 >
                   {t("garage.viewParts")}
                 </button>
@@ -334,7 +334,7 @@ export function VehicleQuickSelector({
       <div className="mt-4 grid gap-2.5 sm:grid-cols-2">
         <div>
           <label htmlFor="vq-make" className="v3-label mb-1 flex items-center gap-2 !text-[0.625rem]">
-            <span className="v3-partno !text-[var(--v3-brand)]">01</span>
+            <span className="v3-partno !text-[var(--v3-brand-ink)]">01</span>
             {t("vehicleSelect.make")}
           </label>
           <select
@@ -358,7 +358,7 @@ export function VehicleQuickSelector({
         </div>
         <div>
           <label htmlFor="vq-model" className="v3-label mb-1 flex items-center gap-2 !text-[0.625rem]">
-            <span className="v3-partno !text-[var(--v3-brand)]">02</span>
+            <span className="v3-partno !text-[var(--v3-brand-ink)]">02</span>
             {t("vehicleSelect.model")}
           </label>
           <select

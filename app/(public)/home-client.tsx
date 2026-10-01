@@ -11,6 +11,7 @@ import { PublicBrandsSection } from "@/components/public-brand-grid";
 import { ProductDetailModal } from "@/components/product-detail-modal";
 import { SearchExperience, type SearchTab } from "@/components/search-experience";
 import { useI18n } from "@/components/preferences-provider";
+import { STOREFRONT_CATEGORIES } from "@/lib/storefront-categories";
 import { rememberSearch } from "@/lib/recent-searches";
 import { MobileBottomNav } from "@/components/mobile/mobile-bottom-nav";
 
@@ -295,56 +296,19 @@ export function HomePageContent({
       .catch(() => setWishlistCount(0));
   }, []);
 
-  const categoryCards = [
-    {
-      name: t("cat.body"),
-      slug: "body-parts",
-      desc: t("cat.bodyDesc"),
-      image: "/images/category/body-parts.png",
-    },
-    {
-      name: t("cat.filters"),
-      slug: "filters",
-      desc: t("cat.filtersDesc"),
-      image: "/images/category/filters.png",
-    },
-    {
-      name: t("cat.brakes"),
-      slug: "braking-system",
-      desc: t("cat.brakesDesc"),
-      image: "/images/category/braking-system.png",
-    },
-    {
-      name: t("cat.engine"),
-      slug: "engine-parts",
-      desc: t("cat.engineDesc"),
-      image: "/images/category/engine-parts.png",
-    },
-    {
-      name: t("cat.suspension"),
-      slug: "suspension-steering",
-      desc: t("cat.suspensionDesc"),
-      image: "/images/category/suspension-steering.png",
-    },
-    {
-      name: t("cat.clutch"),
-      slug: "clutch-transmission",
-      desc: t("cat.clutchDesc"),
-      image: "/images/category/clutch-transmission.png",
-    },
-    {
-      name: t("cat.electricals"),
-      slug: "electricals",
-      desc: t("cat.electricalsDesc"),
-      image: "/images/category/electricals.png",
-    },
-    {
-      name: t("cat.lubricants"),
-      slug: "lubricants",
-      desc: t("cat.lubricantsDesc"),
-      image: "/images/category/lubricants.png",
-    },
-  ];
+  /* THE CATEGORY TILES.
+     Read from STOREFRONT_CATEGORIES rather than declared here. This block
+     used to be a second, hand-maintained copy of the same eight categories
+     with their own image paths - so a change to the registry did not reach
+     the homepage, and the two could silently disagree. Reading the registry
+     also means the homepage now renders `framedImage`, the tightly-framed
+     derivative, because the registry is where that field lives. */
+  const categoryCards = STOREFRONT_CATEGORIES.map((category) => ({
+    name: t(category.nameKey),
+    slug: category.slug,
+    desc: t(category.descKey),
+    image: category.framedImage,
+  }));
 
   function commitSearch(
     searchQuery: string,
@@ -632,11 +596,11 @@ export function HomePageContent({
                     />
                   </div>
                   <div className="min-w-0 flex-1 px-1 pt-3">
-                    <h3 className="v3-h3 transition-colors group-hover:text-[var(--v3-brand)]">
+                    <h3 className="v3-h3 transition-colors group-hover:text-[var(--v3-brand-ink)]">
                       {cat.name}
                     </h3>
                     <p className="v3-small v3-clamp-2 mt-1">{cat.desc}</p>
-                    <span className="mt-2.5 inline-flex items-center gap-1 whitespace-nowrap text-[0.75rem] font-bold text-[var(--v3-brand)]">
+                    <span className="mt-2.5 inline-flex items-center gap-1 whitespace-nowrap text-[0.75rem] font-bold text-[var(--v3-brand-ink)]">
                       {t("hero.explore")}
                       <svg
                         className="h-3 w-3"

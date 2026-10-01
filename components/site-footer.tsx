@@ -82,7 +82,11 @@ export function SiteFooter() {
       { href: "/brands", label: t("nav.brands") },
     ],
     dealer: [
-      { href: "/login/dealer", label: t("nav.dealer") },
+      /* Dealer Login is deliberately absent.
+         It was a link in this column on every page, which put a trade-portal
+         entry point in the same list as Contact Us and About Us. The ROUTE is
+         untouched: /login/dealer still resolves for a direct visit, and the
+         homepage's Dealer / Bulk Order band still links to it. */
       { href: "/dealer", label: t("footer.quickOrder") },
     ],
     /* The seven utility destinations in one flat row, in reference

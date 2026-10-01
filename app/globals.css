@@ -1,5 +1,23 @@
 @import "tailwindcss";
 
+/* ===================================================================
+   DARK MODE PHASE 1
+   -------------------------------------------------------------------
+   Tailwind v4 ships `dark:` as `@media (prefers-color-scheme: dark)`.
+   This site's theme is a CLASS on <html> - `app/layout.tsx` reads the
+   `sparelink-theme` cookie and emits `class="dark"`, `lib/i18n/index.ts`
+   bootstraps it before paint, and `components/preferences-provider.tsx`
+   toggles it. Left at the v4 default, every `dark:` utility would follow
+   the OPERATING SYSTEM instead of the visitor's own choice, which is
+   exactly backwards: a visitor who picks "Light" on a dark OS would still
+   get the dark utilities, and a visitor who picks "Dark" on a light OS
+   would get none of them.
+
+   This one line makes `dark:` mean "the `.dark` class is on the root",
+   which is what the rest of this file, and `app/v3.css`, already assume.
+   =================================================================== */
+@custom-variant dark (&:where(.dark, .dark *));
+
 :root {
   --background: #f7f7f7;
   --foreground: #1a1a1a;
@@ -41,6 +59,43 @@ html.dark {
   color-scheme: dark;
   --background: #0c0e12;
   --foreground: #e8eef6;
+
+  /* --- Phase 1: the three surface tokens below were light-only -------
+     `--surface` drives `.mobile-bottom-nav` and `.mobile-sticky-cta`
+     through `color-mix(... var(--surface) 94%, transparent)`. Leaving it
+     at #ffffff meant the mobile bottom bar stayed a 94%-opaque WHITE bar
+     in dark mode while its inactive labels were remapped to #cbd5e1 -
+     1.48:1, i.e. four of the five labels invisible on every mobile route.
+
+     `--border-subtle` is the same story for that bar's top hairline. */
+  --surface: #10141c;
+  --surface-muted: #161b24;
+  --border-subtle: #2d3545;
+
+  /* --- the logo plate ---
+     `sparelink-india-logo.svg` is a raster-traced lockup: 287 pure
+     #000000 fills, a dark navy wordmark, red and orange accents, and three
+     light surround fills. It is artwork authored for a LIGHT ground and
+     there is no dark variant of it, so no token or colour choice can make
+     it work on a dark surface - the only correct move is to put a light
+     ground back under it. That is the same decision
+     `.fitment-logo-plate` already makes for the vehicle brand logos,
+     fifteen lines below.
+
+     Defined in dark mode only, so the light storefront header is untouched.
+     #f8fafc rather than pure white, so the plate does not read as a
+     brighter object than the header it sits on. */
+  --logo-plate: #f8fafc;
+}
+
+/* The plate itself, applied only in dark mode. A class rather than a
+   `dark:` utility so the light mode rule stays exactly as it was: the
+   wrapper renders `inline-flex` in light and picks up padding and a
+   background only here. */
+html.dark .brand-logo-plate {
+  background: var(--logo-plate);
+  border-radius: 0.375rem;
+  padding: 0.25rem 0.375rem;
 }
 
 html.dark .bg-white {
@@ -125,6 +180,342 @@ html.dark .text-emerald-700 {
 
 html.dark .text-emerald-700 {
   color: #6ee7b7;
+}
+
+/* ===================================================================
+   DARK MODE PHASE 1 - the rest of the remapping
+   -------------------------------------------------------------------
+   Everything above is a hand-maintained allow-list, and the audit found
+   the list was missing roughly thirty entries. Each miss is one of two
+   symmetric failures, and neither is a styling nit:
+
+     light-on-light   a background that is NOT remapped (bg-white/95,
+                      bg-slate-200, bg-zinc-50 ...) sitting under a
+                      colour that IS remapped to a light value;
+     dark-on-dark     a light-on-dark pair where neither side is in the
+                      list, e.g. #7a1233 on #161b24 at 1.61:1.
+
+   Selector-shape note, because it is the whole reason this list has to be
+   written out by hand: `html.dark .bg-white` matches the class token
+   `bg-white` and nothing else. It does NOT match `bg-white/95`,
+   `hover:bg-rose-50` or `disabled:bg-slate-200`. Where a variant is
+   needed the class is escaped here exactly as Tailwind escapes it.
+   =================================================================== */
+
+/* ---- translucent white: DELIBERATELY NOT REMAPPED ------------------
+   The brief asked for `bg-white/95` and `bg-white/15`. Both were checked
+   against every call site, and neither can be remapped globally:
+
+   `bg-white/15` appears once on the storefront - the language pill on the
+   charcoal utility bar - and `bg-white/10` on the charcoal dealer band.
+   Both are translucent white OVER A DARK SURFACE WITH `text-white` beside
+   them. Translucent-white-over-dark is the intended effect and is correct
+   in both themes; turning them into dark solids would erase the pill.
+
+   `bg-white/95` is different, and genuinely broken: it is the sticky
+   mobile total bar on /cart and /checkout and the whole command header of
+   /orders/[id]/payment, all of which pair it with a remapped light text
+   colour for 1.4:1. But it is ALSO the deliberate light plate around the
+   logo in the admin sidebar (`components/admin-shell.tsx:95`, on a
+   hardcoded `bg-[#0f172a]`), and that plate is exactly what keeps the
+   dark-navy wordmark readable. A global remap makes the admin logo
+   invisible, and the two call sites share one class token, so CSS cannot
+   tell them apart.
+
+   Since this phase may not touch Admin, the near-opaque alphas are left
+   alone here and the four storefront call sites move to
+   `bg-[var(--v3-panel)]` in Tier 2 - one token per site, and it leaves the
+   admin plate alone. `lib/dark-mode-tokens.test.ts` asserts this file
+   contains no global `bg-white/<alpha>` override, so the regression cannot
+   be reintroduced by accident. */
+
+/* ---- zinc grounds -------------------------------------------------
+   `bg-zinc-50` is the page shell on /dealer, /dealer/orders,
+   /dealer/sales-orders and /orders/[id]; `bg-zinc-100` is the status pill
+   and the per-firm row inside those pages' already-dark `bg-white` cards. */
+html.dark .bg-zinc-50 {
+  background-color: #10141c;
+}
+html.dark .bg-zinc-100 {
+  background-color: #1a1f29;
+}
+html.dark .bg-zinc-200 {
+  background-color: #232a36;
+}
+
+/* ---- remaining light grounds ---------------------------------------
+   `bg-slate-200` is the disabled add-to-cart chip in the catalogue table
+   and the mobile card skeleton blocks on /cart. `bg-emerald-100` is the
+   order-success tick on /order-confirmation. `bg-amber-50/60` is the
+   Pensol settlement panel on /checkout. All three sat at their light
+   value under a remapped, light text colour. */
+html.dark .bg-slate-200 {
+  background-color: #1e2530;
+}
+html.dark .bg-slate-300 {
+  background-color: #2b3444;
+}
+html.dark .bg-emerald-100 {
+  background-color: #12312a;
+}
+html.dark .bg-amber-50\/60 {
+  background-color: #1a2430;
+}
+
+/* ---- zinc text -----------------------------------------------------
+   The entire /dealer surface and /orders/[id] are written in `text-zinc-*`
+   with no colour class at all on many elements (they inherit). Those
+   families were never in the list, so `bg-white` went dark while the
+   zinc ink stayed at its light-theme value. */
+html.dark .text-zinc-950,
+html.dark .text-zinc-900,
+html.dark .text-zinc-800,
+html.dark .text-zinc-700,
+html.dark .text-zinc-600 {
+  color: #e2e8f0;
+}
+html.dark .text-zinc-400 {
+  color: #94a3b8;
+}
+html.dark .text-zinc-300 {
+  color: #cbd5e1;
+}
+
+/* ---- the low tiers of slate ---------------------------------------- */
+html.dark .text-slate-400 {
+  color: #94a3b8;
+}
+html.dark .text-slate-300 {
+  color: #cbd5e1;
+}
+
+/* ---- neutral and gray ---------------------------------------------
+   Both families are all-but-unused on the storefront: the only surviving
+   `text-gray-*` is in app/admin/source-catalogue, which this phase may not
+   touch, and there is no `text-neutral-*` call site at all.
+
+   They are remapped anyway, and the reason is that this whole block is a
+   hand-maintained allow-list, which means its cost of being wrong is paid
+   later rather than now. A future component reaching for `text-neutral-600`
+   - the obvious choice, it is in Tailwind's palette and looks right in a
+   light file - would land outside the list and ship a 1.9:1 bug with
+   nothing to fail. The equivalent zinc/slate families above are remapped
+   for the same reason. Cost: six lines of CSS that match nothing today. */
+html.dark .text-neutral-950,
+html.dark .text-neutral-900,
+html.dark .text-neutral-800,
+html.dark .text-neutral-700,
+html.dark .text-gray-800 {
+  color: #e2e8f0;
+}
+html.dark .text-neutral-600,
+html.dark .text-neutral-500,
+html.dark .text-neutral-300,
+html.dark .text-gray-700,
+html.dark .text-gray-600 {
+  color: #cbd5e1;
+}
+/* The muted neutral tier, one step below --v3-text-3 so it matches
+   `text-slate-400` in the block above. */
+html.dark .text-neutral-400 {
+  color: #94a3b8;
+}
+
+/* ---- state ink that stayed dark on a dark ground -------------------
+   The `*-50` state backgrounds above were already remapped to #1a2430,
+   and #1a2430 is dark - so the 700/800/900 tiers of those same families
+   were unreadable ON the panel they belonged to. `text-amber-800` on the
+   remapped amber panel measured 2.21:1, which is how the /checkout
+   invalid-GSTIN error and the /orders/[id] "Request return" button became
+   invisible. */
+html.dark .text-amber-800,
+html.dark .text-amber-900 {
+  color: #fbbf24;
+}
+html.dark .text-emerald-900,
+html.dark .text-emerald-950 {
+  color: #6ee7b7;
+}
+html.dark .text-rose-600,
+html.dark .text-rose-700 {
+  color: #fda4af;
+}
+html.dark .text-green-800,
+html.dark .text-green-900 {
+  color: #86efac;
+}
+html.dark .text-teal-700,
+html.dark .text-teal-800 {
+  color: #5eead4;
+}
+
+/* ---- the burgundy used as INK ---------------------------------------
+   #7a1233 is the brand FILL colour and is correct exactly as it is: white
+   on it is 10.7:1 and stays so in dark mode. But the same literal is also
+   used as a TEXT colour on a dark ground, where it measures 1.61:1.
+
+   This rule only rescues the cases where the element is a light ink on a
+   dark ground and nothing else can be changed without touching a
+   component. It is deliberately narrow: `text-[#7a1233]` as a foreground
+   on a still-light surface (a white card, the cream page) is NOT
+   remapped, because the phase brief holds burgundy-as-fill fixed and
+   routes burgundy-as-ink through the `--v3-brand-ink` token in Tier 2.
+   The lifted value is the same #e8a0b8 that token carries. */
+html.dark .text-\[\#7a1233\] {
+  color: #e8a0b8;
+}
+/* The hover variant is a DIFFERENT class token, so the rule above does not
+   reach it - the same reason `.hover\:bg-zinc-50:hover` had to be escaped
+   separately. Four product-card titles in search-product-card.tsx use it.
+   Without this the title snaps to #7a1233 on hover, which on a dark card
+   is 1.61:1 for exactly as long as the pointer is over it. */
+html.dark .hover\:text-\[\#7a1233\]:hover {
+  color: #e8a0b8;
+}
+/* The same failure on the TOKEN form of the class. `hover:text-[var(--v3-brand)]`
+   appears in components/home-hero.tsx, which this phase may not edit, so the
+   lift is applied here instead of at the call site. That is the whole point
+   of a global rule: the protected file gets the fix without being touched,
+   and no component has to be opened to stay correct. */
+html.dark .hover\:text-\[var\(--v3-brand\)\]:hover {
+  color: #e8a0b8;
+}
+
+/* ---- hover and focus states that disappeared ------------------------
+   Each of these is a `hover:` or `disabled:` or `has-` variant, so the
+   plain-class rules above never matched it. The effect in every case was
+   the same: a light-mode hover target on a dark surface, i.e. the
+   affordance vanished at the exact moment the user needed it. */
+html.dark .hover\:bg-rose-50:hover {
+  background-color: #2a1620;
+}
+html.dark .hover\:bg-emerald-100:hover {
+  background-color: #12312a;
+}
+html.dark .hover\:bg-amber-100:hover {
+  background-color: #2a2416;
+}
+html.dark .hover\:bg-slate-100:hover {
+  background-color: #232a36;
+}
+html.dark .hover\:bg-zinc-100:hover {
+  background-color: #232a36;
+}
+html.dark .hover\:text-slate-700:hover,
+html.dark .hover\:text-slate-800:hover,
+html.dark .hover\:text-slate-900:hover {
+  color: #f1f5f9;
+}
+html.dark .hover\:text-zinc-600:hover,
+html.dark .hover\:text-zinc-700:hover,
+html.dark .hover\:text-zinc-900:hover {
+  color: #f1f5f9;
+}
+html.dark .hover\:text-emerald-900:hover,
+html.dark .hover\:text-emerald-950:hover {
+  color: #6ee7b7;
+}
+html.dark .hover\:text-rose-700:hover,
+html.dark .hover\:text-rose-900:hover {
+  color: #fecdd3;
+}
+html.dark .hover\:text-amber-800:hover,
+html.dark .hover\:text-amber-900:hover {
+  color: #fbbf24;
+}
+
+/* Selected radio / checkbox rows on /checkout, /profile and /register.
+   `has-checked:` is a `has-` variant, so the `.bg-slate-50*` rules never
+   applied and the selected row kept a light fill under light text. */
+html.dark .has-checked\:bg-slate-50:checked,
+html.dark .has-checked\:bg-slate-50\/50:checked {
+  background-color: #1c232e;
+}
+
+/* Disabled add-to-cart in the catalogue table. `disabled:` is a variant,
+   and the /cart lightbox close button uses `hover:bg-slate-200`. */
+html.dark .disabled\:bg-slate-200:disabled {
+  background-color: #1e2530;
+}
+
+/* `divide-slate-100` is its own utility and was never listed, so the
+   line-item dividers on /checkout rendered as near-white rules. */
+html.dark .divide-slate-100 > * {
+  border-color: #2d3545;
+}
+html.dark .divide-slate-200 > * {
+  border-color: #2d3545;
+}
+
+/* ---- keyboard focus on a dark ground -------------------------------
+   `:focus-visible` is the global fallback ring. `--brand` is the burgundy
+   fill token and is unchanged, so on a dark page this ring measured
+   1.61:1 - WCAG 2.4.7 fails outright. The lifted value matches
+   `--v3-brand-ink` in app/v3.css, which carries the same #e8a0b8 for the
+   V3 components that use `.v3-focus`. */
+html.dark :focus-visible {
+  outline-color: #e8a0b8;
+}
+
+/* ---- the V3 search field --------------------------------------------
+   `html.dark input` above sets `background-color:#10141c` at specificity
+   (0,1,2), which beats `.v3-search input` at (0,1,1). So the moment the
+   V3 token block lands, the input inside the search pill would still be
+   forced to a dark fill and lose its own surface - and worse, the typed
+   value is coloured by `.v3-search .sl-search-input` at (0,2,0), which
+   wins, so `--v3-text` on that forced #10141c is 1.05:1. Restoring
+   `transparent` hands the surface back to `.v3-search`. */
+html.dark .v3-search input {
+  background: transparent;
+}
+
+/* ===================================================================
+   TIER 2 - the focus state on the non-V3 storefront forms
+   -------------------------------------------------------------------
+   /checkout, /profile and /register write their own inputs with raw
+   Tailwind and never adopted the V3 control classes. They share one
+   className shape, repeated 28 times:
+
+     focus:border-slate-950 focus:bg-white focus:ring-2
+     focus:ring-slate-950/10
+
+   All three halves fail in dark mode, and the first one is the worst
+   kind of failure:
+
+     focus:border-slate-950   #020617 on a #10141c field = 1.2:1, so
+                              keyboard focus is invisible where it matters
+                              most.
+     focus:ring-slate-950/10  a near-black ring at 10% over a near-black
+                              field. Effectively not drawn.
+     focus:bg-white          THE REAL BUG. `.focus\:bg-white:focus` is
+                              specificity (0,2,0) and `html.dark input`
+                              above is (0,1,2), so the variant WINS: the
+                              field flashes pure #ffffff while its text is
+                              #f1f5f9. 1.0:1. The user focuses an input to
+                              type into it and the caret is invisible.
+
+   Fixed here rather than in the 28 call sites, for one reason: this is
+   a single class-name shape, and a global rule is the only fix that
+   cannot be half-applied later. Editing 28 sites across four files, two
+   of which are mid-feature (checkout, profile), would also mean editing
+   pre-existing uncommitted work for a colour problem.
+
+   Light mode is untouched - every selector is `html.dark`-scoped. The
+   dark values match the v3 control contract so these forms and the V3
+   controls now look like one system. */
+html.dark .focus\:bg-white:focus {
+  background-color: #10141c;
+}
+html.dark .focus\:border-slate-950:focus {
+  border-color: #5b6a85;
+}
+html.dark .focus\:ring-slate-950\/10:focus {
+  --tw-ring-color: rgba(91, 106, 133, 0.35);
+}
+/* The other focus shape in the same four files: a `focus-visible` ring
+   drawn in slate-950 on the secondary buttons. Same failure, same fix. */
+html.dark .focus-visible\:ring-slate-950:focus-visible {
+  --tw-ring-color: rgba(91, 106, 133, 0.45);
 }
 
 .hero-automotive-bg {

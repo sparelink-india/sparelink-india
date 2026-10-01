@@ -13,9 +13,80 @@ import {
 } from "@/components/header-search";
 import { ProductDetailModal } from "@/components/product-detail-modal";
 import { useI18n } from "@/components/preferences-provider";
+import { SignOutButton } from "@/components/sign-out-button";
+import { StorefrontWhatsApp } from "@/components/storefront-whatsapp";
+import { useStorefrontSession } from "@/components/use-storefront-session";
 import { WhatsAppCta } from "@/components/whatsapp-cta";
 import { UTILITY_STRIP } from "@/lib/brand";
 import { getWhatsAppChatUrl } from "@/lib/whatsapp";
+
+/**
+ * Where each role's account control goes, and what it is called.
+ *
+ * Keyed by the role the session endpoint reports. An unknown or absent role
+ * falls back to the customer paths, so a newly added role cannot produce a
+ * dead link.
+ */
+const ACCOUNT_HOME = {
+  buyer: "/profile",
+  dealer: "/dealer",
+  admin: "/admin",
+} as const;
+
+/**
+ * The visible label for a signed-in visitor, by role.
+ *
+ * "Admin" and "Dealer" are role NAMES, not copy: they are the words on the
+ * account type, and they read as English to a Hindi user exactly as "Admin"
+ * does in every Indian admin panel. The customer's own label comes from the
+ * dictionary so it does localise.
+ */
+const ROLE_LABEL = { admin: "Admin", dealer: "Dealer" } as const;
+
+/**
+ * WHY THE FLOATING WHATSAPP CONTROL LIVES HERE.
+ * =========================================
+ * There is NO public storefront layout. `app/layout.tsx` is the only layout
+ * above the storefront routes, and it also wraps `/admin` and `/dealer`, so
+ * mounting the control there would put a customer contact button in the admin
+ * console. A `(storefront)` route group with its own layout would need roughly
+ * twenty route directories moved into it, and every one of those files is
+ * currently uncommitted work - a move would show up as a delete plus a new
+ * file and destroy the "pre-existing changes preserved" property that this
+ * repository's safety depends on.
+ *
+ * So the control is mounted in `StorefrontHeader`, which is the ONE component
+ * guaranteed to appear on every customer-facing storefront route:
+ *
+ *   - `StorefrontShell`   (/products, /about-us, /contact-us, the policy pages)
+ *   - `fitment-shell`     (/vehicle-fitment, /vehicle-fitment/[make]/[model])
+ *   - directly            (the homepage, /brands, /category/*, /login,
+ *                          /register, /login/dealer, /cart, /checkout,
+ *                          /orders, /profile, /wishlist, /offers,
+ *                          /help-support, /track-order, change-password)
+ *
+ * EXACTLY ONE INSTANCE, and why that is guaranteed rather than hoped for:
+ * every page renders `StorefrontHeader` exactly once, and no page renders both
+ * the header and the shell. So one mount in the header yields exactly one
+ * control per page, with no per-page work and nothing to keep in sync.
+ *
+ * WHY A `position: fixed` CONTROL BELONGS INSIDE A `position: sticky` BAR.
+ * `sticky` does not create a containing block for a fixed descendant, so the
+ * control still resolves against the VIEWPORT - verified by the absence of
+ * `transform`, `filter`, `backdrop-filter`, `perspective`, `will-change` or
+ * `contain` on the header and on every wrapper above it. The one consequence
+ * worth stating: the header is a stacking context at `z-40`, so the control
+ * paints WITHIN it. That is correct here - the mobile bottom nav is `z-45` and
+ * the control is offset clear of it, and the product modal is `z-50` and
+ * should cover it. If a future ancestor of the header gains a `transform`, the
+ * control would be positioned against that ancestor instead; the test in
+ * `lib/web-completion-regression.test.ts` asserts the no-transform property so
+ * that change cannot land silently.
+ *
+ * NOT MOUNTED FOR `/admin`, `/dealer` or `/order-confirmation`: those render
+ * `admin-shell`, the dealer layout, or no storefront chrome at all, and none of
+ * them renders this header.
+ */
 
 type StorefrontHeaderProps = {
   cartCount?: number;
@@ -167,6 +238,10 @@ export function StorefrontHeader({
   const router = useRouter();
   const pathname = usePathname() ?? "/";
   const whatsappHref = getWhatsAppChatUrl();
+  /* The real session, so the account control reflects who is actually
+     signed in. See use-storefront-session for why this is a fetch rather
+     than a prop, and why `loading` starts true. */
+  const session = useStorefrontSession();
   const [internalMenuOpen, setInternalMenuOpen] = useState(false);
   const [localQuery, setLocalQuery] = useState(query);
   const [detailTarget, setDetailTarget] = useState<{
@@ -251,6 +326,12 @@ export function StorefrontHeader({
   /* V3 nav item: no pill, no filled active background. The active page is
      marked by a 2px burgundy underline, which is the only place burgundy
      appears in this row. */
+  /* "Products" now points at /products, the full catalogue index, and NOT at
+     /category/filters. A navigation item labelled "Products" that opened one
+     category was misrepresenting itself: the shopper got a filtered slice and
+     had no filters, no brand axis and no vehicle axis to widen it with.
+     /category/filters still exists and is still reachable from the category
+     grid, the footer and every category link. */
   const navLink = (href: string, label: string) => {
     const active =
       href === "/" ? pathname === "/" : pathname === href || pathname.startsWith(`${href}/`);
@@ -260,8 +341,8 @@ export function StorefrontHeader({
         aria-current={active ? "page" : undefined}
         className={`v3-focus relative inline-flex h-16 shrink-0 items-center px-3 text-[0.8125rem] font-semibold tracking-[0.01em] transition-colors ${
           active
-            ? "text-[var(--v3-brand)] after:absolute after:inset-x-2 after:bottom-0 after:h-0.5 after:bg-[var(--v3-brand)]"
-            : "text-[var(--v3-text-2)] hover:text-[var(--v3-brand)]"
+            ? "text-[var(--v3-brand-ink)] after:absolute after:inset-x-2 after:bottom-0 after:h-0.5 after:bg-[var(--v3-brand)]"
+            : "text-[var(--v3-text-2)] hover:text-[var(--v3-brand-ink)]"
         }`}
       >
         {label}
@@ -298,7 +379,7 @@ export function StorefrontHeader({
           </p>
           <nav
             className="ml-auto flex items-center gap-1 whitespace-nowrap"
-            aria-label="Utility"
+            aria-label={t("common.utilityNavAria")}
           >
             <Link
               href="/help-support"
@@ -313,13 +394,18 @@ export function StorefrontHeader({
             >
               {t("nav.track")}
             </Link>
-            <span aria-hidden className="mx-1 h-3 w-px bg-white/20" />
-            <Link
-              href="/login/dealer"
-              className="v3-focus-invert inline-flex h-8 items-center border border-white/30 px-2.5 text-[0.75rem] font-semibold text-white transition-colors hover:bg-white/10 md:h-12"
-            >
-              {t("nav.dealer")}
-            </Link>
+            {/* DEALER LOGIN IS NOT HERE.
+                It used to be a bordered link in the utility bar of every
+                page. A retailer or a customer has no reason to see a trade
+                portal, and the same link was repeated in the mobile drawer
+                and the footer, so a B2B entry point read as a customer
+                feature.
+
+                The ROUTE is untouched: /login/dealer still resolves, the
+                dealer layout still redirects here, and the homepage's
+                Dealer / Bulk Order band still links to it for a buyer who
+                genuinely wants it. This is a navigation-surface change, not
+                a removal. */}
             <div className="lg:hidden">
               <HeaderPreferenceToggle compact />
             </div>
@@ -363,20 +449,58 @@ export function StorefrontHeader({
           {/* RIGHT: account, wishlist, cart, theme + language, and the drawer
               button. Grouped so the cluster can never be split across lines. */}
           <div className="ml-auto flex shrink-0 items-center gap-1 md:gap-1.5">
-            <Link
-              href="/login"
-              className="v3-focus hidden h-11 w-11 shrink-0 items-center justify-center gap-2 rounded-[var(--v3-r)] text-[var(--v3-text-2)] transition-colors hover:bg-[var(--v3-sunk)] hover:text-[var(--v3-brand)] md:inline-flex xl:w-auto xl:justify-start xl:px-2.5"
-            >
-              <UserIcon />
-              <span className="hidden text-[0.8125rem] font-semibold xl:inline">
-                {t("nav.loginRegister")}
-              </span>
-              <span className="sr-only">{t("nav.loginRegister")}</span>
-            </Link>
+            {/* THE ACCOUNT CONTROL.
+
+                Previously this was an unconditional "Login / Register" link,
+                so a customer who had just signed in still saw it. It now
+                reflects the real session:
+
+                  signed out  -> /login, labelled Login / Register
+                  signed in   -> the role's own home, labelled with the role
+
+                A role home rather than a generic dashboard, because the three
+                roles land in three different places and a signed-in admin
+                clicking "My Account" and being sent to /admin is correct,
+                not a bug.
+
+                `SignOutButton` is rendered only in the signed-in branch, so
+                the DOM contains the action that actually works. Nothing is
+                hidden with CSS. */}
+            {session.authenticated ? (
+              <>
+                <Link
+                  href={ACCOUNT_HOME[session.role ?? "buyer"]}
+                  className="v3-focus hidden h-11 w-11 shrink-0 items-center justify-center gap-2 rounded-[var(--v3-r)] text-[var(--v3-text-2)] transition-colors hover:bg-[var(--v3-sunk)] hover:text-[var(--v3-brand-ink)] md:inline-flex xl:w-auto xl:justify-start xl:px-2.5"
+                >
+                  <UserIcon />
+                  <span className="hidden text-[0.8125rem] font-semibold xl:inline">
+                    {session.role && session.role !== "buyer"
+                      ? ROLE_LABEL[session.role]
+                      : t("nav.account")}
+                  </span>
+                  <span className="sr-only">{t("nav.account")}</span>
+                </Link>
+                <SignOutButton
+                  className="hidden h-11 shrink-0 items-center rounded-[var(--v3-r)] border border-[var(--v3-rule-strong)] px-3 text-[0.8125rem] font-semibold text-[var(--v3-text-2)] transition-colors hover:bg-[var(--v3-sunk)] hover:text-[var(--v3-brand-ink)] md:inline-flex"
+                  onSignedOut={session.refresh}
+                />
+              </>
+            ) : (
+              <Link
+                href="/login"
+                className="v3-focus hidden h-11 w-11 shrink-0 items-center justify-center gap-2 rounded-[var(--v3-r)] text-[var(--v3-text-2)] transition-colors hover:bg-[var(--v3-sunk)] hover:text-[var(--v3-brand-ink)] md:inline-flex xl:w-auto xl:justify-start xl:px-2.5"
+              >
+                <UserIcon />
+                <span className="hidden text-[0.8125rem] font-semibold xl:inline">
+                  {t("nav.loginRegister")}
+                </span>
+                <span className="sr-only">{t("nav.loginRegister")}</span>
+              </Link>
+            )}
 
             <Link
               href="/wishlist"
-              className="v3-focus relative hidden h-11 w-11 shrink-0 items-center justify-center rounded-[var(--v3-r)] text-[var(--v3-text-2)] transition-colors hover:bg-[var(--v3-sunk)] hover:text-[var(--v3-brand)] sm:inline-flex"
+              className="v3-focus relative hidden h-11 w-11 shrink-0 items-center justify-center rounded-[var(--v3-r)] text-[var(--v3-text-2)] transition-colors hover:bg-[var(--v3-sunk)] hover:text-[var(--v3-brand-ink)] sm:inline-flex"
               aria-label={t("nav.wishlist")}
             >
               <span className="relative inline-flex">
@@ -410,7 +534,7 @@ export function StorefrontHeader({
                 way to reach the navigation below `lg`. */}
             <button
               type="button"
-              className="v3-focus inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-[var(--v3-r)] border border-[var(--v3-rule-strong)] text-[var(--v3-text)] transition-colors hover:border-[var(--v3-brand)] hover:text-[var(--v3-brand)] lg:hidden"
+              className="v3-focus inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-[var(--v3-r)] border border-[var(--v3-rule-strong)] text-[var(--v3-text)] transition-colors hover:border-[var(--v3-brand)] hover:text-[var(--v3-brand-ink)] lg:hidden"
               aria-label={t("nav.menu")}
               aria-expanded={menuOpen}
               onClick={toggleMenu}
@@ -439,18 +563,26 @@ export function StorefrontHeader({
           later in this same header - still paints above the panel. */}
       <nav
         className="hidden border-t border-[var(--v3-rule)] bg-white lg:block"
-        aria-label="Primary"
+        aria-label={t("nav.primary")}
       >
         <div className="v3-container flex min-w-0 items-center lg:min-h-16">
           <CategoriesMenu />
           <div className="flex min-w-0 flex-1 items-center overflow-x-auto">
             <span aria-hidden className="mx-1 h-5 w-px shrink-0 bg-[var(--v3-rule)]" />
+            {/* PRIMARY CUSTOMER NAVIGATION.
+                Home / Products / Cart / Accounts / Profile.
+
+                The product-discovery destinations this row used to carry
+                directly (Brands, Vehicle Fitment, Offers) are now reached
+                through the CategoriesMenu to the left and the mobile drawer,
+                so nothing became unreachable. About Us and Contact Us remain
+                in the footer. Cart stays a main-row control as well as a nav
+                item, because the row control carries the live count. */}
             {navLink("/", t("nav.home"))}
-            {navLink("/brands", t("nav.brands"))}
-            {navLink("/vehicle-fitment", t("nav.fitment"))}
-            {navLink("/offers", t("nav.offers"))}
-            {navLink("/about-us", t("nav.about"))}
-            {navLink("/contact-us", t("nav.contact"))}
+            {navLink("/products", t("nav.products"))}
+            {navLink("/cart", t("nav.cart"))}
+            {navLink("/account", t("nav.accounts"))}
+            {navLink("/profile", t("nav.profile"))}
           </div>
           {/* Wishlist used to sit here as well as in the main row. It is a
               main-row control now, so this row carries only the one thing the
@@ -482,6 +614,10 @@ export function StorefrontHeader({
             <div className="mt-3 grid grid-cols-2 gap-1.5">
               {[
                 { href: "/", label: t("nav.home") },
+                { href: "/products", label: t("nav.products") },
+                { href: "/cart", label: t("nav.cart") },
+                { href: "/account", label: t("nav.accounts") },
+                { href: "/profile", label: t("nav.profile") },
                 { href: "/brands", label: t("nav.brands") },
                 { href: "/vehicle-fitment", label: t("nav.fitment") },
                 { href: "/offers", label: t("nav.offers") },
@@ -490,7 +626,9 @@ export function StorefrontHeader({
                 { href: "/help-support", label: t("nav.help") },
                 { href: "/about-us", label: t("nav.about") },
                 { href: "/contact-us", label: t("nav.contact") },
-                { href: "/login/dealer", label: t("nav.dealer") },
+                /* No dealer entry here either. The drawer is the phone's
+                   primary navigation, so a trade-portal link in it was the
+                   most prominent customer-facing instance of the problem. */
               ].map((item) => {
                 const active =
                   item.href === "/"
@@ -502,7 +640,7 @@ export function StorefrontHeader({
                     href={item.href}
                     className={`v3-focus flex min-h-11 items-center border px-3 text-[0.8125rem] font-semibold transition-colors ${
                       active
-                        ? "border-[var(--v3-brand-line)] bg-[var(--v3-brand-soft)] text-[var(--v3-brand)]"
+                        ? "border-[var(--v3-brand-line)] bg-[var(--v3-brand-soft)] text-[var(--v3-brand-ink)]"
                         : "border-[var(--v3-rule)] text-[var(--v3-text-2)]"
                     }`}
                   >
@@ -521,6 +659,23 @@ export function StorefrontHeader({
           </div>
         </div>
       ) : null}
+
+      {/* THE ONE FLOATING WHATSAPP CONTROL.
+
+          Mounted here, as the last child of <header>, for the coverage
+          reasons set out above. Placement notes:
+
+            - AFTER the drawer, so it is not inside the `lg:hidden` subtree and
+              does not disappear when the drawer is closed.
+            - It is a sibling of the modal trigger, not a descendant of any
+              `overflow` container. The drawer's `overflow-y-auto` would have
+              clipped a control placed inside it, which is one reason the
+              earlier footer-and-shell mounts were unreliable.
+            - `StorefrontWhatsApp` reads the same session hook and the same
+              session endpoint this header already uses, so the two can never
+              disagree about who is signed in, and it returns null while signed
+              in. */}
+      <StorefrontWhatsApp />
     </header>
   );
 }

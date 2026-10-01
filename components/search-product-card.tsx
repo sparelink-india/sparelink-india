@@ -72,7 +72,7 @@ export function SearchProductCard({
   hit: SearchHit;
   query: string;
   addingId: string;
-  layout?: "grid" | "list" | "mobile";
+  layout?: "grid" | "tiles" | "list" | "mobile" | "detailed";
   /** Card index in the current page; first few stay eager for first paint. */
   index?: number;
   onOpen: () => void;
@@ -108,7 +108,9 @@ export function SearchProductCard({
         netInclusivePaise={listing.netInclusivePaise}
         discountPercent={listing.discountPercent}
         gstRate={listing.gstRate}
-        align={layout === "grid" ? "left" : "right"}
+        /* LIST is the only right-aligned layout; the card layouts read
+           left-to-right with the price under the title. */
+        align={layout === "list" ? "right" : "left"}
       />
     )
   ) : (
@@ -163,13 +165,13 @@ export function SearchProductCard({
             </button>
             <p className="mt-1 truncate text-[11px] font-medium text-slate-600">{partMeta}</p>
             <div className="mt-3 flex flex-wrap items-center gap-1.5">
-              <span className="rounded-md bg-[#f5dfe3] px-2 py-1 text-[11px] font-bold text-[#7a1233]">
+              <span className="rounded-md bg-[var(--v3-brand-soft)] px-2 py-1 text-[11px] font-bold text-[var(--v3-brand-ink)]">
                 LIST {formatPaise(listPaise)}
               </span>
               <span className="rounded-md bg-slate-100 px-2 py-1 text-[11px] font-bold text-slate-700">
                 MRP {formatPaise(listing?.mrpPaise)}
               </span>
-              <span className="rounded-md bg-[#e5f1d9] px-2 py-1 text-[11px] font-bold text-[#4b7d1c]">
+              <span className="rounded-md bg-[var(--v3-ok-soft)] px-2 py-1 text-[11px] font-bold text-[var(--v3-ok)]">
                 DISC {discountText(listing)}
               </span>
               <button
@@ -247,6 +249,185 @@ export function SearchProductCard({
           >
             {canAdd ? t("product.addToCart") : t("price.onRequest")}
           </button>
+        </div>
+      </article>
+    );
+  }
+
+  /* TILES: denser than GRID. Same fields, tighter type and padding, so more
+     products fit on screen without losing price, discount or stock. */
+  if (layout === "tiles") {
+    return (
+      <article className="flex h-full flex-col overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm transition hover:shadow-md">
+        <button
+          type="button"
+          className="relative aspect-[4/3] w-full bg-slate-50"
+          onClick={onOpen}
+          aria-label={title}
+        >
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={image}
+            alt=""
+            width={300}
+            height={225}
+            loading={loading}
+            decoding="async"
+            className="h-full w-full object-contain p-2"
+            onError={(event) => {
+              const el = event.currentTarget as HTMLImageElement;
+              const original = hit.imageUrl || listing?.imageUrl;
+              if (original && el.src !== original) {
+                el.src = original;
+                return;
+              }
+              el.src = "/images/products/placeholder.svg";
+            }}
+          />
+          {typeof listing?.discountPercent === "number" && listing.discountPercent > 0 ? (
+            <span className="absolute right-1.5 top-1.5 rounded-md bg-[#4b7d1c] px-1.5 py-0.5 text-[10px] font-bold text-white">
+              {Math.round(listing.discountPercent)}% OFF
+            </span>
+          ) : null}
+        </button>
+        <div className="flex flex-1 flex-col p-2.5">
+          {partData.part_number ? (
+            <p className="font-mono text-[10px] font-semibold text-slate-500">
+              {partData.part_number}
+            </p>
+          ) : null}
+          <button
+            type="button"
+            className="line-clamp-2 text-left text-[13px] font-bold leading-snug text-slate-950 hover:text-[var(--v3-brand-ink)]"
+            onClick={onOpen}
+          >
+            <SearchHighlight text={title} query={query} />
+          </button>
+          <p className="mt-1.5 text-[13px] font-extrabold text-slate-950">
+            LIST {formatPaise(listingListPaise(listing))}
+          </p>
+          <div className="mt-0.5 flex items-center gap-1.5 text-[10px] font-semibold text-slate-500">
+            <span className="line-through">MRP {formatPaise(listing?.mrpPaise)}</span>
+            <span className="text-[var(--v3-ok)]">DISC {discountText(listing)}</span>
+          </div>
+          <p className={`mt-1 text-[10px] font-bold ${canAdd ? "text-emerald-700" : "text-slate-500"}`}>
+            {stock}
+          </p>
+          <button
+            type="button"
+            disabled={!canAdd || addingId === listing?.id}
+            onClick={() => listing && onAddToCart(listing.id, title)}
+            className="mt-1.5 inline-flex min-h-9 w-full items-center justify-center rounded-lg bg-[#7a1233] px-2 text-[11px] font-bold text-white hover:bg-[#611029] disabled:opacity-50"
+          >
+            {canAdd ? t("product.addToCart") : t("price.onRequest")}
+          </button>
+        </div>
+      </article>
+    );
+  }
+
+  /* DETAILED: the browsing view. Larger image and the fullest set of fields the
+     search contract actually returns.
+
+     NOT shown, deliberately: vehicle compatibility, warranty, and product
+     type/quality. None of those exist on `SearchHit` or `SearchListing`, and the
+     brief says not to invent fields. They are available on the product detail
+     modal, which the whole card opens, so nothing is lost - it is just not
+     faked here. */
+  if (layout === "detailed") {
+    return (
+      <article className="flex h-full flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition hover:shadow-md">
+        <div className="flex flex-col sm:flex-row">
+          <button
+            type="button"
+            className="relative aspect-square w-full shrink-0 bg-slate-50 sm:aspect-auto sm:h-44 sm:w-44"
+            onClick={onOpen}
+            aria-label={title}
+          >
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={image}
+              alt=""
+              width={360}
+              height={360}
+              loading={loading}
+              decoding="async"
+              className="h-full w-full object-contain p-3"
+              onError={(event) => {
+                const el = event.currentTarget as HTMLImageElement;
+                const original = hit.imageUrl || listing?.imageUrl;
+                if (original && el.src !== original) {
+                  el.src = original;
+                  return;
+                }
+                el.src = "/images/products/placeholder.svg";
+              }}
+            />
+          </button>
+          <div className="flex min-w-0 flex-1 flex-col p-4">
+            {partData.brand ? (
+              <p className="text-[11px] font-bold uppercase tracking-wide text-slate-500">
+                {partData.brand}
+              </p>
+            ) : null}
+            <button
+              type="button"
+              className="mt-0.5 text-left text-base font-bold leading-snug text-slate-950 hover:text-[#7a1233]"
+              onClick={onOpen}
+            >
+              <SearchHighlight text={title} query={query} />
+            </button>
+            <dl className="mt-2 grid grid-cols-2 gap-x-4 gap-y-1 text-xs sm:grid-cols-3">
+              <div className="min-w-0">
+                <dt className="text-[10px] font-bold uppercase text-slate-400">{t("search.partNo")}</dt>
+                <dd className="truncate font-mono font-semibold text-slate-800">
+                  {partData.part_number || "—"}
+                </dd>
+              </div>
+              <div className="min-w-0">
+                <dt className="text-[10px] font-bold uppercase text-slate-400">HSN</dt>
+                <dd className="truncate font-mono text-slate-700">{listing?.hsn || "—"}</dd>
+              </div>
+              <div className="min-w-0">
+                <dt className="text-[10px] font-bold uppercase text-slate-400">GST</dt>
+                <dd className="text-slate-700">
+                  {listing?.gstRate != null ? `${listing.gstRate}%` : "—"}
+                </dd>
+              </div>
+              {listing?.sku ? (
+                <div className="min-w-0">
+                  <dt className="text-[10px] font-bold uppercase text-slate-400">SKU</dt>
+                  <dd className="truncate font-mono text-slate-700">{listing.sku}</dd>
+                </div>
+              ) : null}
+              {partData.category ? (
+                <div className="min-w-0">
+                  <dt className="text-[10px] font-bold uppercase text-slate-400">{t("product.category")}</dt>
+                  <dd className="truncate text-slate-700">{partData.category}</dd>
+                </div>
+              ) : null}
+              <div className="min-w-0">
+                <dt className="text-[10px] font-bold uppercase text-slate-400">{t("search.stockHeading")}</dt>
+                <dd className={`font-bold ${canAdd ? "text-emerald-700" : "text-slate-500"}`}>
+                  {stock}
+                </dd>
+              </div>
+            </dl>
+            <div className="mt-3">
+              {priceBlock}
+              <p className="mt-0.5 text-[11px] text-slate-400 line-through">
+                {t("price.mrp")} {formatPaise(listing?.mrpPaise)}
+              </p>
+            </div>
+            <button
+              type="button"
+              disabled={!canAdd || addingId === listing?.id}
+              onClick={() => listing && onAddToCart(listing.id, title)}
+              className="mt-3 inline-flex min-h-10 w-full items-center justify-center rounded-lg bg-[#7a1233] px-3 text-xs font-bold text-white hover:bg-[#611029] disabled:opacity-50"
+            >
+              {canAdd ? t("product.addToCart") : t("price.onRequest")}
+            </button>
+          </div>
         </div>
       </article>
     );

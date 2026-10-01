@@ -1,6 +1,7 @@
-"use client";
+﻿"use client";
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import { useI18n } from "@/components/preferences-provider";
 
 type SO = {
   id: string;
@@ -18,6 +19,7 @@ type SearchHit = {
 };
 
 export default function DealerSalesOrdersPage() {
+  const { t } = useI18n();
   const [orders, setOrders] = useState<SO[]>([]);
   const [error, setError] = useState("");
   const [partyName, setPartyName] = useState("");
@@ -92,12 +94,12 @@ export default function DealerSalesOrdersPage() {
           <Link href="/dealer" className="text-xl font-bold">
             SpareLink India
           </Link>
-          <span className="text-sm">Dealer sales orders</span>
+          <span className="text-sm">{t("dealer.salesOrdersHeading")}</span>
         </div>
       </header>
       <div className="mx-auto max-w-6xl px-6 py-10">
         <div className="flex items-center justify-between">
-          <h1 className="text-3xl font-bold">B2B sales orders</h1>
+          <h1 className="text-3xl font-bold">{t("dealer.b2bSalesOrders")}</h1>
           <Link href="/dealer" className="text-sm text-blue-600 hover:underline">
             Back
           </Link>
@@ -111,14 +113,14 @@ export default function DealerSalesOrdersPage() {
           <input
             value={partyName}
             onChange={(e) => setPartyName(e.target.value)}
-            placeholder="Party name (defaults to your business)"
+            placeholder={t("dealer.partyNamePlaceholder")}
             className="w-full rounded border px-3 py-2 text-sm"
           />
           <div className="flex gap-2">
             <input
               value={q}
               onChange={(e) => setQ(e.target.value)}
-              placeholder="Search parts..."
+              placeholder={t("dealer.searchPartsPlaceholder")}
               className="flex-1 rounded border px-3 py-2 text-sm"
             />
             <button
@@ -192,3 +194,5 @@ export default function DealerSalesOrdersPage() {
     </main>
   );
 }
+
+

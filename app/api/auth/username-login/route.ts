@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server";
 
 import { auth } from "@/lib/auth";
-import { resolveLoginEmail } from "@/lib/auth-flags";
+import { evaluateLoginRole, resolveLoginEmail } from "@/lib/auth-flags";
+import { resolveLoginIdentifier } from "@/lib/dealer-identity";
 import { isMustChangePassword } from "@/lib/must-change-password";
 import { consumeRateLimit } from "@/lib/rate-limit";
 
@@ -27,10 +28,21 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Invalid username or password." }, { status: 401 });
   }
 
-  const email = resolveLoginEmail(username);
-  if (!email) {
+  /* THE IDENTIFIER RESOLUTION ORDER, and why it is a dealer ID first.
+     A dealer signs in with a permanent `DEALER…` identifier, so that is
+     checked before the generic account path. The consequence that matters:
+     a value that looks like a dealer ID can ONLY ever resolve to a dealer
+     record, and the reserved dealer email namespace cannot be produced by the
+     customer username mapping. `resolveLoginIdentifier` is a pure function and
+     is tested directly in lib/dealer-identity.test.ts.
+
+     The customer and admin path is unchanged - it is the same
+     `resolveLoginEmail` call this route always made. */
+  const resolution = resolveLoginIdentifier(username, resolveLoginEmail);
+  if (resolution.kind === "unknown") {
     return NextResponse.json({ error: "Invalid username or password." }, { status: 401 });
   }
+  const email = resolution.kind === "dealer" ? resolution.lookupEmail : resolution.email;
 
   try {
     const result = await auth.api.signInEmail({
@@ -39,36 +51,52 @@ export async function POST(request: Request) {
     });
 
     const user = result.user as { id: string; role?: string };
-    const role = user.role || "buyer";
+    /* The role is a RAW stored value, not a narrowed one. It comes from the
+       session row and may be "suspended", so it is passed to the decision
+       unvalidated - narrowing it to AppUserRole here would make the suspended
+       branch unreachable and delete the check. */
+    const role = user.role;
 
-    if (role === "suspended") {
+    /* THE ROLE GATE.
+       This is the code that produced "This account cannot use this login."
+       It was working correctly: the dealer surface sent expectedRole
+       "dealer", an admin's role is "admin", so the check refused.
+
+       It is kept, and its decision extracted to `evaluateLoginRole` so it can
+       be tested as the security boundary it is. What is NOT done is widening
+       it: no branch lets an admin through the dealer door, and none converts
+       a role. The session is destroyed on every refusal, so a refused attempt
+       leaves no authenticated cookie behind. */
+    const decision = evaluateLoginRole(role, expectedRole);
+    if (!decision.ok) {
       await auth.api.signOut({ headers: request.headers }).catch(() => undefined);
       return NextResponse.json(
-        { error: "This account is suspended." },
-        { status: 403 },
+        { error: decision.message },
+        { status: decision.status },
       );
     }
 
-    if (expectedRole && role !== expectedRole) {
-      await auth.api.signOut({ headers: request.headers }).catch(() => undefined);
-      return NextResponse.json(
-        { error: "This account cannot use this login." },
-        { status: 403 },
-      );
-    }
     const mustChangePassword = await isMustChangePassword(user.id);
+
+    /* WHERE EACH ROLE LANDS.
+       A dealer identifier resolves to the dealer portal; an admin to /admin;
+       anyone else to the storefront. Each role has exactly one home, so a
+       session cannot end up in a surface that does not belong to it. */
+    const redirectTo = mustChangePassword
+      ? "/account/change-password"
+      : resolution.kind === "dealer"
+        ? "/dealer"
+        : decision.role === "admin"
+          ? "/admin"
+          : decision.role === "dealer"
+            ? "/dealer"
+            : "/";
 
     return NextResponse.json({
       ok: true,
-      role,
+      role: decision.role,
       mustChangePassword,
-      redirectTo: mustChangePassword
-        ? "/account/change-password"
-        : role === "admin"
-          ? "/admin"
-          : role === "dealer"
-            ? "/dealer"
-            : "/",
+      redirectTo,
     });
   } catch {
     return NextResponse.json({ error: "Invalid username or password." }, { status: 401 });

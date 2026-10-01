@@ -25,6 +25,17 @@ type Listing = {
   status?: string;
   listInclusivePaise?: number;
   netInclusivePaise?: number;
+  /* The dropdown calls the SAME `/api/search/parts` endpoint as the results
+     page, and the results page has always read these four off the same
+     `listings[]` payload. This local type was simply narrower than the
+     response, which is why the compact row could not show MRP, HSN or the
+     discount without a type error. Widened to match the endpoint - no new
+     field is invented, and no extra request is made. */
+  mrpPaise?: number | null;
+  hsn?: string | null;
+  gstRate?: number | null;
+  discountPercent?: number;
+  isPensol?: boolean;
   imageUrl?: string | null;
   thumbUrl?: string | null;
   mediumUrl?: string | null;
@@ -150,6 +161,13 @@ function mapHits(results: unknown, fallbackName: string): HeaderSearchProduct[] 
       listing,
     };
   });
+}
+
+/** Rupee string for the compact summary chips, or an em dash when not priced. */
+function compactPaise(value: number | null | undefined) {
+  return typeof value === "number" && Number.isFinite(value) && value > 0
+    ? `₹${(value / 100).toLocaleString("en-IN")}`
+    : "—";
 }
 
 function CompactPrice({ listing }: { listing?: Listing }) {
@@ -324,8 +342,8 @@ export function OrderSearchFilters({
         onClick={() => onClearFilters?.()}
         className={`inline-flex h-11 shrink-0 items-center justify-center whitespace-nowrap rounded-[var(--v3-r)] border px-2 text-xs font-semibold leading-none outline-none transition-colors focus:border-[var(--v3-brand)] sm:h-9 ${
           orderPage
-            ? "border-[var(--v3-brand)] text-[var(--v3-brand)] hover:bg-[var(--v3-brand-soft)]"
-            : "border-[var(--v3-rule-strong)] text-[var(--v3-text-2)] hover:bg-[var(--v3-sunk)] hover:text-[var(--v3-brand)]"
+            ? "border-[var(--v3-brand)] text-[var(--v3-brand-ink)] hover:bg-[var(--v3-brand-soft)]"
+            : "border-[var(--v3-rule-strong)] text-[var(--v3-text-2)] hover:bg-[var(--v3-sunk)] hover:text-[var(--v3-brand-ink)]"
         }`}
       >
         {t("common.clearFilters")}
@@ -633,7 +651,7 @@ export function HeaderSearchField({
                     className={`inline-flex h-10 items-center gap-2 rounded-[var(--v3-r)] px-3 text-xs font-bold transition-colors duration-200 ${
                       active
                         ? "bg-[var(--v3-brand)] text-white shadow-[0_6px_16px_-8px_rgba(122,18,51,0.7)]"
-                        : "border border-[var(--v3-rule)] bg-[var(--v3-brand-soft)]/50 text-[var(--v3-text-2)] hover:bg-[var(--v3-brand-soft)] hover:text-[var(--v3-brand)]"
+                        : "border border-[var(--v3-rule)] bg-[var(--v3-brand-soft)]/50 text-[var(--v3-text-2)] hover:bg-[var(--v3-brand-soft)] hover:text-[var(--v3-brand-ink)]"
                     }`}
                   >
                     <TabIcon kind={item.id} />
@@ -701,23 +719,16 @@ export function HeaderSearchField({
                   })}
                 </div>
               </section>
-              <div className="mt-auto p-3">
-                <div className="rounded-[var(--v3-r)] bg-slate-100 p-4">
-                  <div className="mb-2 flex items-center gap-2 text-[var(--v3-text-3)]">
-                    <SearchIcon className="h-4 w-4" />
-                    <p className="text-sm font-bold text-[var(--v3-text)]">{t("search.cantFindTitle")}</p>
-                  </div>
-                  <p className="text-[12px] leading-relaxed text-[var(--v3-text-2)]">{t("search.cantFindHint")}</p>
-                  <Link
-                    href="/vehicle-fitment"
-                    className="mt-3 inline-flex min-h-10 w-full items-center justify-center gap-2 rounded-[2px] border-2 border-[var(--v3-brand-hover)] bg-white px-3 text-xs font-bold text-[var(--v3-brand)]"
-                    onMouseDown={(event) => event.preventDefault()}
-                  >
-                    <SearchIcon className="h-3.5 w-3.5" />
-                    {t("search.advancedSearch")}
-                  </Link>
-                </div>
-              </div>
+              {/* The "no results, try this instead" hint panel and its link to
+                  the by-vehicle finder used to live here, pinned to the bottom
+                  of the sidebar by `mt-auto`. Both are gone, and the whole
+                  wrapper went with them: removing only the inner card would
+                  have left a `mt-auto` block reserving blank space beneath the
+                  suggestions, which is the empty gap that was reported. The
+                  sidebar is now just its facet sections.
+
+                  The two message keys it used are deleted from the dictionary
+                  rather than left orphaned, so the copy cannot come back. */}
             </aside>
 
             <div
@@ -855,11 +866,36 @@ export function HeaderSearchField({
                                 .filter(Boolean)
                                 .join(" | ")}
                             </span>
-                            {item.category ? (
-                              <span className="mt-2 inline-flex rounded bg-slate-100 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-[var(--v3-text-2)]">
-                                {item.category}
+                            {/* Compact commercial summary. This is the
+                                autocomplete presentation the brief specifies:
+                                image, name, part no., LIST, MRP, HSN, discount
+                                and Add to Cart, and deliberately NOT the
+                                catalogue card. It stays a single scannable row. */}
+                            <span className="mt-1.5 flex flex-wrap items-center gap-1">
+                              <span className="rounded bg-[var(--v3-brand-soft)] px-1.5 py-0.5 text-[10px] font-bold text-[var(--v3-brand-ink)]">
+                                {t("search.chipList")}{" "}
+                                {compactPaise(item.listing?.listInclusivePaise ?? item.listing?.pricePaise)}
                               </span>
-                            ) : null}
+                              <span className="rounded bg-slate-100 px-1.5 py-0.5 text-[10px] font-bold text-slate-700">
+                                {t("search.chipMrp")} {compactPaise(item.listing?.mrpPaise)}
+                              </span>
+                              <span className="rounded bg-slate-100 px-1.5 py-0.5 text-[10px] font-bold text-slate-700">
+                                {t("search.chipHsn")} {item.listing?.hsn || "—"}
+                              </span>
+                              <span className="rounded bg-[var(--v3-ok-soft)] px-1.5 py-0.5 text-[10px] font-bold text-[var(--v3-ok)]">
+                                {t("search.chipDisc")}{" "}
+                                {typeof item.listing?.discountPercent === "number"
+                                  ? `${Math.round(item.listing.discountPercent)}%`
+                                  : "—"}
+                              </span>
+                              {/* Category was already on this row before the
+                                  summary chips were added, so it stays. */}
+                              {item.category ? (
+                                <span className="inline-flex rounded bg-slate-100 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-[var(--v3-text-2)]">
+                                  {item.category}
+                                </span>
+                              ) : null}
+                            </span>
                           </span>
                         </button>
                         <div className="flex w-full min-w-0 shrink-0 flex-row items-center justify-between gap-2 sm:w-[8.25rem] sm:flex-col sm:items-end sm:justify-center sm:gap-1.5">

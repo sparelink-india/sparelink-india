@@ -131,7 +131,7 @@ export default function AboutUsPage() {
           <h2 id="about-firms" className="v3-h2">
             <T k="about.partners" />
           </h2>
-          <span className="v3-num ml-auto shrink-0 text-[1.25rem] font-extrabold leading-none text-[var(--v3-brand)]">
+          <span className="v3-num ml-auto shrink-0 text-[1.25rem] font-extrabold leading-none text-[var(--v3-brand-ink)]">
             {FIRMS.length}
           </span>
         </div>
@@ -265,7 +265,7 @@ export default function AboutUsPage() {
                 {telHref ? (
                   <a
                     href={telHref}
-                    className="v3-focus v3-nav inline-flex min-h-11 items-center gap-2 rounded-[2px] text-[var(--v3-text-2)] transition-colors hover:text-[var(--v3-brand)]"
+                    className="v3-focus v3-nav inline-flex min-h-11 items-center gap-2 rounded-[2px] text-[var(--v3-text-2)] transition-colors hover:text-[var(--v3-brand-ink)]"
                   >
                     <PhoneIcon />
                     {PUBLIC_SUPPORT_PHONE}
@@ -273,7 +273,7 @@ export default function AboutUsPage() {
                 ) : null}
                 <a
                   href={`mailto:${PUBLIC_DISPLAY_EMAIL}`}
-                  className="v3-focus v3-nav inline-flex min-h-11 items-center gap-2 rounded-[2px] text-[var(--v3-text-2)] transition-colors hover:text-[var(--v3-brand)]"
+                  className="v3-focus v3-nav inline-flex min-h-11 items-center gap-2 rounded-[2px] text-[var(--v3-text-2)] transition-colors hover:text-[var(--v3-brand-ink)]"
                 >
                   <MailIcon />
                   {PUBLIC_DISPLAY_EMAIL}
