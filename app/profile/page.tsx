@@ -138,18 +138,34 @@ export default function ProfilePage() {
   return (
     <div className="storefront-mobile-pad min-h-screen bg-slate-50 text-slate-900">
       <StorefrontHeader />
+      {/*
+        DESKTOP UTILITY BAR - Orders and "Order Parts" only.
+
+        This bar used to carry its own /cart link and its own SignOutButton,
+        duplicating the two controls the header above already renders, which is
+        why /profile showed Cart twice and Sign out twice. Both duplicates are
+        gone; the header is now the single source for those two actions.
+
+        The mobile account hub below keeps its own SignOutButton deliberately.
+        The header's Sign out is `hidden ... md:inline-flex`, so it does not
+        exist below `md`, and this bar is `hidden md:block` too. Removing the
+        mobile one as well would leave phone users with no way to sign out from
+        this page, which is the one thing that must not break. As it stands,
+        exactly one Sign out is visible at every viewport - the header's from
+        `md` up, the hub's below it - and never two at once.
+
+        The mobile bottom nav's Cart is untouched for the same class of reason:
+        it is a shared component's primary navigation, not a duplicate of
+        anything on this page.
+      */}
       <div className="hidden border-b border-slate-200 bg-white px-4 py-2 md:block">
         <div className="mx-auto flex max-w-4xl flex-wrap items-center justify-end gap-3 text-xs font-semibold text-slate-600">
           <Link href="/orders" className="hover:text-slate-950">
             {t("nav.orders")}
           </Link>
-          <Link href="/cart" className="hover:text-slate-950">
-            {t("nav.cart")}
-          </Link>
           <Link href="/" className="rounded-full border border-slate-300 px-3 py-1.5 hover:bg-slate-100">
             {t("nav.orderParts")}
           </Link>
-          <SignOutButton className="rounded-full border border-slate-300 px-3 py-1.5 text-xs font-semibold text-slate-700 transition-colors hover:bg-slate-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-950 disabled:cursor-not-allowed disabled:opacity-60" />
         </div>
       </div>
 
@@ -180,6 +196,8 @@ export default function ProfilePage() {
             ))}
           </nav>
           <div className="mt-3">
+            {/* The one Sign out below `md`, and the only one at this width -
+                the header's is hidden until `md`. See the note above. */}
             <SignOutButton className="inline-flex min-h-11 w-full items-center justify-center rounded-xl border border-slate-300 bg-white text-sm font-semibold text-slate-700" />
           </div>
         </section>
