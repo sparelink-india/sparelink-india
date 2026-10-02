@@ -6,6 +6,14 @@ import {
   PUBLIC_DISPLAY_EMAIL,
   PUBLIC_SUPPORT_PHONE,
 } from "@/lib/business-contacts";
+import { routeMetadata } from "@/lib/seo";
+
+export const metadata = routeMetadata({
+  path: "/terms-and-conditions",
+  title: "Terms and Conditions",
+  description:
+    "The terms that govern your use of SpareLink India, your account, orders, pricing, payment and warranty on automotive spare parts.",
+});
 
 const SECTIONS = [
   ["terms.usageTitle", "terms.usageBody"],

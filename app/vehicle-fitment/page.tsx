@@ -2,8 +2,16 @@ import { FitmentModelGrid } from "@/components/vehicle-fitment/model-grid";
 import { FitmentShell } from "@/components/vehicle-fitment/fitment-shell";
 import { loadFitmentCatalog } from "@/lib/load-fitment";
 import { getServerMessages } from "@/lib/i18n/server";
+import { routeMetadata } from "@/lib/seo";
 
 export const dynamic = "force-dynamic";
+
+export const metadata = routeMetadata({
+  path: "/vehicle-fitment",
+  title: "Find Spare Parts by Vehicle - Make, Model and Year",
+  description:
+    "Select your vehicle make and model to see only the auto spare parts that fit it, from braking and engine parts to filters, electricals and lubricants.",
+});
 
 export default async function VehicleFitmentPage() {
   const { brands } = await loadFitmentCatalog();

@@ -510,6 +510,99 @@ html.dark .focus-visible\:ring-slate-950:focus-visible {
   --tw-ring-color: rgba(91, 106, 133, 0.45);
 }
 
+/* ===================================================================
+   DARK MODE TIER 3 - the gaps this allow-list still had
+   -------------------------------------------------------------------
+   Tier 1 and Tier 2 remapped the page grounds, the type families and the
+   one shared focus shape. This block closes the remaining classes that
+   are actually reachable from a customer-facing storefront file.
+
+   Each entry below was found by comparing every Tailwind colour utility
+   used under `app/` and `components/` against the selectors this file
+   declares, matching variants the way Tailwind escapes them
+   (`.focus\:border-zinc-950:focus`), so a variant that is already handled
+   is not reported here. The reasoning and the values are the same as
+   Tier 2's, so they are not re-derived per rule.
+
+   1. INVISIBLE INPUT TEXT - the only outright content loss found.
+
+      The GSTIN field in /checkout validates as you type and recolours its
+      OWN text, not just its border:
+
+        invalid -> "border-rose-300 text-rose-950"
+        valid   -> "border-emerald-500 text-emerald-950"
+
+      `text-emerald-950` was remapped in Tier 1 and `text-rose-950` was
+      not. Its field background is `bg-slate-50/50`, which IS remapped, so
+      in dark mode the field is #10141c and an invalid GSTIN was rendered
+      in #881337 - about 1.4:1. A user typing a wrong GSTIN in dark mode
+      typed into a field whose characters they could not see, with no
+      error shown, because the only thing that changed colour was invisible.
+      Rose-950 is lifted to the same value Tier 1 already chose for
+      `text-rose-800`, so both validation states now read identically.
+
+   2. INVISIBLE KEYBOARD FOCUS on /account/change-password.
+
+      That form uses the zinc focus shape rather than the slate one:
+
+        focus:border-zinc-950  ->  #09090b on the #10141c dark field
+
+      Tier 2 fixed `focus:border-slate-950` because it is the shape that
+      appears 37 times across /checkout, /cart and /register. The zinc
+      spelling is the same failure with a different family name and was
+      simply never matched, so keyboard focus is invisible on this one
+      form. Same value as the slate rule above: both now draw the same ring.
+
+   3. BRIGHT HALOS ON DARK STATUS CARDS.
+
+      Tier 1 remapped the status GROUNDS (`bg-rose-50`, `bg-emerald-50`,
+      `bg-amber-50`, `bg-red-50` -> #1a2430) but not the matching BORDERS.
+      Every status card therefore kept its light-theme outline: a #fecdd3
+      hairline around a dark card. The card is readable, but it is ringed
+      in a colour that belongs to no theme it is now sitting in, and on
+      /cart, /checkout, /orders and /order-confirmation that is several
+      cards per screen. One rule per status family keeps the pair together.
+
+      `border-zinc-100` and `divide-zinc-100` are the same bug in grey and
+      are the hairline between rows on /orders/[id].
+
+   4. A WHITE SURFACE ON /profile.
+
+      `bg-slate-100/80` is a near-white card. Its opacity twin
+      `bg-slate-100` was remapped in Tier 1; the `/80` spelling was not, so
+      it rendered a light panel in dark mode. Covered by the same rule.
+
+   Light mode is untouched - every selector is `html.dark`-scoped. */
+html.dark .text-rose-950 {
+  color: #fecdd3;
+}
+html.dark .focus\:border-zinc-950:focus {
+  border-color: #5b6a85;
+}
+html.dark .border-rose-200,
+html.dark .border-rose-300 {
+  border-color: #6b3243;
+}
+html.dark .border-emerald-200,
+html.dark .border-emerald-200\/60,
+html.dark .border-emerald-300 {
+  border-color: #245243;
+}
+html.dark .border-amber-200,
+html.dark .border-amber-300 {
+  border-color: #5c4620;
+}
+html.dark .border-red-200 {
+  border-color: #6b3030;
+}
+html.dark .border-zinc-100,
+html.dark .divide-zinc-100 {
+  border-color: #2d3545;
+}
+html.dark .bg-slate-100\/80 {
+  background-color: #1a1f29;
+}
+
 .hero-automotive-bg {
   background: #2a0812;
   color: #fff;

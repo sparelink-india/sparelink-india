@@ -7,6 +7,14 @@ import {
   PUBLIC_SUPPORT_INBOX,
   PUBLIC_SUPPORT_PHONE,
 } from "@/lib/business-contacts";
+import { routeMetadata } from "@/lib/seo";
+
+export const metadata = routeMetadata({
+  path: "/privacy-policy",
+  title: "Privacy Policy",
+  description:
+    "How SpareLink India collects, uses and protects your personal information, your account data and your order history.",
+});
 
 export default function PrivacyPolicyPage() {
   return (

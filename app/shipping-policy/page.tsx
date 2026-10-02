@@ -6,6 +6,14 @@ import {
   PUBLIC_DISPLAY_EMAIL,
   PUBLIC_SUPPORT_PHONE,
 } from "@/lib/business-contacts";
+import { routeMetadata } from "@/lib/seo";
+
+export const metadata = routeMetadata({
+  path: "/shipping-policy",
+  title: "Shipping and Delivery Policy",
+  description:
+    "How SpareLink India packs, dispatches and delivers auto spare parts across India, including delivery timelines, tracking and damage claims.",
+});
 
 export default function ShippingPolicyPage() {
   return (

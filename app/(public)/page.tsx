@@ -3,8 +3,19 @@ import { Suspense } from "react";
 import { loadEnabledBanners } from "@/lib/promotional-banners";
 import { readHeroSlotAvailability } from "@/lib/hero-slot-availability";
 import { HomePageContent } from "./home-client";
+import { routeMetadata } from "@/lib/seo";
 
 export const dynamic = "force-dynamic";
+
+/* The homepage is the one route whose canonical is the bare origin. Until this
+   export it had no title of its own either, so it inherited the layout default
+   "SpareLink India" with no keyword and no description of its own. */
+export const metadata = routeMetadata({
+  path: "/",
+  title: "SpareLink India - Auto Spare Parts at Wholesale Prices",
+  description:
+    "Genuine and quality auto spare parts at wholesale prices for cars, trucks, two wheelers, LCV/HCV, agriculture and industrial vehicles, with pan-India delivery.",
+});
 
 function firstParam(value?: string | string[]) {
   return Array.isArray(value) ? (value[0] ?? "") : (value ?? "");

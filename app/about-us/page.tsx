@@ -7,6 +7,14 @@ import {
 } from "@/lib/business-contacts";
 import { getTelHref } from "@/lib/support-contacts";
 import { getWhatsAppChatUrl } from "@/lib/whatsapp";
+import { routeMetadata } from "@/lib/seo";
+
+export const metadata = routeMetadata({
+  path: "/about-us",
+  title: "About SpareLink India",
+  description:
+    "SpareLink India is the digital sales platform of Hind Motors, Ambaji Traders and India Sales, supplying genuine auto spare parts across India.",
+});
 
 /**
  * V2 About page — an editorial layout, not a wall of equal-weight headings.

@@ -53,13 +53,37 @@ export const metadata: Metadata = {
   formatDetection: {
     telephone: false,
   },
-  // Canonical is emitted per-route by the pages that own a specific URL, so the
-  // site-wide default here is the bare origin. A single "/" canonical applied
-  // globally would be wrong: it would tell crawlers that /products and /brands
-  // are duplicates of the homepage.
-  alternates: {
-    canonical: "/",
-  },
+  /* NO SITE-WIDE `alternates.canonical`.
+
+     This used to sit here:
+
+         alternates: { canonical: "/" }
+
+     and it was a real, production-wide SEO defect rather than a harmless
+     default. The comment above it claimed canonical was "emitted per-route by
+     the pages that own a specific URL" - that was never true. NO route in this
+     app exported `metadata` or `generateMetadata` (verified across every
+     `app/**\/page.tsx`), and most storefront routes are client components,
+     which cannot export metadata at all. So the root layout's "/" was the
+     ONLY canonical in the document, and it was inherited by every single URL:
+
+         /products   <link rel="canonical" href="https://sparelinkindia.com"/>
+         /brands     <link rel="canonical" href="https://sparelinkindia.com"/>
+         /privacy-policy  <link rel="canonical" href=".../">
+
+     Every page on the site was declaring itself a duplicate of the homepage.
+     That is precisely the "de-index my catalogue" signal a canonical is meant
+     to avoid, and it was active in production.
+
+     With the field gone, a page that owns its URL emits its own absolute
+     canonical (see `routeMetadata` in `lib/seo` and the per-route exports), and
+     a page that does not emits NO canonical at all - which is the correct and
+     safe default: search engines then treat the URL as self-referencing
+     instead of being told it is a duplicate of something else.
+
+     `title` and `openGraph` below still apply as a site-wide FALLBACK, which is
+     what a layout-level title is for. Only `canonical` was harmful, because it
+     is the one field that must never be inherited across distinct URLs. */
   openGraph: {
     title: "SpareLink India",
     description: siteDescription,

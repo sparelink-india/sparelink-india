@@ -419,7 +419,22 @@ export default function RegisterPage() {
     <main id="main-content" className="px-4 py-12 sm:px-6">
       <div className="mx-auto mb-8 flex max-w-xl flex-col items-center text-center">
         <BrandLogo />
-        <h1 className="sr-only">SpareLink India</h1>
+        {/* NO SCREEN-READER-ONLY HEADING HERE.
+
+            This block used to carry `<h1 className="sr-only">SpareLink India</h1>`
+            above the logo. Combined with the per-mode headings further down
+            ("Register with email" / the OTP heading) that put THREE <h1>
+            elements in the document - and because each mode renders its own
+            heading, all three were live at once in the email/OTP branches.
+
+            That is not a cosmetic duplicate. A screen-reader user navigating by
+            heading gets three top-level landmarks that say three unrelated
+            things, and the document outline no longer identifies the page. The
+            brand name is already announced by the logo's own `aria-label` and
+            image `alt`, so this heading repeated it without adding information.
+
+            The page's single <h1> is now the mode heading inside the form, which
+            is the one that actually describes what the visitor is doing. */}
         <p className="mt-2 text-xs font-semibold uppercase tracking-wider text-slate-500">
           {t("register.kicker")}
         </p>

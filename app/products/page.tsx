@@ -3,8 +3,16 @@ import { Suspense } from "react";
 import { StorefrontShell } from "@/components/storefront-shell";
 import { ProductsCatalogue } from "@/components/products-catalogue";
 import { getServerMessages } from "@/lib/i18n/server";
+import { routeMetadata } from "@/lib/seo";
 
 export const dynamic = "force-dynamic";
+
+export const metadata = routeMetadata({
+  path: "/products",
+  title: "Auto Spare Parts Catalogue - Browse All Parts",
+  description:
+    "Browse the full SpareLink India spare parts catalogue. Filter by category, brand and vehicle to find the parts that fit your car, truck, two wheeler, LCV/HCV or industrial machine.",
+});
 
 /**
  * /products - the FULL catalogue.

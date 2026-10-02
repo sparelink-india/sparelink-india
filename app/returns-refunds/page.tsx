@@ -6,6 +6,14 @@ import {
   PUBLIC_DISPLAY_EMAIL,
   PUBLIC_SUPPORT_PHONE,
 } from "@/lib/business-contacts";
+import { routeMetadata } from "@/lib/seo";
+
+export const metadata = routeMetadata({
+  path: "/returns-refunds",
+  title: "Returns and Refunds",
+  description:
+    "Our return, exchange and refund process for auto spare parts, including eligibility windows, credit notes and how to raise a return request.",
+});
 
 export default function ReturnsRefundsPage() {
   return (
