@@ -348,7 +348,14 @@ export default function CheckoutPage() {
     >
       <StorefrontHeader cartCount={cart?.itemCount ?? 0} />
 
-      <div className="mx-auto max-w-5xl px-3 py-5 sm:px-6 sm:py-8 lg:py-10">
+      {/* <main>, matching every other customer route.
+
+          This was a bare <div>, which made /checkout the only storefront page
+          with no `main` landmark - a screen reader user landing here to pay for
+          their order had no main-content landmark to jump to and no
+          `#main-content` target. Only the element and the id changed; the
+          classes are untouched, so the rendered layout is identical. */}
+      <main id="main-content" className="mx-auto max-w-5xl px-3 py-5 sm:px-6 sm:py-8 lg:py-10">
         <div className="mb-3 flex flex-wrap items-center justify-between gap-2 sm:mb-4">
           <Link href="/cart" className="text-xs font-semibold text-[var(--v3-brand-ink)] hover:underline">
             {t("cart.continue")}
@@ -825,9 +832,15 @@ export default function CheckoutPage() {
               </section>
             </div>
 
-            {/* Authoritative Order Summary Sidebar */}
+            {/* Authoritative Order Summary Sidebar
+
+                The summary reads `top-[calc(var(--v3-header-h)+1rem)]` rather
+                than a fixed `top-20`, for the same reason the cart summary
+                does (see app/cart/page.tsx). `top-20` is 80px and the V3
+                desktop header is 210px, so the summary pinned with its
+                headline and the first line items hidden behind the header. */}
             <aside aria-label={t("checkout.orderBreakdownAria")} className="min-w-0">
-              <div className="rounded-[var(--v3-r)] border border-[var(--v3-rule)] bg-[var(--v3-panel)] p-4 sm:p-6 lg:sticky lg:top-20">
+              <div className="rounded-[var(--v3-r)] border border-[var(--v3-rule)] bg-[var(--v3-panel)] p-4 sm:p-6 lg:sticky lg:top-[calc(var(--v3-header-h)+1rem)]">
                 <h2 className="text-base font-bold text-[var(--v3-text)] sm:text-lg">
                   {t("checkout.summary")}
                 </h2>
@@ -992,7 +1005,7 @@ export default function CheckoutPage() {
             </aside>
           </form>
         )}
-      </div>
+      </main>
       <SiteFooter />
       {showMobileCheckoutCta && cart ? (
         <div

@@ -827,7 +827,12 @@ export function HomePageContent({
           >
             <div className="v3-container grid gap-x-10 gap-y-6 lg:grid-cols-12">
               <div className="lg:col-span-4">
-                <div className="lg:sticky lg:top-32">
+                {/* `top-32` was 128px, which is less than the V3 desktop
+                    header's 210px, so the moment this rail actually stuck it
+                    pinned the top 82px of its own heading behind the header.
+                    It read the same header token the cart summary uses, so the
+                    rail tracks the header instead of guessing at it. */}
+                <div className="lg:sticky lg:top-[calc(var(--v3-header-h)+1rem)]">
                   <p className="v3-label">{t("fulfill.kicker")}</p>
                   <h2 className="v3-h1 mt-2">{t("fulfill.title")}</h2>
                   <p className="v3-small mt-3">{t("fulfill.goalLabel")}</p>

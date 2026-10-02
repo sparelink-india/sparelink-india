@@ -52,7 +52,31 @@ body {
   background: var(--background);
   color: var(--foreground);
   min-height: 100%;
-  overflow-x: hidden;
+
+  /* `clip`, never `hidden`.
+     This declaration exists so that nothing can ever produce a page-level
+     horizontal scrollbar. It used to be `overflow-x: hidden`, and that broke
+     every sticky element on the site.
+
+     WHY. `overflow-x: hidden` on <html>/<body> promotes that element to a
+     scroll container - and because the other axis then computes from
+     `visible` to `auto`, `body` ends up reporting `overflow: hidden/auto`
+     rather than `hidden/visible`. A `position: sticky` descendant resolves
+     its containing block to its NEAREST SCROLLING ANCESTOR, so the sticky
+     header stopped being sticky relative to the viewport and started being
+     sticky relative to <body>, whose scrollport never moves. Measured in
+     Chromium before the fix: scrolling a long page to y=600 left the header
+     at `top: -600`, i.e. the header scrolled completely out of view on every
+     route. The site declared `sticky top-0` on the header and
+     `top: calc(var(--v3-header-h) + 1rem)` on the sticky rails - so the
+     search, cart and account navigation disappeared on scroll, and the cart
+     order summary was offset by a header height that was no longer pinned.
+
+     `overflow: clip` clips overflow without establishing a scroll container,
+     so it keeps the guarantee this declaration is for while leaving
+     `position: sticky` working. Measured after the fix at the same scroll
+     position: header `top: 0`, no horizontal scroll on any route. */
+  overflow-x: clip;
 }
 
 html.dark {
