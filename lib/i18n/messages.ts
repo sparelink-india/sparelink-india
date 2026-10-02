@@ -152,6 +152,29 @@ export const en = {
   "hero.labelPumps": "Water Pump Assemblies",
   "hero.labelPensol": "Pensol Lubricants",
   "hero.viewOffers": "View Offers",
+  /* The hero's 15 hotspots (8 vehicle, 5 part, 2 CTA) carried literal English
+     labels. They are the accessible name of each invisible overlay anchor AND
+     the visible text of the mobile category row, so a Hindi visitor was reading
+     an English homepage: confirmed in a real browser at 390px with
+     sparelink-locale=hi, where the row below the hero read "Brake Parts /
+     Filters / Shockers / Grease Products / Oil and Lubricants".
+
+     The pixel `box` for each hotspot stays in home-hero.tsx, because those are
+     coordinates in the approved bitmap. Only the text moved here. */
+  "heroTarget.heavyCommercial": "Heavy Commercial Vehicle Parts",
+  "heroTarget.lightCommercial": "Light Commercial Vehicle Parts",
+  "heroTarget.passenger": "Passenger Vehicle Parts",
+  "heroTarget.agriculture": "Agriculture Vehicle Parts",
+  "heroTarget.earthmover": "Earthmover Parts",
+  "heroTarget.motorcycle": "Motorcycle Parts",
+  "heroTarget.scooter": "Scooter Parts",
+  "heroTarget.brakeParts": "Brake Parts",
+  "heroTarget.filters": "Filters",
+  "heroTarget.shockers": "Shockers",
+  "heroTarget.grease": "Grease Products",
+  "heroTarget.lubricants": "Oil and Lubricants",
+  "heroTarget.shopParts": "Shop Spare Parts",
+  "heroTarget.dealerBulk": "Dealer Bulk Order",
   "hero.brands": "Verified Brands",
   "hero.brandsHint": "Original & trusted brands only",
   "hero.quality": "Quality Assured",
@@ -1150,6 +1173,20 @@ export const hi: Record<keyof typeof en, string> = {
   "hero.range": "विस्तृत श्रृंखला",
   "hero.rangeHint": "पार्ट, ब्रांड या वाहन से खोजें",
   "hero.support": "विशेषज्ञ सहायता",
+  "heroTarget.heavyCommercial": "भारी वाणिज्यिक वाहन पार्ट्स",
+  "heroTarget.lightCommercial": "हल्के वाणिज्यिक वाहन पार्ट्स",
+  "heroTarget.passenger": "यात्री वाहन पार्ट्स",
+  "heroTarget.agriculture": "कृषि वाहन पार्ट्स",
+  "heroTarget.earthmover": "अर्थ मूवर पार्ट्स",
+  "heroTarget.motorcycle": "मोटरसाइकिल पार्ट्स",
+  "heroTarget.scooter": "स्कूटर पार्ट्स",
+  "heroTarget.brakeParts": "ब्रेक पार्ट्स",
+  "heroTarget.filters": "फ़िल्टर",
+  "heroTarget.shockers": "शॉकर",
+  "heroTarget.grease": "ग्रीस उत्पाद",
+  "heroTarget.lubricants": "ऑयल और लुब्रिकेंट",
+  "heroTarget.shopParts": "स्पेयर पार्ट्स देखें",
+  "heroTarget.dealerBulk": "डीलर बल्क ऑर्डर",
   "hero.supportHint": "डीलर और खरीदार सहायता",
   "hero.statGenuine": "असली पार्ट्स की गारंटी",
   "hero.statGenuine1": "असली पार्ट्स",

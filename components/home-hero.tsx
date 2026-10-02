@@ -1,6 +1,7 @@
-import Image from "next/image";
+﻿import Image from "next/image";
 import Link from "next/link";
 import { HERO_COLLECTION_SLOTS, heroCollectionHref } from "@/lib/hero-collections";
+import type { MessageKey } from "@/lib/i18n/messages";
 
 /**
  * V3 hero - final approved artwork with the interaction layer.
@@ -88,12 +89,46 @@ const HERO_HEIGHT = 729;
 
 type Target = {
   href: string;
-  label: string;
+  /**
+   * The i18n key for this hotspot's name, resolved by the caller.
+   *
+   * It was a literal English string until a real browser pass at 390px with
+   * `sparelink-locale=hi` showed the mobile category row under the hero reading
+   * "Brake Parts / Filters / Shockers / Grease Products / Oil and Lubricants" on
+   * a Hindi page. The same string is also the `aria-label` of an invisible
+   * overlay anchor, so it reached screen-reader users in English too.
+   */
+  labelKey: MessageKey;
   /** Bounds in 2158x729 source pixels: left, top, right, bottom. */
   box: [number, number, number, number];
   kind: "vehicle" | "part" | "cta";
   /** Present on vehicle hotspots only: which hero class this dot represents. */
   slot?: HeroSlot;
+};
+
+/**
+ * English fallback for a hotspot whose `labels` entry is missing.
+ *
+ * The same strings the table carried before they became i18n keys. They are
+ * NOT the primary source - a Hindi page must never reach this map - but an
+ * unnamed hotspot is an invisible anchor with no accessible name, which is worse
+ * than English.
+ */
+const FALLBACK_LABELS: Partial<Record<MessageKey, string>> = {
+  "heroTarget.heavyCommercial": "Heavy Commercial Vehicle Parts",
+  "heroTarget.lightCommercial": "Light Commercial Vehicle Parts",
+  "heroTarget.passenger": "Passenger Vehicle Parts",
+  "heroTarget.agriculture": "Agriculture Vehicle Parts",
+  "heroTarget.earthmover": "Earthmover Parts",
+  "heroTarget.motorcycle": "Motorcycle Parts",
+  "heroTarget.scooter": "Scooter Parts",
+  "heroTarget.brakeParts": "Brake Parts",
+  "heroTarget.filters": "Filters",
+  "heroTarget.shockers": "Shockers",
+  "heroTarget.grease": "Grease Products",
+  "heroTarget.lubricants": "Oil and Lubricants",
+  "heroTarget.shopParts": "Shop Spare Parts",
+  "heroTarget.dealerBulk": "Dealer Bulk Order",
 };
 
 const pct = (b: Target["box"]) => ({
@@ -124,28 +159,28 @@ type HeroSlot = (typeof HERO_COLLECTION_SLOTS)[number];
 
 const TARGETS: Target[] = [
   /* ---- 8 vehicles, centred on the detected marker dot ---- */
-  { kind: "vehicle", slot: "heavy-commercial-vehicle", href: FITMENT, label: "Heavy Commercial Vehicle Parts", box: [924, 233, 994, 303] },
-  { kind: "vehicle", slot: "light-commercial-vehicle", href: FITMENT, label: "Light Commercial Vehicle Parts", box: [1093, 284, 1163, 354] },
-  { kind: "vehicle", slot: "passenger-red-suv", href: FITMENT, label: "Passenger Vehicle Parts", box: [1292, 289, 1362, 359] },
+  { kind: "vehicle", slot: "heavy-commercial-vehicle", href: FITMENT, labelKey: "heroTarget.heavyCommercial", box: [924, 233, 994, 303] },
+  { kind: "vehicle", slot: "light-commercial-vehicle", href: FITMENT, labelKey: "heroTarget.lightCommercial", box: [1093, 284, 1163, 354] },
+  { kind: "vehicle", slot: "passenger-red-suv", href: FITMENT, labelKey: "heroTarget.passenger", box: [1292, 289, 1362, 359] },
   /* the saloon has two dots; this spans both */
-  { kind: "vehicle", slot: "passenger-white-saloon", href: FITMENT, label: "Passenger Vehicle Parts", box: [1566, 310, 1646, 394] },
-  { kind: "vehicle", slot: "agriculture", href: FITMENT, label: "Agriculture Vehicle Parts", box: [1721, 246, 1791, 316] },
-  { kind: "vehicle", slot: "earthmover", href: FITMENT, label: "Earthmover Parts", box: [1980, 244, 2050, 314] },
-  { kind: "vehicle", slot: "motorcycle", href: FITMENT, label: "Motorcycle Parts", box: [1799, 379, 1869, 449] },
-  { kind: "vehicle", slot: "scooter", href: FITMENT, label: "Scooter Parts", box: [1999, 388, 2069, 458] },
+  { kind: "vehicle", slot: "passenger-white-saloon", href: FITMENT, labelKey: "heroTarget.passenger", box: [1566, 310, 1646, 394] },
+  { kind: "vehicle", slot: "agriculture", href: FITMENT, labelKey: "heroTarget.agriculture", box: [1721, 246, 1791, 316] },
+  { kind: "vehicle", slot: "earthmover", href: FITMENT, labelKey: "heroTarget.earthmover", box: [1980, 244, 2050, 314] },
+  { kind: "vehicle", slot: "motorcycle", href: FITMENT, labelKey: "heroTarget.motorcycle", box: [1799, 379, 1869, 449] },
+  { kind: "vehicle", slot: "scooter", href: FITMENT, labelKey: "heroTarget.scooter", box: [1999, 388, 2069, 458] },
 
   /* ---- 5 part categories ---- */
-  { kind: "part", href: "/category/braking-system", label: "Brake Parts", box: [874, 444, 1010, 578] },
-  { kind: "part", href: "/category/filters", label: "Filters", box: [1059, 437, 1183, 578] },
+  { kind: "part", href: "/category/braking-system", labelKey: "heroTarget.brakeParts", box: [874, 444, 1010, 578] },
+  { kind: "part", href: "/category/filters", labelKey: "heroTarget.filters", box: [1059, 437, 1183, 578] },
   /* corrected: the first pass sat on empty background above the ribbed damper
      and clipped the AP-LR pail; the object is lower than estimated. */
-  { kind: "part", href: "/category/shock-absorbers-shockers", label: "Shockers", box: [1310, 468, 1400, 537] },
-  { kind: "part", href: "/category/greases", label: "Grease Products", box: [1190, 452, 1305, 618] },
-  { kind: "part", href: "/category/lubricants", label: "Oil and Lubricants", box: [1458, 396, 1566, 608] },
+  { kind: "part", href: "/category/shock-absorbers-shockers", labelKey: "heroTarget.shockers", box: [1310, 468, 1400, 537] },
+  { kind: "part", href: "/category/greases", labelKey: "heroTarget.grease", box: [1190, 452, 1305, 618] },
+  { kind: "part", href: "/category/lubricants", labelKey: "heroTarget.lubricants", box: [1458, 396, 1566, 608] },
 
   /* ---- the two baked-in CTA buttons ---- */
-  { kind: "cta", href: "#categories", label: "Shop Spare Parts", box: [52, 454, 346, 521] },
-  { kind: "cta", href: "/login/dealer", label: "Dealer Bulk Order", box: [367, 454, 665, 521] },
+  { kind: "cta", href: "#categories", labelKey: "heroTarget.shopParts", box: [52, 454, 346, 521] },
+  { kind: "cta", href: "/login/dealer", labelKey: "heroTarget.dealerBulk", box: [367, 454, 665, 521] },
 ];
 
 /**
@@ -155,7 +190,7 @@ const TARGETS: Target[] = [
  * hero renders inside `app/(public)/home-client.tsx`, which is a CLIENT
  * component. A client component cannot read the database, and a client-side
  * fetch for eight link targets would put the fallback decision behind a
- * round-trip that can fail visibly — a hero dot that 404s is worse than one that
+ * round-trip that can fail visibly â€” a hero dot that 404s is worse than one that
  * goes to the fitment browser. So `app/(public)/page.tsx` resolves the slots on
  * the server and hands the answer down.
  */
@@ -164,9 +199,23 @@ export type HeroSlotAvailability = {
   enabled: HeroSlot[];
 };
 
-export function HomeHero({ availability }: { availability?: HeroSlotAvailability }) {
+export function HomeHero({
+  availability,
+  labels,
+}: {
+  availability?: HeroSlotAvailability;
+  /**
+   * Resolved hotspot names, keyed by the i18n key in TARGETS.
+   *
+   * Supplied by the client parent rather than resolved with `useI18n()` here, so
+   * this file stays a server component and the LCP-critical artwork is not
+   * pushed behind the client boundary. A missing key degrades to the English
+   * literal in `TARGETS` rather than rendering a blank hotspot.
+   */
+  labels?: Partial<Record<MessageKey, string>>;
+}) {
   /* An absent prop means "no collections", which resolves every slot to the
-     fitment fallback. That is exactly the pre-collections behaviour, so a caller
+     fitment fallback. That is the pre-collections behaviour, so a caller
      that forgets to pass it degrades safely rather than producing dead links. */
   const counts = new Map<HeroSlot, number>(Object.entries(availability?.counts ?? {}) as [HeroSlot, number][]);
   const enabled = new Set<HeroSlot>(availability?.enabled ?? []);
@@ -176,6 +225,10 @@ export function HomeHero({ availability }: { availability?: HeroSlotAvailability
   const targets = TARGETS.map((target) =>
     target.slot ? { ...target, href: heroCollectionHref(target.slot, counts, enabled) } : target,
   );
+
+  /* The English literals, kept as a last-resort fallback so a caller that omits
+     `labels` still renders a readable hotspot instead of an empty one. */
+  const label = (target: Target) => labels?.[target.labelKey] ?? FALLBACK_LABELS[target.labelKey] ?? "";
 
   return (
     <section
@@ -213,15 +266,15 @@ export function HomeHero({ availability }: { availability?: HeroSlotAvailability
         <div className="pointer-events-none absolute inset-0 z-20 hidden md:block">
           {targets.map((target) => (
             <Link
-              key={`${target.kind}-${target.label}-${target.box.join("_")}`}
+              key={`${target.kind}-${target.labelKey}-${target.box.join("_")}`}
               href={target.href}
               /* aria-label only. A `title` attribute makes the browser paint a
                  native tooltip over the artwork on hover, which is exactly the
                  visible label these hotspots must not have. The accessible name
                  is unaffected - aria-label wins over title anyway. */
-              aria-label={target.label}
+              aria-label={label(target)}
               data-hero-target={target.kind}
-              data-hero-label={target.label}
+              data-hero-label={label(target)}
               className="pointer-events-auto absolute cursor-pointer border-0 bg-transparent p-0 text-transparent shadow-none outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-0 focus-visible:outline-[var(--v3-brand)]"
               style={pct(target.box)}
             />
@@ -242,8 +295,7 @@ export function HomeHero({ availability }: { availability?: HeroSlotAvailability
                   href={target.href}
                   className="v3-focus text-[0.8125rem] font-semibold text-[var(--v3-text-2)] transition-colors hover:text-[var(--v3-brand)]"
                 >
-                  {target.label}
-                </Link>
+                  {label(target)}                </Link>
               </li>
             ))}
           </ul>

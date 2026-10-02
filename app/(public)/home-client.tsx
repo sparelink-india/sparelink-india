@@ -510,7 +510,30 @@ export function HomePageContent({
         {!searchedQuery && !urlQuery ? (
           <>
             {/* ============ 1. HERO / GLOBAL SEARCH ============ */}
-            <HomeHero availability={heroSlots} />
+            <HomeHero
+              availability={heroSlots}
+              /* Hotspot names are resolved HERE because this component already has
+                 `t()` and home-hero.tsx is deliberately a server component. The
+                 list is explicit rather than derived, so a key added to
+                 home-hero.tsx without a line here fails the type check instead of
+                 silently rendering the English fallback. */
+              labels={{
+                "heroTarget.heavyCommercial": t("heroTarget.heavyCommercial"),
+                "heroTarget.lightCommercial": t("heroTarget.lightCommercial"),
+                "heroTarget.passenger": t("heroTarget.passenger"),
+                "heroTarget.agriculture": t("heroTarget.agriculture"),
+                "heroTarget.earthmover": t("heroTarget.earthmover"),
+                "heroTarget.motorcycle": t("heroTarget.motorcycle"),
+                "heroTarget.scooter": t("heroTarget.scooter"),
+                "heroTarget.brakeParts": t("heroTarget.brakeParts"),
+                "heroTarget.filters": t("heroTarget.filters"),
+                "heroTarget.shockers": t("heroTarget.shockers"),
+                "heroTarget.grease": t("heroTarget.grease"),
+                "heroTarget.lubricants": t("heroTarget.lubricants"),
+                "heroTarget.shopParts": t("heroTarget.shopParts"),
+                "heroTarget.dealerBulk": t("heroTarget.dealerBulk"),
+              }}
+            />
 
             {/* ============ 1b. SEARCH-FIRST BAND ============
                 Mounted HERE rather than inside components/home-hero.tsx.

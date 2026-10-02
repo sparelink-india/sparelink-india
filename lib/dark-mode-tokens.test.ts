@@ -451,9 +451,17 @@ describe("dark mode: the three traps a token cannot reach", () => {
   });
 
   it("B: gives .v3-select a chevron it can actually reach", () => {
-    // The light chevron bakes #857972 into an SVG data URI, so no custom
+    // The light chevron bakes --v3-text-3 into an SVG data URI, so no custom
     // property can reach it - the browser has a bitmap by paint time. The
     // dark variant has to re-encode the same path.
+    //
+    // This assertion is deliberately PINNED TO THE TOKEN'S CURRENT VALUE rather
+    // than to `--v3-text-3` by reference, because the two cannot be linked by a
+    // custom property. #756a64 replaced #857972 when the light muted ink was
+    // found to fail AA (4.22:1 on the panel, 3.69:1 on the sunk inset); if the
+    // token moves again this line is the reminder that the chevron must move
+    // with it, and dark-mode-tokens.test.ts's own contrast table covers the
+    // token side.
     // Anchored to the start of a line, because `html.dark .v3-select`
     // also contains the substring `.v3-select` and appears EARLIER in the
     // file than the light rule - an unanchored match reads the dark rule
@@ -466,7 +474,7 @@ describe("dark mode: the three traps a token cannot reach", () => {
     const dark = /html\.dark\s+\.v3-select\s*\{[^}]*background-image:\s*url\("data:image\/svg\+xml,([^"]*)"\)/m.exec(V3);
     assert.ok(light, ".v3-select must keep its light-theme chevron");
     assert.ok(dark, "app/v3.css must give .v3-select a dark-theme chevron");
-    assert.match(light[1], /fill='%23857972'/, "light chevron should bake the light ink");
+    assert.match(light[1], /fill='%23756a64'/, "light chevron should bake the light ink");
     assert.notEqual(light[1], dark[1], "the dark chevron must not be a copy of the light one");
     assert.match(dark[1], /fill='%23[0-9a-f]{6}'/i, "dark chevron must bake a dark-mode ink");
     // Same path, different fill: a changed path would move the arrow.

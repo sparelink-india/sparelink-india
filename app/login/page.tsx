@@ -1,7 +1,6 @@
 ﻿"use client";
 
 import { FormEvent, useState } from "react";
-import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { BrandLogo } from "@/components/brand-logo";
@@ -71,24 +70,41 @@ export default function LoginPage() {
             the site states elsewhere and adds nothing a screen-reader user needs
             before typing a username. */}
         <div className="grid w-full max-w-5xl overflow-hidden rounded-[var(--v3-r-lg)] border border-[var(--v3-rule)] bg-[var(--v3-panel)] shadow-[var(--v3-lift-hi)] lg:grid-cols-[1.05fr_1fr]">
-          <div className="relative hidden overflow-hidden bg-[var(--v3-inverse)] lg:block" aria-hidden="true">
-            <Image
-              src="/images/hero/hero-banner-full.webp"
-              alt=""
-              fill
-              priority
-              sizes="(min-width: 1024px) 520px, 0px"
-              className="object-cover opacity-70"
-            />
-            {/* A burgundy-to-transparent wash so the white promise text keeps its
-                contrast over whatever part of the photograph sits behind it,
-                without darkening the whole image into a black rectangle. */}
-            <div className="absolute inset-0 bg-gradient-to-t from-[rgba(23,17,15,0.92)] via-[rgba(23,17,15,0.55)] to-[rgba(23,17,15,0.25)]" />
-            <div className="relative flex h-full flex-col justify-end p-8">
+          {/* NO PHOTOGRAPH HERE, AND THAT IS THE FIX.
+
+             This panel used to render `hero-banner-full.webp` with
+             `object-cover` into a ~520x650 portrait box. That artwork is
+             2158x729 - a 2.96:1 composite whose left third carries its OWN baked
+             headline ("India's Trusted / Auto Parts / Distributor & Dealer"),
+             its own two CTA buttons and its own icon row. Cover-cropping a
+             2.96:1 image into a 0.8:1 box keeps roughly the middle 27% of its
+             width, so the browser rendered:
+
+               - the baked headline zoomed and sliced mid-word
+                 ("Distributor & Deale"),
+               - the artwork's own "Browse Products" / "Find by Vehicle" pills,
+                 half cropped,
+               - and then this panel's promise list printed ON TOP of the
+                 artwork's own icons, producing two overlapping sets of words.
+
+             Confirmed in a real browser at 1440px, not inferred. The homepage
+             hero is unchanged and still the correct home for that artwork; it
+             was simply the wrong asset for a portrait panel.
+
+             The panel is now built from the existing V3 tokens: the brand fill
+             over the inverse ground, with the gold accent already used in the
+             footer bar. Nothing is invented, no new colour is introduced, and
+             no image is asked to do a job its aspect ratio cannot do. */}
+          <div
+            className="relative hidden overflow-hidden bg-[var(--v3-inverse)] p-8 lg:flex lg:flex-col lg:justify-center"
+            aria-hidden="true"
+          >
+            <div className="absolute inset-0 bg-gradient-to-br from-[var(--v3-brand)] via-[rgba(97,16,41,0.92)] to-[var(--v3-inverse)]" />
+            <div className="relative">
               <p className="v3-label !text-white/70">{t("trust.title")}</p>
-              <ul className="mt-3 space-y-2.5">
+              <ul className="mt-4 space-y-3">
                 {promises.map((promise) => (
-                  <li key={promise} className="flex items-start gap-2.5 text-sm font-semibold text-white">
+                  <li key={promise} className="flex items-start gap-3 text-[0.9375rem] font-semibold text-white">
                     <svg
                       className="mt-0.5 h-4 w-4 shrink-0 text-[var(--v3-gold)]"
                       viewBox="0 0 20 20"
@@ -112,7 +128,7 @@ export default function LoginPage() {
               href="/products"
               className="v3-focus inline-flex min-h-9 items-center text-xs font-semibold text-[var(--v3-brand-ink)] hover:underline"
             >
-              ← {t("search.catalog")}
+              {t("search.catalog")}
             </Link>
 
             <div className="mt-3">
@@ -201,7 +217,12 @@ export default function LoginPage() {
 
                 The ROUTE is untouched. /login/dealer still resolves on direct
                 navigation, and the dealer layout still redirects there. */}
-            <div className="v3-rule-gold mt-6 border-t border-[var(--v3-rule)] pt-5 text-center text-xs text-[var(--v3-text-2)]">
+            {/* `.v3-rule-gold` sets `background`, not `border-color`. Applied to this
+                div it painted a solid gold bar behind the register link - visible
+                in the real browser as an olive/gold block. The intent was a gold
+                hairline ABOVE the row, so the rule is its own element now and the
+                divider below is a plain panel border. */}
+            <div className="mt-6 border-t border-[var(--v3-rule)] pt-5 text-center text-xs text-[var(--v3-text-2)]">
               {t("login.new")}{" "}
               <Link
                 href="/register"
