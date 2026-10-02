@@ -59,18 +59,18 @@ export function GoogleSignInButton({
         disabled={busy || !googleConfigured}
         className={
           className ??
-          "h-12 w-full rounded-xl border border-zinc-300 bg-white font-medium text-zinc-800 hover:bg-zinc-50 disabled:cursor-not-allowed disabled:opacity-60"
+          "h-12 w-full rounded-[var(--v3-r)] border border-[var(--v3-rule-strong)] bg-[var(--v3-panel)] font-medium text-[var(--v3-text)] hover:bg-[var(--v3-sunk)] disabled:cursor-not-allowed disabled:opacity-60"
         }
       >
         {busy ? t("login.googleBusy") : t("login.google")}
       </button>
       {!googleConfigured && showUnavailableHint ? (
-        <p className="mt-2 text-center text-xs text-zinc-500">
+        <p className="mt-2 text-center text-xs text-[var(--v3-text-3)]">
           {t("login.googleNeeded")}
         </p>
       ) : null}
       {error ? (
-        <p className="mt-2 rounded-xl bg-red-50 p-3 text-sm text-red-700">{error}</p>
+        <p className="mt-2 rounded-[var(--v3-r)] bg-[var(--v3-bad-soft)] p-3 text-sm text-[var(--v3-bad)]">{error}</p>
       ) : null}
     </div>
   );

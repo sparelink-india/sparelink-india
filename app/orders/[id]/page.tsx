@@ -117,10 +117,10 @@ export default function OrderDetailPage() {
     : 0;
 
   return (
-    <main className="min-h-screen bg-zinc-50 text-zinc-950">
-      <header className="border-b border-zinc-200 bg-white">
+    <main className="min-h-screen bg-[var(--v3-page)] text-[var(--v3-text)]">
+      <header className="border-b border-[var(--v3-rule)] bg-[var(--v3-panel)]">
         <div className="mx-auto flex max-w-3xl items-center justify-between px-6 py-4">
-          <Link href="/orders" className="text-sm font-semibold text-zinc-600">
+          <Link href="/orders" className="text-sm font-semibold text-[var(--v3-text-2)]">
             ← My Orders
           </Link>
           <Link href="/" className="text-xl font-bold">
@@ -131,23 +131,23 @@ export default function OrderDetailPage() {
 
       <div className="mx-auto max-w-3xl px-6 py-10">
         {loading && (
-          <p className="text-sm text-zinc-500">Loading order details…</p>
+          <p className="text-sm text-[var(--v3-text-3)]">Loading order details…</p>
         )}
         {error && (
-          <div role="alert" className="rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">
+          <div role="alert" className="rounded-[var(--v3-r)] border border-[var(--v3-bad-line)] bg-[var(--v3-bad-soft)] p-4 text-sm text-[var(--v3-bad)]">
             {error}
           </div>
         )}
         {order && (
           <article className="space-y-6">
             <div>
-              <p className="text-xs font-bold uppercase tracking-widest text-zinc-500">
+              <p className="text-xs font-bold uppercase tracking-widest text-[var(--v3-text-3)]">
                 Order detail
               </p>
               <h1 className="mt-1 text-2xl font-bold tracking-tight">
                 #{order.orderNumber}
               </h1>
-              <p className="mt-1 text-sm text-zinc-500">
+              <p className="mt-1 text-sm text-[var(--v3-text-3)]">
                 Placed{" "}
                 {new Date(order.createdAt).toLocaleString("en-IN", {
                   day: "numeric",
@@ -158,10 +158,10 @@ export default function OrderDetailPage() {
                 })}
               </p>
               <div className="mt-3 flex flex-wrap gap-2 text-xs">
-                <span className="rounded-full bg-zinc-100 px-3 py-1 font-medium">
+                <span className="rounded-full bg-[var(--v3-sunk)] px-3 py-1 font-medium">
                   {statusLabel(order.status)}
                 </span>
-                <span className="rounded-full bg-zinc-100 px-3 py-1 font-medium">
+                <span className="rounded-full bg-[var(--v3-sunk)] px-3 py-1 font-medium">
                   {order.paymentMethod === "cash_on_delivery"
                     ? "Cash on delivery"
                     : statusLabel(order.paymentMethod)}{" "}
@@ -170,9 +170,9 @@ export default function OrderDetailPage() {
               </div>
             </div>
 
-            <section className="rounded-2xl border border-zinc-200 bg-white p-5">
+            <section className="rounded-[var(--v3-r)] border border-[var(--v3-rule)] bg-[var(--v3-panel)] p-5">
               <h2 className="text-sm font-bold">Delivery address</h2>
-              <p className="mt-2 text-sm text-zinc-700">
+              <p className="mt-2 text-sm text-[var(--v3-text-2)]">
                 {order.shippingName}
                 <br />
                 {order.shippingPhone}
@@ -190,17 +190,17 @@ export default function OrderDetailPage() {
               </p>
             </section>
 
-            <section className="rounded-2xl border border-zinc-200 bg-white p-5">
+            <section className="rounded-[var(--v3-r)] border border-[var(--v3-rule)] bg-[var(--v3-panel)] p-5">
               <h2 className="text-sm font-bold">Items</h2>
               <ul className="mt-3 space-y-2 text-sm">
                 {order.items.map((item) => (
                   <li
                     key={item.id}
-                    className="flex justify-between gap-4 border-b border-zinc-100 pb-2"
+                    className="flex justify-between gap-4 border-b border-[var(--v3-rule)] pb-2"
                   >
                     <span>
                       {item.partName}{" "}
-                      <span className="font-mono text-zinc-400">
+                      <span className="font-mono text-[var(--v3-text-3)]">
                         #{item.partNumber}
                       </span>{" "}
                       × {item.quantity}
@@ -211,7 +211,7 @@ export default function OrderDetailPage() {
                   </li>
                 ))}
               </ul>
-              <div className="mt-4 space-y-1 text-xs text-zinc-600">
+              <div className="mt-4 space-y-1 text-xs text-[var(--v3-text-2)]">
                 <div className="flex justify-between">
                   <span>Subtotal</span>
                   <span>
@@ -230,7 +230,7 @@ export default function OrderDetailPage() {
                     ₹{((order.shippingPaise ?? 0) / 100).toLocaleString("en-IN")}
                   </span>
                 </div>
-                <div className="flex justify-between border-t border-zinc-200 pt-2 text-sm font-bold text-zinc-950">
+                <div className="flex justify-between border-t border-[var(--v3-rule)] pt-2 text-sm font-bold text-[var(--v3-text)]">
                   <span>Total</span>
                   <span>
                     ₹{(order.totalPaise / 100).toLocaleString("en-IN")}
@@ -240,9 +240,9 @@ export default function OrderDetailPage() {
             </section>
 
             {firmPayments.length > 0 && (
-              <section className="rounded-2xl border border-zinc-200 bg-white p-5">
+              <section className="rounded-[var(--v3-r)] border border-[var(--v3-rule)] bg-[var(--v3-panel)] p-5">
                 <h2 className="text-sm font-bold">Fulfillment</h2>
-                <p className="mt-1 text-xs text-zinc-500">
+                <p className="mt-1 text-xs text-[var(--v3-text-3)]">
                   Your SpareLink order may be fulfilled by one or more of our
                   firms. Each firm issues its own tax invoice.
                 </p>
@@ -250,11 +250,11 @@ export default function OrderDetailPage() {
                   {firmPayments.map((firm) => (
                     <li
                       key={firm.firmOrderId}
-                      className="flex flex-wrap items-center justify-between gap-3 rounded-xl bg-zinc-50 px-3 py-2"
+                      className="flex flex-wrap items-center justify-between gap-3 rounded-[var(--v3-r)] bg-[var(--v3-page)] px-3 py-2"
                     >
                       <span>
                         {firm.firmName}
-                        <span className="mt-0.5 block text-xs text-zinc-500">
+                        <span className="mt-0.5 block text-xs text-[var(--v3-text-3)]">
                           {statusLabel(firm.fulfillmentStatus)} ·{" "}
                           {statusLabel(firm.paymentStatus)}
                         </span>
@@ -268,7 +268,7 @@ export default function OrderDetailPage() {
                           target="_blank"
                           rel="noreferrer"
                           download
-                          className="rounded-md border border-zinc-300 bg-white px-2 py-1 text-[11px] font-bold text-zinc-700"
+                          className="rounded-md border border-[var(--v3-rule-strong)] bg-[var(--v3-panel)] px-2 py-1 text-[11px] font-bold text-[var(--v3-text-2)]"
                         >
                           Invoice
                         </a>
@@ -286,18 +286,18 @@ export default function OrderDetailPage() {
                   firmOrderId: firm.firmOrderId,
                   firmName: firm.firmName,
                 }))}
-                linkClassName="rounded-lg border border-zinc-300 bg-white px-3 py-2 text-xs font-bold"
+                linkClassName="rounded-[var(--v3-r)] border border-[var(--v3-rule-strong)] bg-[var(--v3-panel)] px-3 py-2 text-xs font-bold"
               />
               <a
                 href={`/api/orders/${order.id}/excel`}
-                className="rounded-lg border border-emerald-300 bg-emerald-50 px-3 py-2 text-xs font-bold text-emerald-800"
+                className="rounded-[var(--v3-r)] border border-[var(--v3-ok-line)] bg-[var(--v3-ok-soft)] px-3 py-2 text-xs font-bold text-[var(--v3-ok)]"
               >
                 Download Excel
               </a>
               {order.paymentMethod !== "cash_on_delivery" && (
                 <Link
                   href={`/orders/${order.id}/payment`}
-                  className="rounded-lg bg-zinc-950 px-3 py-2 text-xs font-bold text-white"
+                  className="rounded-[var(--v3-r)] bg-[var(--v3-inverse)] px-3 py-2 text-xs font-bold text-white"
                 >
                   Payment
                 </Link>
@@ -306,13 +306,13 @@ export default function OrderDetailPage() {
                 type="button"
                 disabled={submittingReturn}
                 onClick={() => void submitReturnRequest()}
-                className="rounded-lg border border-amber-300 bg-amber-50 px-3 py-2 text-xs font-bold text-amber-900 disabled:opacity-50"
+                className="rounded-[var(--v3-r)] border border-[var(--v3-warn-line)] bg-[var(--v3-warn-soft)] px-3 py-2 text-xs font-bold text-[var(--v3-warn)] disabled:opacity-50"
               >
                 {submittingReturn ? "Submitting…" : "Request return"}
               </button>
             </div>
             {returnMsg && (
-              <p className="text-sm text-zinc-600">{returnMsg}</p>
+              <p className="text-sm text-[var(--v3-text-2)]">{returnMsg}</p>
             )}
           </article>
         )}

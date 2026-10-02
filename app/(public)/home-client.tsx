@@ -7,6 +7,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { SiteFooter } from "@/components/site-footer";
 import { StorefrontHeader } from "@/components/storefront-header";
 import { HomeHero, type HeroSlotAvailability } from "@/components/home-hero";
+import { HeroSearchPanel } from "@/components/hero-search-panel";
 import { PublicBrandsSection } from "@/components/public-brand-grid";
 import { ProductDetailModal } from "@/components/product-detail-modal";
 import { SearchExperience, type SearchTab } from "@/components/search-experience";
@@ -510,6 +511,26 @@ export function HomePageContent({
           <>
             {/* ============ 1. HERO / GLOBAL SEARCH ============ */}
             <HomeHero availability={heroSlots} />
+
+            {/* ============ 1b. SEARCH-FIRST BAND ============
+                Mounted HERE rather than inside components/home-hero.tsx.
+
+                That file is a PROTECTED file: the hero bitmap is a single
+                approved composite whose baked-in left column, headline and both
+                CTA buttons mean the visible headline cannot be re-drawn, and
+                whose nine vehicle hotspot coordinates were derived by template
+                matching the artwork. lib/dark-mode-tier2.test.ts pins that file
+                byte-for-byte against colour edits, and deliberately so - fixing a
+                colour inside it is the wrong trade when a global rule can do it.
+
+                Adding a sibling band is not a colour edit and does not touch the
+                artwork or a hotspot, but mounting it from here keeps the
+                protected file untouched altogether, which is cheaper to justify
+                than an argument about which kind of edit is acceptable.
+
+                It sits between the hero and the vehicle finder so the page reads
+                artwork -> search -> browse on every viewport. */}
+            <HeroSearchPanel />
 
             {/* ============ 2. QUICK VEHICLE FINDER ============
                 Sits directly under the hero, per the V3 brief: the highest-value

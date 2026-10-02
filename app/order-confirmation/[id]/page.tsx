@@ -63,9 +63,9 @@ export default function OrderConfirmationPage() {
   const multiFirm = firmAllocations.length > 1;
 
   return (
-    <main className="min-h-screen bg-slate-50/80 px-4 py-16 text-slate-900 sm:px-6 sm:py-24">
-      <section className="mx-auto max-w-xl rounded-2xl border border-slate-200 bg-white p-8 sm:p-10 text-center shadow-sm">
-        <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-emerald-100 text-emerald-700">
+    <main className="min-h-screen bg-[var(--v3-sunk)] px-4 py-16 text-[var(--v3-text)] sm:px-6 sm:py-24">
+      <section className="mx-auto max-w-xl rounded-[var(--v3-r)] border border-[var(--v3-rule)] bg-[var(--v3-panel)] p-8 sm:p-10 text-center ">
+        <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-[var(--v3-r)] bg-[var(--v3-ok-soft)] text-[var(--v3-ok)]">
           <svg className="h-8 w-8" viewBox="0 0 20 20" fill="currentColor">
             <path
               fillRule="evenodd"
@@ -75,17 +75,17 @@ export default function OrderConfirmationPage() {
           </svg>
         </div>
 
-        <p className="mt-5 text-xs font-bold uppercase tracking-widest text-emerald-700">
+        <p className="mt-5 text-xs font-bold uppercase tracking-widest text-[var(--v3-ok)]">
           Order Successfully Placed
         </p>
-        <h1 className="mt-2 text-2xl font-bold tracking-tight text-slate-950 sm:text-3xl">
+        <h1 className="mt-2 text-2xl font-bold tracking-tight text-[var(--v3-text)] sm:text-3xl">
           Thank you for your order!
         </h1>
 
-        <p className="mt-3 text-sm text-slate-600">
+        <p className="mt-3 text-sm text-[var(--v3-text-2)]">
           Your order{" "}
           {order?.orderNumber ? (
-            <strong className="font-mono font-bold text-slate-900">
+            <strong className="font-mono font-bold text-[var(--v3-text)]">
               #{order.orderNumber}
             </strong>
           ) : (
@@ -94,14 +94,14 @@ export default function OrderConfirmationPage() {
           has been received and allocated to regional fulfillment partners.
         </p>
 
-        <div className="mt-6 rounded-xl bg-slate-50 border border-slate-100 p-4 text-xs text-slate-500 space-y-1.5 text-left">
+        <div className="mt-6 rounded-[var(--v3-r)] bg-[var(--v3-sunk)] border border-[var(--v3-rule)] p-4 text-xs text-[var(--v3-text-3)] space-y-1.5 text-left">
           <div className="flex justify-between">
             <span>Order Reference:</span>
-            <span className="font-mono text-slate-700">{id}</span>
+            <span className="font-mono text-[var(--v3-text-2)]">{id}</span>
           </div>
           <div className="flex justify-between">
             <span>Payment status:</span>
-            <span className="text-slate-900 font-medium">
+            <span className="text-[var(--v3-text)] font-medium">
               {order
                 ? parentPaymentLabel(order.paymentStatus)
                 : "Confirming from SpareLink..."}
@@ -109,7 +109,7 @@ export default function OrderConfirmationPage() {
           </div>
           <div className="flex justify-between gap-3">
             <span>GST Tax Invoice:</span>
-            <span className="text-slate-900 font-medium text-right">
+            <span className="text-[var(--v3-text)] font-medium text-right">
               {multiFirm
                 ? "One invoice per fulfillment firm"
                 : "Ready for Download"}
@@ -120,7 +120,7 @@ export default function OrderConfirmationPage() {
         {needsPayment && (
           <Link
             href={`/orders/${id}/payment`}
-            className="mt-6 inline-flex w-full items-center justify-center rounded-xl bg-slate-950 px-6 py-3 text-sm font-bold text-white shadow-sm hover:bg-slate-800"
+            className="mt-6 inline-flex w-full items-center justify-center rounded-[var(--v3-r)] bg-[var(--v3-brand)] px-6 py-3 text-sm font-bold text-white hover:bg-[var(--v3-brand-hover)]"
           >
             {order.paymentStatus === "partial"
               ? "Complete remaining payment"
@@ -134,30 +134,30 @@ export default function OrderConfirmationPage() {
               orderId={id}
               allocations={firmAllocations}
               className="flex flex-wrap items-center justify-center gap-2.5"
-              linkClassName="inline-flex items-center gap-1.5 rounded-xl border border-slate-300 bg-white px-3.5 py-2 text-xs font-bold text-slate-800 shadow-xs hover:bg-slate-50 transition-colors"
+              linkClassName="inline-flex items-center gap-1.5 rounded-[var(--v3-r)] border border-[var(--v3-rule-strong)] bg-[var(--v3-panel)] px-3.5 py-2 text-xs font-bold text-[var(--v3-text)] hover:bg-[var(--v3-sunk)] transition-colors"
             />
           ) : null}
           {id ? (
             <a
               href={`/api/orders/${id}/excel`}
               download
-              className="inline-flex items-center gap-1.5 rounded-xl border border-emerald-300 bg-emerald-50 px-3.5 py-2 text-xs font-bold text-emerald-800 shadow-xs hover:bg-emerald-100 transition-colors"
+              className="inline-flex items-center gap-1.5 rounded-[var(--v3-r)] border border-[var(--v3-ok-line)] bg-[var(--v3-ok-soft)] px-3.5 py-2 text-xs font-bold text-[var(--v3-ok)] hover:bg-[var(--v3-ok-soft)] transition-colors"
             >
               <span>📊</span> Download Excel
             </a>
           ) : null}
         </div>
 
-        <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:justify-center border-t border-slate-100 pt-6">
+        <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:justify-center border-t border-[var(--v3-rule)] pt-6">
           <Link
             href="/orders"
-            className="inline-flex items-center justify-center rounded-xl bg-slate-950 px-6 py-3 text-sm font-bold text-white shadow-sm hover:bg-slate-800"
+            className="inline-flex items-center justify-center rounded-[var(--v3-r)] bg-[var(--v3-brand)] px-6 py-3 text-sm font-bold text-white hover:bg-[var(--v3-brand-hover)]"
           >
             View My Orders →
           </Link>
           <Link
             href="/"
-            className="inline-flex items-center justify-center rounded-xl border border-slate-300 bg-white px-5 py-3 text-sm font-semibold text-slate-700 hover:bg-slate-50"
+            className="inline-flex items-center justify-center rounded-[var(--v3-r)] border border-[var(--v3-rule-strong)] bg-[var(--v3-panel)] px-5 py-3 text-sm font-semibold text-[var(--v3-text-2)] hover:bg-[var(--v3-sunk)]"
           >
             Continue Shopping
           </Link>

@@ -56,14 +56,14 @@ export default function OffersPage() {
   }
 
   return (
-    <div className="flex min-h-screen flex-col bg-slate-50">
+    <div className="flex min-h-screen flex-col bg-[var(--v3-sunk)]">
       <StorefrontHeader />
       <main id="main-content" className="mx-auto w-full max-w-5xl flex-1 px-4 py-10">
-        <h1 className="text-2xl font-bold text-slate-900">{t("offers.title")}</h1>
-        {error ? <p className="mt-4 text-sm text-red-700">{error}</p> : null}
-        {message ? <p className="mt-4 text-sm text-emerald-700">{message}</p> : null}
+        <h1 className="text-2xl font-bold text-[var(--v3-text)]">{t("offers.title")}</h1>
+        {error ? <p className="mt-4 text-sm text-[var(--v3-bad)]">{error}</p> : null}
+        {message ? <p className="mt-4 text-sm text-[var(--v3-ok)]">{message}</p> : null}
         {offers.length === 0 ? (
-          <p className="mt-8 rounded-2xl border border-dashed border-slate-300 bg-white p-10 text-center text-sm text-slate-600">
+          <p className="mt-8 rounded-[var(--v3-r)] border border-dashed border-[var(--v3-rule-strong)] bg-[var(--v3-panel)] p-10 text-center text-sm text-[var(--v3-text-2)]">
             {t("offers.empty")}
           </p>
         ) : (
@@ -78,8 +78,8 @@ export default function OffersPage() {
                 special > 0 &&
                 special < regular;
               return (
-                <article key={`${offer.partId || offer.partNumber || index}`} className="rounded-2xl border border-slate-200 bg-white p-4">
-                  <div className="aspect-[4/3] overflow-hidden rounded-xl bg-slate-100">
+                <article key={`${offer.partId || offer.partNumber || index}`} className="rounded-[var(--v3-r)] border border-[var(--v3-rule)] bg-[var(--v3-panel)] p-4">
+                  <div className="aspect-[4/3] overflow-hidden rounded-[var(--v3-r)] bg-[var(--v3-sunk)]">
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img
                       src={offer.thumbUrl || offer.imageUrl || "/images/products/placeholder.svg"}
@@ -99,16 +99,16 @@ export default function OffersPage() {
                       }}
                     />
                   </div>
-                  {offer.partNumber ? <p className="mt-3 font-mono text-xs text-slate-500">Part #{offer.partNumber}</p> : null}
+                  {offer.partNumber ? <p className="mt-3 font-mono text-xs text-[var(--v3-text-3)]">Part #{offer.partNumber}</p> : null}
                   <h2 className="mt-1 font-semibold">{offer.name || "Special offer product"}</h2>
                   {typeof regular === "number" && regular > 0 ? (
-                    <p className="mt-1 text-sm text-slate-500 line-through">₹{(regular / 100).toLocaleString("en-IN")}</p>
+                    <p className="mt-1 text-sm text-[var(--v3-text-3)] line-through">₹{(regular / 100).toLocaleString("en-IN")}</p>
                   ) : null}
                   {typeof special === "number" && special > 0 ? (
                     <p className="text-sm font-semibold">₹{(special / 100).toLocaleString("en-IN")}</p>
                   ) : null}
                   {showDiscount ? (
-                    <p className="text-xs font-semibold text-emerald-700">
+                    <p className="text-xs font-semibold text-[var(--v3-ok)]">
                       {t("offers.save", { amount: ((regular! - special!) / 100).toLocaleString("en-IN") })}
                     </p>
                   ) : null}
@@ -116,13 +116,13 @@ export default function OffersPage() {
                     <button
                       type="button"
                       onClick={() => void addToCart(offer)}
-                      className="rounded-lg bg-slate-950 px-3 py-2 text-sm font-semibold text-white"
+                      className="rounded-[var(--v3-r)] bg-[var(--v3-brand)] px-3 py-2 text-sm font-semibold text-white"
                     >
                       {t("product.addToCart")}
                     </button>
                     <Link
                       href={offer.partNumber ? `/?q=${encodeURIComponent(offer.partNumber)}` : "/"}
-                      className="rounded-lg border px-3 py-2 text-sm font-semibold"
+                      className="rounded-[var(--v3-r)] border px-3 py-2 text-sm font-semibold"
                     >
                       {t("offers.details")}
                     </Link>

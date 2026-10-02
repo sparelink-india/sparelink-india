@@ -57,7 +57,7 @@ export function CatalogueProductTable({
 }) {
   const { t } = useI18n();
   return (
-    <div className="overflow-x-auto rounded-[var(--v3-r-lg)] bg-white shadow-[0_8px_24px_rgba(15,23,42,0.06)]">
+    <div className="overflow-x-auto rounded-[var(--v3-r-lg)] bg-[var(--v3-panel)] shadow-[0_8px_24px_rgba(15,23,42,0.06)]">
       <table className="w-full min-w-[920px] table-fixed border-collapse text-left">
         <thead className="bg-[var(--v3-brand)] text-sm font-bold text-white">
           <tr>
@@ -139,7 +139,7 @@ export function CatalogueProductTable({
                   </div>
                 </td>
                 <td className="px-3 py-2 font-mono text-xs text-[var(--v3-text-2)]">
-                  <span className="text-sm font-semibold text-slate-800">{partData.part_number || "—"}</span>
+                  <span className="text-sm font-semibold text-[var(--v3-text)]">{partData.part_number || "—"}</span>
                 </td>
                 <td className="px-3 py-2 text-xs text-[var(--v3-text-2)]">
                   {listing?.gstRate != null ? `${listing.gstRate}%` : "—"}
@@ -147,13 +147,13 @@ export function CatalogueProductTable({
                 <td className="px-3 py-2 font-mono text-[11px] text-[var(--v3-text-2)]">
                   {listing?.hsn || "—"}
                 </td>
-                <td className="px-3 py-2 text-xs font-semibold text-slate-800">
+                <td className="px-3 py-2 text-xs font-semibold text-[var(--v3-text)]">
                   {formatPaise(listPrice(listing))}
                 </td>
                 <td className="px-3 py-2 text-xs text-[var(--v3-text-3)]">
                   {formatPaise(listing?.mrpPaise)}
                 </td>
-                <td className="px-3 py-2 text-sm font-semibold text-slate-800">
+                <td className="px-3 py-2 text-sm font-semibold text-[var(--v3-text)]">
                   <span className="rounded-md bg-[var(--v3-brand)] px-1.5 py-0.5 text-xs font-bold text-white">
                     {typeof listing?.discountPercent === "number"
                       ? `${Math.round(listing.discountPercent)}%`
@@ -165,7 +165,7 @@ export function CatalogueProductTable({
                     type="button"
                     disabled={!canAdd || addingId === listing?.id}
                     onClick={() => listing && onAddToCart(listing.id, title)}
-                    className="inline-flex min-h-9 items-center gap-1.5 rounded-[2px] bg-[var(--v3-brand)] px-3 text-xs font-bold text-white hover:bg-[var(--v3-brand-hover)] disabled:cursor-not-allowed disabled:bg-slate-200 disabled:text-[var(--v3-text-3)]"
+                    className="inline-flex min-h-9 items-center gap-1.5 rounded-[2px] bg-[var(--v3-brand)] px-3 text-xs font-bold text-white hover:bg-[var(--v3-brand-hover)] disabled:cursor-not-allowed disabled:bg-[var(--v3-sunk-deep)] disabled:text-[var(--v3-text-3)]"
                     aria-label={`${t("product.addToCart")}: ${title}`}
                   >
                     {canAdd ? (

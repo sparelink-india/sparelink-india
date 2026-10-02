@@ -63,7 +63,7 @@ export default async function FitmentModelPage({
   return (
     <FitmentShell>
       <div className="mx-auto w-full max-w-6xl px-4 py-10">
-        <p className="text-sm text-slate-500">
+        <p className="text-sm text-[var(--v3-text-3)]">
           <Link href="/vehicle-fitment" className="hover:underline">
             {messages["fitment.title"]}
           </Link>
@@ -72,7 +72,7 @@ export default async function FitmentModelPage({
             {brand.make}
           </Link>
         </p>
-        <Suspense fallback={<p className="mt-6 text-sm text-slate-500">{messages["common.loading"]}</p>}>
+        <Suspense fallback={<p className="mt-6 text-sm text-[var(--v3-text-3)]">{messages["common.loading"]}</p>}>
           <FitmentModelCatalogue
             model={selected}
             fuel={fuel}
@@ -80,7 +80,7 @@ export default async function FitmentModelPage({
             page={page}
           />
         </Suspense>
-        <p className="mt-12 text-xs leading-relaxed text-slate-500">
+        <p className="mt-12 text-xs leading-relaxed text-[var(--v3-text-3)]">
           {messages["fitment.photoCredits"]}
         </p>
       </div>

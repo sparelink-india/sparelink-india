@@ -25,16 +25,7 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { slug } = await params;
   const slugs = Array.isArray(slug) ? slug : [slug];
-  const path = `/category/${slugs.join("/")}`;
-  const messages = await getServerMessages();
-  const storefront = slugs.length === 1 ? findStorefrontCategory(slugs[0]) : null;
-
-  if (storefront) {
-    const name = messages[storefront.nameKey] ?? storefront.slug;
-    const description = messages[storefront.descKey];
-    return routeMetadata({
-      path,
-      title: `${name} - Auto Spare Parts`,
+  const path = `/category/${slugs.join("/")}`; const messages = await getServerMessages(); const storefront = slugs.length === 1 ? findStorefrontCategory(slugs[0]) : null; if (storefront) { const name = messages[storefront.nameKey] ?? storefront.slug; const description = messages[storefront.descKey]; return routeMetadata({ path, title: `${name} - Auto Spare Parts`,
       description,
     });
   }
@@ -59,7 +50,7 @@ export async function generateMetadata({
 
 function CategoryShell({ children }: { children: React.ReactNode }) {
   return (
-    <div className="storefront-mobile-pad flex min-h-screen flex-col bg-slate-50">
+    <div className="storefront-mobile-pad flex min-h-screen flex-col bg-[var(--v3-sunk)]">
       <StorefrontHeader />
       <main id="main-content" className="flex-1">
         <div className="mx-auto w-full max-w-7xl px-3 py-5 sm:px-6 sm:py-10">{children}</div>
@@ -85,7 +76,7 @@ export default async function CategoryPage({
   if (storefront) {
     return (
       <CategoryShell>
-        <Suspense fallback={<p className="text-sm text-slate-500">{messages["common.loading"]}</p>}>
+        <Suspense fallback={<p className="text-sm text-[var(--v3-text-3)]">{messages["common.loading"]}</p>}>
           <CategoryResults
             path={`/category/${storefront.slug}`}
             title={messages[storefront.nameKey]}
@@ -115,7 +106,7 @@ export default async function CategoryPage({
 
   return (
     <CategoryShell>
-      <Suspense fallback={<p className="text-sm text-slate-500">{messages["common.loading"]}</p>}>
+      <Suspense fallback={<p className="text-sm text-[var(--v3-text-3)]">{messages["common.loading"]}</p>}>
         <CategoryResults
           path={`/category/${slugs.join("/")}`}
           title={route.title}

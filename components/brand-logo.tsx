@@ -49,7 +49,7 @@ export function BrandLogo({
     <Link
       href="/"
       aria-label={t("common.homeAria")}
-      className="inline-flex items-center rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#7a1233]"
+      className="inline-flex items-center rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--v3-brand)]"
     >
       {failed ? (
         <span

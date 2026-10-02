@@ -36,16 +36,16 @@ const SECTIONS = [
 export default function TermsAndConditionsPage() {
   return (
     <StorefrontShell>
-      <h1 className="text-2xl font-bold text-slate-950">
+      <h1 className="text-2xl font-bold text-[var(--v3-text)]">
         <T k="legal.terms" />
       </h1>
-      <p className="mt-3 text-sm leading-7 text-slate-700">
+      <p className="mt-3 text-sm leading-7 text-[var(--v3-text-2)]">
         <T k="terms.intro" />
       </p>
-      <section className="mt-8 space-y-6 text-sm leading-7 text-slate-700">
+      <section className="mt-8 space-y-6 text-sm leading-7 text-[var(--v3-text-2)]">
         {SECTIONS.map(([title, body]) => (
           <div key={title}>
-            <h2 className="font-bold text-slate-950">
+            <h2 className="font-bold text-[var(--v3-text)]">
               <T k={title} />
             </h2>
             <p>
@@ -54,7 +54,7 @@ export default function TermsAndConditionsPage() {
           </div>
         ))}
         <div>
-          <h2 className="font-bold text-slate-950">
+          <h2 className="font-bold text-[var(--v3-text)]">
             <T k="terms.contactTitle" />
           </h2>
           <p>
@@ -62,7 +62,7 @@ export default function TermsAndConditionsPage() {
             <br />
             <T k="common.email" />: {PUBLIC_DISPLAY_EMAIL}
           </p>
-          <Link href="/help-support" className="mt-2 inline-block font-semibold text-[#7a1233] underline">
+          <Link href="/help-support" className="mt-2 inline-block font-semibold text-[var(--v3-brand-ink)] underline">
             <T k="nav.help" />
           </Link>
         </div>

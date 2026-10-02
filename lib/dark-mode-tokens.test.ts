@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
-import { readFileSync } from "node:fs";
-import { dirname, join } from "node:path";
+import { readdirSync, readFileSync } from "node:fs";
+import { dirname, join, relative } from "node:path";
 import { describe, it } from "node:test";
 import { fileURLToPath } from "node:url";
 
@@ -186,14 +186,61 @@ describe("dark mode: the class-based dark variant", () => {
     assert.ok(variant > imported, "@custom-variant must come after the import");
   });
 
-  it("has dark utilities to activate, so the variant is load-bearing", () => {
-    // If this ever fails, the @custom-variant line is dead weight and the
-    // four utilities in header-preference-toggle.tsx should be reviewed.
+  it("has no `dark:` utilities left, because theme switching is token-driven", () => {
+    // This test used to assert the opposite: that `dark:` utilities EXIST in
+    // header-preference-toggle.tsx, as a proxy for "@custom-variant dark is
+    // load-bearing". Its own comment said so:
+    //
+    //   "If this ever fails, the @custom-variant line is dead weight and the
+    //    four utilities in header-preference-toggle.tsx should be reviewed."
+    //
+    // They have been reviewed, and all four are gone. That control now names
+    // `var(--v3-panel)`, `var(--v3-brand-ink)` and `var(--v3-text-3)` instead of
+    // `bg-white dark:bg-white` / `text-[var(--brand)]`, which is not a
+    // cosmetic swap: `--brand` is #7a1233 in BOTH themes, so the previously
+    // selected option rendered 1.4:1 - unreadable - in dark mode. One
+    // `dark:`-free control is now correct in both themes by construction.
+    //
+    // That was the last `dark:` utility in the entire storefront AND in admin,
+    // so the assertion is inverted into the real invariant: every surface now
+    // themes through a token, and a NEW `dark:` utility is drift back toward the
+    // allow-list-in-globals.css approach that the tokens exist to replace. A
+    // regression test should guard the architecture that was actually chosen,
+    // not proxy for the one that was replaced.
     const toggles = source("components/header-preference-toggle.tsx");
     const uses = toggles.match(/\bdark:[a-z-]+/g) ?? [];
-    assert.ok(
-      uses.length > 0,
-      "no `dark:` utilities exist; re-check whether the custom variant is needed",
+    assert.deepEqual(
+      uses,
+      [],
+      "header-preference-toggle.tsx reintroduced `dark:` utilities; use the V3 tokens instead",
+    );
+
+    // And the guarantee is site-wide, not just in the file that tripped it.
+    // Scanned inline because this file only reads fixed paths; a new surface
+    // must not be able to opt out of the rule by not being in a list.
+    const SKIP = new Set(["node_modules", ".next", ".git", "_backups", ".vercel"]);
+    const walk = (dir: string): string[] =>
+      readdirSync(dir, { withFileTypes: true }).flatMap((e) => {
+        const p = join(dir, e.name);
+        if (e.isDirectory()) return SKIP.has(e.name) ? [] : walk(p);
+        return /\.(tsx|ts)$/.test(e.name) ? [p] : [];
+      });
+
+    const storefrontDarkUtilities = [...walk(join(root, "app")), ...walk(join(root, "components"))]
+      .map((p) => relative(root, p).replace(/\\/g, "/"))
+      .filter((rel) => {
+        // Comments are stripped: a migration note that quotes `dark:` utilities
+        // is documentation, not a call site.
+        const code = source(rel)
+          .replace(/\/\*[\s\S]*?\*\//g, "")
+          .replace(/^\s*\/\/.*$/gm, "");
+        return /\bdark:[a-z-]+/.test(code);
+      });
+
+    assert.deepEqual(
+      storefrontDarkUtilities,
+      [],
+      `these files still theme with \`dark:\` utilities rather than tokens:\n  ${storefrontDarkUtilities.join("\n  ")}`,
     );
   });
 });

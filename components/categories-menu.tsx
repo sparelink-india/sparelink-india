@@ -9,7 +9,7 @@ import type { NavGroup } from "@/lib/category-navigation";
 function Chevron({ open }: { open: boolean }) {
   return (
     <svg
-      className={`h-3.5 w-3.5 shrink-0 text-slate-500 transition-transform ${open ? "rotate-180" : ""}`}
+      className={`h-3.5 w-3.5 shrink-0 text-[var(--v3-text-3)] transition-transform ${open ? "rotate-180" : ""}`}
       viewBox="0 0 20 20"
       fill="currentColor"
       aria-hidden
@@ -71,7 +71,7 @@ export function CategoriesMenu() {
             setOpen(true);
           }
         }}
-        className="inline-flex w-full items-center justify-center gap-2 rounded-md bg-[#7a1233] px-4 py-2.5 text-sm font-semibold text-white md:w-auto"
+        className="inline-flex w-full items-center justify-center gap-2 rounded-md bg-[var(--v3-brand)] px-4 py-2.5 text-sm font-semibold text-white md:w-auto"
       >
         <span aria-hidden>☰</span>
         {t("nav.categories")}
@@ -80,23 +80,23 @@ export function CategoriesMenu() {
         <div
           id={menuId}
           role="menu"
-          className="absolute left-0 right-0 z-50 mt-1 max-h-[min(80vh,calc(100dvh-6rem))] w-full overflow-y-auto overscroll-contain rounded-lg border border-slate-200 bg-white py-1.5 shadow-lg md:right-auto md:w-[22rem]"
+          className="absolute left-0 right-0 z-50 mt-1 max-h-[min(80vh,calc(100dvh-6rem))] w-full overflow-y-auto overscroll-contain rounded-[var(--v3-r)] border border-[var(--v3-rule)] bg-[var(--v3-panel)] py-1.5 md:right-auto md:w-[22rem]"
         >
           {groups.length === 0 ? (
-            <p className="px-3 py-2 text-sm text-slate-500">{t("categories.empty")}</p>
+            <p className="px-3 py-2 text-sm text-[var(--v3-text-3)]">{t("categories.empty")}</p>
           ) : (
             groups.map((group) => {
               const isOpen = Boolean(expanded[group.id]);
               const hasChildren = group.children.length > 0;
               const label = navGroupLabel(group, t);
               return (
-                <div key={group.id} className="border-b border-slate-100 last:border-b-0">
+                <div key={group.id} className="border-b border-[var(--v3-rule)] last:border-b-0">
                   <div className="flex items-stretch">
                     {group.href ? (
                       <Link
                         role="menuitem"
                         href={group.href}
-                        className="min-w-0 flex-1 px-3 py-2 text-left text-[13px] font-semibold uppercase tracking-wide text-slate-800 hover:bg-slate-50"
+                        className="min-w-0 flex-1 px-3 py-2 text-left text-[13px] font-semibold uppercase tracking-wide text-[var(--v3-text)] hover:bg-[var(--v3-sunk)]"
                         onClick={() => setOpen(false)}
                       >
                         {label}
@@ -104,7 +104,7 @@ export function CategoriesMenu() {
                     ) : (
                       <button
                         type="button"
-                        className="min-w-0 flex-1 px-3 py-2 text-left text-[13px] font-semibold uppercase tracking-wide text-slate-800 hover:bg-slate-50"
+                        className="min-w-0 flex-1 px-3 py-2 text-left text-[13px] font-semibold uppercase tracking-wide text-[var(--v3-text)] hover:bg-[var(--v3-sunk)]"
                         onClick={() => toggleGroup(group.id)}
                       >
                         {label}
@@ -113,7 +113,7 @@ export function CategoriesMenu() {
                     {hasChildren ? (
                       <button
                         type="button"
-                        className="px-3 text-slate-500 hover:bg-slate-50"
+                        className="px-3 text-[var(--v3-text-3)] hover:bg-[var(--v3-sunk)]"
                         aria-expanded={isOpen}
                         aria-label={isOpen ? t("nav.collapseGroup") : t("nav.expandGroup")}
                         onClick={() => toggleGroup(group.id)}
@@ -129,7 +129,7 @@ export function CategoriesMenu() {
                           key={child.id}
                           role="menuitem"
                           href={child.href}
-                          className="block py-1.5 pl-6 pr-3 text-[13px] text-slate-700 hover:bg-slate-50 hover:text-slate-950"
+                          className="block py-1.5 pl-6 pr-3 text-[13px] text-[var(--v3-text-2)] hover:bg-[var(--v3-sunk)] hover:text-[var(--v3-text)]"
                           onClick={() => setOpen(false)}
                         >
                           {child.name}

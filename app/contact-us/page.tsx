@@ -16,29 +16,29 @@ export default function ContactUsPage() {
 
   return (
     <StorefrontShell>
-      <h1 className="text-2xl font-bold text-slate-950">
+      <h1 className="text-2xl font-bold text-[var(--v3-text)]">
         <T k="contact.title" />
       </h1>
-      <p className="mt-2 text-sm text-slate-600">
+      <p className="mt-2 text-sm text-[var(--v3-text-2)]">
         <T k="contact.intro" />
       </p>
       <dl className="mt-6 space-y-3 text-sm">
         <div>
-          <dt className="font-semibold text-slate-500">
+          <dt className="font-semibold text-[var(--v3-text-3)]">
             <T k="help.phoneLabel" />
           </dt>
           <dd>
-            <a href={telHref ?? undefined} className="font-semibold text-slate-900">
+            <a href={telHref ?? undefined} className="font-semibold text-[var(--v3-text)]">
               {PUBLIC_SUPPORT_PHONE}
             </a>
           </dd>
         </div>
         <div>
-          <dt className="font-semibold text-slate-500">
+          <dt className="font-semibold text-[var(--v3-text-3)]">
             <T k="help.emailLabel" />
           </dt>
           <dd>
-            <a href={`mailto:${PUBLIC_DISPLAY_EMAIL}`} className="font-semibold text-slate-900">
+            <a href={`mailto:${PUBLIC_DISPLAY_EMAIL}`} className="font-semibold text-[var(--v3-text)]">
               {PUBLIC_DISPLAY_EMAIL}
             </a>
           </dd>
@@ -47,19 +47,19 @@ export default function ContactUsPage() {
       <div className="mt-6 flex flex-wrap gap-3">
         <WhatsAppCta href={whatsappHref} />
         {telHref ? (
-          <a href={telHref} className="inline-flex items-center rounded-xl border border-slate-200 bg-white px-4 py-2 font-semibold">
+          <a href={telHref} className="inline-flex items-center rounded-[var(--v3-r)] border border-[var(--v3-rule)] bg-[var(--v3-panel)] px-4 py-2 font-semibold">
             <T k="help.call" />
           </a>
         ) : null}
         <a
           href={`mailto:${PUBLIC_DISPLAY_EMAIL}`}
-          className="inline-flex items-center rounded-xl border border-slate-200 bg-white px-4 py-2 font-semibold"
+          className="inline-flex items-center rounded-[var(--v3-r)] border border-[var(--v3-rule)] bg-[var(--v3-panel)] px-4 py-2 font-semibold"
         >
           <T k="help.emailUs" />
         </a>
         <Link
           href="/help-support"
-          className="inline-flex items-center rounded-xl bg-[#7a1233] px-4 py-2 font-semibold text-white"
+          className="inline-flex items-center rounded-[var(--v3-r)] bg-[var(--v3-brand)] px-4 py-2 font-semibold text-white"
         >
           <T k="nav.help" />
         </Link>

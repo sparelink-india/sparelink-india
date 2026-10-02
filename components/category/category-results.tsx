@@ -154,12 +154,12 @@ export function CategoryResults({
 
   return (
     <div>
-      <nav className="text-sm text-slate-500" aria-label="Breadcrumb">
+      <nav className="text-sm text-[var(--v3-text-3)]" aria-label="Breadcrumb">
         {crumbs.map((crumb, index) => (
           <span key={`${crumb.href}-${index}`}>
             {index > 0 ? " / " : null}
             {index === crumbs.length - 1 ? (
-              <span className="text-slate-800">{crumb.key ? t(crumb.key) : crumb.label}</span>
+              <span className="text-[var(--v3-text)]">{crumb.key ? t(crumb.key) : crumb.label}</span>
             ) : (
               <Link href={crumb.href} className="hover:underline">
                 {crumb.key ? t(crumb.key) : crumb.label}
@@ -169,10 +169,10 @@ export function CategoryResults({
         ))}
       </nav>
 
-      <div className="mt-6 overflow-hidden rounded-2xl border border-slate-200 bg-white">
+      <div className="mt-6 overflow-hidden rounded-[var(--v3-r)] border border-[var(--v3-rule)] bg-[var(--v3-panel)]">
         <div className="flex items-center gap-4 p-5">
           {image ? (
-            <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-full bg-slate-100 ring-1 ring-slate-200">
+            <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-full bg-[var(--v3-sunk)] ring-1 ring-[var(--v3-rule)]">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 src={image}
@@ -184,33 +184,33 @@ export function CategoryResults({
             </div>
           ) : null}
           <div>
-            <h1 className="text-3xl font-bold tracking-tight text-slate-950">{heading}</h1>
-            {summary ? <p className="mt-1 text-sm text-slate-600">{summary}</p> : null}
+            <h1 className="text-3xl font-bold tracking-tight text-[var(--v3-text)]">{heading}</h1>
+            {summary ? <p className="mt-1 text-sm text-[var(--v3-text-2)]">{summary}</p> : null}
           </div>
         </div>
       </div>
 
       {error ? (
-        <p className="mt-6 text-sm text-rose-700" role="alert">
+        <p className="mt-6 text-sm text-[var(--v3-bad)]" role="alert">
           {error}
         </p>
       ) : null}
 
       {loading ? (
-        <p className="mt-8 text-sm text-slate-500">{t("search.searching")}</p>
+        <p className="mt-8 text-sm text-[var(--v3-text-3)]">{t("search.searching")}</p>
       ) : found === 0 ? (
-        <div className="mt-10 rounded-2xl border border-dashed border-slate-300 bg-white p-12 text-center">
-          <h2 className="text-lg font-bold text-slate-900">{t("category.empty")}</h2>
+        <div className="mt-10 rounded-[var(--v3-r)] border border-dashed border-[var(--v3-rule-strong)] bg-[var(--v3-panel)] p-12 text-center">
+          <h2 className="text-lg font-bold text-[var(--v3-text)]">{t("category.empty")}</h2>
           <Link
             href="/"
-            className="mt-6 inline-flex min-h-10 items-center rounded-xl bg-[#7a1233] px-5 text-xs font-bold text-white"
+            className="mt-6 inline-flex min-h-10 items-center rounded-[var(--v3-r)] bg-[var(--v3-brand)] px-5 text-xs font-bold text-white"
           >
             {t("category.searchAll")}
           </Link>
         </div>
       ) : (
         <>
-          <h2 className="mt-8 text-lg font-bold text-slate-950">
+          <h2 className="mt-8 text-lg font-bold text-[var(--v3-text)]">
             {found === 1
               ? t("search.foundOne", { query: heading })
               : t("search.found", { count: found, query: heading })}
@@ -222,12 +222,12 @@ export function CategoryResults({
               return (
                 <article
                   key={partData.id || partData.part_number || index}
-                  className="overflow-hidden rounded-2xl border border-slate-200 bg-white p-3 sm:p-4"
+                  className="overflow-hidden rounded-[var(--v3-r)] border border-[var(--v3-rule)] bg-[var(--v3-panel)] p-3 sm:p-4"
                 >
                   <div className="flex items-start gap-3 sm:gap-4">
                     <button
                       type="button"
-                      className="h-[160px] w-[160px] shrink-0 overflow-hidden rounded-xl bg-slate-100 min-[430px]:h-[168px] min-[430px]:w-[168px] md:h-[240px] md:w-[250px]"
+                      className="h-[160px] w-[160px] shrink-0 overflow-hidden rounded-[var(--v3-r)] bg-[var(--v3-sunk)] min-[430px]:h-[168px] min-[430px]:w-[168px] md:h-[240px] md:w-[250px]"
                       onClick={() =>
                         setDetailTarget({
                           partId: partData.id,
@@ -262,10 +262,10 @@ export function CategoryResults({
                       />
                     </button>
                     <div className="min-w-0 flex-1 overflow-hidden">
-                      <h3 className="line-clamp-3 break-words font-bold leading-snug text-slate-950">
+                      <h3 className="line-clamp-3 break-words font-bold leading-snug text-[var(--v3-text)]">
                         {partData.name || t("product.partFallback")}
                       </h3>
-                      <p className="mt-1 text-xs text-slate-500">
+                      <p className="mt-1 text-xs text-[var(--v3-text-3)]">
                         {[partData.brand, partData.part_number].filter(Boolean).join(" · ")}
                       </p>
                       {listing ? (
@@ -290,7 +290,7 @@ export function CategoryResults({
                               )
                             }
                             onClick={() => void addToCart(listing.id)}
-                            className="mt-2 min-h-10 rounded-lg bg-[#7a1233] px-3 text-xs font-bold text-white disabled:opacity-50"
+                            className="mt-2 min-h-10 rounded-[var(--v3-r)] bg-[var(--v3-brand)] px-3 text-xs font-bold text-white disabled:opacity-50"
                           >
                             {!isAuthoritativeSellingPricePaise(
                               listing.listInclusivePaise,
@@ -304,7 +304,7 @@ export function CategoryResults({
                           </button>
                         </div>
                       ) : (
-                        <p className="mt-2 text-xs text-slate-500">{t("product.noListing")}</p>
+                        <p className="mt-2 text-xs text-[var(--v3-text-3)]">{t("product.noListing")}</p>
                       )}
                     </div>
                   </div>
@@ -318,18 +318,18 @@ export function CategoryResults({
                 type="button"
                 disabled={activePage <= 1}
                 onClick={() => goToPage(activePage - 1)}
-                className="min-h-10 rounded-lg border border-slate-200 bg-white px-4 text-sm font-semibold disabled:opacity-40"
+                className="min-h-10 rounded-[var(--v3-r)] border border-[var(--v3-rule)] bg-[var(--v3-panel)] px-4 text-sm font-semibold disabled:opacity-40"
               >
                 {t("search.prev")}
               </button>
-              <p className="text-sm text-slate-600">
+              <p className="text-sm text-[var(--v3-text-2)]">
                 {t("search.page", { page: activePage, pages: totalPages })}
               </p>
               <button
                 type="button"
                 disabled={activePage >= totalPages}
                 onClick={() => goToPage(activePage + 1)}
-                className="min-h-10 rounded-lg border border-slate-200 bg-white px-4 text-sm font-semibold disabled:opacity-40"
+                className="min-h-10 rounded-[var(--v3-r)] border border-[var(--v3-rule)] bg-[var(--v3-panel)] px-4 text-sm font-semibold disabled:opacity-40"
               >
                 {t("search.next")}
               </button>

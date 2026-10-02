@@ -3,6 +3,17 @@ export type Locale = (typeof locales)[number];
 
 export const en = {
   "a11y.skipToContent": "Skip to main content",
+  /* The theme and language control in the header shipped with five hardcoded
+     English accessible names ("Theme and language", "Theme", "Language",
+     "Light theme", "Dark theme") plus two visible English labels. A Hindi user
+     tabbing through the header heard English. */
+  "a11y.themeAndLanguage": "Theme and language",
+  "a11y.themeGroup": "Theme",
+  "a11y.languageGroup": "Language",
+  "a11y.lightTheme": "Light theme",
+  "a11y.darkTheme": "Dark theme",
+  "theme.light": "Light",
+  "theme.dark": "Dark",
   "settings.aria": "SpareLink India settings",
   "settings.appearance": "Appearance",
   "settings.theme": "Theme",
@@ -81,6 +92,7 @@ export const en = {
   "search.filters": "Filters",
   "search.partNo": "Part No.",  "search.recent": "Recent",
   "search.byVehicle": "Search by Vehicle",
+  "search.byBrand": "Search by Brand",
   "search.byPartNumber": "Search by Part Number",
   "search.resultsFor": "Search Results for {query}",
   "search.sortBy": "Sort",
@@ -243,6 +255,18 @@ export const en = {
   "cart.emptyTitle": "Your cart is currently empty",
   "cart.emptyBody": "Explore automobile spare parts from Hind Motors, Ambaji Traders and India Sales.",
   "cart.find": "Find Spare Parts",
+  /* A count with no noun to inflect. The cart badge used to build this in JS
+     as `count + " item" + (count === 1 ? "" : "s")`, which hardcoded English
+     into a bilingual page and produced "2 items" as a separate string no
+     translator ever sees. Two explicit keys rather than a plural pipe, because
+     `translate()` interpolates `{name}` and has no plural-forms support.
+     Hindi takes the same shape - it does not inflect this noun - so the Hindi
+     value is identical and only English needs the two variants. */
+  "cart.itemCountOne": "{count} item",
+  "cart.itemCountMany": "{count} items",
+  /* Was a template literal in the cart row: `Only ${item.stock} left in stock`,
+     i.e. hardcoded English on a bilingual page. */
+  "product.onlyLeft": "Only {count} left in stock",
   "cart.summary": "Order Summary",
   "cart.subtotal": "Items Subtotal ({count})",
   "cart.gst": "GST / Taxes",
@@ -366,6 +390,10 @@ export const en = {
   "login.passwordHint": "Sign in with username and password",
   "login.username": "Username",
   "login.password": "Password",
+  /* The password field had no visibility toggle and no visible <label> - only a
+     placeholder, which disappears the moment the field has any value. */
+  "login.showPassword": "Show password",
+  "login.hidePassword": "Hide password",
   "login.submit": "Login",
   "login.google": "Continue with Google",
   "login.googleNeeded": "Google OAuth configuration required.",
@@ -718,6 +746,15 @@ export const en = {
   "price.netRate": "Net Rate",
   "price.inclGst": "Incl. GST",
   "price.inclTaxDiscount": "{percent}% Incl. Tax Discount",
+  /* These four were literal English strings inside app/cart/page.tsx's item
+     row - the per-unit caption and both quantity steppers' accessible names.
+     The stepper labels matter most: they are what a screen-reader user hears
+     when they land on an otherwise anonymous "−" and "+". */
+  "price.listWithGst": "List ₹{amount} · Incl. GST",
+  "price.perUnitNet": "/ unit net",
+  "cart.removeNamed": "Remove {name} from cart",
+  "cart.qtyDecrease": "Decrease quantity of {name}",
+  "cart.qtyIncrease": "Increase quantity of {name}",
   "price.mrp": "MRP",
   "price.dlp": "Price List / DLP",
   "price.onRequest": "Price on Request",
@@ -901,9 +938,20 @@ export const en = {
   "states.loading": "Loading",
   "whatsapp.notConfigured": "WhatsApp number is not configured",
   "cart.signInToView": "Sign in to view your cart",
+  /* Both of these were literal English inside app/cart/page.tsx, on the signed
+     OUT cart screen - the one screen a first-time visitor is most likely to
+     see. Added here so the sentence is translatable like everything else. */
+  "cart.savedToAccount": "Your cart is saved to your SpareLink account.",
+  "common.signIn": "Sign in",
   "cart.itemsAria": "Cart items",
   "cart.orderSummaryAria": "Order summary",
   "cart.gstInvoicing": "GST Compliant Invoicing",
+  /* The cart's three trust badges rendered `cart.genuine` TWICE under two
+     different icons, so the list told the shopper the same sentence twice and
+     never mentioned the third thing it illustrated. Replaced with a claim the
+     site actually makes everywhere: the floating WhatsApp control in the
+     storefront header. Nothing is asserted that the page does not do. */
+  "cart.supportOnWhatsApp": "Order help on WhatsApp",
   "orders.loadingDetail": "Loading order details…",
   "orders.deliveryAddress": "Delivery address",
   "orders.itemsHeading": "Items",
@@ -954,6 +1002,13 @@ export const en = {
 
 export const hi: Record<keyof typeof en, string> = {
   "a11y.skipToContent": "मुख्य सामग्री पर जाएँ",
+  "a11y.themeAndLanguage": "थीम और भाषा",
+  "a11y.themeGroup": "थीम",
+  "a11y.languageGroup": "भाषा",
+  "a11y.lightTheme": "लाइट थीम",
+  "a11y.darkTheme": "डार्क थीम",
+  "theme.light": "लाइट",
+  "theme.dark": "डार्क",
   "settings.aria": "SpareLink India सेटिंग्स",
   "settings.appearance": "दिखावट",
   "settings.theme": "थीम",
@@ -1028,6 +1083,7 @@ export const hi: Record<keyof typeof en, string> = {
   "search.filters": "फ़िल्टर",
   "search.partNo": "पार्ट नंबर",  "search.recent": "हाल की खोज",
   "search.byVehicle": "वाहन से खोजें",
+  "search.byBrand": "ब्रांड से खोजें",
   "search.byPartNumber": "पार्ट नंबर से खोजें",
   "search.resultsFor": "{query} के खोज परिणाम",
   "search.sortBy": "क्रम",
@@ -1190,6 +1246,12 @@ export const hi: Record<keyof typeof en, string> = {
   "cart.emptyTitle": "आपका कार्ट खाली है",
   "cart.emptyBody": "Hind Motors, Ambaji Traders और India Sales के ऑटोमोबाइल स्पेयर पार्ट्स देखें।",
   "cart.find": "स्पेयर पार्ट्स खोजें",
+  /* Hindi does not inflect this noun, so singular and many read identically.
+     Both keys exist because `translate()` has no plural-forms support and the
+     English side genuinely needs the distinction. */
+  "cart.itemCountOne": "{count} आइटम",
+  "cart.itemCountMany": "{count} आइटम",
+  "product.onlyLeft": "स्टॉक में केवल {count} बचे हैं",
   "cart.summary": "ऑर्डर सारांश",
   "cart.subtotal": "आइटम उप-योग ({count})",
   "cart.gst": "GST / कर",
@@ -1313,6 +1375,8 @@ export const hi: Record<keyof typeof en, string> = {
   "login.passwordHint": "यूज़रनेम और पासवर्ड से साइन इन करें",
   "login.username": "यूज़रनेम",
   "login.password": "पासवर्ड",
+  "login.showPassword": "पासवर्ड दिखाएँ",
+  "login.hidePassword": "पासवर्ड छिपाएँ",
   "login.submit": "लॉगिन",
   "login.google": "Google से जारी रखें",
   "login.googleNeeded": "Google OAuth कॉन्फ़िगरेशन आवश्यक है।",
@@ -1665,6 +1729,11 @@ export const hi: Record<keyof typeof en, string> = {
   "price.netRate": "नेट रेट",
   "price.inclGst": "GST सहित",
   "price.inclTaxDiscount": "{percent}% इंक्लूसिव टैक्स डिस्काउंट",
+  "price.listWithGst": "लिस्ट ₹{amount} · GST सहित",
+  "price.perUnitNet": "/ प्रति यूनिट शुद्ध",
+  "cart.qtyDecrease": "{name} की मात्रा घटाएँ",
+  "cart.qtyIncrease": "{name} की मात्रा बढ़ाएँ",
+  "cart.removeNamed": "{name} को कार्ट से हटाएँ",
   "price.mrp": "MRP",
   "price.dlp": "प्राइस लिस्ट / DLP",
   "price.onRequest": "मूल्य अनुरोध पर",
@@ -1848,9 +1917,12 @@ export const hi: Record<keyof typeof en, string> = {
   "states.loading": "लोड हो रहा है",
   "whatsapp.notConfigured": "व्हाट्सएप्प नंबर कॉन्फ़िगर नहीं है",
   "cart.signInToView": "अपनी कार्ट देखने के लिए साइन इन करें",
+  "cart.savedToAccount": "आपकी कार्ट आपके SpareLink खाते में सहेजी जाती है।",
+  "common.signIn": "साइन इन करें",
   "cart.itemsAria": "कार्ट आइटम",
   "cart.orderSummaryAria": "ऑर्डर सारांश",
   "cart.gstInvoicing": "जीएसटी अनुपालन वितरण",
+  "cart.supportOnWhatsApp": "व्हाट्सएप पर ऑर्डर सहायता",
   "orders.loadingDetail": "ऑर्डर विवरण लोड हो रहा है…",
   "orders.deliveryAddress": "डिलीवरी पता",
   "orders.itemsHeading": "आइटम",

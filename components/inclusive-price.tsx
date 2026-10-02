@@ -16,6 +16,20 @@ function rupees(paise: number) {
   return (paise / 100).toLocaleString("en-IN");
 }
 
+/**
+ * The one price block in the storefront.
+ *
+ * Written in V3 tokens rather than raw palette classes because it appears in
+ * the product card, the catalogue table, the product modal, the cart, the
+ * checkout summary and the order detail - so a single colour decision made with
+ * a token here is a colour decision made correctly in six places, in both
+ * themes.
+ *
+ * The price ITSELF is the emphasis on the page, so it wears `v3-price`
+ * (tabular numerals, tight tracking). Everything around it - the "list rate"
+ * caption, the GST note - is deliberately quiet, because four equally loud
+ * numbers would give the buyer no way to tell which one to pay.
+ */
 export function InclusivePrice({
   pricePaise,
   listInclusivePaise,
@@ -29,43 +43,34 @@ export function InclusivePrice({
   const net = netInclusivePaise ?? list;
   const priced = isAuthoritativeSellingPricePaise(list, net, pricePaise);
   const showDiscount = priced && (discountPercent ?? 0) > 0 && net !== list;
+  const alignClass = align === "right" ? "text-right" : "text-left";
 
   if (!priced) {
     return (
-      <div className={align === "right" ? "text-right" : "text-left"}>
-        <p className="text-sm font-bold text-slate-800">{t("price.onRequest")}</p>
+      <div className={alignClass}>
+        <p className="text-sm font-bold text-[var(--v3-text)]">{t("price.onRequest")}</p>
       </div>
     );
   }
 
   return (
-    <div className={align === "right" ? "text-right" : "text-left"}>
-      <p className="text-[11px] font-medium uppercase tracking-wide text-slate-500">
-        {t("price.listRate")}
-      </p>
-      <p
-        className={
-          showDiscount
-            ? "text-sm font-semibold text-slate-500"
-            : "text-base font-extrabold text-slate-950"
-        }
-      >
+    <div className={alignClass}>
+      <p className="v3-label">{t("price.listRate")}</p>
+      <p className={showDiscount ? "text-sm font-semibold text-[var(--v3-text-3)]" : "v3-price"}>
         ₹{rupees(list)}
       </p>
-      <p className="text-[11px] font-medium text-emerald-700">{t("price.inclGst")}</p>
+      <p className="text-[11px] font-medium text-[var(--v3-ok)]">{t("price.inclGst")}</p>
       {showDiscount ? (
         <>
-          <p className="mt-1 text-[11px] font-medium uppercase tracking-wide text-slate-500">
-            {t("price.netRate")}
-          </p>
-          <p className="text-base font-extrabold text-slate-950">₹{rupees(net)}</p>
-          <p className="text-[11px] font-semibold text-[#7a1233]">
+          <p className="v3-label mt-1">{t("price.netRate")}</p>
+          <p className="v3-price">₹{rupees(net)}</p>
+          <p className="text-[11px] font-semibold text-[var(--v3-brand-ink)]">
             {t("price.inclTaxDiscount", { percent: String(discountPercent) })}
           </p>
         </>
       ) : null}
       {gstRate != null ? (
-        <p className="text-[11px] text-slate-500">GST {gstRate}%</p>
+        <p className="text-[11px] text-[var(--v3-text-3)]">GST {gstRate}%</p>
       ) : null}
     </div>
   );

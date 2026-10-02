@@ -104,12 +104,12 @@ function InfoCard({
   children: ReactNode;
 }) {
   return (
-    <div className="rounded-xl border border-slate-200 bg-slate-50/80 px-3 py-2.5">
-      <p className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-[0.12em] text-slate-500">
+    <div className="rounded-[var(--v3-r)] border border-[var(--v3-rule)] bg-[var(--v3-sunk)] px-3 py-2.5">
+      <p className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-[0.12em] text-[var(--v3-text-3)]">
         {icon}
         {title}
       </p>
-      <div className="mt-1 text-xs font-semibold leading-snug text-slate-900">{children}</div>
+      <div className="mt-1 text-xs font-semibold leading-snug text-[var(--v3-text)]">{children}</div>
     </div>
   );
 }
@@ -333,12 +333,12 @@ export function ProductDetailModal({
       role="dialog"
       aria-modal="true"
       aria-labelledby={titleId}
-      className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/70 p-0 backdrop-blur-[8px] sm:p-4"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-[var(--v3-brand)]/70 p-0 backdrop-blur-[8px] sm:p-4"
       onClick={(event) => {
         if (event.target === event.currentTarget) onClose();
       }}
     >
-      <div className="relative flex h-[100dvh] w-full max-w-[min(92vw,1420px)] min-w-0 flex-col overflow-hidden rounded-none bg-white shadow-2xl sm:h-[min(86dvh,880px)] sm:max-h-[min(88dvh,880px)] sm:rounded-[20px]">
+      <div className="relative flex h-[100dvh] w-full max-w-[min(92vw,1420px)] min-w-0 flex-col overflow-hidden rounded-none bg-[var(--v3-panel)] sm:h-[min(86dvh,880px)] sm:max-h-[min(88dvh,880px)] sm:rounded-[20px]">
         <button
           type="button"
           onClick={onClose}
@@ -347,17 +347,17 @@ export function ProductDetailModal({
              on the modal shell, and `html.dark .bg-white` remaps BOTH to
              #161b24, so without an explicit edge the close button becomes
              invisible against its own background. */
-          className="absolute right-3 top-3 z-40 flex h-9 w-9 items-center justify-center rounded-full border border-[var(--v3-rule-strong)] bg-[var(--v3-panel)] text-lg text-[var(--v3-text-2)] shadow-sm hover:bg-[var(--v3-sunk)]"
+          className="absolute right-3 top-3 z-40 flex h-9 w-9 items-center justify-center rounded-full border border-[var(--v3-rule-strong)] bg-[var(--v3-panel)] text-lg text-[var(--v3-text-2)] hover:bg-[var(--v3-sunk)]"
         >
           ×
         </button>
 
         {!payload && !error ? (
-          <div className="flex flex-1 items-center justify-center p-10 text-sm text-slate-500">
+          <div className="flex flex-1 items-center justify-center p-10 text-sm text-[var(--v3-text-3)]">
             {t("common.loading")}
           </div>
         ) : error && !payload ? (
-          <div className="flex flex-1 items-center justify-center p-10 text-sm text-rose-700">{error}</div>
+          <div className="flex flex-1 items-center justify-center p-10 text-sm text-[var(--v3-bad)]">{error}</div>
         ) : payload ? (
           <div className="grid min-h-0 min-w-0 flex-1 grid-cols-1 overflow-y-auto md:grid-cols-[minmax(0,1.27fr)_minmax(0,1fr)] md:overflow-hidden">
             {/* THE GALLERY COLUMN.
@@ -383,8 +383,8 @@ export function ProductDetailModal({
                         key={`${src}-${index}`}
                         type="button"
                         onClick={() => setImageIndex(index)}
-                        className={`aspect-square w-full shrink-0 overflow-hidden rounded-xl border bg-white ${
-                          index === imageIndex ? "border-[#7a1233] ring-1 ring-[#7a1233]/30" : "border-[var(--v3-rule)]"
+                        className={`aspect-square w-full shrink-0 overflow-hidden rounded-[var(--v3-r)] border bg-[var(--v3-panel)] ${
+                          index === imageIndex ? "border-[var(--v3-brand)] ring-1 ring-[var(--v3-brand)]/30" : "border-[var(--v3-rule)]"
                         }`}
                       >
                         {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -413,7 +413,7 @@ export function ProductDetailModal({
                        floating on black. The gallery column around it is
                        the dark `v3-sunk`, so the stage reads as a lit
                        product bay - which is what it is. */
-                    className="relative flex min-h-[220px] min-w-0 flex-1 items-center justify-center overflow-hidden rounded-2xl bg-[var(--v3-panel)] md:min-h-0"
+                    className="relative flex min-h-[220px] min-w-0 flex-1 items-center justify-center overflow-hidden rounded-[var(--v3-r)] bg-[var(--v3-panel)] md:min-h-0"
                     onPointerDown={(event) => {
                       if (!view360) return;
                       event.currentTarget.setPointerCapture(event.pointerId);
@@ -469,7 +469,7 @@ export function ProductDetailModal({
                            the control disappeared. A hairline edge restores
                            the boundary in both themes without changing the
                            light appearance. */
-                        className="absolute left-3 top-3 inline-flex items-center gap-1.5 rounded-full border border-[var(--v3-rule-strong)] bg-[var(--v3-panel)] px-3 py-1.5 text-[11px] font-bold text-[var(--v3-text)] shadow"
+                        className="absolute left-3 top-3 inline-flex items-center gap-1.5 rounded-full border border-[var(--v3-rule-strong)] bg-[var(--v3-panel)] px-3 py-1.5 text-[11px] font-bold text-[var(--v3-text)] "
                       >
                         <span className="text-[var(--v3-brand-ink)]">360°</span>
                         {view360 ? t("product.exit360") : t("product.view360")}
@@ -480,7 +480,7 @@ export function ProductDetailModal({
                       type="button"
                       aria-label={t("product.enlarge", { name: payload.part.title })}
                       onClick={() => setEnlarged(true)}
-                      className="absolute right-3 top-3 flex h-9 w-9 items-center justify-center rounded-xl border border-[var(--v3-rule-strong)] bg-[var(--v3-panel)] text-[var(--v3-text-2)] shadow"
+                      className="absolute right-3 top-3 flex h-9 w-9 items-center justify-center rounded-[var(--v3-r)] border border-[var(--v3-rule-strong)] bg-[var(--v3-panel)] text-[var(--v3-text-2)] "
                     >
                       ↗
                     </button>
@@ -491,7 +491,7 @@ export function ProductDetailModal({
                           type="button"
                           aria-label={t("product.prevImage")}
                           onClick={() => cycle(-1)}
-                          className="absolute left-2 top-1/2 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full border border-[var(--v3-rule-strong)] bg-[var(--v3-panel)] text-lg text-[var(--v3-text)] shadow"
+                          className="absolute left-2 top-1/2 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full border border-[var(--v3-rule-strong)] bg-[var(--v3-panel)] text-lg text-[var(--v3-text)] "
                         >
                           ‹
                         </button>
@@ -499,7 +499,7 @@ export function ProductDetailModal({
                           type="button"
                           aria-label={t("product.nextImage")}
                           onClick={() => cycle(1)}
-                          className="absolute right-2 top-1/2 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full border border-[var(--v3-rule-strong)] bg-[var(--v3-panel)] text-lg text-[var(--v3-text)] shadow"
+                          className="absolute right-2 top-1/2 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full border border-[var(--v3-rule-strong)] bg-[var(--v3-panel)] text-lg text-[var(--v3-text)] "
                         >
                           ›
                         </button>
@@ -512,7 +512,7 @@ export function ProductDetailModal({
                           type="button"
                           aria-label={t("product.prevImage")}
                           onClick={() => cycleFrame(-1)}
-                          className="absolute left-2 top-1/2 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full border border-[var(--v3-rule-strong)] bg-[var(--v3-panel)] text-lg text-[var(--v3-text)] shadow"
+                          className="absolute left-2 top-1/2 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full border border-[var(--v3-rule-strong)] bg-[var(--v3-panel)] text-lg text-[var(--v3-text)] "
                         >
                           ‹
                         </button>
@@ -520,7 +520,7 @@ export function ProductDetailModal({
                           type="button"
                           aria-label={t("product.nextImage")}
                           onClick={() => cycleFrame(1)}
-                          className="absolute right-2 top-1/2 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full border border-[var(--v3-rule-strong)] bg-[var(--v3-panel)] text-lg text-[var(--v3-text)] shadow"
+                          className="absolute right-2 top-1/2 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full border border-[var(--v3-rule-strong)] bg-[var(--v3-panel)] text-lg text-[var(--v3-text)] "
                         >
                           ›
                         </button>
@@ -528,7 +528,7 @@ export function ProductDetailModal({
                     ) : null}
 
                     {view360 ? (
-                      <span className="pointer-events-none absolute bottom-3 left-1/2 -translate-x-1/2 rounded-full border border-[var(--v3-rule)] bg-[var(--v3-panel)]/95 px-2.5 py-1 text-[10px] font-semibold text-[var(--v3-text-2)] shadow">
+                      <span className="pointer-events-none absolute bottom-3 left-1/2 -translate-x-1/2 rounded-full border border-[var(--v3-rule)] bg-[var(--v3-panel)]/95 px-2.5 py-1 text-[10px] font-semibold text-[var(--v3-text-2)] ">
                         {frame + 1} / {images.length}
                       </span>
                     ) : null}
@@ -567,8 +567,8 @@ export function ProductDetailModal({
                           key={`m-${src}-${index}`}
                           type="button"
                           onClick={() => setImageIndex(index)}
-                          className={`h-14 w-14 shrink-0 overflow-hidden rounded-xl border bg-white ${
-                            index === imageIndex ? "border-[#7a1233]" : "border-[var(--v3-rule)]"
+                          className={`h-14 w-14 shrink-0 overflow-hidden rounded-[var(--v3-r)] border bg-[var(--v3-panel)] ${
+                            index === imageIndex ? "border-[var(--v3-brand)]" : "border-[var(--v3-rule)]"
                           }`}
                         >
                           {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -595,15 +595,15 @@ export function ProductDetailModal({
                   tile on a sunk ground, which is correct in both themes. The
                   ink moves to the v3 tokens so it follows the surface. */}
               <ul className="mt-3 grid grid-cols-3 gap-2">
-                <li className="rounded-xl bg-[var(--v3-panel)] px-2 py-2 text-center">
+                <li className="rounded-[var(--v3-r)] bg-[var(--v3-panel)] px-2 py-2 text-center">
                   <p className="text-[11px] font-bold text-[var(--v3-text)]">{t("product.genuineQuality")}</p>
                   <p className="text-[10px] text-[var(--v3-text-3)]">{t("product.genuineQualityHint")}</p>
                 </li>
-                <li className="rounded-xl bg-[var(--v3-panel)] px-2 py-2 text-center">
+                <li className="rounded-[var(--v3-r)] bg-[var(--v3-panel)] px-2 py-2 text-center">
                   <p className="text-[11px] font-bold text-[var(--v3-text)]">{t("product.fastDispatch")}</p>
                   <p className="text-[10px] text-[var(--v3-text-3)]">{t("product.fastDispatchHint")}</p>
                 </li>
-                <li className="rounded-xl bg-[var(--v3-panel)] px-2 py-2 text-center">
+                <li className="rounded-[var(--v3-r)] bg-[var(--v3-panel)] px-2 py-2 text-center">
                   <p className="text-[11px] font-bold text-[var(--v3-text)]">{t("product.easyReturns")}</p>
                   <p className="text-[10px] text-[var(--v3-text-3)]">{t("product.easyReturnsHint")}</p>
                 </li>
@@ -650,16 +650,16 @@ export function ProductDetailModal({
                 </span>
               </div>
 
-              <h2 id={titleId} className="mt-3 break-words text-[clamp(1.1rem,2vw,1.375rem)] font-extrabold leading-snug tracking-tight text-slate-950">
+              <h2 id={titleId} className="mt-3 break-words text-[clamp(1.1rem,2vw,1.375rem)] font-extrabold leading-snug tracking-tight text-[var(--v3-text)]">
                 {payload.part.title}
               </h2>
-              {subtitle ? <p className="mt-1 text-sm text-slate-500">{subtitle}</p> : null}
-              {category ? <p className="mt-1 text-sm font-semibold text-slate-700">{category}</p> : null}
+              {subtitle ? <p className="mt-1 text-sm text-[var(--v3-text-3)]">{subtitle}</p> : null}
+              {category ? <p className="mt-1 text-sm font-semibold text-[var(--v3-text-2)]">{category}</p> : null}
 
               {payload.part.description ? (
                 <>
                   <div className="my-3 h-px bg-[var(--v3-rule)]" />
-                  <p className="text-sm leading-relaxed text-slate-600">{payload.part.description}</p>
+                  <p className="text-sm leading-relaxed text-[var(--v3-text-2)]">{payload.part.description}</p>
                 </>
               ) : null}
 
@@ -668,9 +668,9 @@ export function ProductDetailModal({
                   <div className="my-3 h-px bg-[var(--v3-rule)]" />
                   <div className="grid grid-cols-1 gap-2 min-[420px]:grid-cols-3">
                     {infoCards.map((card) => (
-                      <div key={card.label} className="rounded-xl bg-slate-50 px-3 py-2.5">
-                        <p className="text-[10px] font-semibold uppercase tracking-wide text-slate-500">{card.label}</p>
-                        <p className="mt-0.5 break-words text-sm font-bold text-slate-900">{card.value}</p>
+                      <div key={card.label} className="rounded-[var(--v3-r)] bg-[var(--v3-sunk)] px-3 py-2.5">
+                        <p className="text-[10px] font-semibold uppercase tracking-wide text-[var(--v3-text-3)]">{card.label}</p>
+                        <p className="mt-0.5 break-words text-sm font-bold text-[var(--v3-text)]">{card.value}</p>
                       </div>
                     ))}
                   </div>
@@ -747,7 +747,7 @@ export function ProductDetailModal({
               <div className="mt-4 border-t border-[var(--v3-rule)] pt-3">
                 {listing ? (
                   listing.isPensol ? (
-                    <div className="text-sm font-bold text-slate-900">
+                    <div className="text-sm font-bold text-[var(--v3-text)]">
                       {listing.pricePaise > 0
                         ? `₹${(listing.pricePaise / 100).toLocaleString("en-IN")}`
                         : t("price.onRequest")}
@@ -763,15 +763,15 @@ export function ProductDetailModal({
                     />
                   )
                 ) : (
-                  <p className="text-sm font-bold text-slate-800">{t("price.onRequest")}</p>
+                  <p className="text-sm font-bold text-[var(--v3-text)]">{t("price.onRequest")}</p>
                 )}
                 {listing?.firmName ? (
-                  <p className="mt-1 text-[11px] font-semibold text-emerald-700">
+                  <p className="mt-1 text-[11px] font-semibold text-[var(--v3-ok)]">
                     {t("product.fulfilledBy", { firm: listing.firmName })}
                   </p>
                 ) : null}
 
-                {error ? <p className="mt-2 text-xs text-rose-700">{error}</p> : null}
+                {error ? <p className="mt-2 text-xs text-[var(--v3-bad)]">{error}</p> : null}
 
                 <div className="mt-3 flex min-w-0 flex-wrap items-center gap-3">
                   {/* Quantity stepper. `border-slate-200` IS remapped by
@@ -780,7 +780,7 @@ export function ProductDetailModal({
                       `--foreground`, which is correct in both themes. Left
                       alone deliberately - the controls work and the audit
                       found no failure here. */}
-                  <div className="flex items-center rounded-xl border border-slate-200">
+                  <div className="flex items-center rounded-[var(--v3-r)] border border-[var(--v3-rule)]">
                     <button
                       type="button"
                       aria-label={t("product.decreaseQuantity")}
@@ -803,7 +803,7 @@ export function ProductDetailModal({
                     type="button"
                     disabled={!canAdd || adding}
                     onClick={() => void addToCart()}
-                    className="inline-flex min-h-12 min-w-0 flex-1 items-center justify-center gap-2 rounded-xl bg-[#7a1233] px-4 text-sm font-bold text-white hover:bg-[#611029] disabled:opacity-50"
+                    className="inline-flex min-h-12 min-w-0 flex-1 items-center justify-center gap-2 rounded-[var(--v3-r)] bg-[var(--v3-brand)] px-4 text-sm font-bold text-white hover:bg-[#611029] disabled:opacity-50"
                   >
                     <CartIcon className="h-4 w-4" />
                     {canAdd
@@ -829,7 +829,7 @@ export function ProductDetailModal({
                          and a mint hover flash on a dark panel. Those become
                          the ok-soft pair, which is the same green family at
                          a dark value. --v3-ok is 10.06:1 on the panel. */
-                      className="inline-flex min-h-11 min-w-0 items-center justify-center gap-2 rounded-xl border border-[var(--v3-ok-line)] bg-[var(--v3-ok-soft)] px-3 text-center text-sm font-bold text-[var(--v3-ok)] hover:bg-[var(--v3-ok-line)] hover:bg-opacity-30"
+                      className="inline-flex min-h-11 min-w-0 items-center justify-center gap-2 rounded-[var(--v3-r)] border border-[var(--v3-ok-line)] bg-[var(--v3-ok-soft)] px-3 text-center text-sm font-bold text-[var(--v3-ok)] hover:bg-[var(--v3-ok-line)] hover:bg-opacity-30"
                     >
                       <WhatsAppIcon className="h-5 w-5" />
                       {t("product.enquireWhatsApp")}
@@ -846,7 +846,7 @@ export function ProductDetailModal({
                        dark rule remapped, so the button wore a bright pink
                        outline around a dark surface. The bad-soft pair keeps
                        the same meaning - --v3-bad is #f87171, 6.24:1. */
-                    className="inline-flex min-h-11 min-w-0 items-center justify-center gap-2 rounded-xl border border-[var(--v3-bad-line)] bg-[var(--v3-panel)] px-3 text-sm font-bold text-[var(--v3-bad)] hover:bg-[var(--v3-bad-soft)] disabled:opacity-50"
+                    className="inline-flex min-h-11 min-w-0 items-center justify-center gap-2 rounded-[var(--v3-r)] border border-[var(--v3-bad-line)] bg-[var(--v3-panel)] px-3 text-sm font-bold text-[var(--v3-bad)] hover:bg-[var(--v3-bad-soft)] disabled:opacity-50"
                   >
                     <HeartIcon className="h-4 w-4" />
                     {t("product.addWishlist")}
@@ -859,7 +859,7 @@ export function ProductDetailModal({
 
         {enlarged ? (
           <div
-            className="absolute inset-0 z-50 flex items-center justify-center bg-slate-950/80 p-6"
+            className="absolute inset-0 z-50 flex items-center justify-center bg-[var(--v3-brand)]/80 p-6"
             onClick={() => setEnlarged(false)}
           >
             {/* eslint-disable-next-line @next/next/no-img-element */}

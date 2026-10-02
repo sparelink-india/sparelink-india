@@ -13,7 +13,7 @@ export function SearchHighlight({
         part.match ? (
           <mark
             key={`${part.text}-${index}`}
-            className="rounded-sm bg-[#7a1233]/15 px-0.5 font-semibold text-inherit"
+            className="rounded-sm bg-[var(--v3-brand)]/15 px-0.5 font-semibold text-inherit"
           >
             {part.text}
           </mark>

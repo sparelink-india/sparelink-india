@@ -18,15 +18,15 @@ export const metadata = routeMetadata({
 export default function ReturnsRefundsPage() {
   return (
     <StorefrontShell>
-      <h1 className="text-2xl font-bold text-slate-950">
+      <h1 className="text-2xl font-bold text-[var(--v3-text)]">
         <T k="legal.returns" />
       </h1>
-      <p className="mt-3 text-sm leading-7 text-slate-700">
+      <p className="mt-3 text-sm leading-7 text-[var(--v3-text-2)]">
         <T k="returns.intro" />
       </p>
-      <section className="mt-8 space-y-6 text-sm leading-7 text-slate-700">
+      <section className="mt-8 space-y-6 text-sm leading-7 text-[var(--v3-text-2)]">
         <div>
-          <h2 className="font-bold text-slate-950">
+          <h2 className="font-bold text-[var(--v3-text)]">
             <T k="returns.eligibilityTitle" />
           </h2>
           <p>
@@ -34,7 +34,7 @@ export default function ReturnsRefundsPage() {
           </p>
         </div>
         <div>
-          <h2 className="font-bold text-slate-950">
+          <h2 className="font-bold text-[var(--v3-text)]">
             <T k="returns.damageTitle" />
           </h2>
           <p>
@@ -42,7 +42,7 @@ export default function ReturnsRefundsPage() {
           </p>
         </div>
         <div>
-          <h2 className="font-bold text-slate-950">
+          <h2 className="font-bold text-[var(--v3-text)]">
             <T k="returns.processTitle" />
           </h2>
           <p>
@@ -50,7 +50,7 @@ export default function ReturnsRefundsPage() {
           </p>
         </div>
         <div>
-          <h2 className="font-bold text-slate-950">
+          <h2 className="font-bold text-[var(--v3-text)]">
             <T k="returns.timeTitle" />
           </h2>
           <p>
@@ -58,7 +58,7 @@ export default function ReturnsRefundsPage() {
           </p>
         </div>
         <div>
-          <h2 className="font-bold text-slate-950">
+          <h2 className="font-bold text-[var(--v3-text)]">
             <T k="returns.conditionTitle" />
           </h2>
           <p>
@@ -66,7 +66,7 @@ export default function ReturnsRefundsPage() {
           </p>
         </div>
         <div>
-          <h2 className="font-bold text-slate-950">
+          <h2 className="font-bold text-[var(--v3-text)]">
             <T k="returns.nonTitle" />
           </h2>
           <p>
@@ -74,7 +74,7 @@ export default function ReturnsRefundsPage() {
           </p>
         </div>
         <div>
-          <h2 className="font-bold text-slate-950">
+          <h2 className="font-bold text-[var(--v3-text)]">
             <T k="returns.inspectTitle" />
           </h2>
           <p>
@@ -82,7 +82,7 @@ export default function ReturnsRefundsPage() {
           </p>
         </div>
         <div>
-          <h2 className="font-bold text-slate-950">
+          <h2 className="font-bold text-[var(--v3-text)]">
             <T k="returns.refundTitle" />
           </h2>
           <p>
@@ -90,7 +90,7 @@ export default function ReturnsRefundsPage() {
           </p>
         </div>
         <div>
-          <h2 className="font-bold text-slate-950">
+          <h2 className="font-bold text-[var(--v3-text)]">
             <T k="returns.timelineTitle" />
           </h2>
           <p>
@@ -98,7 +98,7 @@ export default function ReturnsRefundsPage() {
           </p>
         </div>
         <div>
-          <h2 className="font-bold text-slate-950">
+          <h2 className="font-bold text-[var(--v3-text)]">
             <T k="returns.shipTitle" />
           </h2>
           <p>
@@ -106,7 +106,7 @@ export default function ReturnsRefundsPage() {
           </p>
         </div>
         <div>
-          <h2 className="font-bold text-slate-950">
+          <h2 className="font-bold text-[var(--v3-text)]">
             <T k="returns.contactTitle" />
           </h2>
           <p>
@@ -114,7 +114,7 @@ export default function ReturnsRefundsPage() {
             <br />
             <T k="common.email" />: {PUBLIC_DISPLAY_EMAIL}
           </p>
-          <Link href="/help-support" className="mt-2 inline-block font-semibold text-[#7a1233] underline">
+          <Link href="/help-support" className="mt-2 inline-block font-semibold text-[var(--v3-brand-ink)] underline">
             <T k="help.open" />
           </Link>
         </div>

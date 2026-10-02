@@ -96,7 +96,7 @@ export function SearchProductCard({
 
   const priceBlock = listing ? (
     listing.isPensol ? (
-      <p className="text-sm font-extrabold text-slate-950">
+      <p className="text-sm font-extrabold text-[var(--v3-text)]">
         {listing.pricePaise > 0
           ? `₹${(listing.pricePaise / 100).toLocaleString("en-IN")}`
           : t("price.onRequest")}
@@ -114,7 +114,7 @@ export function SearchProductCard({
       />
     )
   ) : (
-    <p className="text-sm font-extrabold text-slate-800">{t("price.onRequest")}</p>
+    <p className="text-sm font-extrabold text-[var(--v3-text)]">{t("price.onRequest")}</p>
   );
 
   if (layout === "mobile") {
@@ -126,11 +126,11 @@ export function SearchProductCard({
     ].join(" • ");
 
     return (
-      <article className="rounded-xl border border-[#7a1233] bg-white p-3 shadow-sm">
+      <article className="rounded-[var(--v3-r)] border border-[var(--v3-brand)] bg-[var(--v3-panel)] p-3 ">
         <div className="flex items-start gap-3">
           <button
             type="button"
-            className="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-[#7a1233]"
+            className="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-[var(--v3-r)] bg-[var(--v3-brand)]"
             onClick={onOpen}
             aria-label={title}
           >
@@ -157,18 +157,18 @@ export function SearchProductCard({
           <div className="min-w-0 flex-1">
             <button
               type="button"
-              className="block w-full truncate text-left text-[17px] font-extrabold leading-tight text-slate-950 hover:text-[#7a1233]"
+              className="block w-full truncate text-left text-[17px] font-extrabold leading-tight text-[var(--v3-text)] hover:text-[var(--v3-brand-ink)]"
               onClick={onOpen}
               title={title}
             >
               <SearchHighlight text={title} query={query} />
             </button>
-            <p className="mt-1 truncate text-[11px] font-medium text-slate-600">{partMeta}</p>
+            <p className="mt-1 truncate text-[11px] font-medium text-[var(--v3-text-2)]">{partMeta}</p>
             <div className="mt-3 flex flex-wrap items-center gap-1.5">
               <span className="rounded-md bg-[var(--v3-brand-soft)] px-2 py-1 text-[11px] font-bold text-[var(--v3-brand-ink)]">
                 LIST {formatPaise(listPaise)}
               </span>
-              <span className="rounded-md bg-slate-100 px-2 py-1 text-[11px] font-bold text-slate-700">
+              <span className="rounded-md bg-[var(--v3-sunk)] px-2 py-1 text-[11px] font-bold text-[var(--v3-text-2)]">
                 MRP {formatPaise(listing?.mrpPaise)}
               </span>
               <span className="rounded-md bg-[var(--v3-ok-soft)] px-2 py-1 text-[11px] font-bold text-[var(--v3-ok)]">
@@ -178,7 +178,7 @@ export function SearchProductCard({
                 type="button"
                 disabled={!canAdd || addingId === listing?.id}
                 onClick={() => listing && onAddToCart(listing.id, title)}
-                className="ml-auto inline-flex min-h-9 items-center gap-1.5 rounded-lg bg-[#7a1233] px-3 text-xs font-bold text-white hover:bg-[#611029] disabled:cursor-not-allowed disabled:bg-slate-200 disabled:text-slate-500"
+                className="ml-auto inline-flex min-h-9 items-center gap-1.5 rounded-[var(--v3-r)] bg-[var(--v3-brand)] px-3 text-xs font-bold text-white hover:bg-[#611029] disabled:cursor-not-allowed disabled:bg-[var(--v3-sunk-deep)] disabled:text-[var(--v3-text-3)]"
                 aria-label={`${t("product.addToCart")}: ${title}`}
               >
                 {canAdd ? (
@@ -201,8 +201,8 @@ export function SearchProductCard({
 
   if (layout === "list") {
     return (
-      <article className="flex min-w-0 flex-col gap-3 border-b border-slate-100 bg-white px-3 py-3 sm:flex-row sm:px-4">
-        <button type="button" className="h-20 w-20 shrink-0 overflow-hidden rounded-lg bg-slate-50" onClick={onOpen}>
+      <article className="flex min-w-0 flex-col gap-3 border-b border-[var(--v3-rule)] bg-[var(--v3-panel)] px-3 py-3 sm:flex-row sm:px-4">
+        <button type="button" className="h-20 w-20 shrink-0 overflow-hidden rounded-[var(--v3-r)] bg-[var(--v3-sunk)]" onClick={onOpen}>
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src={image}
@@ -224,28 +224,28 @@ export function SearchProductCard({
           />
         </button>
         <div className="min-w-0 flex-1">
-          <button type="button" className="block w-full text-left text-sm font-bold text-slate-950 hover:text-[#7a1233]" onClick={onOpen}>
+          <button type="button" className="block w-full text-left text-sm font-bold text-[var(--v3-text)] hover:text-[var(--v3-brand-ink)]" onClick={onOpen}>
             <SearchHighlight text={title} query={query} />
           </button>
-          <p className="mt-1 text-xs text-slate-500">
+          <p className="mt-1 text-xs text-[var(--v3-text-3)]">
             {[partData.brand, partData.part_number ? `${t("search.partNo")} ${partData.part_number}` : ""]
               .filter(Boolean)
               .join(" | ")}
           </p>
           {partData.category ? (
-            <span className="mt-1 inline-flex rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-semibold text-slate-600">
+            <span className="mt-1 inline-flex rounded-full bg-[var(--v3-sunk)] px-2 py-0.5 text-[10px] font-semibold text-[var(--v3-text-2)]">
               {partData.category}
             </span>
           ) : null}
         </div>
         <div className="flex min-w-0 shrink-0 flex-row items-end justify-between gap-2 sm:flex-col sm:items-end">
-          <p className={`text-[11px] font-bold ${canAdd ? "text-emerald-700" : "text-slate-500"}`}>{stock}</p>
+          <p className={`text-[11px] font-bold ${canAdd ? "text-[var(--v3-ok)]" : "text-[var(--v3-text-3)]"}`}>{stock}</p>
           {priceBlock}
           <button
             type="button"
             disabled={!canAdd || addingId === listing?.id}
             onClick={() => listing && onAddToCart(listing.id, title)}
-            className="min-h-9 rounded-lg bg-[#7a1233] px-3 text-[11px] font-bold text-white disabled:opacity-50"
+            className="min-h-9 rounded-[var(--v3-r)] bg-[var(--v3-brand)] px-3 text-[11px] font-bold text-white disabled:opacity-50"
           >
             {canAdd ? t("product.addToCart") : t("price.onRequest")}
           </button>
@@ -258,10 +258,10 @@ export function SearchProductCard({
      products fit on screen without losing price, discount or stock. */
   if (layout === "tiles") {
     return (
-      <article className="flex h-full flex-col overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm transition hover:shadow-md">
+      <article className="flex h-full flex-col overflow-hidden rounded-[var(--v3-r)] border border-[var(--v3-rule)] bg-[var(--v3-panel)] transition hover:shadow-md">
         <button
           type="button"
-          className="relative aspect-[4/3] w-full bg-slate-50"
+          className="relative aspect-[4/3] w-full bg-[var(--v3-sunk)]"
           onClick={onOpen}
           aria-label={title}
         >
@@ -292,32 +292,32 @@ export function SearchProductCard({
         </button>
         <div className="flex flex-1 flex-col p-2.5">
           {partData.part_number ? (
-            <p className="font-mono text-[10px] font-semibold text-slate-500">
+            <p className="font-mono text-[10px] font-semibold text-[var(--v3-text-3)]">
               {partData.part_number}
             </p>
           ) : null}
           <button
             type="button"
-            className="line-clamp-2 text-left text-[13px] font-bold leading-snug text-slate-950 hover:text-[var(--v3-brand-ink)]"
+            className="line-clamp-2 text-left text-[13px] font-bold leading-snug text-[var(--v3-text)] hover:text-[var(--v3-brand-ink)]"
             onClick={onOpen}
           >
             <SearchHighlight text={title} query={query} />
           </button>
-          <p className="mt-1.5 text-[13px] font-extrabold text-slate-950">
+          <p className="mt-1.5 text-[13px] font-extrabold text-[var(--v3-text)]">
             LIST {formatPaise(listingListPaise(listing))}
           </p>
-          <div className="mt-0.5 flex items-center gap-1.5 text-[10px] font-semibold text-slate-500">
+          <div className="mt-0.5 flex items-center gap-1.5 text-[10px] font-semibold text-[var(--v3-text-3)]">
             <span className="line-through">MRP {formatPaise(listing?.mrpPaise)}</span>
             <span className="text-[var(--v3-ok)]">DISC {discountText(listing)}</span>
           </div>
-          <p className={`mt-1 text-[10px] font-bold ${canAdd ? "text-emerald-700" : "text-slate-500"}`}>
+          <p className={`mt-1 text-[10px] font-bold ${canAdd ? "text-[var(--v3-ok)]" : "text-[var(--v3-text-3)]"}`}>
             {stock}
           </p>
           <button
             type="button"
             disabled={!canAdd || addingId === listing?.id}
             onClick={() => listing && onAddToCart(listing.id, title)}
-            className="mt-1.5 inline-flex min-h-9 w-full items-center justify-center rounded-lg bg-[#7a1233] px-2 text-[11px] font-bold text-white hover:bg-[#611029] disabled:opacity-50"
+            className="mt-1.5 inline-flex min-h-9 w-full items-center justify-center rounded-[var(--v3-r)] bg-[var(--v3-brand)] px-2 text-[11px] font-bold text-white hover:bg-[#611029] disabled:opacity-50"
           >
             {canAdd ? t("product.addToCart") : t("price.onRequest")}
           </button>
@@ -336,11 +336,11 @@ export function SearchProductCard({
      faked here. */
   if (layout === "detailed") {
     return (
-      <article className="flex h-full flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition hover:shadow-md">
+      <article className="flex h-full flex-col overflow-hidden rounded-[var(--v3-r)] border border-[var(--v3-rule)] bg-[var(--v3-panel)] transition hover:shadow-md">
         <div className="flex flex-col sm:flex-row">
           <button
             type="button"
-            className="relative aspect-square w-full shrink-0 bg-slate-50 sm:aspect-auto sm:h-44 sm:w-44"
+            className="relative aspect-square w-full shrink-0 bg-[var(--v3-sunk)] sm:aspect-auto sm:h-44 sm:w-44"
             onClick={onOpen}
             aria-label={title}
           >
@@ -366,56 +366,56 @@ export function SearchProductCard({
           </button>
           <div className="flex min-w-0 flex-1 flex-col p-4">
             {partData.brand ? (
-              <p className="text-[11px] font-bold uppercase tracking-wide text-slate-500">
+              <p className="text-[11px] font-bold uppercase tracking-wide text-[var(--v3-text-3)]">
                 {partData.brand}
               </p>
             ) : null}
             <button
               type="button"
-              className="mt-0.5 text-left text-base font-bold leading-snug text-slate-950 hover:text-[#7a1233]"
+              className="mt-0.5 text-left text-base font-bold leading-snug text-[var(--v3-text)] hover:text-[var(--v3-brand-ink)]"
               onClick={onOpen}
             >
               <SearchHighlight text={title} query={query} />
             </button>
             <dl className="mt-2 grid grid-cols-2 gap-x-4 gap-y-1 text-xs sm:grid-cols-3">
               <div className="min-w-0">
-                <dt className="text-[10px] font-bold uppercase text-slate-400">{t("search.partNo")}</dt>
-                <dd className="truncate font-mono font-semibold text-slate-800">
+                <dt className="text-[10px] font-bold uppercase text-[var(--v3-text-3)]">{t("search.partNo")}</dt>
+                <dd className="truncate font-mono font-semibold text-[var(--v3-text)]">
                   {partData.part_number || "—"}
                 </dd>
               </div>
               <div className="min-w-0">
-                <dt className="text-[10px] font-bold uppercase text-slate-400">HSN</dt>
-                <dd className="truncate font-mono text-slate-700">{listing?.hsn || "—"}</dd>
+                <dt className="text-[10px] font-bold uppercase text-[var(--v3-text-3)]">HSN</dt>
+                <dd className="truncate font-mono text-[var(--v3-text-2)]">{listing?.hsn || "—"}</dd>
               </div>
               <div className="min-w-0">
-                <dt className="text-[10px] font-bold uppercase text-slate-400">GST</dt>
-                <dd className="text-slate-700">
+                <dt className="text-[10px] font-bold uppercase text-[var(--v3-text-3)]">GST</dt>
+                <dd className="text-[var(--v3-text-2)]">
                   {listing?.gstRate != null ? `${listing.gstRate}%` : "—"}
                 </dd>
               </div>
               {listing?.sku ? (
                 <div className="min-w-0">
-                  <dt className="text-[10px] font-bold uppercase text-slate-400">SKU</dt>
-                  <dd className="truncate font-mono text-slate-700">{listing.sku}</dd>
+                  <dt className="text-[10px] font-bold uppercase text-[var(--v3-text-3)]">SKU</dt>
+                  <dd className="truncate font-mono text-[var(--v3-text-2)]">{listing.sku}</dd>
                 </div>
               ) : null}
               {partData.category ? (
                 <div className="min-w-0">
-                  <dt className="text-[10px] font-bold uppercase text-slate-400">{t("product.category")}</dt>
-                  <dd className="truncate text-slate-700">{partData.category}</dd>
+                  <dt className="text-[10px] font-bold uppercase text-[var(--v3-text-3)]">{t("product.category")}</dt>
+                  <dd className="truncate text-[var(--v3-text-2)]">{partData.category}</dd>
                 </div>
               ) : null}
               <div className="min-w-0">
-                <dt className="text-[10px] font-bold uppercase text-slate-400">{t("search.stockHeading")}</dt>
-                <dd className={`font-bold ${canAdd ? "text-emerald-700" : "text-slate-500"}`}>
+                <dt className="text-[10px] font-bold uppercase text-[var(--v3-text-3)]">{t("search.stockHeading")}</dt>
+                <dd className={`font-bold ${canAdd ? "text-[var(--v3-ok)]" : "text-[var(--v3-text-3)]"}`}>
                   {stock}
                 </dd>
               </div>
             </dl>
             <div className="mt-3">
               {priceBlock}
-              <p className="mt-0.5 text-[11px] text-slate-400 line-through">
+              <p className="mt-0.5 text-[11px] text-[var(--v3-text-3)] line-through">
                 {t("price.mrp")} {formatPaise(listing?.mrpPaise)}
               </p>
             </div>
@@ -423,7 +423,7 @@ export function SearchProductCard({
               type="button"
               disabled={!canAdd || addingId === listing?.id}
               onClick={() => listing && onAddToCart(listing.id, title)}
-              className="mt-3 inline-flex min-h-10 w-full items-center justify-center rounded-lg bg-[#7a1233] px-3 text-xs font-bold text-white hover:bg-[#611029] disabled:opacity-50"
+              className="mt-3 inline-flex min-h-10 w-full items-center justify-center rounded-[var(--v3-r)] bg-[var(--v3-brand)] px-3 text-xs font-bold text-white hover:bg-[#611029] disabled:opacity-50"
             >
               {canAdd ? t("product.addToCart") : t("price.onRequest")}
             </button>
@@ -434,8 +434,8 @@ export function SearchProductCard({
   }
 
   return (
-    <article className="flex h-full flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition hover:shadow-md">
-      <button type="button" className="relative aspect-square w-full bg-slate-50" onClick={onOpen} aria-label={title}>
+    <article className="flex h-full flex-col overflow-hidden rounded-[var(--v3-r)] border border-[var(--v3-rule)] bg-[var(--v3-panel)] transition hover:shadow-md">
+      <button type="button" className="relative aspect-square w-full bg-[var(--v3-sunk)]" onClick={onOpen} aria-label={title}>
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
           src={image}
@@ -459,30 +459,30 @@ export function SearchProductCard({
       <div className="flex flex-1 flex-col p-3">
         <button
           type="button"
-          className="line-clamp-2 text-left text-sm font-bold leading-snug text-slate-950 hover:text-[#7a1233]"
+          className="line-clamp-2 text-left text-sm font-bold leading-snug text-[var(--v3-text)] hover:text-[var(--v3-brand-ink)]"
           onClick={onOpen}
         >
           <SearchHighlight text={title} query={query} />
         </button>
-        {partData.brand ? <p className="mt-1 text-xs font-semibold text-slate-600">{partData.brand}</p> : null}
+        {partData.brand ? <p className="mt-1 text-xs font-semibold text-[var(--v3-text-2)]">{partData.brand}</p> : null}
         {partData.part_number ? (
-          <p className="mt-0.5 text-[11px] text-slate-500">
+          <p className="mt-0.5 text-[11px] text-[var(--v3-text-3)]">
             {t("search.partNo")} {partData.part_number}
           </p>
         ) : null}
         {partData.category ? (
-          <span className="mt-2 w-fit rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-semibold text-slate-600">
+          <span className="mt-2 w-fit rounded-full bg-[var(--v3-sunk)] px-2 py-0.5 text-[10px] font-semibold text-[var(--v3-text-2)]">
             {partData.category}
           </span>
         ) : null}
         <div className="mt-auto pt-3">
-          <p className={`text-[11px] font-bold ${canAdd ? "text-emerald-700" : "text-slate-500"}`}>{stock}</p>
+          <p className={`text-[11px] font-bold ${canAdd ? "text-[var(--v3-ok)]" : "text-[var(--v3-text-3)]"}`}>{stock}</p>
           <div className="mt-1">{priceBlock}</div>
           <button
             type="button"
             disabled={!canAdd || addingId === listing?.id}
             onClick={() => listing && onAddToCart(listing.id, title)}
-            className="mt-2 inline-flex min-h-10 w-full items-center justify-center rounded-lg bg-[#7a1233] px-3 text-xs font-bold text-white hover:bg-[#611029] disabled:opacity-50"
+            className="mt-2 inline-flex min-h-10 w-full items-center justify-center rounded-[var(--v3-r)] bg-[var(--v3-brand)] px-3 text-xs font-bold text-white hover:bg-[#611029] disabled:opacity-50"
           >
             {canAdd ? t("product.addToCart") : t("price.onRequest")}
           </button>

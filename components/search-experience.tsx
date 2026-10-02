@@ -102,7 +102,7 @@ function FacetChecks({
   return (
     <section>
       <div className="flex items-center justify-between gap-2">
-        <h3 className="text-[11px] font-bold  text-[var(--v3-text-3)]">{title}</h3>
+        <h3 className="text-[11px] font-bold text-[var(--v3-text-3)]">{title}</h3>
         {active ? (
           <button type="button" className="text-[11px] font-semibold text-[var(--v3-brand-ink)]" onClick={() => onToggle("")}>
             {tClear}
@@ -114,7 +114,7 @@ function FacetChecks({
           const checked = active === row.value;
           return (
             <li key={row.value}>
-              <label className="flex cursor-pointer items-center gap-2 rounded-[2px] px-1 py-1.5 text-sm text-slate-800 hover:bg-[var(--v3-sunk)]">
+              <label className="flex cursor-pointer items-center gap-2 rounded-[2px] px-1 py-1.5 text-sm text-[var(--v3-text)] hover:bg-[var(--v3-sunk)]">
                 <input
                   type="checkbox"
                   checked={checked}
@@ -172,7 +172,7 @@ function SearchFilters({
 }) {
   const { t } = useI18n();
   return (
-    <aside className="space-y-6 rounded-[var(--v3-r-lg)] border border-[var(--v3-rule)] bg-white p-4">
+    <aside className="space-y-6 rounded-[var(--v3-r-lg)] border border-[var(--v3-rule)] bg-[var(--v3-panel)] p-4">
       <div className="flex items-center justify-between">
         <h2 className="text-sm font-bold text-[var(--v3-text)]">{t("search.filters")}</h2>
         {activeBrand || activeCategory || activeStock !== "all" ? (
@@ -186,7 +186,7 @@ function SearchFilters({
         ) : null}
       </div>
       <section className="border-b border-[var(--v3-rule)] pb-3">
-        <h3 className="text-[11px] font-bold  text-[var(--v3-text-3)]">{t("search.browseHeading")}</h3>
+        <h3 className="text-[11px] font-bold text-[var(--v3-text-3)]">{t("search.browseHeading")}</h3>
         <div className="mt-2 flex flex-wrap gap-1.5">
           {tabs.map((item) => (
             <button
@@ -206,13 +206,13 @@ function SearchFilters({
         </div>
       </section>
       <section>
-        <h3 className="text-[11px] font-bold  text-[var(--v3-text-3)]">{t("search.stockHeading")}</h3>
+        <h3 className="text-[11px] font-bold text-[var(--v3-text-3)]">{t("search.stockHeading")}</h3>
         <select
           value={activeStock}
           onChange={(event) =>
             onStockChange(event.target.value === "in_stock" ? "in_stock" : "all")
           }
-          className="mt-2 h-9 w-full rounded-[2px] border border-[var(--v3-rule)] bg-white px-2 text-xs font-semibold text-[var(--v3-text-2)] outline-none focus:border-[var(--v3-brand)]"
+          className="mt-2 h-9 w-full rounded-[2px] border border-[var(--v3-rule)] bg-[var(--v3-panel)] px-2 text-xs font-semibold text-[var(--v3-text-2)] outline-none focus:border-[var(--v3-brand)]"
           aria-label={t("search.stockFilterAria")}
         >
           <option value="all">{t("search.allStock")}</option>
@@ -235,7 +235,7 @@ function SearchFilters({
       />
       {vehicles.length ? (
         <section>
-          <h3 className="text-[11px] font-bold  text-[var(--v3-text-3)]">
+          <h3 className="text-[11px] font-bold text-[var(--v3-text-3)]">
             {t("search.tabVehicles")}
           </h3>
           <ul className="mt-2 space-y-1">
@@ -243,7 +243,7 @@ function SearchFilters({
               <li key={`${row.make}-${row.model}`}>
                 <Link
                   href={`/vehicle-fitment/${slugifyFitment(row.make)}/${slugifyFitment(row.model)}`}
-                  className="flex items-center justify-between rounded-[2px] px-1 py-1.5 text-sm text-slate-800 hover:bg-[var(--v3-sunk)]"
+                  className="flex items-center justify-between rounded-[2px] px-1 py-1.5 text-sm text-[var(--v3-text)] hover:bg-[var(--v3-sunk)]"
                 >
                   <span className="min-w-0 truncate">
                     {row.make} {row.model}
@@ -489,7 +489,7 @@ export function SearchExperience({
           ) : null}
 
             {tab === "brands" ? (
-              <ul className="overflow-hidden rounded-[var(--v3-r-lg)] border border-[var(--v3-rule)] bg-white">
+              <ul className="overflow-hidden rounded-[var(--v3-r-lg)] border border-[var(--v3-rule)] bg-[var(--v3-panel)]">
                 {brands.map((row) => {
                   const logo = getBrandLogo(row.value);
                   return (
@@ -517,7 +517,7 @@ export function SearchExperience({
             ) : null}
 
             {tab === "categories" ? (
-              <ul className="overflow-hidden rounded-[var(--v3-r-lg)] border border-[var(--v3-rule)] bg-white">
+              <ul className="overflow-hidden rounded-[var(--v3-r-lg)] border border-[var(--v3-rule)] bg-[var(--v3-panel)]">
                 {categories.map((row) => (
                   <li key={row.value} className="border-b border-[var(--v3-rule)] last:border-0">
                     <button
@@ -534,7 +534,7 @@ export function SearchExperience({
             ) : null}
 
             {tab === "vehicles" ? (
-              <ul className="overflow-hidden rounded-[var(--v3-r-lg)] border border-[var(--v3-rule)] bg-white">
+              <ul className="overflow-hidden rounded-[var(--v3-r-lg)] border border-[var(--v3-rule)] bg-[var(--v3-panel)]">
                 {vehicles.map((row) => (
                   <li key={`${row.make}-${row.model}`} className="border-b border-[var(--v3-rule)] last:border-0">
                     <Link
@@ -622,7 +622,7 @@ export function SearchExperience({
                           className={`min-h-9 min-w-9 rounded-[2px] px-2 text-sm font-semibold ${
                             item === page
                               ? "bg-[var(--v3-brand)] text-white"
-                              : "border border-[var(--v3-rule-strong)] bg-white text-[var(--v3-text-2)]"
+                              : "border border-[var(--v3-rule-strong)] bg-[var(--v3-panel)] text-[var(--v3-text-2)]"
                           }`}
                         >
                           {item}
@@ -786,7 +786,7 @@ function Toolbar({
           const next = event.target.value;
           onSort(next === "name" || next === "relevance" ? next : "price-low-high");
         }}
-        className="rounded-md border border-[var(--v3-rule)] bg-white px-2 py-1 text-xs font-semibold text-slate-800"
+        className="rounded-md border border-[var(--v3-rule)] bg-[var(--v3-panel)] px-2 py-1 text-xs font-semibold text-[var(--v3-text)]"
         aria-label={t("search.sortAria")}
       >
         <option value="price-low-high">{t("search.priceLowHigh")}</option>

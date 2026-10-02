@@ -126,8 +126,8 @@ export function FitmentModelCatalogue({
 
   return (
     <div>
-      <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white">
-        <div className="aspect-[21/9] bg-slate-100 sm:aspect-[21/8]">
+      <div className="overflow-hidden rounded-[var(--v3-r)] border border-[var(--v3-rule)] bg-[var(--v3-panel)]">
+        <div className="aspect-[21/9] bg-[var(--v3-sunk)] sm:aspect-[21/8]">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src={model.photo || "/images/vehicles/placeholder.svg"}
@@ -138,13 +138,13 @@ export function FitmentModelCatalogue({
           />
         </div>
         <div className="p-5">
-          <p className="text-xs font-bold uppercase tracking-widest text-emerald-600">
+          <p className="text-xs font-bold uppercase tracking-widest text-[var(--v3-ok)]">
             {model.make}
           </p>
-          <h1 className="mt-1 text-3xl font-bold tracking-tight text-slate-950">
+          <h1 className="mt-1 text-3xl font-bold tracking-tight text-[var(--v3-text)]">
             {model.model}
           </h1>
-          <p className="mt-2 text-sm text-slate-600">{t("fitment.compatibleParts")}</p>
+          <p className="mt-2 text-sm text-[var(--v3-text-2)]">{t("fitment.compatibleParts")}</p>
         </div>
       </div>
 
@@ -154,8 +154,8 @@ export function FitmentModelCatalogue({
           onClick={() => setFilter({})}
           className={`min-h-10 rounded-full border px-4 text-sm font-semibold ${
             !fuel && !variant
-              ? "border-slate-950 bg-slate-950 text-white"
-              : "border-slate-200 bg-white text-slate-800"
+              ? "border-[var(--v3-brand)] bg-[var(--v3-brand)] text-white"
+              : "border-[var(--v3-rule)] bg-[var(--v3-panel)] text-[var(--v3-text)]"
           }`}
         >
           {t("fitment.filterAll")}
@@ -167,8 +167,8 @@ export function FitmentModelCatalogue({
             onClick={() => setFilter({ fuel: item || "" })}
             className={`min-h-10 rounded-full border px-4 text-sm font-semibold capitalize ${
               fuel === item
-                ? "border-slate-950 bg-slate-950 text-white"
-                : "border-slate-200 bg-white text-slate-800"
+                ? "border-[var(--v3-brand)] bg-[var(--v3-brand)] text-white"
+                : "border-[var(--v3-rule)] bg-[var(--v3-panel)] text-[var(--v3-text)]"
             }`}
           >
             {item ? item.charAt(0).toUpperCase() + item.slice(1) : item}
@@ -181,8 +181,8 @@ export function FitmentModelCatalogue({
             onClick={() => setFilter({ variant: item.label })}
             className={`min-h-10 rounded-full border px-4 text-sm font-semibold ${
               variant === item.label
-                ? "border-slate-950 bg-slate-950 text-white"
-                : "border-slate-200 bg-white text-slate-800"
+                ? "border-[var(--v3-brand)] bg-[var(--v3-brand)] text-white"
+                : "border-[var(--v3-rule)] bg-[var(--v3-panel)] text-[var(--v3-text)]"
             }`}
           >
             {item.label}
@@ -191,16 +191,16 @@ export function FitmentModelCatalogue({
       </div>
 
       {error ? (
-        <p className="mt-6 text-sm text-rose-700" role="alert">
+        <p className="mt-6 text-sm text-[var(--v3-bad)]" role="alert">
           {error}
         </p>
       ) : null}
 
       {loading ? (
-        <p className="mt-8 text-sm text-slate-500">{t("search.searching")}</p>
+        <p className="mt-8 text-sm text-[var(--v3-text-3)]">{t("search.searching")}</p>
       ) : (
         <>
-          <h2 className="mt-8 text-lg font-bold text-slate-950">
+          <h2 className="mt-8 text-lg font-bold text-[var(--v3-text)]">
             {found === 1
               ? t("search.foundOne", { query: model.model })
               : t("search.found", { count: found, query: model.model })}
@@ -212,12 +212,12 @@ export function FitmentModelCatalogue({
               return (
                 <article
                   key={partData.id || partData.part_number || index}
-                  className="rounded-2xl border border-slate-200 bg-white p-4"
+                  className="rounded-[var(--v3-r)] border border-[var(--v3-rule)] bg-[var(--v3-panel)] p-4"
                 >
                   <div className="flex gap-4">
                     <button
                       type="button"
-                      className="h-20 w-20 shrink-0 overflow-hidden rounded-xl bg-slate-100"
+                      className="h-20 w-20 shrink-0 overflow-hidden rounded-[var(--v3-r)] bg-[var(--v3-sunk)]"
                       onClick={() =>
                         setDetailTarget({
                           partId: partData.id,
@@ -237,10 +237,10 @@ export function FitmentModelCatalogue({
                       />
                     </button>
                     <div className="min-w-0 flex-1">
-                      <h3 className="font-bold text-slate-950">
+                      <h3 className="font-bold text-[var(--v3-text)]">
                         {partData.name || t("product.partFallback")}
                       </h3>
-                      <p className="mt-1 text-xs text-slate-500">
+                      <p className="mt-1 text-xs text-[var(--v3-text-3)]">
                         {[partData.brand, partData.part_number].filter(Boolean).join(" · ")}
                       </p>
                       {listing ? (
@@ -265,7 +265,7 @@ export function FitmentModelCatalogue({
                               )
                             }
                             onClick={() => void addToCart(listing.id)}
-                            className="mt-2 min-h-10 rounded-lg bg-[#7a1233] px-3 text-xs font-bold text-white disabled:opacity-50"
+                            className="mt-2 min-h-10 rounded-[var(--v3-r)] bg-[var(--v3-brand)] px-3 text-xs font-bold text-white disabled:opacity-50"
                           >
                             {!isAuthoritativeSellingPricePaise(
                               listing.listInclusivePaise,
@@ -277,7 +277,7 @@ export function FitmentModelCatalogue({
                           </button>
                         </div>
                       ) : (
-                        <p className="mt-2 text-xs text-slate-500">{t("product.noListing")}</p>
+                        <p className="mt-2 text-xs text-[var(--v3-text-3)]">{t("product.noListing")}</p>
                       )}
                     </div>
                   </div>

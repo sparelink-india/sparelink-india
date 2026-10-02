@@ -208,11 +208,11 @@ function SidebarRow({
   return (
     <button
       type="button"
-      className="flex w-full items-center gap-3 px-2 py-2.5 text-left text-sm text-slate-800 hover:bg-[var(--v3-sunk)]"
+      className="flex w-full items-center gap-3 px-2 py-2.5 text-left text-sm text-[var(--v3-text)] hover:bg-[var(--v3-sunk)]"
       onMouseDown={(event) => event.preventDefault()}
       onClick={onClick}
     >
-      <span className="flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-md bg-slate-100">
+      <span className="flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-md bg-[var(--v3-sunk)]">
         {icon}
       </span>
       <span className="min-w-0 flex-1 truncate font-medium">{label}</span>
@@ -610,11 +610,11 @@ export function HeaderSearchField({
       ref={panelRef}
       role="listbox"
       aria-label={t("search.tabsLabel")}
-      className="absolute inset-x-3 z-[70] mt-1.5 flex max-h-[min(76dvh,720px)] min-h-[min(48dvh,480px)] w-auto flex-col overflow-hidden rounded-[var(--v3-r-lg)] border border-[var(--v3-rule)] bg-white shadow-[0_18px_50px_rgba(15,23,42,0.18)] md:inset-x-6"
+      className="absolute inset-x-3 z-[70] mt-1.5 flex max-h-[min(76dvh,720px)] min-h-[min(48dvh,480px)] w-auto flex-col overflow-hidden rounded-[var(--v3-r-lg)] border border-[var(--v3-rule)] bg-[var(--v3-panel)] shadow-[0_18px_50px_rgba(15,23,42,0.18)] md:inset-x-6"
     >
       {showIdle ? (
         <div className="p-4">
-          <p className="mb-2 text-[11px]  tracking-wide text-[var(--v3-text-3)]">
+          <p className="mb-2 text-[11px] tracking-wide text-[var(--v3-text-3)]">
             {t("search.recentSearches")}
           </p>
           <div className="flex flex-wrap gap-2">
@@ -665,9 +665,9 @@ export function HeaderSearchField({
           </div>
 
           <div className="grid min-h-0 min-w-0 flex-1 grid-cols-1 overflow-hidden md:grid-cols-[minmax(11rem,17.5rem)_minmax(0,1fr)]">
-            <aside className="hidden min-h-0 min-w-0 flex-col overflow-y-auto border-r border-[var(--v3-rule)] bg-white md:flex">
+            <aside className="hidden min-h-0 min-w-0 flex-col overflow-y-auto border-r border-[var(--v3-rule)] bg-[var(--v3-panel)] md:flex">
               <section className="shrink-0 px-3 pt-4">
-                <p className="px-2 text-[11px]  tracking-[0.14em] text-[var(--v3-text-3)]">
+                <p className="px-2 text-[11px] tracking-[0.14em] text-[var(--v3-text-3)]">
                   {t("search.relatedCategories")}
                 </p>
                 <div className="mt-1">
@@ -690,7 +690,7 @@ export function HeaderSearchField({
               </section>
               <div className="mx-5 my-2 border-t border-[var(--v3-rule)]" />
               <section className="shrink-0 px-3">
-                <p className="px-2 text-[11px]  tracking-[0.14em] text-[var(--v3-text-3)]">
+                <p className="px-2 text-[11px] tracking-[0.14em] text-[var(--v3-text-3)]">
                   {t("search.popularBrands")}
                 </p>
                 <div className="mt-1">
@@ -755,7 +755,7 @@ export function HeaderSearchField({
                       <button
                         key={row.value}
                         type="button"
-                        className="flex w-full items-center gap-3 border-b border-slate-100 px-5 py-3 text-left hover:bg-[var(--v3-sunk)]"
+                        className="flex w-full items-center gap-3 border-b border-[var(--v3-rule)] px-5 py-3 text-left hover:bg-[var(--v3-sunk)]"
                         onMouseDown={(event) => event.preventDefault()}
                         onClick={() => {
                           onChange(row.value);
@@ -778,7 +778,7 @@ export function HeaderSearchField({
                     <button
                       key={row.value}
                       type="button"
-                      className="flex w-full items-center justify-between border-b border-slate-100 px-5 py-3 text-left hover:bg-[var(--v3-sunk)]"
+                      className="flex w-full items-center justify-between border-b border-[var(--v3-rule)] px-5 py-3 text-left hover:bg-[var(--v3-sunk)]"
                       onMouseDown={(event) => event.preventDefault()}
                       onClick={() => {
                         onChange(row.value);
@@ -797,7 +797,7 @@ export function HeaderSearchField({
                         <Link
                           key={`${vehicle.make}-${vehicle.model}`}
                           href={`/vehicle-fitment/${slugifyFitment(vehicle.make)}`}
-                          className="flex items-center justify-between border-b border-slate-100 px-5 py-3 hover:bg-[var(--v3-sunk)]"
+                          className="flex items-center justify-between border-b border-[var(--v3-rule)] px-5 py-3 hover:bg-[var(--v3-sunk)]"
                           onMouseDown={(event) => event.preventDefault()}
                         >
                           <span className="font-semibold">
@@ -832,8 +832,8 @@ export function HeaderSearchField({
                         id={`${listId}-option-${index}`}
                         role="option"
                         aria-selected={index === activeIndex}
-                        className={`flex min-w-0 flex-col gap-3 border-b border-slate-100 px-3 py-3 sm:flex-row sm:items-center sm:gap-4 sm:px-4 sm:py-3.5 ${
-                          index === activeIndex ? "bg-[var(--v3-sunk)]" : "bg-white"
+                        className={`flex min-w-0 flex-col gap-3 border-b border-[var(--v3-rule)] px-3 py-3 sm:flex-row sm:items-center sm:gap-4 sm:px-4 sm:py-3.5 ${
+                          index === activeIndex ? "bg-[var(--v3-sunk)]" : "bg-[var(--v3-panel)]"
                         }`}
                       >
                         <button
@@ -876,10 +876,10 @@ export function HeaderSearchField({
                                 {t("search.chipList")}{" "}
                                 {compactPaise(item.listing?.listInclusivePaise ?? item.listing?.pricePaise)}
                               </span>
-                              <span className="rounded bg-slate-100 px-1.5 py-0.5 text-[10px] font-bold text-slate-700">
+                              <span className="rounded bg-[var(--v3-sunk)] px-1.5 py-0.5 text-[10px] font-bold text-[var(--v3-text-2)]">
                                 {t("search.chipMrp")} {compactPaise(item.listing?.mrpPaise)}
                               </span>
-                              <span className="rounded bg-slate-100 px-1.5 py-0.5 text-[10px] font-bold text-slate-700">
+                              <span className="rounded bg-[var(--v3-sunk)] px-1.5 py-0.5 text-[10px] font-bold text-[var(--v3-text-2)]">
                                 {t("search.chipHsn")} {item.listing?.hsn || "—"}
                               </span>
                               <span className="rounded bg-[var(--v3-ok-soft)] px-1.5 py-0.5 text-[10px] font-bold text-[var(--v3-ok)]">
@@ -891,7 +891,7 @@ export function HeaderSearchField({
                               {/* Category was already on this row before the
                                   summary chips were added, so it stays. */}
                               {item.category ? (
-                                <span className="inline-flex rounded bg-slate-100 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-[var(--v3-text-2)]">
+                                <span className="inline-flex rounded bg-[var(--v3-sunk)] px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-[var(--v3-text-2)]">
                                   {item.category}
                                 </span>
                               ) : null}
@@ -961,7 +961,7 @@ export function HeaderSearchField({
                     <button
                       key={item}
                       type="button"
-                      className="shrink-0 rounded-[2px] border border-[var(--v3-rule)] bg-white px-3 py-1 text-xs font-semibold text-[var(--v3-text-2)]"
+                      className="shrink-0 rounded-[2px] border border-[var(--v3-rule)] bg-[var(--v3-panel)] px-3 py-1 text-xs font-semibold text-[var(--v3-text-2)]"
                       onMouseDown={(event) => event.preventDefault()}
                       onClick={() => {
                         onChange(item);
@@ -979,14 +979,14 @@ export function HeaderSearchField({
             <div className="flex min-w-0 gap-2 overflow-x-auto">
               <Link
                 href="/vehicle-fitment"
-                className="inline-flex shrink-0 items-center gap-1 rounded-[2px] border border-[var(--v3-rule)] bg-white px-3 py-2 text-xs font-bold text-slate-800"
+                className="inline-flex shrink-0 items-center gap-1 rounded-[2px] border border-[var(--v3-rule)] bg-[var(--v3-panel)] px-3 py-2 text-xs font-bold text-[var(--v3-text)]"
                 onMouseDown={(event) => event.preventDefault()}
               >
                 {t("search.byVehicle")} ›
               </Link>
               <button
                 type="button"
-                className="inline-flex shrink-0 items-center gap-1 rounded-[2px] border border-[var(--v3-rule)] bg-white px-3 py-2 text-xs font-bold text-slate-800"
+                className="inline-flex shrink-0 items-center gap-1 rounded-[2px] border border-[var(--v3-rule)] bg-[var(--v3-panel)] px-3 py-2 text-xs font-bold text-[var(--v3-text)]"
                 onMouseDown={(event) => event.preventDefault()}
                 onClick={() => rootRef.current?.querySelector("input")?.focus()}
               >
@@ -994,7 +994,7 @@ export function HeaderSearchField({
               </button>
               <button
                 type="button"
-                className="inline-flex shrink-0 items-center gap-1 rounded-[2px] border border-[var(--v3-rule)] bg-white px-3 py-2 text-xs font-bold text-slate-800"
+                className="inline-flex shrink-0 items-center gap-1 rounded-[2px] border border-[var(--v3-rule)] bg-[var(--v3-panel)] px-3 py-2 text-xs font-bold text-[var(--v3-text)]"
                 onMouseDown={(event) => event.preventDefault()}
                 onClick={() => rootRef.current?.querySelector("input")?.focus()}
               >

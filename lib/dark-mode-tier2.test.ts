@@ -526,7 +526,20 @@ describe("tier 2: the product modal gallery", () => {
   it("keeps the product stage near-white, because the photography needs it", () => {
     // Most product shots are on white. A dark stage turns them into white
     // rectangles floating on black. The stage is v3-panel on purpose.
-    assert.match(MODAL, /rounded-2xl bg-\[var\(--v3-panel\)\]/);
+    //
+    // The assertion used to be `/rounded-2xl bg-\[var\(--v3-panel\)\]/`, which
+    // bundled the RADIUS into a test about the BACKGROUND. When the storefront
+    // migration moved every card from `rounded-2xl` to the `var(--v3-r)` token
+    // the stage's background was still correct and this failed - a test that
+    // would have blocked the migration it had nothing to do with.
+    //
+    // What is actually being protected here is the background token, so that is
+    // what is asserted: the stage must be v3-panel. The radius is free to move.
+    assert.match(
+      codeOf(MODAL),
+      /className="[^"]*bg-\[var\(--v3-panel\)\][^"]*"/,
+      "the product stage must stay on var(--v3-panel), because the photography is shot on white",
+    );
   });
 
   it("recolours the inactive gallery dot off bg-slate-300", () => {

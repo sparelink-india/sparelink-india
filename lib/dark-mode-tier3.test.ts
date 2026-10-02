@@ -69,6 +69,44 @@ function darkAllowList(): Set<string> {
 }
 
 describe("tier 3: the specific gaps are closed", () => {
+  /* A fill token used as ink. Found while migrating the header's theme and
+     language control, which is the one piece of chrome a visitor is guaranteed
+     to look at - and the control that tells them which theme they are in.
+
+     It read `bg-white ... text-[var(--brand)]`. `--brand` is #7a1233 in BOTH
+     themes (it is a fill, and v3.css documents using it as ink at 1.61:1 on a
+     dark ground), while `bg-white` is remapped to #161b24 in dark mode. So the
+     SELECTED option was #7a1233 on #161b24 - 1.4:1, and unreadable. */
+  it("the preference control uses brand-INK, not the brand fill, on the selected option", () => {
+    // Comments are stripped first: the note above `optionClass` QUOTES
+    // `text-[var(--brand)]` to explain why it was removed, and a raw-source
+    // assertion would fail on its own explanation.
+    const toggle = read("components/header-preference-toggle.tsx")
+      .replace(/\/\*[\s\S]*?\*\//g, "")
+      .replace(/^\s*\/\/.*$/gm, "");
+    assert.doesNotMatch(
+      toggle,
+      /text-\[var\(--brand\)\]/,
+      "--brand is a fill (#7a1233 in both themes); as ink it is 1.61:1 on dark",
+    );
+    assert.match(
+      toggle,
+      /text-\[var\(--v3-brand-ink\)\]/,
+      "the selected option must use the token that stays readable in both themes",
+    );
+  });
+
+  it("states the selected option's ground rather than inheriting the bg-white remap", () => {
+    const toggle = read("components/header-preference-toggle.tsx")
+      .replace(/\/\*[\s\S]*?\*\//g, "")
+      .replace(/^\s*\/\/.*$/gm, "");
+    assert.match(
+      toggle,
+      /bg-\[var\(--v3-panel\)\][^"]*font-bold text-\[var\(--v3-brand-ink\)\]/,
+      "the selected pill should be an explicit panel ground with brand-ink text",
+    );
+  });
+
   it("lifts text-rose-950 so an invalid GSTIN is not invisible in dark mode", () => {
     // #881337 on the #10141c dark field is ~1.4:1. The user typed a wrong
     // GSTIN and the field showed them nothing.

@@ -38,7 +38,7 @@ export function RecentlyViewedSection({
   return (
     <section className="px-3 py-4 sm:px-4" aria-labelledby="recently-viewed-heading">
       <div className="mb-3 flex items-end justify-between gap-2">
-        <h2 id="recently-viewed-heading" className="text-lg font-bold text-slate-950">
+        <h2 id="recently-viewed-heading" className="text-lg font-bold text-[var(--v3-text)]">
           {t("home.recentlyViewed")}
         </h2>
       </div>
@@ -48,19 +48,19 @@ export function RecentlyViewedSection({
             key={item.id}
             type="button"
             onClick={() => onOpen(item)}
-            className="w-36 shrink-0 rounded-2xl border border-slate-200 bg-white p-2 text-left shadow-xs"
+            className="w-36 shrink-0 rounded-[var(--v3-r)] border border-[var(--v3-rule)] bg-[var(--v3-panel)] p-2 text-left "
           >
             <CatalogueProductImage
               src={item.imageUrl}
               alt={item.name}
               size="thumb"
-              className="aspect-square rounded-xl bg-slate-50 p-2"
+              className="aspect-square rounded-[var(--v3-r)] bg-[var(--v3-sunk)] p-2"
             />
             {item.brand ? (
-              <p className="mt-2 truncate text-[10px] font-bold uppercase text-slate-500">{item.brand}</p>
+              <p className="mt-2 truncate text-[10px] font-bold uppercase text-[var(--v3-text-3)]">{item.brand}</p>
             ) : null}
-            <p className="truncate font-mono text-[11px] font-semibold text-slate-700">{item.partNumber}</p>
-            <p className="line-clamp-2 text-xs font-semibold text-slate-900">{item.name}</p>
+            <p className="truncate font-mono text-[11px] font-semibold text-[var(--v3-text-2)]">{item.partNumber}</p>
+            <p className="line-clamp-2 text-xs font-semibold text-[var(--v3-text)]">{item.name}</p>
           </button>
         ))}
       </div>
@@ -85,13 +85,13 @@ export function HomeOffersTeaser() {
     <section className="px-3 py-2 sm:px-4">
       <Link
         href="/offers"
-        className="flex min-h-14 items-center justify-between gap-3 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3"
+        className="flex min-h-14 items-center justify-between gap-3 rounded-[var(--v3-r)] border border-[var(--v3-warn-line)] bg-[var(--v3-warn-soft)] px-4 py-3"
       >
         <div>
-          <p className="text-xs font-bold uppercase tracking-wide text-amber-800">{t("home.specialOffers")}</p>
-          <p className="text-sm font-semibold text-slate-900">{t("home.offersCount", { count })}</p>
+          <p className="text-xs font-bold uppercase tracking-wide text-[var(--v3-warn)]">{t("home.specialOffers")}</p>
+          <p className="text-sm font-semibold text-[var(--v3-text)]">{t("home.offersCount", { count })}</p>
         </div>
-        <span className="text-sm font-bold text-[#7a1233]">{t("hero.viewOffers")} →</span>
+        <span className="text-sm font-bold text-[var(--v3-brand-ink)]">{t("hero.viewOffers")} →</span>
       </Link>
     </section>
   );
@@ -105,11 +105,11 @@ export function HomeTrustStrip() {
     t("trust.support"),
   ];
   return (
-    <section className="border-y border-slate-200 bg-white px-3 py-4 sm:px-4" aria-label={t("trust.title")}>
-      <h2 className="text-sm font-bold text-slate-950">{t("trust.title")}</h2>
+    <section className="border-y border-[var(--v3-rule)] bg-[var(--v3-panel)] px-3 py-4 sm:px-4" aria-label={t("trust.title")}>
+      <h2 className="text-sm font-bold text-[var(--v3-text)]">{t("trust.title")}</h2>
       <ul className="mt-2 grid gap-2 sm:grid-cols-3">
         {items.map((item) => (
-          <li key={item} className="rounded-xl bg-slate-50 px-3 py-2.5 text-xs font-semibold text-slate-700">
+          <li key={item} className="rounded-[var(--v3-r)] bg-[var(--v3-sunk)] px-3 py-2.5 text-xs font-semibold text-[var(--v3-text-2)]">
             {item}
           </li>
         ))}

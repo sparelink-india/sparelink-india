@@ -44,6 +44,25 @@ type StorefrontProductCardProps = {
   onAdd?: () => void;
 };
 
+/**
+ * The product card used by every grid in the storefront: the catalogue, the
+ * "popular products" band on the homepage, related products, and search results.
+ *
+ * ONE card, because a shopper who compares the same part on two screens must
+ * not be shown two different hierarchies - and because this is the single
+ * highest-leverage surface in the storefront: it appears more often than every
+ * other component combined.
+ *
+ * It is written entirely in the V3 token vocabulary (v3-panel, v3-stage,
+ * v3-badge, v3-price, v3-partno) rather than raw palette utilities. That is the
+ * whole point of the migration: the card was the most-repeated legacy surface,
+ * and every raw `bg-white` / `text-slate-950` / `rounded-2xl` on it was one more
+ * thing that had to be remembered when the theme changed, instead of a token
+ * that changes with everything else.
+ *
+ * NOTHING ABOUT THE DATA CHANGED. Same fields, same price logic, same
+ * availability rule, same add-to-cart behaviour, same i18n keys.
+ */
 export function StorefrontProductCard({
   name,
   brand,
@@ -78,14 +97,15 @@ export function StorefrontProductCard({
 
   return (
     <article
-      className={`card-hover flex overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-xs ${
-        compact ? "flex-row gap-0" : "flex-col"
-      } ${className}`}
-    >
+      className={`v3-panel v3-panel-hover group flex overflow-hidden ${
+        compact ? "flex-row" : "flex-col"
+      } ${className}`} > {/* The image stage. `v3-stage` supplies the sunk ground and the radius,
+          so the picture sits on the same tone in both themes instead of a flat
+          grey box that only matched in light mode. */}
       <button
         type="button"
         onClick={onOpen}
-        className={`relative shrink-0 bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#7a1233] ${
+        className={`v3-stage v3-focus shrink-0 ${
           compact ? "h-28 w-28" : "aspect-[4/3] w-full"
         }`}
         aria-label={t("photo.enlargeAria", { name })}
@@ -96,32 +116,39 @@ export function StorefrontProductCard({
           mediumUrl={mediumUrl || listing?.mediumUrl}
           alt={name}
           size="thumb"
-          className="h-full w-full p-2"
-          imgClassName="h-full w-full object-contain"
+          className="h-full w-full p-3"
+          imgClassName="h-full w-full object-contain transition-transform duration-200 group-hover:scale-[1.03]"
         />
       </button>
 
-      <div className={`flex min-w-0 flex-1 flex-col gap-1.5 ${compact ? "p-3" : "p-3.5"}`}>
-        {badge ? (
-          <span className="inline-flex w-fit rounded-md bg-slate-100 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-slate-700">
-            {badge}
-          </span>
-        ) : null}
+      <div
+        className={`flex min-w-0 flex-1 flex-col ${
+          compact ? "gap-1 p-3" : "gap-1.5 p-4"
+        }`}
+      >
+        {/* Identity first, in the order a buyer scans it: what it is, who
+            makes it, and the number they would type into a search box. */}
+        {badge ? <span className="v3-badge w-fit">{badge}</span> : null}
         {brand ? (
-          <p className="text-[11px] font-bold uppercase tracking-wide text-slate-500">{brand}</p>
+          <p className="text-[11px] font-bold uppercase tracking-[0.12em] text-[var(--v3-brand-ink)]">
+            {brand}
+          </p>
         ) : null}
-        {partNumber ? (
-          <p className="font-mono text-xs font-semibold text-slate-800">{partNumber}</p>
-        ) : null}
-        <h3 className={`font-bold leading-snug text-slate-950 ${compact ? "line-clamp-2 text-sm" : "line-clamp-3 text-base"}`}>
+        {partNumber ? <p className="v3-partno">{partNumber}</p> : null}
+
+        <h3
+          className={`font-bold leading-snug text-[var(--v3-text)] ${
+            compact ? "v3-clamp-2 text-sm" : "v3-clamp-2 text-[0.9375rem]"
+          }`}
+        >
           {name}
         </h3>
         {application ? (
-          <p className="line-clamp-1 text-xs text-slate-500">{application}</p>
+          <p className="v3-small v3-clamp-1">{application}</p>
         ) : null}
 
         {listing ? (
-          <div className="mt-auto space-y-2 pt-1">
+          <div className="mt-auto flex flex-col gap-2 pt-2">
             {isPriced ? (
               <InclusivePrice
                 pricePaise={listing.pricePaise}
@@ -132,26 +159,42 @@ export function StorefrontProductCard({
                 align="left"
               />
             ) : (
-              <p className="text-sm font-bold text-slate-800">{t("price.onRequest")}</p>
+              <p className="text-sm font-bold text-[var(--v3-text)]">
+                {t("price.onRequest")}
+              </p>
             )}
+
             {listing.mrpPaise && listing.mrpPaise > listing.pricePaise ? (
-              <p className="text-[11px] text-slate-400 line-through">
+              <p className="v3-price-was">
                 {t("price.mrp")} ₹{(listing.mrpPaise / 100).toLocaleString("en-IN")}
               </p>
             ) : null}
-            <p className="text-[11px] text-slate-500">
-              {isAvailable ? t("product.inStock", { count: stock }) : t("product.outOfStock")}
-            </p>
+
+            {/* Stock is a state, so it wears the state badge rather than
+                grey helper text: a shopper scanning a grid should be able to
+                filter out the sold-out rows without reading every line. */}
+            <div>
+              {isAvailable ? (
+                <span className="v3-badge v3-badge-ok">{t("product.inStock", { count: stock })}</span>
+              ) : (
+                <span className="v3-badge v3-badge-bad">{t("product.outOfStock")}</span>
+              )}
+            </div>
+
+            {/* Full-width primary action at the card foot, 44px tall so it is a
+                reliable thumb target on mobile. `justAdded` swaps the label
+                rather than moving the button, so the grid does not reflow the
+                moment a shopper taps. */}
             <button
               type="button"
               disabled={!isAvailable || adding || justAdded}
               onClick={onAdd}
-              className={`btn-press min-h-11 w-full rounded-xl text-xs font-bold ${
+              className={`btn-press v3-btn !min-h-11 w-full !px-3 text-xs ${
                 justAdded
-                  ? "bg-emerald-600 text-white"
+                  ? "v3-btn-primary !bg-[var(--v3-ok)]"
                   : isAvailable
-                    ? "bg-slate-950 text-white"
-                    : "cursor-not-allowed bg-slate-200 text-slate-400"
+                    ? "v3-btn-primary"
+                    : "cursor-not-allowed !border-[var(--v3-rule)] !bg-[var(--v3-sunk)] !text-[var(--v3-text-3)]"
               }`}
             >
               {adding ? "..." : justAdded ? "✓" : t("product.addToCart")}
@@ -161,7 +204,7 @@ export function StorefrontProductCard({
           <button
             type="button"
             onClick={onOpen}
-            className="btn-press mt-auto min-h-11 w-full rounded-xl border border-slate-200 text-xs font-bold text-slate-800"
+            className="v3-btn v3-btn-outline btn-press mt-auto !min-h-11 w-full text-xs"
           >
             {t("offers.details")}
           </button>

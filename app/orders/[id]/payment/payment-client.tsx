@@ -344,9 +344,9 @@ export default function OrderPaymentPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-slate-50 text-slate-900">
+      <div className="min-h-screen bg-[var(--v3-sunk)] text-[var(--v3-text)]">
         <main id="main-content" className="mx-auto max-w-4xl px-4 py-16 sm:px-6">
-          <div className="rounded-2xl border border-slate-200 bg-white p-8 text-center text-sm text-slate-500 shadow-xs">
+          <div className="rounded-[var(--v3-r)] border border-[var(--v3-rule)] bg-[var(--v3-panel)] p-8 text-center text-sm text-[var(--v3-text-3)] ">
             Loading payment details...
           </div>
         </main>
@@ -356,14 +356,14 @@ export default function OrderPaymentPage() {
 
   if (error && !order) {
     return (
-      <div className="min-h-screen bg-slate-50 text-slate-900">
+      <div className="min-h-screen bg-[var(--v3-sunk)] text-[var(--v3-text)]">
         <main className="mx-auto max-w-4xl px-4 py-16 sm:px-6">
-          <div className="rounded-2xl border border-rose-200 bg-rose-50 p-6 text-sm font-medium text-rose-800">
+          <div className="rounded-[var(--v3-r)] border border-[var(--v3-bad-line)] bg-[var(--v3-bad-soft)] p-6 text-sm font-medium text-[var(--v3-bad)]">
             {error}
           </div>
           <Link
             href="/orders"
-            className="mt-4 inline-flex rounded-xl border border-slate-300 bg-white px-4 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-100"
+            className="mt-4 inline-flex rounded-[var(--v3-r)] border border-[var(--v3-rule-strong)] bg-[var(--v3-panel)] px-4 py-2 text-xs font-semibold text-[var(--v3-text-2)] hover:bg-[var(--v3-sunk)]"
           >
             Back to My Orders
           </Link>
@@ -379,7 +379,7 @@ export default function OrderPaymentPage() {
   const canPayBank = order.paymentMethod === "bank_transfer";
 
   return (
-    <div className="min-h-screen bg-slate-50 text-slate-900">
+    <div className="min-h-screen bg-[var(--v3-sunk)] text-[var(--v3-text)]">
       {/* The V3 panel token replaces a hardcoded `bg-white/95`. A global
           override of that class is not possible: `admin-shell.tsx:95` uses it
           as a deliberate light plate around the logo on a hardcoded
@@ -390,83 +390,83 @@ export default function OrderPaymentPage() {
       <header className="sticky top-0 z-30 border-b border-[var(--v3-rule)] bg-[var(--v3-panel)]/95 backdrop-blur-md">
         <div className="mx-auto flex max-w-5xl items-center justify-between px-4 py-3.5 sm:px-6">
           <Link href="/" className="flex items-center gap-2">
-            <span className="text-lg font-bold tracking-tight text-slate-950">
+            <span className="text-lg font-bold tracking-tight text-[var(--v3-text)]">
               SpareLink
             </span>
-            <span className="rounded bg-slate-100 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-emerald-700">
+            <span className="rounded bg-[var(--v3-sunk)] px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-[var(--v3-ok)]">
               India
             </span>
           </Link>
-          <nav className="flex items-center gap-4 text-xs font-semibold text-slate-600">
-            <Link href="/orders" className="hover:text-slate-950">
+          <nav className="flex items-center gap-4 text-xs font-semibold text-[var(--v3-text-2)]">
+            <Link href="/orders" className="hover:text-[var(--v3-text)]">
               My Orders
             </Link>
-            <Link href="/cart" className="hover:text-slate-950">
+            <Link href="/cart" className="hover:text-[var(--v3-text)]">
               Cart
             </Link>
-            <SignOutButton className="rounded-lg border border-slate-300 px-3 py-1.5 text-xs font-semibold text-slate-700 transition-colors hover:bg-slate-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-950 disabled:cursor-not-allowed disabled:opacity-60" />
+            <SignOutButton className="rounded-[var(--v3-r)] border border-[var(--v3-rule-strong)] px-3 py-1.5 text-xs font-semibold text-[var(--v3-text-2)] transition-colors hover:bg-[var(--v3-sunk)] focus-visible:outline-none focus-visible:ring-2 v3-focus disabled:cursor-not-allowed disabled:opacity-60" />
           </nav>
         </div>
       </header>
 
       <main className="mx-auto max-w-4xl px-4 py-10 sm:px-6">
-        <div className="flex flex-col gap-3 border-b border-slate-200 pb-5 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex flex-col gap-3 border-b border-[var(--v3-rule)] pb-5 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <h1 className="text-2xl font-bold tracking-tight text-slate-950 sm:text-3xl">
+            <h1 className="text-2xl font-bold tracking-tight text-[var(--v3-text)] sm:text-3xl">
               Order Payment
             </h1>
-            <p className="mt-1 text-xs text-slate-500">
+            <p className="mt-1 text-xs text-[var(--v3-text-3)]">
               Order #{order.orderNumber}. Pay each firm allocation separately.
               Returning from checkout is not proof of payment.
             </p>
           </div>
           <Link
             href="/orders"
-            className="self-start rounded-xl border border-slate-300 bg-white px-3.5 py-1.5 text-xs font-semibold text-slate-700 shadow-2xs hover:bg-slate-100"
+            className="self-start rounded-[var(--v3-r)] border border-[var(--v3-rule-strong)] bg-[var(--v3-panel)] px-3.5 py-1.5 text-xs font-semibold text-[var(--v3-text-2)] shadow-2xs hover:bg-[var(--v3-sunk)]"
           >
             Back to Orders
           </Link>
         </div>
 
         {error && (
-          <div role="alert" className="mt-5 rounded-xl border border-rose-200 bg-rose-50 p-4 text-xs font-medium text-rose-800">
+          <div role="alert" className="mt-5 rounded-[var(--v3-r)] border border-[var(--v3-bad-line)] bg-[var(--v3-bad-soft)] p-4 text-xs font-medium text-[var(--v3-bad)]">
             {error}
           </div>
         )}
 
         {successMsg && (
-          <div role="status" className="mt-5 rounded-xl border border-emerald-200 bg-emerald-50 p-4 text-xs font-medium text-emerald-800">
+          <div role="status" className="mt-5 rounded-[var(--v3-r)] border border-[var(--v3-ok-line)] bg-[var(--v3-ok-soft)] p-4 text-xs font-medium text-[var(--v3-ok)]">
             {successMsg}
           </div>
         )}
 
-        <section className="mt-6 rounded-2xl border border-slate-200 bg-white p-6 shadow-xs">
-          <div className="flex flex-col gap-4 border-b border-slate-100 pb-4 sm:flex-row sm:items-center sm:justify-between">
+        <section className="mt-6 rounded-[var(--v3-r)] border border-[var(--v3-rule)] bg-[var(--v3-panel)] p-6 ">
+          <div className="flex flex-col gap-4 border-b border-[var(--v3-rule)] pb-4 sm:flex-row sm:items-center sm:justify-between">
             <div>
-              <h2 className="text-base font-bold text-slate-950 sm:text-lg">
+              <h2 className="text-base font-bold text-[var(--v3-text)] sm:text-lg">
                 Payment Summary
               </h2>
-              <p className="mt-1 text-xs text-slate-500">
+              <p className="mt-1 text-xs text-[var(--v3-text-3)]">
                 Parent status comes from SpareLink after each allocation is
                 verified.
               </p>
             </div>
             <div className="text-left sm:text-right">
-              <span className="block text-[11px] font-semibold uppercase text-slate-500">
+              <span className="block text-[11px] font-semibold uppercase text-[var(--v3-text-3)]">
                 Order Total
               </span>
-              <span className="mt-1 block text-xl font-black text-slate-950">
+              <span className="mt-1 block text-xl font-black text-[var(--v3-text)]">
                 {formatRupees(order.totalPaise)}
               </span>
             </div>
           </div>
 
           <div className="mt-5 grid gap-3 text-xs sm:grid-cols-3">
-            <div className="rounded-xl bg-slate-50 p-3.5">
-              <span className="block text-[11px] font-semibold uppercase text-slate-500">
+            <div className="rounded-[var(--v3-r)] bg-[var(--v3-sunk)] p-3.5">
+              <span className="block text-[11px] font-semibold uppercase text-[var(--v3-text-3)]">
                 Method
               </span>
-              <span className="mt-1 block font-bold text-slate-900">
+              <span className="mt-1 block font-bold text-[var(--v3-text)]">
                 {isCod
                   ? "Cash on delivery"
                   : order.paymentMethod === "bank_transfer"
@@ -474,19 +474,19 @@ export default function OrderPaymentPage() {
                     : "Online payment"}
               </span>
             </div>
-            <div className="rounded-xl bg-slate-50 p-3.5">
-              <span className="block text-[11px] font-semibold uppercase text-slate-500">
+            <div className="rounded-[var(--v3-r)] bg-[var(--v3-sunk)] p-3.5">
+              <span className="block text-[11px] font-semibold uppercase text-[var(--v3-text-3)]">
                 Parent Payment Status
               </span>
-              <span className="mt-1 block font-bold text-slate-900">
+              <span className="mt-1 block font-bold text-[var(--v3-text)]">
                 {parentPaymentLabel(order.paymentStatus)}
               </span>
             </div>
-            <div className="rounded-xl bg-slate-50 p-3.5">
-              <span className="block text-[11px] font-semibold uppercase text-slate-500">
+            <div className="rounded-[var(--v3-r)] bg-[var(--v3-sunk)] p-3.5">
+              <span className="block text-[11px] font-semibold uppercase text-[var(--v3-text-3)]">
                 Allocations
               </span>
-              <span className="mt-1 block font-bold text-slate-900">
+              <span className="mt-1 block font-bold text-[var(--v3-text)]">
                 {firmPayments.length}
               </span>
             </div>
@@ -494,7 +494,7 @@ export default function OrderPaymentPage() {
         </section>
 
         {isCod && (
-          <div className="mt-6 rounded-xl border border-amber-200 bg-amber-50 p-4 text-xs font-medium text-amber-800">
+          <div className="mt-6 rounded-[var(--v3-r)] border border-[var(--v3-warn-line)] bg-[var(--v3-warn-soft)] p-4 text-xs font-medium text-[var(--v3-warn)]">
             This order is cash on delivery. Online payment and UTR submission
             are not used for COD.
           </div>
@@ -521,25 +521,25 @@ export default function OrderPaymentPage() {
               return (
                 <div
                   key={firmPayment.firmOrderId}
-                  className="rounded-2xl border border-slate-200 bg-white p-5 shadow-xs sm:p-6"
+                  className="rounded-[var(--v3-r)] border border-[var(--v3-rule)] bg-[var(--v3-panel)] p-5 sm:p-6"
                 >
-                  <div className="flex flex-col gap-3 border-b border-slate-200 pb-4 sm:flex-row sm:items-start sm:justify-between">
+                  <div className="flex flex-col gap-3 border-b border-[var(--v3-rule)] pb-4 sm:flex-row sm:items-start sm:justify-between">
                     <div>
-                      <h3 className="text-base font-bold text-slate-950">
+                      <h3 className="text-base font-bold text-[var(--v3-text)]">
                         {firmPayment.firmName}
                       </h3>
-                      <p className="mt-1 text-[11px] font-medium text-slate-500">
+                      <p className="mt-1 text-[11px] font-medium text-[var(--v3-text-3)]">
                         Allocation: {firmPayment.allocationNumber}
                       </p>
                     </div>
-                    <div className="rounded-xl bg-slate-50 px-4 py-2 text-left sm:text-right">
-                      <span className="block text-[10px] font-semibold uppercase text-slate-500">
+                    <div className="rounded-[var(--v3-r)] bg-[var(--v3-sunk)] px-4 py-2 text-left sm:text-right">
+                      <span className="block text-[10px] font-semibold uppercase text-[var(--v3-text-3)]">
                         Amount
                       </span>
-                      <span className="mt-0.5 block text-lg font-black text-slate-950">
+                      <span className="mt-0.5 block text-lg font-black text-[var(--v3-text)]">
                         {formatRupees(firmPayment.amountPaise)}
                       </span>
-                      <span className="mt-1 block text-[11px] font-bold uppercase text-slate-600">
+                      <span className="mt-1 block text-[11px] font-bold uppercase text-[var(--v3-text-2)]">
                         {allocationPaymentLabel(firmPayment.paymentStatus)}
                       </span>
                     </div>
@@ -548,11 +548,11 @@ export default function OrderPaymentPage() {
                   {canPayOnline &&
                     !paid &&
                     firmPayment.onlinePaymentConfigured === false && (
-                    <div className="mt-4 rounded-xl border border-dashed border-amber-300 bg-amber-50 p-4">
-                      <p className="text-sm font-bold text-amber-950">
+                    <div className="mt-4 rounded-[var(--v3-r)] border border-dashed border-[var(--v3-warn-line)] bg-[var(--v3-warn-soft)] p-4">
+                      <p className="text-sm font-bold text-[var(--v3-warn)]">
                         Online Payment — Coming Soon
                       </p>
-                      <p className="mt-1 text-xs font-medium text-amber-800">
+                      <p className="mt-1 text-xs font-medium text-[var(--v3-warn)]">
                         Cashfree is not available for this firm yet. Use Cash on
                         Delivery when placing the order, or pay this allocation
                         by bank/UPI transfer. No online payment session will be
@@ -570,7 +570,7 @@ export default function OrderPaymentPage() {
                           verifyingFirmOrderId === firmPayment.firmOrderId
                         }
                         onClick={() => void handlePayNow(firmPayment.firmOrderId)}
-                        className="btn-press rounded-xl bg-slate-950 px-4 py-2.5 text-xs font-bold text-white hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-60"
+                        className="btn-press rounded-[var(--v3-r)] bg-[var(--v3-brand)] px-4 py-2.5 text-xs font-bold text-white hover:bg-[var(--v3-brand-hover)] disabled:cursor-not-allowed disabled:opacity-60"
                       >
                         {payingFirmOrderId === firmPayment.firmOrderId
                           ? "Opening payment..."
@@ -579,7 +579,7 @@ export default function OrderPaymentPage() {
                             : "Pay Now"}
                       </button>
                       {verifyingFirmOrderId === firmPayment.firmOrderId && (
-                        <p className="self-center text-xs text-slate-500">
+                        <p className="self-center text-xs text-[var(--v3-text-3)]">
                           Checking payment with SpareLink...
                         </p>
                       )}
@@ -587,7 +587,7 @@ export default function OrderPaymentPage() {
                   )}
 
                   {paid && (
-                    <p className="mt-4 text-xs font-semibold text-emerald-700">
+                    <p className="mt-4 text-xs font-semibold text-[var(--v3-ok)]">
                       This allocation is paid. Other firms on this order remain
                       independent.
                     </p>
@@ -595,30 +595,30 @@ export default function OrderPaymentPage() {
 
                   {canPayBank &&
                     firmPayment.paymentMethod === "bank_transfer" && (
-                    <div className="mt-5 rounded-xl border border-slate-200 bg-slate-50/70 p-4">
-                      <h4 className="text-sm font-bold text-slate-900">
+                    <div className="mt-5 rounded-[var(--v3-r)] border border-[var(--v3-rule)] bg-[var(--v3-page)] p-4">
+                      <h4 className="text-sm font-bold text-[var(--v3-text)]">
                         Bank / UPI transfer for this firm
                       </h4>
                       {config.isConfigured ? (
                         <>
-                          <p className="mt-2 text-xs leading-5 text-slate-600">
+                          <p className="mt-2 text-xs leading-5 text-[var(--v3-text-2)]">
                             {config.instructions}
                           </p>
                           <div className="mt-3 grid gap-3 sm:grid-cols-2">
                             {config.accountName && (
-                              <div className="rounded-xl border border-slate-200 bg-white p-3.5">
-                                <span className="block text-[11px] font-semibold uppercase text-slate-500">
+                              <div className="rounded-[var(--v3-r)] border border-[var(--v3-rule)] bg-[var(--v3-panel)] p-3.5">
+                                <span className="block text-[11px] font-semibold uppercase text-[var(--v3-text-3)]">
                                   Account Name
                                 </span>
-                                <span className="mt-1 block font-bold text-slate-900">
+                                <span className="mt-1 block font-bold text-[var(--v3-text)]">
                                   {config.accountName}
                                 </span>
                               </div>
                             )}
                             {config.accountNumber && (
-                              <div className="rounded-xl border border-slate-200 bg-white p-3.5">
+                              <div className="rounded-[var(--v3-r)] border border-[var(--v3-rule)] bg-[var(--v3-panel)] p-3.5">
                                 <div className="flex items-center justify-between">
-                                  <span className="text-[11px] font-semibold uppercase text-slate-500">
+                                  <span className="text-[11px] font-semibold uppercase text-[var(--v3-text-3)]">
                                     Account Number
                                   </span>
                                   <button
@@ -629,7 +629,7 @@ export default function OrderPaymentPage() {
                                         `account-${firmPayment.firmOrderId}`,
                                       )
                                     }
-                                    className="text-[11px] font-bold text-emerald-700 hover:underline"
+                                    className="text-[11px] font-bold text-[var(--v3-ok)] hover:underline"
                                   >
                                     {copiedField ===
                                     `account-${firmPayment.firmOrderId}`
@@ -637,27 +637,27 @@ export default function OrderPaymentPage() {
                                       : "Copy"}
                                   </button>
                                 </div>
-                                <span className="mt-1 block font-mono text-sm font-bold text-slate-900">
+                                <span className="mt-1 block font-mono text-sm font-bold text-[var(--v3-text)]">
                                   {config.accountNumber}
                                 </span>
                               </div>
                             )}
                             {config.ifscCode && (
-                              <div className="rounded-xl border border-slate-200 bg-white p-3.5">
-                                <span className="block text-[11px] font-semibold uppercase text-slate-500">
+                              <div className="rounded-[var(--v3-r)] border border-[var(--v3-rule)] bg-[var(--v3-panel)] p-3.5">
+                                <span className="block text-[11px] font-semibold uppercase text-[var(--v3-text-3)]">
                                   IFSC
                                 </span>
-                                <span className="mt-1 block font-mono text-sm font-bold text-slate-900">
+                                <span className="mt-1 block font-mono text-sm font-bold text-[var(--v3-text)]">
                                   {config.ifscCode}
                                 </span>
                               </div>
                             )}
                             {config.upiId && (
-                              <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-3.5 sm:col-span-2">
-                                <span className="block text-[11px] font-semibold uppercase text-emerald-900">
+                              <div className="rounded-[var(--v3-r)] border border-[var(--v3-ok-line)] bg-[var(--v3-ok-soft)] p-3.5 sm:col-span-2">
+                                <span className="block text-[11px] font-semibold uppercase text-[var(--v3-ok)]">
                                   UPI ID
                                 </span>
-                                <span className="mt-1 block font-mono text-sm font-bold text-emerald-950">
+                                <span className="mt-1 block font-mono text-sm font-bold text-[var(--v3-ok)]">
                                   {config.upiId}
                                 </span>
                               </div>
@@ -665,13 +665,13 @@ export default function OrderPaymentPage() {
                           </div>
                         </>
                       ) : (
-                        <p className="mt-2 text-xs text-amber-800">
+                        <p className="mt-2 text-xs text-[var(--v3-warn)]">
                           Bank details for this firm are not configured yet.
                         </p>
                       )}
 
                       {latestUtr && (
-                        <p className="mt-3 text-xs text-slate-600">
+                        <p className="mt-3 text-xs text-[var(--v3-text-2)]">
                           Latest UTR:{" "}
                           <span className="font-mono font-bold">
                             {latestUtr.utrReference}
@@ -693,27 +693,27 @@ export default function OrderPaymentPage() {
                               value={utrReference}
                               onChange={(e) => setUtrReference(e.target.value)}
                               placeholder={t("payment.utrPlaceholder")}
-                              className="h-11 w-full rounded-xl border border-slate-200 bg-white px-3.5 font-mono text-sm outline-none focus:border-slate-950"
+                              className="h-11 w-full rounded-[var(--v3-r)] border border-[var(--v3-rule)] bg-[var(--v3-panel)] px-3.5 font-mono text-sm outline-none v3-focus"
                             />
                             <input
                               type="date"
                               required
                               value={paymentDate}
                               onChange={(e) => setPaymentDate(e.target.value)}
-                              className="h-11 w-full rounded-xl border border-slate-200 bg-white px-3.5 text-sm outline-none focus:border-slate-950"
+                              className="h-11 w-full rounded-[var(--v3-r)] border border-[var(--v3-rule)] bg-[var(--v3-panel)] px-3.5 text-sm outline-none v3-focus"
                             />
                             <div className="flex gap-2">
                               <button
                                 type="submit"
                                 disabled={submitting}
-                                className="rounded-xl bg-slate-950 px-4 py-2 text-xs font-bold text-white disabled:opacity-60"
+                                className="rounded-[var(--v3-r)] bg-[var(--v3-brand)] px-4 py-2 text-xs font-bold text-white disabled:opacity-60"
                               >
                                 {submitting ? "Submitting..." : "Submit UTR"}
                               </button>
                               <button
                                 type="button"
                                 onClick={() => setUtrFirmOrderId(null)}
-                                className="rounded-xl border border-slate-300 px-4 py-2 text-xs font-semibold"
+                                className="rounded-[var(--v3-r)] border border-[var(--v3-rule-strong)] px-4 py-2 text-xs font-semibold"
                               >
                                 Cancel
                               </button>
@@ -726,7 +726,7 @@ export default function OrderPaymentPage() {
                               setUtrFirmOrderId(firmPayment.firmOrderId);
                               setUtrReference("");
                             }}
-                            className="mt-4 rounded-xl border border-slate-300 bg-white px-4 py-2 text-xs font-semibold text-slate-800"
+                            className="mt-4 rounded-[var(--v3-r)] border border-[var(--v3-rule-strong)] bg-[var(--v3-panel)] px-4 py-2 text-xs font-semibold text-[var(--v3-text)]"
                           >
                             Submit UTR for this allocation
                           </button>

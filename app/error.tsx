@@ -9,14 +9,14 @@ export default function GlobalError({
   reset: () => void;
 }) {
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center bg-slate-50 px-6 py-16 text-center text-slate-900">
-      <p className="text-xs font-bold uppercase tracking-widest text-emerald-700">
+    <div className="flex min-h-screen flex-col items-center justify-center bg-[var(--v3-sunk)] px-6 py-16 text-center text-[var(--v3-text)]">
+      <p className="text-xs font-bold uppercase tracking-widest text-[var(--v3-ok)]">
         SpareLink India
       </p>
       <h1 className="mt-3 text-2xl font-bold tracking-tight sm:text-3xl">
         Something went wrong
       </h1>
-      <p className="mt-3 max-w-md text-sm text-slate-600">
+      <p className="mt-3 max-w-md text-sm text-[var(--v3-text-2)]">
         The page could not be loaded. You can try again or return to the parts
         catalog.
       </p>
@@ -24,13 +24,13 @@ export default function GlobalError({
         <button
           type="button"
           onClick={() => reset()}
-          className="inline-flex min-h-11 items-center rounded-xl bg-slate-950 px-5 py-2.5 text-sm font-semibold text-white hover:bg-slate-800"
+          className="inline-flex min-h-11 items-center rounded-[var(--v3-r)] bg-[var(--v3-brand)] px-5 py-2.5 text-sm font-semibold text-white hover:bg-[var(--v3-brand-hover)]"
         >
           Try again
         </button>
         <Link
           href="/"
-          className="inline-flex min-h-11 items-center rounded-xl border border-slate-300 bg-white px-5 py-2.5 text-sm font-semibold text-slate-800 hover:bg-slate-50"
+          className="inline-flex min-h-11 items-center rounded-[var(--v3-r)] border border-[var(--v3-rule-strong)] bg-[var(--v3-panel)] px-5 py-2.5 text-sm font-semibold text-[var(--v3-text)] hover:bg-[var(--v3-sunk)]"
         >
           Back to catalog
         </Link>

@@ -7,7 +7,7 @@ import { StorefrontHeader } from "@/components/storefront-header";
 
 export function FitmentShell({ children }: { children: ReactNode }) {
   return (
-    <div className="storefront-mobile-pad flex min-h-screen flex-col bg-slate-50">
+    <div className="storefront-mobile-pad flex min-h-screen flex-col bg-[var(--v3-sunk)]">
       <StorefrontHeader />
       <main id="main-content" className="flex-1">{children}</main>
       <SiteFooter />

@@ -169,10 +169,10 @@ export function MobileBottomNav({
             <li key={item.key} className="min-w-0 flex-1">
               <Link
                 href={item.href}
-                className={`relative flex min-h-12 flex-col items-center justify-center gap-0.5 rounded-lg px-1 py-1 text-[10px] font-semibold transition-colors ${
+                className={`relative flex min-h-12 flex-col items-center justify-center gap-0.5 rounded-[var(--v3-r)] px-1 py-1 text-[10px] font-semibold transition-colors ${
                   item.active
-                    ? "text-[#7a1233]"
-                    : "text-slate-500 hover:text-slate-800"
+                    ? "text-[var(--v3-brand-ink)]"
+                    : "text-[var(--v3-text-3)] hover:text-[var(--v3-text)]"
                 }`}
                 aria-current={item.active ? "page" : undefined}
               >

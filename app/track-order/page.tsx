@@ -60,45 +60,57 @@ export default function TrackOrderPage() {
   }
 
   return (
-    <div className="flex min-h-screen flex-col bg-slate-50">
+    <div className="flex min-h-screen flex-col bg-[var(--v3-sunk)]">
       <StorefrontHeader />
-      <main id="main-content" className="mx-auto w-full max-w-3xl flex-1 px-4 py-10">
-        <h1 className="text-2xl font-bold text-slate-900">{t("track.title")}</h1>
-        <p className="mt-2 text-sm text-slate-600">{t("track.hint")}</p>
-        <form onSubmit={handleTrack} className="mt-6 flex flex-col gap-3 sm:flex-row">
-          <input
-            value={query}
-            onChange={(event) => setQuery(event.target.value)}
-            placeholder={t("track.id")}
-            className="h-12 flex-1 rounded-xl border border-slate-300 px-4"
-          />
+      <main id="main-content" className="v3-container flex-1 py-10">
+        <h1 className="v3-h1">{t("track.title")}</h1>
+        <p className="v3-body mt-2">{t("track.hint")}</p>
+        {/* The order-id field had a placeholder but no label, so its accessible
+            name was empty and the instruction disappeared once a visitor typed.
+            A visible label plus `htmlFor` fixes 3.3.2 / 4.1.2 without changing the
+            copy: the label reuses the same `track.id` key. */}
+        <form onSubmit={handleTrack} className="mt-6 flex flex-col gap-3 sm:flex-row sm:items-end">
+          <div className="flex-1">
+            <label htmlFor="track-order-id" className="v3-label">
+              {t("track.id")}
+            </label>
+            <input
+              id="track-order-id"
+              name="orderId"
+              value={query}
+              onChange={(event) => setQuery(event.target.value)}
+              placeholder={t("track.id")}
+              className="v3-input mt-1.5 !min-h-12"
+              autoComplete="off"
+            />
+          </div>
           <button
             type="submit"
             disabled={busy || !query.trim()}
-            className="h-12 rounded-xl bg-[#7a1233] px-5 font-semibold text-white disabled:opacity-50"
+            className="v3-btn v3-btn-primary v3-focus !min-h-12 !px-5 disabled:opacity-50"
           >
             {t("track.button")}
           </button>
         </form>
         {!query.trim() && !order && !error ? (
-          <p className="mt-8 rounded-xl border border-dashed border-slate-300 bg-white p-8 text-center text-sm text-slate-500">
+          <p className="mt-8 rounded-[var(--v3-r)] border border-dashed border-[var(--v3-rule-strong)] bg-[var(--v3-panel)] p-8 text-center text-sm text-[var(--v3-text-3)]">
             {t("track.empty")}
           </p>
         ) : null}
         {error ? (
-          <div className="mt-6 rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-950">
+          <div className="mt-6 rounded-[var(--v3-r)] border border-[var(--v3-warn-line)] bg-[var(--v3-warn-soft)] p-4 text-sm text-[var(--v3-warn)]">
             <p>{error}</p>
             {needsLogin ? (
-              <Link href="/login" className="mt-3 inline-block font-semibold text-[#7a1233] underline">
+              <Link href="/login" className="mt-3 inline-block font-semibold text-[var(--v3-brand-ink)] underline">
                 {t("dealer.customerLogin")}
               </Link>
             ) : null}
           </div>
         ) : null}
         {order ? (
-          <article className="mt-6 rounded-2xl border border-slate-200 bg-white p-6">
+          <article className="mt-6 rounded-[var(--v3-r)] border border-[var(--v3-rule)] bg-[var(--v3-panel)] p-6">
             <p className="font-semibold">#{order.orderNumber}</p>
-            <p className="mt-1 text-sm text-slate-500">{t("track.status", { status: order.status, payment: order.paymentStatus })}</p>
+            <p className="mt-1 text-sm text-[var(--v3-text-3)]">{t("track.status", { status: order.status, payment: order.paymentStatus })}</p>
             <p className="mt-1 text-sm">{t("track.total", { amount: (order.totalPaise / 100).toLocaleString("en-IN") })}</p>
             <ul className="mt-4 space-y-2 text-sm">
               {order.items.map((item) => (

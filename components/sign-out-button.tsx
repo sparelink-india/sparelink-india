@@ -59,14 +59,18 @@ export function SignOutButton({ className, ariaLabel, onSignedOut }: SignOutButt
       aria-label={ariaLabel}
       className={
         className ??
-        /* The default moved from raw `zinc-*` to the slate family.
+        /* The default is a V3 quiet button.
 
-           `text-zinc-700` and `hover:bg-zinc-100` were never in the dark
-           allow-list, so this button's default rendered as dark ink on a
-           remapped dark card wherever a caller passed no className. The
-           slate equivalents ARE remapped, so the default is now correct in
-           both themes without a global override that would reach Admin. */
-        "rounded-lg border border-slate-300 px-3 py-1.5 text-xs font-semibold text-slate-700 transition-colors hover:bg-slate-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-950 disabled:cursor-not-allowed disabled:opacity-60"
+           It has moved twice: raw `zinc-*` -> the slate family (neither `text-zinc-700`
+           nor `hover:bg-zinc-100` was in the dark allow-list, so this button rendered
+           as dark ink on a remapped dark card wherever a caller passed no
+           className) -> the `v3-btn v3-btn-quiet` tokens.
+
+           The token is the correct end state rather than another palette swap: the
+           allow-list is hand-maintained, so the reliable way to stop a colour being
+           wrong in dark mode is to stop naming a colour at all. */
+
+        "v3-btn v3-btn-quiet v3-focus !min-h-9 !px-3 !py-1.5 !text-xs"
       }
     >
       {isSigningOut ? t("signOutBusy") : t("signOut")}

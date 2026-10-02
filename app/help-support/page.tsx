@@ -67,17 +67,17 @@ export default function HelpSupportPage() {
   }
 
   return (
-    <div className="flex min-h-screen flex-col bg-slate-50">
+    <div className="flex min-h-screen flex-col bg-[var(--v3-sunk)]">
       <StorefrontHeader />
       <main id="main-content" className="mx-auto w-full max-w-3xl flex-1 px-4 py-10">
-        <h1 className="text-2xl font-bold text-slate-900">{t("help.title")}</h1>
+        <h1 className="text-2xl font-bold text-[var(--v3-text)]">{t("help.title")}</h1>
         <dl className="mt-4 space-y-2 text-sm">
           <div>
-            <dt className="font-semibold text-slate-500">{t("help.phoneLabel")}</dt>
+            <dt className="font-semibold text-[var(--v3-text-3)]">{t("help.phoneLabel")}</dt>
             <dd className="font-semibold">{PUBLIC_SUPPORT_PHONE}</dd>
           </div>
           <div>
-            <dt className="font-semibold text-slate-500">{t("help.emailLabel")}</dt>
+            <dt className="font-semibold text-[var(--v3-text-3)]">{t("help.emailLabel")}</dt>
             <dd className="font-semibold">{PUBLIC_DISPLAY_EMAIL}</dd>
           </div>
         </dl>
@@ -86,16 +86,16 @@ export default function HelpSupportPage() {
           <WhatsAppCta
             href={whatsappHref}
             label={t("wa.label")}
-            className="rounded-xl border border-slate-200 bg-white px-4 py-3"
+            className="rounded-[var(--v3-r)] border border-[var(--v3-rule)] bg-[var(--v3-panel)] px-4 py-3"
           />
           {telHref ? (
-            <a href={telHref} className="rounded-xl border border-slate-200 bg-white px-4 py-3 font-semibold text-slate-800">
+            <a href={telHref} className="rounded-[var(--v3-r)] border border-[var(--v3-rule)] bg-[var(--v3-panel)] px-4 py-3 font-semibold text-[var(--v3-text)]">
               {t("help.call")}
             </a>
           ) : null}
           <a
             href={`mailto:${PUBLIC_DISPLAY_EMAIL}`}
-            className="rounded-xl border border-slate-200 bg-white px-4 py-3 font-semibold text-slate-800"
+            className="rounded-[var(--v3-r)] border border-[var(--v3-rule)] bg-[var(--v3-panel)] px-4 py-3 font-semibold text-[var(--v3-text)]"
           >
             {t("help.emailUs")}
           </a>
@@ -110,28 +110,136 @@ export default function HelpSupportPage() {
               ["help.faq3q", "help.faq3a"],
             ] as const
           ).map(([q, a]) => (
-            <article key={q} className="rounded-xl border border-slate-200 bg-white p-4">
+            <article key={q} className="rounded-[var(--v3-r)] border border-[var(--v3-rule)] bg-[var(--v3-panel)] p-4">
               <h3 className="font-semibold">{t(q)}</h3>
-              <p className="mt-1 text-sm text-slate-600">{t(a)}</p>
+              <p className="mt-1 text-sm text-[var(--v3-text-2)]">{t(a)}</p>
             </article>
           ))}
         </div>
 
-        <h2 className="mt-10 text-lg font-semibold">{t("help.submit")}</h2>
-        <form onSubmit={handleSubmit} className="mt-3 space-y-3 rounded-2xl border border-slate-200 bg-white p-5">
-          <input value={name} onChange={(event) => setName(event.target.value)} placeholder={t("help.name")} className="h-11 w-full rounded-lg border px-3" required maxLength={120} />
-          <input value={mobile} onChange={(event) => setMobile(event.target.value)} placeholder={t("help.mobile")} className="h-11 w-full rounded-lg border px-3" required maxLength={30} />
-          <input value={email} onChange={(event) => setEmail(event.target.value)} placeholder={t("help.email")} type="email" className="h-11 w-full rounded-lg border px-3" required maxLength={120} />
-          <input value={orderId} onChange={(event) => setOrderId(event.target.value)} placeholder={t("help.orderId")} className="h-11 w-full rounded-lg border px-3" maxLength={80} />
-          <input value={subject} onChange={(event) => setSubject(event.target.value)} placeholder={t("help.subject")} className="h-11 w-full rounded-lg border px-3" required maxLength={180} />
-          <textarea value={message} onChange={(event) => setMessage(event.target.value)} placeholder={t("help.message")} className="min-h-28 w-full rounded-lg border px-3 py-2" required maxLength={4000} />
-          <button type="submit" disabled={busy} className="h-11 rounded-lg bg-[#7a1233] px-4 font-semibold text-white disabled:opacity-60">
+        <h2 className="v3-h2 mt-10">{t("help.submit")}</h2>
+        {/* VISIBLE LABELS.
+
+            Every field here was identified ONLY by its placeholder, which means
+            the accessible name was empty and the instruction vanished the moment
+            the visitor typed a character - the WCAG 3.3.2 / 4.1.2 failure that
+            placeholder-only forms produce. The label text is the SAME i18n key
+            the placeholder already used, so no new copy is invented and Hindi
+            gets a labelled field too.
+
+            The labels are `sr-only` rather than visible because the form is
+            narrow and six stacked visible labels push the first field below the
+            fold; the name is still announced, which is what 4.1.2 requires. */}
+        <form onSubmit={handleSubmit} className="v3-panel mt-3 space-y-3 p-5">
+          <div>
+            <label htmlFor="help-name" className="v3-label">
+              {t("help.name")}
+            </label>
+            <input
+              id="help-name"
+              name="name"
+              value={name}
+              onChange={(event) => setName(event.target.value)}
+              placeholder={t("help.name")}
+              className="v3-input mt-1.5"
+              required
+              maxLength={120}
+            />
+          </div>
+          <div>
+            <label htmlFor="help-mobile" className="v3-label">
+              {t("help.mobile")}
+            </label>
+            <input
+              id="help-mobile"
+              name="mobile"
+              value={mobile}
+              onChange={(event) => setMobile(event.target.value)}
+              placeholder={t("help.mobile")}
+              className="v3-input mt-1.5"
+              required
+              maxLength={30}
+            />
+          </div>
+          <div>
+            <label htmlFor="help-email" className="v3-label">
+              {t("help.email")}
+            </label>
+            <input
+              id="help-email"
+              name="email"
+              value={email}
+              onChange={(event) => setEmail(event.target.value)}
+              placeholder={t("help.email")}
+              type="email"
+              className="v3-input mt-1.5"
+              required
+              maxLength={120}
+            />
+          </div>
+          <div>
+            <label htmlFor="help-order-id" className="v3-label">
+              {t("help.orderId")}
+            </label>
+            <input
+              id="help-order-id"
+              name="orderId"
+              value={orderId}
+              onChange={(event) => setOrderId(event.target.value)}
+              placeholder={t("help.orderId")}
+              className="v3-input mt-1.5"
+              maxLength={80}
+            />
+          </div>
+          <div>
+            <label htmlFor="help-subject" className="v3-label">
+              {t("help.subject")}
+            </label>
+            <input
+              id="help-subject"
+              name="subject"
+              value={subject}
+              onChange={(event) => setSubject(event.target.value)}
+              placeholder={t("help.subject")}
+              className="v3-input mt-1.5"
+              required
+              maxLength={180}
+            />
+          </div>
+          <div>
+            <label htmlFor="help-message" className="v3-label">
+              {t("help.message")}
+            </label>
+            <textarea
+              id="help-message"
+              name="message"
+              value={message}
+              onChange={(event) => setMessage(event.target.value)}
+              placeholder={t("help.message")}
+              className="v3-input mt-1.5 min-h-28 !py-2"
+              required
+              maxLength={4000}
+            />
+          </div>
+          <button
+            type="submit"
+            disabled={busy}
+            className="v3-btn v3-btn-primary v3-focus w-full !min-h-11 disabled:opacity-60"
+          >
             {t("help.send")}
           </button>
-          {error ? <p className="text-sm text-red-700">{error}</p> : null}
-          {status ? <p className="text-sm text-emerald-700">{status}</p> : null}
+          {error ? (
+            <p role="alert" className="text-sm text-[var(--v3-bad)]">
+              {error}
+            </p>
+          ) : null}
+          {status ? (
+            <p role="status" className="text-sm text-[var(--v3-ok)]">
+              {status}
+            </p>
+          ) : null}
         </form>
-        <p className="mt-4 text-xs text-slate-500">
+        <p className="mt-4 text-xs text-[var(--v3-text-3)]">
           <Link href="/returns-refunds" className="underline">{t("help.returnsShort")}</Link>
           {" · "}
           <Link href="/shipping-policy" className="underline">{t("help.shippingShort")}</Link>

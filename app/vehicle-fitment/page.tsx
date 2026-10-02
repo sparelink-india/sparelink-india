@@ -20,12 +20,12 @@ export default async function VehicleFitmentPage() {
   return (
     <FitmentShell>
       <div className="mx-auto w-full max-w-6xl px-4 py-10">
-        <h1 className="text-2xl font-bold text-slate-900 sm:text-3xl">
+        <h1 className="text-2xl font-bold text-[var(--v3-text)] sm:text-3xl">
           {messages["fitment.title"]}
         </h1>
-        <p className="mt-2 max-w-2xl text-sm text-slate-600">{messages["fitment.hint"]}</p>
+        <p className="mt-2 max-w-2xl text-sm text-[var(--v3-text-2)]">{messages["fitment.hint"]}</p>
         {brands.length === 0 ? (
-          <p className="mt-8 text-sm text-slate-500">{messages["fitment.empty"]}</p>
+          <p className="mt-8 text-sm text-[var(--v3-text-3)]">{messages["fitment.empty"]}</p>
         ) : (
           brands.map((brand) => (
             <FitmentModelGrid
@@ -35,7 +35,7 @@ export default async function VehicleFitmentPage() {
             />
           ))
         )}
-        <p className="mt-12 text-xs leading-relaxed text-slate-500">
+        <p className="mt-12 text-xs leading-relaxed text-[var(--v3-text-3)]">
           {messages["fitment.photoCredits"]}
         </p>
       </div>

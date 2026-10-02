@@ -89,9 +89,7 @@ export default function CheckoutPage() {
     if (typeof crypto !== "undefined" && typeof crypto.getRandomValues === "function") {
       const values = new Uint32Array(4);
       crypto.getRandomValues(values);
-      return `checkout-${Array.from(values, (value) => value.toString(16)).join("")}`;
-    }
-    return `checkout-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+      return `checkout-${Array.from(values, (value) => value.toString(16)).join("")}`; } return `checkout-${Date.now()}-${Math.random().toString(36).slice(2)}`;
   });
   const idempotencyKeyRef = useRef<string>(checkoutKey);
 
@@ -342,7 +340,7 @@ export default function CheckoutPage() {
 
   return (
     <div
-      className={`min-h-screen bg-slate-50/70 text-slate-900 ${
+      className={`min-h-screen bg-[var(--v3-page)] text-[var(--v3-text)] ${
         cart && cart.items.length > 0
           ? "pb-[calc(var(--mobile-nav-height)+var(--safe-bottom)+4.75rem)] md:pb-0"
           : "storefront-mobile-pad"
@@ -352,31 +350,31 @@ export default function CheckoutPage() {
 
       <div className="mx-auto max-w-5xl px-3 py-5 sm:px-6 sm:py-8 lg:py-10">
         <div className="mb-3 flex flex-wrap items-center justify-between gap-2 sm:mb-4">
-          <Link href="/cart" className="text-xs font-semibold text-[#7a1233] hover:underline">
+          <Link href="/cart" className="text-xs font-semibold text-[var(--v3-brand-ink)] hover:underline">
             {t("cart.continue")}
           </Link>
           <SignOutButton />
         </div>
-        <h1 className="text-xl font-bold tracking-tight text-slate-950 min-[360px]:text-2xl sm:text-3xl">
+        <h1 className="text-xl font-bold tracking-tight text-[var(--v3-text)] min-[360px]:text-2xl sm:text-3xl">
           {t("cart.checkout")}
         </h1>
-        <p className="mt-1 text-sm text-slate-500">
+        <p className="mt-1 text-sm text-[var(--v3-text-3)]">
           {t("cart.genuine")}
         </p>
 
         {loading && (
           <div className="mt-6 space-y-4 sm:mt-8">
-            <div className="h-40 animate-pulse rounded-2xl border border-slate-200 bg-white p-4 sm:p-6" />
+            <div className="h-40 animate-pulse rounded-[var(--v3-r)] border border-[var(--v3-rule)] bg-[var(--v3-panel)] p-4 sm:p-6" />
           </div>
         )}
 
         {!loading && error && (
           <div
             role="alert"
-            className="mt-6 flex items-start gap-3 rounded-xl border border-rose-200 bg-rose-50 p-3 text-sm font-medium text-rose-800 sm:p-4"
+            className="mt-6 flex items-start gap-3 rounded-[var(--v3-r)] border border-[var(--v3-bad-line)] bg-[var(--v3-bad-soft)] p-3 text-sm font-medium text-[var(--v3-bad)] sm:p-4"
           >
             <svg
-              className="mt-0.5 h-5 w-5 shrink-0 text-rose-600"
+              className="mt-0.5 h-5 w-5 shrink-0 text-[var(--v3-bad)]"
               viewBox="0 0 20 20"
               fill="currentColor"
             >
@@ -391,14 +389,14 @@ export default function CheckoutPage() {
         )}
 
         {!loading && !error && (!cart || !cart.items.length) && (
-          <div className="mt-6 rounded-2xl border border-dashed border-slate-300 bg-white p-8 text-center shadow-xs sm:mt-8 sm:p-12">
-            <p className="font-bold text-slate-900">{t("cart.emptyTitle")}</p>
-            <p className="mt-1 text-sm text-slate-500">
+          <div className="mt-6 rounded-[var(--v3-r)] border border-dashed border-[var(--v3-rule-strong)] bg-[var(--v3-panel)] p-8 text-center sm:mt-8 sm:p-12">
+            <p className="font-bold text-[var(--v3-text)]">{t("cart.emptyTitle")}</p>
+            <p className="mt-1 text-sm text-[var(--v3-text-3)]">
               {t("cart.emptyBody")}
             </p>
             <Link
               href="/"
-              className="btn-press mt-5 inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-slate-950 px-5 py-2.5 text-xs font-bold text-white hover:bg-slate-800"
+              className="btn-press mt-5 inline-flex min-h-11 items-center justify-center gap-2 rounded-[var(--v3-r)] bg-[var(--v3-brand)] px-5 py-2.5 text-xs font-bold text-white hover:bg-[var(--v3-brand-hover)]"
             >
               {t("cart.find")}
             </Link>
@@ -414,25 +412,25 @@ export default function CheckoutPage() {
           >
             {/* Delivery Address & Payment Method Form */}
             <div className="min-w-0 space-y-4 sm:space-y-6">
-              <section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-xs sm:p-6">
+              <section className="rounded-[var(--v3-r)] border border-[var(--v3-rule)] bg-[var(--v3-panel)] p-4 sm:p-6">
                 <div className="flex flex-wrap items-start justify-between gap-2">
-                  <h2 className="text-base font-bold text-slate-950 sm:text-lg">
+                  <h2 className="text-base font-bold text-[var(--v3-text)] sm:text-lg">
                     {t("checkout.addressTitle")}
                   </h2>
                   {addressPrefilled ? (
-                    <span className="shrink-0 text-[11px] font-semibold text-emerald-700">
+                    <span className="shrink-0 text-[11px] font-semibold text-[var(--v3-ok)]">
                       {t("checkout.prefilled")}
                     </span>
                   ) : null}
                 </div>
-                <p className="mt-1 text-xs text-slate-500">
+                <p className="mt-1 text-xs text-[var(--v3-text-3)]">
                   {t("checkout.addressHint")}
                 </p>
 
                 <div className="mt-4 grid gap-3 min-[390px]:gap-4 sm:mt-5 sm:grid-cols-2">
                   <label className="block sm:col-span-2">
-                    <span className="mb-1 block text-xs font-semibold text-slate-700">
-                      {t("register.fullName")} <span className="text-rose-500">*</span>
+                    <span className="mb-1 block text-xs font-semibold text-[var(--v3-text-2)]">
+                      {t("register.fullName")} <span className="text-[var(--v3-bad)]">*</span>
                     </span>
                     <input
                       required
@@ -440,13 +438,13 @@ export default function CheckoutPage() {
                       value={fullName}
                       onChange={(e) => setFullName(e.target.value)}
                       placeholder={t("checkout.phName")}
-                      className="h-11 w-full min-w-0 rounded-xl border border-slate-200 bg-slate-50/50 px-3 text-sm font-medium outline-none transition-all focus:border-slate-950 focus:bg-white focus:ring-2 focus:ring-slate-950/10 sm:px-3.5"
+                      className="h-11 w-full min-w-0 rounded-[var(--v3-r)] border border-[var(--v3-rule)] bg-[var(--v3-sunk)] px-3 text-sm font-medium outline-none transition-all v3-focus bg-[var(--v3-panel)] sm:px-3.5"
                     />
                   </label>
 
                   <label className="block min-w-0">
-                    <span className="mb-1 block text-xs font-semibold text-slate-700">
-                      {t("checkout.mobile10")} <span className="text-rose-500">*</span>
+                    <span className="mb-1 block text-xs font-semibold text-[var(--v3-text-2)]">
+                      {t("checkout.mobile10")} <span className="text-[var(--v3-bad)]">*</span>
                     </span>
                     <input
                       required
@@ -456,13 +454,13 @@ export default function CheckoutPage() {
                       value={phone}
                       onChange={(e) => setPhone(e.target.value)}
                       placeholder="+91XXXXXXXXXX"
-                      className="h-11 w-full min-w-0 rounded-xl border border-slate-200 bg-slate-50/50 px-3 text-sm font-medium outline-none transition-all focus:border-slate-950 focus:bg-white focus:ring-2 focus:ring-slate-950/10 sm:px-3.5"
+                      className="h-11 w-full min-w-0 rounded-[var(--v3-r)] border border-[var(--v3-rule)] bg-[var(--v3-sunk)] px-3 text-sm font-medium outline-none transition-all v3-focus bg-[var(--v3-panel)] sm:px-3.5"
                     />
                   </label>
 
                   <label className="block min-w-0">
-                    <span className="mb-1 block text-xs font-semibold text-slate-700">
-                      {t("profile.pincode")} <span className="text-rose-500">*</span>
+                    <span className="mb-1 block text-xs font-semibold text-[var(--v3-text-2)]">
+                      {t("profile.pincode")} <span className="text-[var(--v3-bad)]">*</span>
                     </span>
                     <input
                       required
@@ -472,13 +470,13 @@ export default function CheckoutPage() {
                       value={pincode}
                       onChange={(e) => setPincode(e.target.value)}
                       placeholder="e.g. 380001"
-                      className="h-11 w-full min-w-0 rounded-xl border border-slate-200 bg-slate-50/50 px-3 text-sm font-medium outline-none transition-all focus:border-slate-950 focus:bg-white focus:ring-2 focus:ring-slate-950/10 sm:px-3.5"
+                      className="h-11 w-full min-w-0 rounded-[var(--v3-r)] border border-[var(--v3-rule)] bg-[var(--v3-sunk)] px-3 text-sm font-medium outline-none transition-all v3-focus bg-[var(--v3-panel)] sm:px-3.5"
                     />
                   </label>
 
                   <label className="block sm:col-span-2">
-                    <span className="mb-1 block text-xs font-semibold text-slate-700">
-                      {t("checkout.line1")} <span className="text-rose-500">*</span>
+                    <span className="mb-1 block text-xs font-semibold text-[var(--v3-text-2)]">
+                      {t("checkout.line1")} <span className="text-[var(--v3-bad)]">*</span>
                     </span>
                     <input
                       required
@@ -486,12 +484,12 @@ export default function CheckoutPage() {
                       value={addressLine1}
                       onChange={(e) => setAddressLine1(e.target.value)}
                       placeholder={t("checkout.phLine1")}
-                      className="h-11 w-full min-w-0 rounded-xl border border-slate-200 bg-slate-50/50 px-3 text-sm font-medium outline-none transition-all focus:border-slate-950 focus:bg-white focus:ring-2 focus:ring-slate-950/10 sm:px-3.5"
+                      className="h-11 w-full min-w-0 rounded-[var(--v3-r)] border border-[var(--v3-rule)] bg-[var(--v3-sunk)] px-3 text-sm font-medium outline-none transition-all v3-focus bg-[var(--v3-panel)] sm:px-3.5"
                     />
                   </label>
 
                   <label className="block sm:col-span-2">
-                    <span className="mb-1 block text-xs font-semibold text-slate-700">
+                    <span className="mb-1 block text-xs font-semibold text-[var(--v3-text-2)]">
                       {t("checkout.landmarkOptional")}
                     </span>
                     <input
@@ -499,13 +497,13 @@ export default function CheckoutPage() {
                       value={addressLine2}
                       onChange={(e) => setAddressLine2(e.target.value)}
                       placeholder={t("checkout.phLandmark")}
-                      className="h-11 w-full min-w-0 rounded-xl border border-slate-200 bg-slate-50/50 px-3 text-sm font-medium outline-none transition-all focus:border-slate-950 focus:bg-white focus:ring-2 focus:ring-slate-950/10 sm:px-3.5"
+                      className="h-11 w-full min-w-0 rounded-[var(--v3-r)] border border-[var(--v3-rule)] bg-[var(--v3-sunk)] px-3 text-sm font-medium outline-none transition-all v3-focus bg-[var(--v3-panel)] sm:px-3.5"
                     />
                   </label>
 
                   <label className="block min-w-0">
-                    <span className="mb-1 block text-xs font-semibold text-slate-700">
-                      {t("checkout.cityDistrict")} <span className="text-rose-500">*</span>
+                    <span className="mb-1 block text-xs font-semibold text-[var(--v3-text-2)]">
+                      {t("checkout.cityDistrict")} <span className="text-[var(--v3-bad)]">*</span>
                     </span>
                     <input
                       required
@@ -513,13 +511,13 @@ export default function CheckoutPage() {
                       value={city}
                       onChange={(e) => setCity(e.target.value)}
                       placeholder={t("checkout.phCity")}
-                      className="h-11 w-full min-w-0 rounded-xl border border-slate-200 bg-slate-50/50 px-3 text-sm font-medium outline-none transition-all focus:border-slate-950 focus:bg-white focus:ring-2 focus:ring-slate-950/10 sm:px-3.5"
+                      className="h-11 w-full min-w-0 rounded-[var(--v3-r)] border border-[var(--v3-rule)] bg-[var(--v3-sunk)] px-3 text-sm font-medium outline-none transition-all v3-focus bg-[var(--v3-panel)] sm:px-3.5"
                     />
                   </label>
 
                   <label className="block min-w-0">
-                    <span className="mb-1 block text-xs font-semibold text-slate-700">
-                      {t("checkout.state")} <span className="text-rose-500">*</span>
+                    <span className="mb-1 block text-xs font-semibold text-[var(--v3-text-2)]">
+                      {t("checkout.state")} <span className="text-[var(--v3-bad)]">*</span>
                     </span>
                     <input
                       required
@@ -527,24 +525,24 @@ export default function CheckoutPage() {
                       value={state}
                       onChange={(e) => setState(e.target.value)}
                       placeholder={t("checkout.phState")}
-                      className="h-11 w-full min-w-0 rounded-xl border border-slate-200 bg-slate-50/50 px-3 text-sm font-medium outline-none transition-all focus:border-slate-950 focus:bg-white focus:ring-2 focus:ring-slate-950/10 sm:px-3.5"
+                      className="h-11 w-full min-w-0 rounded-[var(--v3-r)] border border-[var(--v3-rule)] bg-[var(--v3-sunk)] px-3 text-sm font-medium outline-none transition-all v3-focus bg-[var(--v3-panel)] sm:px-3.5"
                     />
                   </label>
                 </div>
               </section>
 
               {/* Fulfillment & Transport Preference */}
-              <section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-xs sm:p-6">
-                <h2 className="text-base font-bold text-slate-950 sm:text-lg">
+              <section className="rounded-[var(--v3-r)] border border-[var(--v3-rule)] bg-[var(--v3-panel)] p-4 sm:p-6">
+                <h2 className="text-base font-bold text-[var(--v3-text)] sm:text-lg">
                   {t("checkout.fulfillTitle")}
                 </h2>
-                <p className="mt-1 text-xs text-slate-500">
+                <p className="mt-1 text-xs text-[var(--v3-text-3)]">
                   {t("checkout.fulfillHint")}
                 </p>
 
                 <div className="mt-4 space-y-3">
                   <div className="grid grid-cols-1 gap-2.5 min-[390px]:grid-cols-3 min-[390px]:gap-3">
-                    <label className="flex min-h-11 cursor-pointer items-center gap-2.5 rounded-xl border border-slate-200 p-3 text-xs font-bold text-slate-800 has-checked:border-slate-950 has-checked:bg-slate-50 sm:p-3.5">
+                    <label className="flex min-h-11 cursor-pointer items-center gap-2.5 rounded-[var(--v3-r)] border border-[var(--v3-rule)] p-3 text-xs font-bold text-[var(--v3-text)] has-checked:border-[var(--v3-brand)] has-checked:bg-[var(--v3-sunk)] sm:p-3.5">
                       <input
                         type="radio"
                         name="shipMethod"
@@ -556,7 +554,7 @@ export default function CheckoutPage() {
                       <span className="leading-snug">{t("register.courier")}</span>
                     </label>
 
-                    <label className="flex min-h-11 cursor-pointer items-center gap-2.5 rounded-xl border border-slate-200 p-3 text-xs font-bold text-slate-800 has-checked:border-slate-950 has-checked:bg-slate-50 sm:p-3.5">
+                    <label className="flex min-h-11 cursor-pointer items-center gap-2.5 rounded-[var(--v3-r)] border border-[var(--v3-rule)] p-3 text-xs font-bold text-[var(--v3-text)] has-checked:border-[var(--v3-brand)] has-checked:bg-[var(--v3-sunk)] sm:p-3.5">
                       <input
                         type="radio"
                         name="shipMethod"
@@ -568,7 +566,7 @@ export default function CheckoutPage() {
                       <span className="leading-snug">{t("register.pickup")}</span>
                     </label>
 
-                    <label className="flex min-h-11 cursor-pointer items-center gap-2.5 rounded-xl border border-slate-200 p-3 text-xs font-bold text-slate-800 has-checked:border-slate-950 has-checked:bg-slate-50 sm:p-3.5">
+                    <label className="flex min-h-11 cursor-pointer items-center gap-2.5 rounded-[var(--v3-r)] border border-[var(--v3-rule)] p-3 text-xs font-bold text-[var(--v3-text)] has-checked:border-[var(--v3-brand)] has-checked:bg-[var(--v3-sunk)] sm:p-3.5">
                       <input
                         type="radio"
                         name="shipMethod"
@@ -582,26 +580,26 @@ export default function CheckoutPage() {
                   </div>
 
                   {shippingMethod === "transport" && (
-                    <div className="space-y-3 rounded-xl border border-slate-200 bg-slate-50 p-3 animate-in fade-in sm:p-4">
-                      <p className="text-xs font-bold text-slate-900">
+                    <div className="space-y-3 rounded-[var(--v3-r)] border border-[var(--v3-rule)] bg-[var(--v3-sunk)] p-3 animate-in fade-in sm:p-4">
+                      <p className="text-xs font-bold text-[var(--v3-text)]">
                         {t("checkout.transportDetails")}
                       </p>
                       <div className="grid gap-3 sm:grid-cols-3">
                         <div className="min-w-0">
-                          <span className="mb-1 block text-xs font-semibold text-slate-700">
-                            {t("checkout.transporterName")} <span className="text-rose-500">*</span>
+                          <span className="mb-1 block text-xs font-semibold text-[var(--v3-text-2)]">
+                            {t("checkout.transporterName")} <span className="text-[var(--v3-bad)]">*</span>
                           </span>
                           <input
                             required={shippingMethod === "transport"}
                             value={transportName}
                             onChange={(e) => setTransportName(e.target.value)}
                             placeholder={t("checkout.phTransporter")}
-                            className="h-11 w-full min-w-0 rounded-xl border border-slate-200 bg-white px-3 text-xs font-medium outline-none focus:border-slate-950 sm:h-10"
+                            className="h-11 w-full min-w-0 rounded-[var(--v3-r)] border border-[var(--v3-rule)] bg-[var(--v3-panel)] px-3 text-xs font-medium outline-none v3-focus sm:h-10"
                           />
                         </div>
 
                         <div className="min-w-0">
-                          <span className="mb-1 block text-xs font-semibold text-slate-700">
+                          <span className="mb-1 block text-xs font-semibold text-[var(--v3-text-2)]">
                             {t("checkout.transportContact")}
                           </span>
                           <input
@@ -610,12 +608,12 @@ export default function CheckoutPage() {
                             value={transportPhone}
                             onChange={(e) => setTransportPhone(e.target.value)}
                             placeholder={t("checkout.phTransportPhone")}
-                            className="h-11 w-full min-w-0 rounded-xl border border-slate-200 bg-white px-3 text-xs font-medium outline-none focus:border-slate-950 sm:h-10"
+                            className="h-11 w-full min-w-0 rounded-[var(--v3-r)] border border-[var(--v3-rule)] bg-[var(--v3-panel)] px-3 text-xs font-medium outline-none v3-focus sm:h-10"
                           />
                         </div>
 
                         <div className="min-w-0">
-                          <span className="mb-1 block text-xs font-semibold text-slate-700">
+                          <span className="mb-1 block text-xs font-semibold text-[var(--v3-text-2)]">
                             {t("checkout.transportGstin")}
                           </span>
                           <input
@@ -623,7 +621,7 @@ export default function CheckoutPage() {
                             value={transportGstin}
                             onChange={(e) => setTransportGstin(e.target.value.toUpperCase())}
                             placeholder={t("profile.phTransportGstin")}
-                            className="h-11 w-full min-w-0 rounded-xl border border-slate-200 bg-white px-3 font-mono text-xs font-medium outline-none focus:border-slate-950 sm:h-10"
+                            className="h-11 w-full min-w-0 rounded-[var(--v3-r)] border border-[var(--v3-rule)] bg-[var(--v3-panel)] px-3 font-mono text-xs font-medium outline-none v3-focus sm:h-10"
                           />
                         </div>
                       </div>
@@ -633,34 +631,34 @@ export default function CheckoutPage() {
               </section>
 
               {/* B2B / GST Information */}
-              <section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-xs sm:p-6">
+              <section className="rounded-[var(--v3-r)] border border-[var(--v3-rule)] bg-[var(--v3-panel)] p-4 sm:p-6">
                 <div className="flex flex-wrap items-start justify-between gap-2">
-                  <h2 className="text-base font-bold text-slate-950 sm:text-lg">
+                  <h2 className="text-base font-bold text-[var(--v3-text)] sm:text-lg">
                     {t("checkout.gstTitle")}
                   </h2>
-                  <span className="shrink-0 rounded bg-slate-100 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-slate-600">
+                  <span className="shrink-0 rounded bg-[var(--v3-sunk)] px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-[var(--v3-text-2)]">
                     {t("checkout.b2bBadge")}
                   </span>
                 </div>
-                <p className="mt-1 text-xs text-slate-500">
+                <p className="mt-1 text-xs text-[var(--v3-text-3)]">
                   {t("checkout.gstHint")}
                 </p>
 
                 <div className="mt-4 grid gap-3 min-[390px]:gap-4 sm:mt-5 sm:grid-cols-2">
                   <label className="block sm:col-span-2">
-                    <span className="mb-1 block text-xs font-semibold text-slate-700">
+                    <span className="mb-1 block text-xs font-semibold text-[var(--v3-text-2)]">
                       {t("register.business")}
                     </span>
                     <input
                       value={businessNameInput}
                       onChange={(e) => setBusinessNameInput(e.target.value)}
                       placeholder={t("checkout.phBusiness")}
-                      className="h-11 w-full min-w-0 rounded-xl border border-slate-200 bg-slate-50/50 px-3 text-sm font-medium outline-none transition-all focus:border-slate-950 focus:bg-white focus:ring-2 focus:ring-slate-950/10 sm:px-3.5"
+                      className="h-11 w-full min-w-0 rounded-[var(--v3-r)] border border-[var(--v3-rule)] bg-[var(--v3-sunk)] px-3 text-sm font-medium outline-none transition-all v3-focus bg-[var(--v3-panel)] sm:px-3.5"
                     />
                   </label>
 
                   <label className="block sm:col-span-2">
-                    <span className="mb-1 block text-xs font-semibold text-slate-700">
+                    <span className="mb-1 block text-xs font-semibold text-[var(--v3-text-2)]">
                       {t("checkout.buyerGstin")}
                     </span>
                     <input
@@ -669,27 +667,21 @@ export default function CheckoutPage() {
                       maxLength={15}
                       autoCapitalize="characters"
                       placeholder="e.g. 24AAACR1234K1Z0"
-                      className={`h-11 w-full min-w-0 rounded-xl border bg-slate-50/50 px-3 font-mono text-sm font-medium outline-none transition-all focus:bg-white focus:ring-2 sm:px-3.5 ${
+                      className={`h-11 w-full min-w-0 rounded-[var(--v3-r)] border bg-[var(--v3-sunk)] px-3 font-mono text-sm font-medium outline-none transition-all bg-[var(--v3-panel)]  sm:px-3.5 ${
                         gstinInput.trim() && gstinValidation
                           ? gstinValidation.valid
-                            ? "border-emerald-500 text-emerald-950 focus:border-emerald-600 focus:ring-emerald-500/10"
-                            : "border-rose-300 text-rose-950 focus:border-rose-500 focus:ring-rose-500/10"
-                          : "border-slate-200 focus:border-slate-950 focus:ring-slate-950/10"
-                      }`}
-                    />
-
-                    {/* GST Validation Status Banner */}
-                    {gstinInput.trim() && gstinValidation && (
-                      <div
-                        className={`mt-2 flex items-start gap-1.5 rounded-lg p-2 text-xs font-medium ${
+                            ? "border-[var(--v3-ok)] text-[var(--v3-ok)] v3-focus "
+                            : "border-[var(--v3-bad-line)] text-[var(--v3-bad)] v3-focus "
+                          : "border-[var(--v3-rule)] v3-focus "
+                      }`} /> {/* GST Validation Status Banner */} {gstinInput.trim() && gstinValidation && ( <div className={`mt-2 flex items-start gap-1.5 rounded-[var(--v3-r)] p-2 text-xs font-medium ${
                           gstinValidation.valid
-                            ? "border border-emerald-200 bg-emerald-50 text-emerald-800"
-                            : "border border-rose-200 bg-rose-50 text-rose-700"
+                            ? "border border-[var(--v3-ok-line)] bg-[var(--v3-ok-soft)] text-[var(--v3-ok)]"
+                            : "border border-[var(--v3-bad-line)] bg-[var(--v3-bad-soft)] text-[var(--v3-bad)]"
                         }`}
                       >
                         {gstinValidation.valid ? (
                           <>
-                            <svg className="mt-0.5 h-4 w-4 shrink-0 text-emerald-600" viewBox="0 0 20 20" fill="currentColor">
+                            <svg className="mt-0.5 h-4 w-4 shrink-0 text-[var(--v3-ok)]" viewBox="0 0 20 20" fill="currentColor">
                               <path fillRule="evenodd" d="M16.704 4.153a.75.75 0 01.143 1.052l-8 10.5a.75.75 0 01-1.127.075l-4.5-4.5a.75.75 0 011.06-1.06l3.894 3.893 7.48-9.817a.75.75 0 011.05-.143z" clipRule="evenodd" />
                             </svg>
                             <span className="min-w-0 break-words">
@@ -698,7 +690,7 @@ export default function CheckoutPage() {
                           </>
                         ) : (
                           <>
-                            <svg className="mt-0.5 h-4 w-4 shrink-0 text-rose-500" viewBox="0 0 20 20" fill="currentColor">
+                            <svg className="mt-0.5 h-4 w-4 shrink-0 text-[var(--v3-bad)]" viewBox="0 0 20 20" fill="currentColor">
                               <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-8-5a.75.75 0 01.75.75v4.5a.75.75 0 01-1.5 0v-4.5A.75.75 0 0110 5zm0 10a1 1 0 100-2 1 1 0 000 2z" clipRule="evenodd" />
                             </svg>
                             <span className="min-w-0 break-words">{gstinValidation.message}</span>
@@ -710,17 +702,17 @@ export default function CheckoutPage() {
                 </div>
               </section>
 
-              <section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-xs sm:p-6">
-                <h2 className="text-base font-bold text-slate-950 sm:text-lg">
+              <section className="rounded-[var(--v3-r)] border border-[var(--v3-rule)] bg-[var(--v3-panel)] p-4 sm:p-6">
+                <h2 className="text-base font-bold text-[var(--v3-text)] sm:text-lg">
                   {t("checkout.payTitle")}
                 </h2>
-                <p className="mt-1 text-xs text-slate-500">
+                <p className="mt-1 text-xs text-[var(--v3-text-3)]">
                   {t("checkout.payHint")}
                 </p>
 
                 {hasPensol ? (
-                  <div className="mt-4 space-y-3 rounded-xl border border-amber-200 bg-amber-50/60 p-3 sm:p-4">
-                    <p className="text-sm font-bold text-slate-900">{t("checkout.pensolPayTitle")}</p>
+                  <div className="mt-4 space-y-3 rounded-[var(--v3-r)] border border-[var(--v3-warn-line)] bg-[var(--v3-warn-soft)]/60 p-3 sm:p-4">
+                    <p className="text-sm font-bold text-[var(--v3-text)]">{t("checkout.pensolPayTitle")}</p>
                     <label className="flex min-h-11 cursor-pointer items-start gap-3">
                       <input
                         type="radio"
@@ -745,7 +737,7 @@ export default function CheckoutPage() {
                         {t("checkout.pensolCredit")}
                       </span>
                     </label>
-                    <p className="break-words text-xs text-slate-600">
+                    <p className="break-words text-xs text-[var(--v3-text-2)]">
                       {cart?.items
                         .filter((item) => item.isPensol)
                         .map((item) => {
@@ -762,7 +754,7 @@ export default function CheckoutPage() {
                 ) : null}
 
                 <div className="mt-4 space-y-3">
-                  <label className="flex min-h-11 cursor-pointer items-start gap-3 rounded-xl border border-slate-200 p-3.5 transition-colors hover:bg-slate-50 has-checked:border-slate-950 has-checked:bg-slate-50/50 sm:gap-3.5 sm:p-4">
+                  <label className="flex min-h-11 cursor-pointer items-start gap-3 rounded-[var(--v3-r)] border border-[var(--v3-rule)] p-3.5 transition-colors hover:bg-[var(--v3-sunk)] has-checked:border-[var(--v3-brand)] has-checked:bg-[var(--v3-sunk)] sm:gap-3.5 sm:p-4">
                     <input
                       type="radio"
                       name="paymentMethod"
@@ -772,16 +764,16 @@ export default function CheckoutPage() {
                       className="mt-0.5 shrink-0"
                     />
                     <div className="min-w-0">
-                      <span className="block text-sm font-bold text-slate-900">
+                      <span className="block text-sm font-bold text-[var(--v3-text)]">
                         {t("checkout.cod")}
                       </span>
-                      <span className="mt-0.5 block text-xs leading-snug text-slate-500">
+                      <span className="mt-0.5 block text-xs leading-snug text-[var(--v3-text-3)]">
                         {t("checkout.codHint")}
                       </span>
                     </div>
                   </label>
 
-                  <label className="flex min-h-11 cursor-pointer items-start gap-3 rounded-xl border border-slate-200 p-3.5 transition-colors hover:bg-slate-50 has-checked:border-slate-950 has-checked:bg-slate-50/50 sm:gap-3.5 sm:p-4">
+                  <label className="flex min-h-11 cursor-pointer items-start gap-3 rounded-[var(--v3-r)] border border-[var(--v3-rule)] p-3.5 transition-colors hover:bg-[var(--v3-sunk)] has-checked:border-[var(--v3-brand)] has-checked:bg-[var(--v3-sunk)] sm:gap-3.5 sm:p-4">
                     <input
                       type="radio"
                       name="paymentMethod"
@@ -791,17 +783,17 @@ export default function CheckoutPage() {
                       className="mt-0.5 shrink-0"
                     />
                     <div className="min-w-0">
-                      <span className="block text-sm font-bold text-slate-900">
+                      <span className="block text-sm font-bold text-[var(--v3-text)]">
                         {t("checkout.bank")}
                       </span>
-                      <span className="mt-0.5 block text-xs leading-snug text-slate-500">
+                      <span className="mt-0.5 block text-xs leading-snug text-[var(--v3-text-3)]">
                         {t("checkout.bankHint")}
                       </span>
                     </div>
                   </label>
 
                   {cartSupportsOnlinePayment ? (
-                    <label className="flex min-h-11 cursor-pointer items-start gap-3 rounded-xl border border-slate-200 p-3.5 transition-colors hover:bg-slate-50 has-checked:border-slate-950 has-checked:bg-slate-50/50 sm:gap-3.5 sm:p-4">
+                    <label className="flex min-h-11 cursor-pointer items-start gap-3 rounded-[var(--v3-r)] border border-[var(--v3-rule)] p-3.5 transition-colors hover:bg-[var(--v3-sunk)] has-checked:border-[var(--v3-brand)] has-checked:bg-[var(--v3-sunk)] sm:gap-3.5 sm:p-4">
                       <input
                         type="radio"
                         name="paymentMethod"
@@ -811,20 +803,20 @@ export default function CheckoutPage() {
                         className="mt-0.5 shrink-0"
                       />
                       <div className="min-w-0">
-                        <span className="block text-sm font-bold text-slate-900">
+                        <span className="block text-sm font-bold text-[var(--v3-text)]">
                           {t("checkout.online")}
                         </span>
-                        <span className="mt-0.5 block text-xs leading-snug text-slate-500">
+                        <span className="mt-0.5 block text-xs leading-snug text-[var(--v3-text-3)]">
                           {t("checkout.onlineHint")}
                         </span>
                       </div>
                     </label>
                   ) : (
-                    <div className="rounded-xl border border-dashed border-slate-300 bg-slate-50 p-3.5 sm:p-4">
-                      <span className="block text-sm font-bold text-slate-900">
+                    <div className="rounded-[var(--v3-r)] border border-dashed border-[var(--v3-rule-strong)] bg-[var(--v3-sunk)] p-3.5 sm:p-4">
+                      <span className="block text-sm font-bold text-[var(--v3-text)]">
                         {t("checkout.comingSoon")}
                       </span>
-                      <span className="mt-0.5 block text-xs leading-snug text-slate-500">
+                      <span className="mt-0.5 block text-xs leading-snug text-[var(--v3-text-3)]">
                         {t("checkout.onlineUnavailable")}
                       </span>
                     </div>
@@ -835,23 +827,23 @@ export default function CheckoutPage() {
 
             {/* Authoritative Order Summary Sidebar */}
             <aside aria-label={t("checkout.orderBreakdownAria")} className="min-w-0">
-              <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-6 lg:sticky lg:top-20">
-                <h2 className="text-base font-bold text-slate-950 sm:text-lg">
+              <div className="rounded-[var(--v3-r)] border border-[var(--v3-rule)] bg-[var(--v3-panel)] p-4 sm:p-6 lg:sticky lg:top-20">
+                <h2 className="text-base font-bold text-[var(--v3-text)] sm:text-lg">
                   {t("checkout.summary")}
                 </h2>
 
                 {/* Line Items */}
-                <div className="mt-4 divide-y divide-slate-100 border-b border-slate-100 pb-4 text-xs">
+                <div className="mt-4 divide-y divide-[var(--v3-rule)] border-b border-[var(--v3-rule)] pb-4 text-xs">
                   {cart.items.map((item) => (
                     <div
                       key={item.id}
                       className="flex items-start justify-between gap-3 py-2.5 first:pt-0"
                     >
                       <div className="min-w-0 flex-1">
-                        <p className="break-words font-semibold text-slate-900">
+                        <p className="break-words font-semibold text-[var(--v3-text)]">
                           {item.partName || t("checkout.sparePart")} × {item.quantity}
                         </p>
-                        <p className="mt-0.5 break-words text-slate-400">
+                        <p className="mt-0.5 break-words text-[var(--v3-text-3)]">
                           {isAuthoritativeSellingPricePaise(
                             item.listInclusivePaise,
                             item.netInclusivePaise,
@@ -860,18 +852,18 @@ export default function CheckoutPage() {
                             ? `${t("price.listRate")}: ₹${(((item.listInclusivePaise ?? item.pricePaise) * item.quantity) / 100).toLocaleString("en-IN")}`
                             : t("price.onRequest")}
                           {item.gstRate !== undefined && (
-                            <span className="ml-1.5 font-medium text-emerald-700">
+                            <span className="ml-1.5 font-medium text-[var(--v3-ok)]">
                               (GST {item.gstRate}%)
                             </span>
                           )}
                         </p>
                         {(item.discountPercent ?? 0) > 0 ? (
-                          <p className="text-[11px] font-semibold text-[#7a1233]">
+                          <p className="text-[11px] font-semibold text-[var(--v3-brand-ink)]">
                             {t("price.inclTaxDiscount", { percent: String(item.discountPercent) })}
                           </p>
                         ) : null}
                       </div>
-                      <span className="shrink-0 tabular-nums font-bold text-slate-900">
+                      <span className="shrink-0 tabular-nums font-bold text-[var(--v3-text)]">
                         {isAuthoritativeSellingPricePaise(
                           item.listInclusivePaise,
                           item.netInclusivePaise,
@@ -896,19 +888,19 @@ export default function CheckoutPage() {
                 </div>
 
                 {firmBreakdown.length > 1 ? (
-                  <div className="mt-3 space-y-1.5 border-b border-slate-100 pb-4 text-xs">
+                  <div className="mt-3 space-y-1.5 border-b border-[var(--v3-rule)] pb-4 text-xs">
                     {firmBreakdown.map((group) => (
                       <div
                         key={group.firmName}
-                        className="flex items-start justify-between gap-3 text-slate-600"
+                        className="flex items-start justify-between gap-3 text-[var(--v3-text-2)]"
                       >
                         <span className="min-w-0 break-words">
                           {group.firmName}
-                          <span className="ml-1 text-slate-400">
+                          <span className="ml-1 text-[var(--v3-text-3)]">
                             ({group.itemCount})
                           </span>
                         </span>
-                        <span className="shrink-0 tabular-nums font-semibold text-slate-900">
+                        <span className="shrink-0 tabular-nums font-semibold text-[var(--v3-text)]">
                           ₹{(group.totalPaise / 100).toLocaleString("en-IN")}
                         </span>
                       </div>
@@ -918,44 +910,44 @@ export default function CheckoutPage() {
 
                 {/* Financial Breakdown */}
                 <div className="mt-4 space-y-2.5 text-xs">
-                  <div className="flex items-center justify-between gap-3 text-slate-600">
+                  <div className="flex items-center justify-between gap-3 text-[var(--v3-text-2)]">
                     <span className="min-w-0">{t("checkout.subtotalPlain")}</span>
-                    <span className="shrink-0 tabular-nums font-semibold text-slate-900">
+                    <span className="shrink-0 tabular-nums font-semibold text-[var(--v3-text)]">
                       ₹{(itemsSubtotalPaise / 100).toLocaleString("en-IN")}
                     </span>
                   </div>
 
-                  <div className="flex items-center justify-between gap-3 text-slate-600">
+                  <div className="flex items-center justify-between gap-3 text-[var(--v3-text-2)]">
                     <span className="inline-flex min-w-0 flex-wrap items-center gap-1">
                       <span>{t("checkout.gstTax")}</span>
-                      <span className="rounded border border-emerald-200/60 bg-emerald-50 px-1 py-0.2 text-[10px] font-bold text-emerald-700">
+                      <span className="rounded border border-[var(--v3-ok-line)]/60 bg-[var(--v3-ok-soft)] px-1 py-0.2 text-[10px] font-bold text-[var(--v3-ok)]">
                         {t("checkout.itemized")}
                       </span>
                     </span>
-                    <span className="shrink-0 tabular-nums font-semibold text-emerald-700">
+                    <span className="shrink-0 tabular-nums font-semibold text-[var(--v3-ok)]">
                       ₹{(gstPaise / 100).toLocaleString("en-IN")}
                     </span>
                   </div>
 
-                  <div className="flex items-center justify-between gap-3 text-slate-600">
+                  <div className="flex items-center justify-between gap-3 text-[var(--v3-text-2)]">
                     <span className="min-w-0">{t("checkout.shippingHandle")}</span>
-                    <span className="max-w-[55%] shrink-0 text-right tabular-nums font-semibold text-emerald-700">
+                    <span className="max-w-[55%] shrink-0 text-right tabular-nums font-semibold text-[var(--v3-ok)]">
                       {shippingPaise === 0
                         ? t("checkout.freeStd")
                         : `₹${(shippingPaise / 100).toLocaleString("en-IN")}`}
                     </span>
                   </div>
 
-                  <div className="border-t border-slate-200 pt-3.5">
+                  <div className="border-t border-[var(--v3-rule)] pt-3.5">
                     <div className="flex items-baseline justify-between gap-3">
-                      <span className="text-sm font-bold text-slate-950">
+                      <span className="text-sm font-bold text-[var(--v3-text)]">
                         {t("checkout.grand")}
                       </span>
                       <div className="min-w-0 text-right">
-                        <span className="text-xl font-extrabold tabular-nums text-slate-950">
+                        <span className="text-xl font-extrabold tabular-nums text-[var(--v3-text)]">
                           ₹{(grandTotalPaise / 100).toLocaleString("en-IN")}
                         </span>
-                        <p className="text-[10px] text-slate-400">
+                        <p className="text-[10px] text-[var(--v3-text-3)]">
                           {t("checkout.inclusive")}
                         </p>
                       </div>
@@ -967,7 +959,7 @@ export default function CheckoutPage() {
                 <button
                   type="submit"
                   disabled={submitting}
-                  className="btn-press mt-6 hidden w-full items-center justify-center gap-2 rounded-xl bg-slate-950 py-3.5 text-center text-sm font-bold text-white shadow-md transition-all hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-60 md:flex"
+                  className="btn-press mt-6 hidden w-full items-center justify-center gap-2 rounded-[var(--v3-r)] bg-[var(--v3-brand)] py-3.5 text-center text-sm font-bold text-white transition-all hover:bg-[var(--v3-brand-hover)] disabled:cursor-not-allowed disabled:opacity-60 md:flex"
                 >
                   {submitting ? (
                     <>
@@ -1012,10 +1004,10 @@ export default function CheckoutPage() {
         >
           <div className="mx-auto flex max-w-lg items-center gap-2.5 min-[360px]:gap-3">
             <div className="min-w-0 flex-1">
-              <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">
+              <p className="text-[11px] font-semibold uppercase tracking-wide text-[var(--v3-text-3)]">
                 {t("checkout.grand")}
               </p>
-              <p className="truncate text-lg font-extrabold tabular-nums text-slate-950">
+              <p className="truncate text-lg font-extrabold tabular-nums text-[var(--v3-text)]">
                 ₹{(grandTotalPaise / 100).toLocaleString("en-IN")}
               </p>
             </div>
@@ -1023,7 +1015,7 @@ export default function CheckoutPage() {
               type="submit"
               form="checkout-form"
               disabled={submitting}
-              className="btn-press inline-flex min-h-12 max-w-[58%] shrink-0 items-center justify-center rounded-xl bg-[#7a1233] px-3.5 text-sm font-bold text-white disabled:cursor-not-allowed disabled:opacity-60 min-[360px]:px-5"
+              className="btn-press inline-flex min-h-12 max-w-[58%] shrink-0 items-center justify-center rounded-[var(--v3-r)] bg-[var(--v3-brand)] px-3.5 text-sm font-bold text-white disabled:cursor-not-allowed disabled:opacity-60 min-[360px]:px-5"
             >
               <span className="truncate">
                 {submitting ? t("checkout.placing") : placeOrderLabel}

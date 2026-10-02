@@ -48,13 +48,13 @@ export default function ChangePasswordPage() {
   }
 
   return (
-    <div className="flex min-h-screen flex-col bg-slate-50">
+    <div className="flex min-h-screen flex-col bg-[var(--v3-sunk)]">
       <StorefrontHeader />
       <main id="main-content" className="flex flex-1 items-center justify-center px-6 py-12">
-        <div className="w-full max-w-md rounded-2xl border border-zinc-200 bg-white p-8 shadow-sm">
+        <div className="w-full max-w-md rounded-[var(--v3-r)] border border-[var(--v3-rule)] bg-[var(--v3-panel)] p-8 ">
           <BrandLogo />
-          <h1 className="mt-4 text-lg font-semibold text-zinc-900">{t("account.passwordTitle")}</h1>
-          <p className="mt-1 text-sm text-zinc-500">
+          <h1 className="mt-4 text-lg font-semibold text-[var(--v3-text)]">{t("account.passwordTitle")}</h1>
+          <p className="mt-1 text-sm text-[var(--v3-text-3)]">
             {t("account.bootstrapHint")}
           </p>
           <form onSubmit={handleSubmit} className="mt-6 space-y-4">
@@ -64,7 +64,7 @@ export default function ChangePasswordPage() {
               value={currentPassword}
               onChange={(event) => setCurrentPassword(event.target.value)}
               placeholder={t("account.current")}
-              className="h-12 w-full rounded-xl border border-zinc-300 px-4 outline-none focus:border-zinc-950"
+              className="h-12 w-full rounded-[var(--v3-r)] border border-[var(--v3-rule-strong)] px-4 outline-none v3-focus"
               required
             />
             <input
@@ -74,7 +74,7 @@ export default function ChangePasswordPage() {
               value={newPassword}
               onChange={(event) => setNewPassword(event.target.value)}
               placeholder={t("account.new")}
-              className="h-12 w-full rounded-xl border border-zinc-300 px-4 outline-none focus:border-zinc-950"
+              className="h-12 w-full rounded-[var(--v3-r)] border border-[var(--v3-rule-strong)] px-4 outline-none v3-focus"
               required
             />
             <input
@@ -84,19 +84,19 @@ export default function ChangePasswordPage() {
               value={confirmPassword}
               onChange={(event) => setConfirmPassword(event.target.value)}
               placeholder={t("account.confirm")}
-              className="h-12 w-full rounded-xl border border-zinc-300 px-4 outline-none focus:border-zinc-950"
+              className="h-12 w-full rounded-[var(--v3-r)] border border-[var(--v3-rule-strong)] px-4 outline-none v3-focus"
               required
             />
             <button
               type="submit"
               disabled={busy}
-              className="h-12 w-full rounded-xl bg-[#7a1233] font-medium text-white hover:bg-[#611029] disabled:opacity-60"
+              className="h-12 w-full rounded-[var(--v3-r)] bg-[var(--v3-brand)] font-medium text-white hover:bg-[#611029] disabled:opacity-60"
             >
               {t("account.save")}
             </button>
           </form>
-          {message ? <p className="mt-5 rounded-xl bg-green-50 p-3 text-sm text-green-700">{message}</p> : null}
-          {error ? <p className="mt-5 rounded-xl bg-red-50 p-3 text-sm text-red-700">{error}</p> : null}
+          {message ? <p className="mt-5 rounded-[var(--v3-r)] bg-green-50 p-3 text-sm text-green-700">{message}</p> : null}
+          {error ? <p className="mt-5 rounded-[var(--v3-r)] bg-[var(--v3-bad-soft)] p-3 text-sm text-[var(--v3-bad)]">{error}</p> : null}
         </div>
       </main>
       <SiteFooter />

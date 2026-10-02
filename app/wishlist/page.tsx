@@ -94,30 +94,30 @@ export default function WishlistPage() {
   }
 
   return (
-    <div className="flex min-h-screen flex-col bg-slate-50">
+    <div className="flex min-h-screen flex-col bg-[var(--v3-sunk)]">
       <StorefrontHeader />
       <main id="main-content" className="mx-auto w-full max-w-5xl flex-1 px-4 py-10">
-        <h1 className="text-2xl font-bold text-slate-900">{t("wishlist.title")}</h1>
-        {loading ? <p className="mt-6 text-sm text-slate-500">{t("wishlist.loading")}</p> : null}
+        <h1 className="text-2xl font-bold text-[var(--v3-text)]">{t("wishlist.title")}</h1>
+        {loading ? <p className="mt-6 text-sm text-[var(--v3-text-3)]">{t("wishlist.loading")}</p> : null}
         {needsLogin ? (
-          <div className="mt-8 rounded-2xl border border-dashed border-slate-300 bg-white p-10 text-center">
-            <p className="text-sm text-slate-600">{t("wishlist.login")}</p>
-            <Link href="/login" className="mt-4 inline-flex rounded-xl bg-[#7a1233] px-5 py-2.5 text-sm font-semibold text-white">
+          <div className="mt-8 rounded-[var(--v3-r)] border border-dashed border-[var(--v3-rule-strong)] bg-[var(--v3-panel)] p-10 text-center">
+            <p className="text-sm text-[var(--v3-text-2)]">{t("wishlist.login")}</p>
+            <Link href="/login" className="mt-4 inline-flex rounded-[var(--v3-r)] bg-[var(--v3-brand)] px-5 py-2.5 text-sm font-semibold text-white">
               {t("nav.login")}
             </Link>
           </div>
         ) : null}
-        {error ? <p className="mt-4 text-sm text-red-700">{error}</p> : null}
-        {message ? <p className="mt-4 text-sm text-emerald-700">{message}</p> : null}
+        {error ? <p className="mt-4 text-sm text-[var(--v3-bad)]">{error}</p> : null}
+        {message ? <p className="mt-4 text-sm text-[var(--v3-ok)]">{message}</p> : null}
         {!loading && !needsLogin && items.length === 0 ? (
-          <div className="mt-8 rounded-2xl border border-dashed border-slate-300 bg-white p-10 text-center text-sm text-slate-500">
+          <div className="mt-8 rounded-[var(--v3-r)] border border-dashed border-[var(--v3-rule-strong)] bg-[var(--v3-panel)] p-10 text-center text-sm text-[var(--v3-text-3)]">
             {t("wishlist.empty")}
           </div>
         ) : null}
         <div className="mt-6 grid gap-4 sm:grid-cols-2">
           {items.map((item) => (
-            <article key={item.id} className="rounded-2xl border border-slate-200 bg-white p-4">
-              <div className="aspect-[4/3] overflow-hidden rounded-xl bg-slate-100">
+            <article key={item.id} className="rounded-[var(--v3-r)] border border-[var(--v3-rule)] bg-[var(--v3-panel)] p-4">
+              <div className="aspect-[4/3] overflow-hidden rounded-[var(--v3-r)] bg-[var(--v3-sunk)]">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
                   src={item.thumbUrl || item.imageUrl || "/images/products/placeholder.svg"}
@@ -137,7 +137,7 @@ export default function WishlistPage() {
                   }}
                 />
               </div>
-              {item.partNumber ? <p className="mt-3 font-mono text-xs text-slate-500">Part #{item.partNumber}</p> : null}
+              {item.partNumber ? <p className="mt-3 font-mono text-xs text-[var(--v3-text-3)]">Part #{item.partNumber}</p> : null}
               <h2 className="mt-1 font-semibold">{item.partName || t("product.partFallback")}</h2>
               {item.pricePaise != null && item.pricePaise > 0 ? (
                 <InclusivePrice
@@ -149,20 +149,20 @@ export default function WishlistPage() {
                   gstRate={item.gstRate}
                 />
               ) : (
-                <p className="mt-1 text-sm text-slate-500">{t("product.priceCheckout")}</p>
+                <p className="mt-1 text-sm text-[var(--v3-text-3)]">{t("product.priceCheckout")}</p>
               )}
               <div className="mt-4 flex gap-2">
                 <button
                   type="button"
                   onClick={() => void addToCart(item)}
-                  className="rounded-lg bg-slate-950 px-3 py-2 text-sm font-semibold text-white"
+                  className="rounded-[var(--v3-r)] bg-[var(--v3-brand)] px-3 py-2 text-sm font-semibold text-white"
                 >
                   {t("product.addToCart")}
                 </button>
                 <button
                   type="button"
                   onClick={() => void removeItem(item)}
-                  className="rounded-lg border border-rose-200 px-3 py-2 text-sm font-semibold text-rose-700"
+                  className="rounded-[var(--v3-r)] border border-[var(--v3-bad-line)] px-3 py-2 text-sm font-semibold text-[var(--v3-bad)]"
                 >
                   {t("cart.remove")}
                 </button>
