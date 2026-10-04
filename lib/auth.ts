@@ -2,11 +2,12 @@ import { betterAuth } from "better-auth";
 import { APIError } from "better-auth/api";
 import { drizzleAdapter } from "@better-auth/drizzle-adapter";
 import { nextCookies } from "better-auth/next-js";
-import { phoneNumber } from "better-auth/plugins";
+import { oneTimeToken, phoneNumber } from "better-auth/plugins";
 import { getDb } from "@/lib/db";
 import { deliverBuyerOtp } from "@/lib/otp";
 import { sessionCookieAttributes } from "@/lib/access-control";
 import { assignRoleOnUserCreate, isSuspendedRole } from "@/lib/auth-policy";
+import { oneTimeTokenPluginOptions } from "@/lib/mobile-auth-handoff";
 import * as schema from "@/drizzle/schema";
 
 const googleClientId = process.env.GOOGLE_CLIENT_ID?.trim();
@@ -110,6 +111,7 @@ function createAuth(disableSignUp = true) {
           getTempName: (phoneNumber) => phoneNumber,
         },
       }),
+      oneTimeToken(oneTimeTokenPluginOptions()),
       nextCookies(),
     ],
   });
