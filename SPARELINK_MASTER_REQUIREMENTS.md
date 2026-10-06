@@ -1,5 +1,19 @@
 # SPARELINK INDIA - COMPLETE MASTER REQUIREMENTS
 
+> **READ FIRST - 06-Oct-2026**
+>
+> This document is the **original WEB requirements brief**. It is preserved
+> unaltered below as the origin of the requirements, and it is where the
+> "NO PAID PAYMENT GATEWAY" rule comes from - a rule the code currently
+> contradicts, because Cashfree is integrated in production.
+>
+> **It carries no status markers and is not the authoritative source for what is
+> true now.** For authoritative cross-project status, architecture, decisions,
+> source of truth, feature status, migration status and known limitations, see
+> **`docs/SPARELINK_MASTER_REQUIREMENTS.md`**.
+>
+> Nothing in this brief has been deleted or rewritten.
+
 PROJECT:
 Existing Next.js application named SpareLink India.
 
