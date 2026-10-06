@@ -1,6 +1,9 @@
-﻿import { randomUUID } from "node:crypto";
+import { randomUUID } from "node:crypto";
 import { and, count, desc, eq, gte, inArray, like, or, sql } from "drizzle-orm";
 import { NextResponse } from "next/server";
+
+import { recordOrderEvent } from "@/lib/analytics/commerce";
+import { writeAuditLog } from "@/lib/audit";
 
 import {
   cart,
@@ -26,6 +29,11 @@ import {
   isAllowedFirmId,
   type ParentPaymentMethod,
 } from "@/lib/firms";
+import { orderableFirmIds } from "@/lib/firm-availability";
+import { resolveCreditSettlementEntitlement } from "@/lib/credit-entitlement";
+import { validateGSTIN } from "@/lib/gst";
+import { resolveGstSplit, stateCodeFromName } from "@/lib/gst-split";
+import { resolveFirmStateCodes } from "@/lib/firm-availability";
 import {
   buildCheckoutIdempotencyStorageKey,
   buildParentOrderPlan,
@@ -48,6 +56,7 @@ import {
   priceStorefrontLines,
 } from "@/lib/storefront-line-price";
 import { isAuthoritativeSellingPricePaise } from "@/lib/storefront-price-display";
+import { throttleRoute } from "@/lib/throttle-route";
 
 type ShippingAddress = {
   name: string;
@@ -122,6 +131,51 @@ async function findIdempotentOrder(
   });
 }
 
+/**
+ * Read the order's own lines and hand them to the analytics writer.
+ *
+ * The line snapshot (part number, name, brand, listing id) is read from the order's
+ * own rows rather than reconstructed from the request body, so what is recorded is
+ * what was actually bought.
+ */
+async function recordOrderAnalytics(db: OrderDb, orderId: string): Promise<void> {
+  const orderRecord = await db.query.order.findFirst({ where: eq(order.id, orderId) });
+  if (!orderRecord) return;
+
+  const lines = await db
+    .select({
+      partId: orderItem.partId,
+      partNumber: orderItem.partNumber,
+      partName: orderItem.partName,
+      dealerListingId: orderItem.dealerListingId,
+      quantity: orderItem.quantity,
+    })
+    .from(orderItem)
+    .where(eq(orderItem.orderId, orderId));
+
+  const partIds = [...new Set(lines.map((line) => line.partId).filter(Boolean))];
+  const brands = partIds.length
+    ? await db
+        .select({ id: part.id, brand: part.brand })
+        .from(part)
+        .where(inArray(part.id, partIds))
+    : [];
+  const brandById = new Map(brands.map((row) => [row.id, row.brand]));
+
+  await recordOrderEvent({
+    orderId,
+    buyerId: orderRecord.buyerId,
+    lines: lines.map((line) => ({
+      partId: line.partId,
+      partNumber: line.partNumber,
+      productName: line.partName,
+      brand: brandById.get(line.partId) ?? null,
+      quantity: line.quantity,
+      dealerListingId: line.dealerListingId,
+    })),
+  });
+}
+
 async function orderResponse(
   db: OrderDb,
   orderId: string,
@@ -131,6 +185,19 @@ async function orderResponse(
     where: eq(order.id, orderId),
   });
   if (!orderRecord) return null;
+
+  /* Customer Intelligence & Experience Analytics: order attribution.
+   *
+   * Fired once the order row exists, never awaited into the response. An order is
+   * revenue and a funnel figure is observability, so analytics can be dropped,
+   * slow or broken without affecting this response in any way.
+   *
+   * The firm for each line is resolved from the dealer_listing chain on the SERVER
+   * inside `recordOrderEvent`, and no amount is ever recorded. See
+   * `lib/analytics/commerce.ts`. */
+  if (status === 201) {
+    void recordOrderAnalytics(db, orderId).catch(() => undefined);
+  }
 
   const allocations = await db
     .select({
@@ -291,13 +358,34 @@ async function handlePost(request: Request) {
   );
   const shippingAddress = parseShippingAddress(body?.shippingAddress);
   const paymentMethod = body?.paymentMethod;
-  const buyerGstin =
+  const rawBuyerGstin =
     typeof body?.buyerGstin === "string" && body.buyerGstin.trim()
       ? body.buyerGstin.trim().toUpperCase()
       : undefined;
+
+  // A GSTIN printed on a tax invoice must be well formed. The previous
+  // implementation only upper-cased it, so any string at all reached the
+  // invoice and the Excel export. Reject rather than silently drop: silently
+  // dropping would make a B2B buyer's invoice quietly B2C.
+  let buyerGstin: string | undefined;
+  if (rawBuyerGstin) {
+    const gstinCheck = validateGSTIN(rawBuyerGstin);
+    if (!gstinCheck.valid) {
+      return NextResponse.json(
+        {
+          error:
+            gstinCheck.message ||
+            "Please provide a valid 15-character GSTIN, or leave it blank for a retail purchase.",
+        },
+        { status: 400 },
+      );
+    }
+    buyerGstin = rawBuyerGstin;
+  }
+
   const buyerBusinessName =
     typeof body?.buyerBusinessName === "string" && body.buyerBusinessName.trim()
-      ? body.buyerBusinessName.trim()
+      ? body.buyerBusinessName.trim().slice(0, 120)
       : undefined;
 
   if (!shippingAddress) {
@@ -421,6 +509,30 @@ async function handlePost(request: Request) {
     );
   }
 
+  // Firm availability. `isAllowedFirmId` above only proves the id is one of the
+  // three canonical firms; it does not prove the firm is still active. An
+  // inactive firm must not be able to take an order, so the active set is
+  // resolved once and every cart line is checked against it.
+  const cartFirmIds = [
+    ...new Set(
+      cartItems
+        .map((item) => item.firmId)
+        .filter((id): id is string => Boolean(id)),
+    ),
+  ];
+  const orderableFirms = new Set(await orderableFirmIds(cartFirmIds));
+  const inactiveFirmItem = cartItems.find(
+    (item) => !item.firmId || !orderableFirms.has(item.firmId),
+  );
+  if (inactiveFirmItem) {
+    return NextResponse.json(
+      {
+        error: `${inactiveFirmItem.partName} is temporarily unavailable. Please contact us for an alternative.`,
+      },
+      { status: 409 },
+    );
+  }
+
   const unpricedItem = cartItems.find(
     (item) => !isAuthoritativeSellingPricePaise(item.pricePaise),
   );
@@ -476,7 +588,18 @@ async function handlePost(request: Request) {
     }
   }
 
-  const settlementResult = authorizedPensolSettlement(body.pensolSettlement);
+  // Credit settlement is a commercial entitlement, so it is resolved from the
+  // database rather than accepted from the request body. The dealer must have
+  // a positive credit limit with headroom, and the parent order must be paying
+  // by bank transfer, which is the only mode a credit sale settles against.
+  const creditEntitlement = await resolveCreditSettlementEntitlement({
+    buyerId: session.user.id,
+    paymentMethod,
+  });
+
+  const settlementResult = authorizedPensolSettlement(body.pensolSettlement, {
+    creditSettlementAllowed: creditEntitlement.allowed,
+  });
   if (settlementResult.error) {
     return NextResponse.json({ error: settlementResult.error }, { status: 400 });
   }
@@ -520,6 +643,83 @@ async function handlePost(request: Request) {
     priced: storefront.priced[index],
   }));
 
+  /**
+ * Resolve the immutable HSN and UOM for a line from the catalogue record.
+ *
+ * Read HERE, at order time, and stored on the order item. Previously the
+ * invoice re-derived HSN from live catalogue prose on demand, which meant a
+ * later catalogue edit could rewrite a historical tax document.
+ *
+ * Returns null when the catalogue has no value. Nothing is invented: an invoice
+ * line with a dash for HSN is honest, a fabricated code is not.
+ */
+function resolveHsnAndUom(specifications?: string | null): {
+  hsn: string | null;
+  uom: string | null;
+} {
+  if (!specifications) return { hsn: null, uom: null };
+  try {
+    const parsed = JSON.parse(specifications) as Record<string, unknown> | null;
+    const hsn = typeof parsed?.hsn === "string" ? parsed.hsn.trim() || null : null;
+    const uomRaw = parsed?.uom ?? parsed?.unit ?? parsed?.uomShort;
+    const uom =
+      typeof uomRaw === "string" && uomRaw.trim()
+        ? uomRaw.trim().toUpperCase()
+        : null;
+    return { hsn, uom };
+  } catch {
+    return { hsn: null, uom: null };
+  }
+}
+
+/**
+ * Snapshot the CGST/SGST vs IGST presentation per order line.
+ *
+ * Resolved from the order's place of supply and the fulfilling firm's state
+ * code, both read from the database. When either is unknown the columns stay
+ * zero and the invoice prints a single undivided GST line, which is honest;
+ * a guessed split would be a filing error.
+ *
+ * CGST takes the rounded half so the pair sums back to lineGstPaise exactly.
+ */
+const orderableFirmsForTax = await orderableFirmIds(cartFirmIds);
+const firmStateById = await resolveFirmStateCodes(orderableFirmsForTax);
+// `shippingAddress` was already null-checked above; captured into a const so the
+// narrowing survives into this closure.
+const orderStateName = shippingAddress?.state ?? "";
+const orderPlaceOfSupplyCode = stateCodeFromName(orderStateName);
+
+// HSN/UOM resolved once per cart line and written onto the order item.
+const hsnByListingId = new Map<string, string>();
+const uomByListingId = new Map<string, string>();
+for (const item of cartItems) {
+  const resolved = resolveHsnAndUom(item.partSpecifications);
+  if (resolved.hsn) hsnByListingId.set(item.dealerListingId, resolved.hsn);
+  if (resolved.uom) uomByListingId.set(item.dealerListingId, resolved.uom);
+}
+
+function taxBreakupFor(
+  snap: { lineGstPaise: number; firmId: string },
+): {
+  cgstPaise: number;
+  sgstPaise: number;
+  igstPaise: number;
+  placeOfSupplyCode: string | null;
+} {
+  const split = resolveGstSplit({
+    gstPaise: snap.lineGstPaise,
+    supplierStateCode: firmStateById.get(snap.firmId) ?? null,
+    placeOfSupplyCode: orderPlaceOfSupplyCode,
+    placeOfSupplyName: orderStateName,
+  });
+  return {
+    cgstPaise: split.cgstPaise,
+    sgstPaise: split.sgstPaise,
+    igstPaise: split.igstPaise,
+    placeOfSupplyCode: orderPlaceOfSupplyCode,
+  };
+}
+
   const checkoutIdempotencyKey = buildCheckoutIdempotencyStorageKey(
     session.user.id,
     rawIdempotencyKey,
@@ -549,6 +749,24 @@ async function handlePost(request: Request) {
   const firmNameById = new Map(
     SPARELINK_FIRMS.map((row) => [row.id, row.name] as const),
   );
+
+  // Resolved once, immediately before the transaction, from the same set the
+  // pre-check used. The in-transaction loop re-tests membership so a firm that
+  // was deactivated in the intervening milliseconds cannot be allocated.
+  const transactionOrderableFirms = new Set(orderableFirms);
+
+  // Normalised out here rather than inside the transaction, for one reason: the
+  // audit row written after the commit has to record the shipping method that was
+  // ACTUALLY used. Keeping the rule inside the transaction would have meant
+  // duplicating it outside to read it, and two copies of a defaulting rule is how
+  // an audit trail starts disagreeing with the order.
+  const requestedShippingMethod =
+    typeof body.shippingMethod === "string" ? body.shippingMethod : "";
+  const shippingMethod = ["self_pickup", "transport", "courier"].includes(
+    requestedShippingMethod,
+  )
+    ? requestedShippingMethod
+    : "courier";
 
   let replayOrderId: string | null = null;
   try {
@@ -605,6 +823,9 @@ async function handlePost(request: Request) {
           firmId: dealerListing.firmId,
           stock: inventory.quantity,
           partName: part.name,
+          // Re-read inside the transaction so the in-transaction comparison can
+          // detect a concurrent price edit instead of committing a stale one.
+          pricePaise: dealerListing.pricePaise,
         })
         .from(cartItem)
         .innerJoin(dealerListing, eq(cartItem.dealerListingId, dealerListing.id))
@@ -628,7 +849,15 @@ async function handlePost(request: Request) {
           live.dealerListingId !== item.dealerListingId ||
           live.listingStatus !== "active" ||
           !live.firmId ||
-          !isAllowedFirmId(live.firmId)
+          !isAllowedFirmId(live.firmId) ||
+          // Firm re-checked inside the transaction so a firm deactivated
+          // between the pre-check and here cannot be allocated.
+          !transactionOrderableFirms.has(live.firmId) ||
+          // Price re-checked inside the transaction. The order was priced from
+          // the pre-transaction snapshot, so an admin price edit landing in that
+          // window would otherwise be committed at the stale value. Comparing
+          // here closes that TOCTOU window.
+          live.pricePaise !== item.pricePaise
         ) {
           throw new Error("Your cart changed. Please review and try again.");
         }
@@ -688,13 +917,6 @@ async function handlePost(request: Request) {
         });
       }
 
-      const requestedShippingMethod =
-        typeof body.shippingMethod === "string" ? body.shippingMethod : "";
-      const shippingMethod = ["self_pickup", "transport", "courier"].includes(
-        requestedShippingMethod,
-      )
-        ? requestedShippingMethod
-        : "courier";
       const transportName = typeof body?.transportName === "string" ? body.transportName.trim() : null;
       const transportPhone = typeof body?.transportPhone === "string" ? body.transportPhone.trim() : null;
       const transportGstin = typeof body?.transportGstin === "string" ? body.transportGstin.trim().toUpperCase() : null;
@@ -758,6 +980,16 @@ async function handlePost(request: Request) {
           lineBasePaise: snap.lineBasePaise,
           lineGstPaise: snap.lineGstPaise,
           totalPaise: snap.totalPaise,
+          /**
+           * Immutable tax snapshot. HSN and UOM are captured HERE, at order
+           * time, rather than being re-read from the live catalogue when the
+           * invoice is generated. Previously HSN was scraped out of
+           * `part.description` on demand, so editing a catalogue record silently
+           * rewrote historical invoices.
+           */
+          hsn: hsnByListingId.get(snap.dealerListingId) ?? null,
+          uom: uomByListingId.get(snap.dealerListingId) ?? null,
+          ...taxBreakupFor(snap),
         })),
       );
       await tx.insert(orderItem).values(createdItems);
@@ -861,6 +1093,43 @@ async function handlePost(request: Request) {
     );
   }
 
+  // Checkout is the largest single business event this application performs: it
+  // creates the order, decrements real stock, writes one stock_adjustment row per
+  // line and splits the order across firms. It was the one money-moving write
+  // with no audit record at all, so there was no way to answer "who placed this,
+  // what did it move, and which firms carried it" from the trail.
+  //
+  // Written after the transaction commits rather than inside it, deliberately:
+  // `writeAuditLog` swallows its own errors so that an audit-table problem can
+  // never fail a customer's completed checkout. That trade-off means an audit
+  // row can be missing where the order exists, which is why the order id and
+  // number are both recorded and why the stock movement itself is separately
+  // evidenced by the stock_adjustment rows written inside the transaction.
+  await writeAuditLog({
+    actorUserId: session.user.id,
+    action: "order.place",
+    entityType: "order",
+    entityId: orderId,
+    metadata: {
+      orderNumber,
+      paymentMethod,
+      shippingMethod,
+      totalPaise: parentPlan.totalPaise,
+      gstPaise: parentPlan.gstPaise,
+      shippingPaise: parentPlan.shippingPaise,
+      // Per-firm split, because a single order can be an obligation on more than
+      // one legal entity and "what was bought" is not the same question as "who
+      // owes for it".
+      firmAllocations: parentPlan.allocations.map((allocation) => ({
+        firmId: allocation.firmId,
+        firmName: firmNameById.get(allocation.firmId) ?? allocation.firmId,
+        amountPaise: allocation.totalPaise,
+        gstPaise: allocation.gstPaise,
+        itemCount: allocation.items.length,
+      })),
+    },
+  });
+
   return NextResponse.json(
     {
       id: orderId,
@@ -884,6 +1153,9 @@ async function handlePost(request: Request) {
 }
 
 export async function POST(request: Request) {
+  const throttled = await throttleRoute(request, "checkout");
+  if (throttled) return throttled;
+
   try {
     return await handlePost(request);
   } catch (error) {
