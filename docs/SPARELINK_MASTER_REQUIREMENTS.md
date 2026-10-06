@@ -42,7 +42,7 @@ code — see §9.
 - **R6** A purchase suggestion is advice. Nothing auto-orders.
 - **R7** Do not duplicate an existing working system.
 
-### 1.3 The payment-gateway contradiction (unresolved — see §4 B1)
+### 1.3 The payment-gateway contradiction (RESOLVED — see §4.2 B1)
 
 The original brief states, at R2's own section:
 
@@ -118,12 +118,12 @@ API-key model, table or minting code.
 | Catalogue | WEB `part` + `dealer_listing` | ERP `erp_item` | **no mapping table exists** |
 | Pricing | WEB tiered off `dealer.price_group` | ERP item master | different models |
 | GST | WEB per-line at checkout; ERP per-rate-band | ERP | 3 implementations |
-| Inventory | WEB `inventory` by **`dealer_listing_id`** | ERP `erp_item_valuation` by **item × godown** | **architectural — see B4** |
+| Inventory | WEB `inventory` by **`dealer_listing_id`** (legacy) | ERP `erp_item_valuation` by **item × godown** | **B4 RESOLVED — ERP is authority. WEB inventory is legacy pending reconciliation.** See §4.1 |
 | Reserved stock | nothing (column only) | ERP | **never written in any project** |
 | Orders | WEB | WEB (commerce) then ERP document | — |
 | Invoices | WEB PDF, `SLA-<order>-<FIRM6>` | ERP numbering series | incompatible schemes |
 | Payments | WEB (Cashfree + UTR) | WEB | ERP is bank-transfer only |
-| Ledger | WEB `party_ledger_entry` **and** ERP `erp_ledger_entry` | ERP | **two AR ledgers — see B5** |
+| Ledger | WEB `party_ledger_entry` **and** ERP `erp_ledger_entry` | ERP | **two AR ledgers — see B5 (RULED: ERP authoritative)** |
 | Credit | WEB `dealer.credit_limit_paise` | ERP `creditLimit` | 0 ⇒ OFF vs WARN default — see B6 |
 | Demand / shortage | WEB code only | ERP | see §7 |
 | Accounting | ERP | ERP | WEB has no engine |
@@ -131,43 +131,115 @@ API-key model, table or minting code.
 
 ---
 
-## 4. BUSINESS DECISIONS — 14 UNRESOLVED
+## 4. BUSINESS DECISIONS
 
-These cannot be safely invented. Each blocks specific downstream work.
+### 4.1 B4 — APPROVED 06-Oct-2026: ERP item × godown is the authoritative inventory
 
-| # | Decision | Blocks | Status |
+**Decision.** ERP `item` × `godown` is the single source of truth for:
+
+- physical stock
+- reserved stock
+- available stock
+- incoming stock
+- stock transfers
+- stock adjustments
+- stock valuation
+- godown-wise stock
+- inventory movements
+- goods-receipt effects
+- procurement stock effects
+
+**WEB `dealer_listing_id` must no longer be treated as the authoritative
+inventory ledger.**
+
+**Division of responsibility, stated explicitly so it is never re-litigated:**
+
+| Concern | Owner | Stored where |
+|---|---|---|
+| How much stock exists, and where | **ERP** | `erp_item_valuation`, `erp_stock_movement`, `erp_stock_valuation_layer` |
+| How much is committed to an order | **ERP** | reservation, ERP-side |
+| Valuation and cost | **ERP** | `erp_item_valuation.averageCost` / `totalValue` |
+| Price, discount, list price | **WEB** | `dealer_listing` |
+| Photos, description, brand, compatibility, visibility | **WEB** | `dealer_listing`, `part` |
+| Customer-facing presentation | **WEB** | WEB |
+
+```
+ERP ITEM (erp_item)
+   ↓ referenced by
+WEB PRODUCT / DEALER LISTING   ← commercial representation ONLY
+   → price, photos, description, brand, compatibility, visibility
+```
+
+**Standing constraints on this decision:**
+
+1. **No existing stock quantity may be destroyed, rewritten or "migrated" by
+   arithmetic.** Reconciliation comes first; unexplained variance is reported,
+   never auto-resolved.
+2. **`dealer_listing` rows are NOT to be deleted.** They remain the commercial
+   representation. Only their role as a stock ledger is retired.
+3. **Mapping is by stable reference, never by fuzzy name.** Part number alone is
+   not sufficient — it must be validated against brand, unit and HSN.
+4. This decision **authorises the target architecture. It does not report the
+   migration as complete.** No cutover has occurred. WEB inventory still holds
+   the only live stock figures until reconciliation passes and a cutover is
+   separately approved.
+
+### 4.2 B1 — RESOLVED BY EXISTING REQUIREMENT: Cashfree is NOT APPROVED
+
+The governing requirement at `SPARELINK_MASTER_REQUIREMENTS.md` §PAYMENT RULE
+is explicit and predates the code:
+
+> **PAYMENT RULE — NO PAID PAYMENT GATEWAY.** DO NOT integrate: Razorpay,
+> Stripe, **Cashfree**, PayU, any paid third-party payment gateway. The user
+> specifically does NOT want paid payment gateways.
+
+Cashfree is therefore treated as **NOT APPROVED** unless the user explicitly
+changes this decision. This is not a new ruling — it is the existing written
+requirement being applied to code that contradicts it.
+
+**Operational consequence, and it is deliberate:** the existing Cashfree code is
+**retained but must not be treated as an approved production payment path.**
+It stays isolated and gated. It is **not removed** in this cycle, because
+removing it would take away a working, correctly-implemented capability that the
+user may yet approve; the reversible action is to stop *relying* on it, not to
+destroy it. The order is therefore: confirm the requirement → keep COD and bank
+transfer as the supported paths → remove or activate Cashfree only on an
+explicit decision.
+
+### 4.3 Remaining decisions — status after 06-Oct-2026
+
+Decisions below are marked by what they **block**, and by the ruling that
+applies while they remain open. No legal or financial fact is invented.
+
+| # | Decision | Status | Ruling applied while open |
 |---|---|---|---|
-| **B1** | Is Cashfree approved or prohibited? | checkout, invoices, Play policy, cash flow | **OPEN** |
-| **B2** | Final legal GSTIN / PAN / state / address / bank for all three firms | tax invoices, GST returns, payments, Play listing | **OPEN** |
-| **B3** | Actual firm state codes (WEB says 23/23/23; ERP seed says 24/24/27; ERP BUSY data is MP; Play listing says Gujarat) | B2, shipping, place of supply | **OPEN** |
-| **B4** | Inventory authority: WEB listing **or** ERP item × godown | all integration, stock taking, procurement, accounting | **OPEN — highest leverage** |
-| **B5** | Accounting authority: ERP only, **or** retain WEB `party_ledger_entry` | duplicate AR, outstanding, reports | **OPEN** |
-| **B6** | Credit semantics: `0` ⇒ enforcement OFF, **or** WARN by default | dealer credit blocking | **OPEN** |
-| **B7** | Retire WEB's B2B-ERP-like admin modules (`0022`/`0023` + 7 admin pages), **or** retain as transitional UI | largest duplication in the ecosystem | **OPEN** |
-| **B8** | BUSY company mapping for `COMP0004` / `COMP0005` / `COMP0006` → Ambaji / Hind / India Sales. Only `COMP0005 = HIND MOTORS` is evidenced | BUSY migration | **OPEN** |
-| **B9** | PO lifecycle: complete the 15 statuses, **or** accept the 4 the API accepts | procurement correctness | **OPEN** |
-| **B10** | Real-party testing scope and write permissions | data safety | **OPEN** |
-| **B11** | Account-credit checkout: build, or formally drop | MOBILE Phase 7 blocked on it | **OPEN** |
-| **B12** | Push notifications: build, or WhatsApp/SMS-only | MOBILE Phase 11 blocked on it | **OPEN** |
-| **B13** | Is the ERP in scope for the first release, or a later phase? | urgency of B4/B5 and the API work | **OPEN** |
-| **B14** | Play Store release target | signing, device QA, listing | **OPEN** |
+| **B1** | Cashfree approved or prohibited | **RESOLVED BY REQUIREMENT — NOT APPROVED** | Code retained and gated; must not be relied on as an approved production path. Not removed. |
+| **B2** | Firm GSTIN / PAN / state / address / bank | **OPEN — needs the user** | **No value invented.** WEB holds real bank details; ERP declares every business field PENDING and deliberately left them uninvented. Conflicts reported in §5. |
+| **B3** | Firm state codes | **OPEN — needs the user** | Four sources disagree: WEB 23/23/23, ERP seed 24/24/27, ERP BUSY data is MP, Play listing says Gujarat. Not reconciled by guess. |
+| **B4** | Inventory authority | **✅ APPROVED** | ERP item × godown. See §4.1. |
+| **B5** | Accounting authority | **RULED** | **ERP is authoritative** for accounting, ledger, receivables, payables. WEB `party_ledger_entry` is **legacy/transition data**, retained, not extended, not deleted. |
+| **B6** | Credit semantics | **OPEN — not invented** | Existing behaviour preserved exactly. `0 ⇒ enforcement OFF` (WEB) and `WARN` default (ERP) both stay until the final rule is written. |
+| **B7** | WEB B2B-ERP admin modules | **RULED** | **Transitional. Not deleted.** Retained until ERP replacement coverage is proven. |
+| **B8** | BUSY company mapping | **OPEN — never guess** | Only `COMP0005 = HIND MOTORS` is evidenced by `DATA/SameSeries/UserMapping.txt`. The other two are unverified and will not be inferred. |
+| **B9** | PO lifecycle | **RULED** | Currently accepted statuses (`draft`, `submitted`, `cancelled`, `received`) preserved. The 11 unreachable statuses are **not wired** without a written requirement. |
+| **B10** | Real-party testing | **RULED** | **Read-only first. No production writes** until explicit approval. |
+| **B11** | Account-credit checkout | **RULED** | **Existing functionality untouched.** No new payment or credit semantics invented. |
+| **B12** | Notifications | **RULED** | **Architecture provider-neutral.** No commitment to a push/WhatsApp/SMS provider; no provider credentials committed. |
+| **B13** | ERP first-release scope | **RULED** | Prioritise: accounting, inventory, purchasing, procurement, GST, reporting, firm isolation, API. |
+| **B14** | Play Store release | **RULED** | **Prepare the release. Do NOT publish.** No upload, no deployment. |
 
-### Rules adopted while a decision is open
+### Rules applied while a decision is open
 
-So that work is not blocked by indecision, these are the safe defaults being
-applied. Reversing any of them later is a small, local change:
+Safe defaults so work is not blocked by indecision. Each is reversible locally.
 
-- **B4 open ⇒ do not migrate stock.** WEB's listing-scoped inventory remains
-  authoritative for WEB commerce; ERP's item × godown remains authoritative for
-  ERP accounting. Neither is rewritten.
-- **B5 open ⇒ keep both ledgers, add neither to the other.** No reconciliation
-  is claimed.
-- **B6 open ⇒ keep both semantics as coded.** Neither is changed.
-- **B1 open ⇒ do not enable Cashfree in production, and do not remove it.**
 - **B2/B3 open ⇒ print what is configured, mark what is a placeholder.** No
-  GSTIN is invented.
-- **B9 open ⇒ leave the 4 accepted statuses alone.** The unreachable 11 are
-  documented, not wired.
+  GSTIN, PAN, address or bank value is invented, and no firm's data is changed.
+- **B6 open ⇒ keep both semantics as coded.** Neither is changed.
+- **B8 open ⇒ verify company mappings, never assume.**
+- **B4 approved ⇒ ERP is the stock authority, but NO stock is migrated by
+  arithmetic.** Reconciliation precedes any cutover.
+- **B5 ruled ⇒ WEB's ledger becomes read-only legacy.** No reconciliation is
+  claimed until one actually passes.
 
 ---
 
@@ -256,7 +328,7 @@ them. Code exists; schema does not.
 0030 is additive only (CREATE TABLE / CREATE INDEX, no DROP/DELETE/UPDATE) and
 is well-constrained — including
 `fulfilled + allocated <= requested` and a pinned status vocabulary. Applying it
-is safe **once B4 is answered**, because demand aggregates against the stock
+is safe under the B4 decision, because demand aggregates against the stock model,
 model.
 
 ### 7.3 Procurement
@@ -269,7 +341,7 @@ end-to-end, with over-receipt blocked and an idempotency key.
 
 **Conflicting goods-receipt rule:** WEB increases stock only when the PO line
 carries a `dealer_listing_id`; ERP increases stock on item × godown with no
-listing concept. They cannot interoperate. Blocked on B4.
+listing concept. They cannot interoperate. Resolved by B4 in favour of ERP; the WEB-side rule is legacy and is retired only after reconciliation.
 
 ### 7.4 Stock taking
 
