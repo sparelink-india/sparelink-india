@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { getServerSession } from "@/lib/auth-server";
+import { writeAuditLog } from "@/lib/audit";
 import { getDb } from "@/lib/db";
 import { user, order, customerProfile, dealer, session as authSession } from "@/drizzle/schema";
 import { count, desc, eq } from "drizzle-orm";
@@ -236,6 +237,29 @@ export async function PATCH(request: Request) {
     if (action === "suspend") {
       await tx.delete(authSession).where(eq(authSession.userId, userId));
     }
+  });
+
+  // Suspending an account is the strongest action this API takes on a person:
+  // it ends their access by deleting every session they hold. It was the one
+  // privilege change with no record of who authorised it, so the trail could show
+  // that a user was suspended but not that an admin chose to do it.
+  //
+  // The role transition is captured as `previousRole -> newRole` rather than just
+  // the destination, because "who was promoted from what" is the question an
+  // auditor asks and the destination alone does not answer it.
+  await writeAuditLog({
+    actorUserId: session.user.id,
+    action: action === "suspend" ? "user.suspend" : "user.activate",
+    entityType: "user",
+    entityId: userId,
+    metadata: {
+      previousRole: targetUser.role,
+      newRole,
+      // `sessionsRevoked` distinguishes a suspension that actually cut access
+      // from one that only relabelled the account.
+      sessionsRevoked: action === "suspend",
+      email: targetUser.email,
+    },
   });
 
   return NextResponse.json({

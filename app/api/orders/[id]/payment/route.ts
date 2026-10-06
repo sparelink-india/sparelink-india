@@ -2,6 +2,7 @@
 import { and, desc, eq, inArray, sql } from "drizzle-orm";
 import { randomUUID } from "node:crypto";
 import { getServerSession } from "@/lib/auth-server";
+import { writeAuditLog } from "@/lib/audit";
 import { getDb } from "@/lib/db";
 import {
   order,
@@ -274,6 +275,15 @@ export async function POST(
 
     const submissionId = randomUUID();
 
+    // Captured from inside the transaction, because the audit row below has to be
+    // written after the commit and so cannot read the locked rows. Assigning them
+    // once the payable guards have passed means the audit describes exactly what
+    // was locked and paid, not what the request asked for.
+    let paidOrderNumber = "";
+    let paidFirmOrderId = "";
+    let paidFirmId = "";
+    let paidAmountPaise = 0;
+
     await db.transaction(async (tx) => {
       const orderRows = await tx
         .select()
@@ -307,6 +317,13 @@ export async function POST(
       ) {
         throw new Error("ALLOCATION_NOT_PAYABLE");
       }
+
+      // Everything below this line writes money-related rows, so capture the
+      // identity of what is being paid while the rows are still locked.
+      paidOrderNumber = lockedOrder.orderNumber;
+      paidFirmOrderId = lockedAllocation.id;
+      paidFirmId = lockedAllocation.firmId;
+      paidAmountPaise = lockedAllocation.amountPaise;
 
       const activeCashfree = await tx
         .select({ id: payment.id })
@@ -364,6 +381,35 @@ export async function POST(
         proofFileType: null,
         status: "submitted",
       });
+    });
+
+    // A UTR submission is a claim that money has moved. It is the customer's own
+    // assertion about a payment the platform cannot yet see, on a specific firm
+    // allocation, and it is the input an admin acts on when marking a firm order
+    // paid. It carried no audit record, so the question "who declared this
+    // payment, for which firm, and how much" had no answer anywhere in the trail.
+    //
+    // Recorded after the transaction commits, for the same reason as every other
+    // call site: `writeAuditLog` swallows its own errors so an audit-table problem
+    // can never reject a customer's payment submission.
+    await writeAuditLog({
+      actorUserId: session.user.id,
+      action: "payment.utr_submitted",
+      entityType: "manual_payment_submission",
+      entityId: submissionId,
+      metadata: {
+        orderId: orderRecord.id,
+        orderNumber: paidOrderNumber,
+        firmOrderId: paidFirmOrderId,
+        firmId: paidFirmId,
+        amountPaise: paidAmountPaise,
+        paymentDate,
+        // The UTR reference itself is deliberately NOT recorded. It is a bank
+        // instrument reference, the row already carries it for the admin who must
+        // reconcile it, and duplicating it into a metadata blob would put a second
+        // unredacted copy in a table that has no retention policy.
+        utrReferencePresent: true,
+      },
     });
 
     return NextResponse.json({
