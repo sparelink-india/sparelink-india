@@ -465,7 +465,7 @@ WEB/MOBILE password reset.
   encode their real intent. **No application code was changed** — the three
   findings were rule defects, not code defects.
 
-**ERP** `01dab3c`, `1b4ba92`
+**ERP** `7b0429a`, `bf4ea52`, `01dab3c`, `1b4ba92`
 - `1b4ba92` — `recovery.integration.test.ts` swept `loginAttempt` and
   `passwordReset` with unfiltered `deleteMany({})`. Both are **global tables with
   no firmId**, so pointing `DATABASE_URL` at a remote database meant an ordinary

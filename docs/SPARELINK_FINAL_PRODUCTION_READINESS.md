@@ -25,6 +25,40 @@ authorization + test + real data flow. Anything less is PARTIAL.
 | 12 | **Reservation record + 5 DB CHECK constraints** | ERP | `bf4ea52`, additive migration, verified 1 table / 9 constraints / 7 indexes / 2 enums |
 | 13 | **Reservation writer — the missing piece** | ERP | `bf4ea52`, `FOR UPDATE` before deciding availability, idempotent, atomic |
 | 14 | Availability clamped; oversell made explicit | ERP | `bf4ea52`, `available` + `oversoldBy` |
+| 15 | **Reservation transactional path verified** | ERP | `7b0429a`, **20/20 integration tests** against a real database |
+
+### Reservation verification gate — PASSED 06-Oct-2026 (`7b0429a`)
+
+Executed against `127.0.0.1:5432/sparelink_erp` (local dev; proved safe before
+anything ran; production Neon is a separate connection).
+
+| Capability | Result |
+|---|---|
+| Reservation integration | **PASS** |
+| Concurrency (`FOR UPDATE`) | **PASS** — two simultaneous 70-unit holds on 100 units, exactly one winner, `reserved = 70`, **never 140** |
+| Idempotency | **PASS** — duplicate key returns the original, one row, reserved unchanged |
+| Release | **PASS** — returns to 0 reserved / 100 available |
+| Expiry | **PASS** — lapsed hold swept, live hold untouched |
+| Reconciliation | **PASS** — zero drift clean; detects an induced 949 discrepancy |
+| DB CHECK constraints | **PASS** — all five reject, inside transactions, valid state untouched |
+| Firm isolation | **PASS** — cross-firm reservation unrepresentable; firm B unchanged |
+| Demand arithmetic | **PASS** — 100/70/50 read from live state, available 30, shortage 20 |
+| Rollback | **PASS** — failure after the hold leaves no row, no inflated counter, no false audit |
+| Audit | **PASS** — recorded on hold and release, absent on refusal, no personal/payment data |
+| Cleanup | **PASS** — 0 residue across 10 categories; 3 seeded firms intact |
+
+**Three real defects were found and fixed by this gate:**
+1. `lockValuation` selected unquoted `reservedQuantity` — PostgreSQL folds it to
+   `reservedquantity`, which does not exist. **The service could never have
+   worked.** Invisible to typecheck, lint and all 89 unit tests.
+2. Two composite FKs lacked `DEFERRABLE INITIALLY DEFERRED`, violating a project
+   invariant enforced by `check-schema.mjs`. Corrected; now 141 FKs (was 138),
+   29 deferred (was 27).
+3. The service wrote **no audit rows** and hardcoded `createdById: "system"`.
+
+A fourth was environmental: a PostgreSQL type outlives its table, so re-applying
+the corrected migration failed on a duplicate enum. Enum creation is now guarded,
+making the migration re-runnable.
 
 ---
 
@@ -32,7 +66,9 @@ authorization + test + real data flow. Anything less is PARTIAL.
 
 | Feature | Owner | State |
 |---|---|---|
-| Reservation service | ERP | **Complete in code, NO integration test.** No transactional path executed against a DB — the local dev DB has no seeded item. |
+| Reservation service | ERP | **VERIFIED 06-Oct-2026 - 20/20 integration tests, 7b0429a.** Not partial. |
+| Reservation arithmetic | ERP | **VERIFIED** - 32 unit tests plus four live-state cases |
+| **Reservations end to end** | ERP | **DONE** - model, migration, writer, row locks, idempotency, release, expiry, reconciliation, audit, constraints, firm isolation, concurrency: all proven |
 | WEB audit coverage | WEB | Checkout/UTR/suspend done; ~15 other admin writes still unaudited. |
 | Guards | ERP | `recovery.integration.test.ts` guarded; **16 of 21 integration suites still unguarded.** |
 | Firm scoping | ERP | 4 layers, **19 firm-owned models outside `FIRM_SCOPE_KEYS`.** |
@@ -208,16 +244,18 @@ seed, no DNS change, no Vercel project, no off-site backup.
 
 ## 20. Exact next action
 
-**Write one ERP integration test** (`reservation-service.integration.test.ts`)
-that creates its own firm + godown + item + valuation fixture, then proves
-end-to-end: reserve reduces available, over-reserve is refused, a duplicate
-idempotency key does not double-hold, release restores availability, a release
-larger than the hold does not go negative, the expiry sweep releases lapsed holds,
-`reconcileReservedQuantity` finds zero drift, and the five CHECK constraints bite.
+The reservation gate is DONE. The next safe phase is the **entity mapping and
+inventory reconciliation**, which is what every other downstream phase waits on:
+ERP API, WEB migration 0030, stock taking and procurement all need to know which
+ERP item each WEB part and dealer listing corresponds to before any of them can
+move a quantity.
 
-That is the one gap between the reservation feature being *written* and being
-*verified*. Everything downstream — WEB 0030, entity mapping, the ERP API, stock
-taking — waits on it.
+That phase cannot start from source alone. It needs read access to two databases,
+and reading WEB production is prohibited. So the immediate action is to obtain
+**explicit approval for a read-only reconciliation query against WEB production**,
+or to supply a sanitised export of WEB part/listing/inventory identifiers for
+comparison. Until one of those exists, reconciliation is BLOCKED rather than
+merely unfinished.
 
 In parallel, and requiring only the business owner: **answer B2/B3** (firm legal
 identity and state codes), **B6** (credit semantics) and **B8** (BUSY company
@@ -242,7 +280,7 @@ mapping).
 | **Stock: valuation** | **ERP** | **ERP** | ❌ | ❌ | ✅ avg + FIFO | — | DONE | ✅ |
 | **Shortage** | **ERP** | **ERP** | ❌ always 0 | ❌ | ✅ **NEW** | — | **ERP DONE** | ✅ **4 cases** |
 | Stock taking | ERP | ERP | ❌ | ❌ | ❌ | — | MISSING | — |
-| **Reservations** | **ERP** | **ERP** | ❌ | ❌ | ✅ **NEW** | — | **code DONE, untested** | ⚠️ |
+| **Reservations** | **ERP** | **ERP** | ❌ | ❌ | ✅ **VERIFIED** | — | **DONE** | ✅ **20/20** |
 | Demand | ERP | ERP | ❌ table | ❌ | ❌ | — | **MISSING** | — |
 | Purchase requirement | ERP | ERP | ❌ table | ❌ | ❌ | — | **MISSING** | — |
 | PO | ERP | ERP | ⚠️ 4 statuses | ❌ | ✅ doc type | — | PARTIAL (B9) | — |
@@ -283,6 +321,7 @@ Catalogue junction: intact
 
 # NOT PRODUCTION READY
 
-Blocked by four unmade business decisions (B2, B3, B6, B8), one untested
-component (the reservation service), and a data-level inventory reconciliation
-that cannot be produced without reading production.
+Blocked by four unmade business decisions (B2, B3, B6, B8) and a data-level
+inventory reconciliation that cannot be produced without reading production. The
+reservation verification gate has PASSED: 20/20 integration tests, three real
+defects fixed. That gate is no longer a blocker.
