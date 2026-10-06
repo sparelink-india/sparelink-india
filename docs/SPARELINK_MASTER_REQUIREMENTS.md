@@ -11,6 +11,7 @@ older document is stale.
 | Supersedes | `docs/admin-ui-modernization-map.md`, `AUDIT_REPORT.md` (WEB); `docs/roadmap.md` §status, `README.md` §status, `docs/database.md`, `docs/imports.md`, `docs/gst.md`, `docs/security.md` (ERP); `docs/MOBILE_PHASE_STATUS.md`, `docs/MOBILE_API_MAP.md`, `docs/MOBILE_ARCHITECTURE.md` (MOBILE) |
 | Preserved as origin | root `SPARELINK_MASTER_REQUIREMENTS.md` (the original WEB requirements brief, 1307 lines, never carried status markers) |
 | Evidence rule | A feature is DONE only with UI + API + service + database + authorization + test + real data flow. Anything less is PARTIAL. |
+| Companion documents | `docs/SPARELINK_BUSINESS_DECISIONS.md` (decision register incl. B2/B3 conflicts) · `docs/SPARELINK_FINAL_PRODUCTION_READINESS.md` (gate results) · `docs/SPARELINK_PAYMENT_ENGINE_{ARCHITECTURE,SECURITY,API,RECONCILIATION}.md` (payment engine) |
 
 ---
 
@@ -122,7 +123,8 @@ API-key model, table or minting code.
 | Reserved stock | nothing (column only) | ERP | **never written in any project** |
 | Orders | WEB | WEB (commerce) then ERP document | — |
 | Invoices | WEB PDF, `SLA-<order>-<FIRM6>` | ERP numbering series | incompatible schemes |
-| Payments | WEB (Cashfree + UTR) | WEB | ERP is bank-transfer only |
+| Payments — orchestration | WEB (Cashfree + UTR) | **ERP — SpareLink Payment Engine** | two sources; engine foundation built, not routed. See §4.4 |
+| Payments — accounting | WEB `party_ledger_entry` (legacy) | **ERP `postVoucher` / `allocatePayment`** | **B5 RULED: ERP authoritative.** Engine must never write ledger rows |
 | Ledger | WEB `party_ledger_entry` **and** ERP `erp_ledger_entry` | ERP | **two AR ledgers — see B5 (RULED: ERP authoritative)** |
 | Credit | WEB `dealer.credit_limit_paise` | ERP `creditLimit` | 0 ⇒ OFF vs WARN default — see B6 |
 | Demand / shortage | WEB code only | ERP | see §7 |
@@ -184,7 +186,7 @@ WEB PRODUCT / DEALER LISTING   ← commercial representation ONLY
    the only live stock figures until reconciliation passes and a cutover is
    separately approved.
 
-### 4.2 B1 — RESOLVED BY EXISTING REQUIREMENT: Cashfree is NOT APPROVED
+### 4.2 B1 — RULED: Cashfree is NOT APPROVED (superseded by B15)
 
 The governing requirement at `SPARELINK_MASTER_REQUIREMENTS.md` §PAYMENT RULE
 is explicit and predates the code:
@@ -206,14 +208,62 @@ destroy it. The order is therefore: confirm the requirement → keep COD and ban
 transfer as the supported paths → remove or activate Cashfree only on an
 explicit decision.
 
-### 4.3 Remaining decisions — status after 06-Oct-2026
+**Reinforced 06-Oct-2026 by explicit ruling (see §4.4).** The business has now
+stated the decision directly rather than leaving it to be inferred from the
+prohibitions: SpareLink will operate its **own payment orchestration layer**, and
+Cashfree and Razorpay are **NOT REQUIRED**. This does not reverse §4.2 — it
+removes the remaining possibility that Cashfree might later be approved, and
+replaces it with an affirmative alternative.
+
+### 4.3 B15 — LOCKED 06-Oct-2026: SpareLink Payment Engine (own orchestration, non-custodial)
+
+SpareLink will own its payment *orchestration*: checkout, payment records, firm
+routing, verification, reconciliation, refund records, audit and ERP integration.
+
+**What is affirmatively decided**
+
+| Question | Ruling |
+|---|---|
+| Own payment orchestration | **YES.** SpareLink builds and owns the software layer. |
+| Cashfree | **NOT REQUIRED.** Legacy WEB code retained, isolated, marked `LEGACY / DISABLED / OPTIONAL PROVIDER`. **Not deleted.** |
+| Razorpay | **NOT REQUIRED.** Already permanently disabled upstream. |
+| Provider dependency in the core engine | **NONE.** Adapters only; a provider name in engine source fails the build. |
+| SpareLink bank account | **DOES NOT EXIST.** |
+| SpareLink-held customer funds | **NONE.** No custody, no wallet, no settlement account, no pool, no escrow. |
+| Settlement route | **Direct to each firm's own bank / payment destination.** Ambaji order → Ambaji account, always. |
+| Firm resolution | **SERVER-SIDE from the order/invoice.** A client-supplied `firmId` is a claim to be checked, never authority. |
+| Money arithmetic | **Integer paise only.** No floating point, ever. |
+| Accounting effect | **ERP only**, via the existing `postVoucher` / `allocatePayment`. The engine must not write ledger tables. |
+| `BANK_TRANSFER` + UTR | **Not verified by submission alone.** A UTR is evidence, not proof; `PENDING_VERIFICATION` until a statement or manual check. |
+| Payment-rail costs | Bank / acquiring / UPI / PSP / net-banking charges are acceptable. **Zero payment-rail charges are NOT promised.** No MDR is hard-coded. |
+
+**What is explicitly *not* claimed**
+
+SpareLink Payment Engine is a proprietary software and orchestration layer. It is
+**NOT** an RBI-authorised Payment Aggregator and **NOT** NPCI-certified, because no
+such authorisation or certification exists. Building software is not the same as
+being authorised to move money. Production UPI and net-banking connectivity must
+go through an appropriately authorised bank / acquiring bank / PSP with whatever
+onboarding, certification and compliance that legally requires.
+
+"No approval is fabricated anywhere in this repository."
+
+**Documented in** `SPARELINK_PAYMENT_ENGINE_ARCHITECTURE.md` ·
+`_SECURITY.md` · `_API.md` · `_RECONCILIATION.md`.
+
+**B15 does NOT require B2, B3, B6 or B8.** Firm ids and destinations are used as
+configuration placeholders. What B2 blocks is *activation*, not design — a
+placeholder destination defaults to inactive and cannot receive a payment.
+
+### 4.4 Remaining decisions — status after 06-Oct-2026
 
 Decisions below are marked by what they **block**, and by the ruling that
 applies while they remain open. No legal or financial fact is invented.
 
 | # | Decision | Status | Ruling applied while open |
 |---|---|---|---|
-| **B1** | Cashfree approved or prohibited | **RESOLVED BY REQUIREMENT — NOT APPROVED** | Code retained and gated; must not be relied on as an approved production path. Not removed. |
+| **B1** | Cashfree approved or prohibited | **RULED — NOT APPROVED, and superseded by B15** | Code retained, isolated and gated; marked `LEGACY / DISABLED / OPTIONAL PROVIDER`. **Not deleted.** Not an approved production path. See §4.2. |
+| **B15** | Payment engine ownership | **✅ LOCKED** | SpareLink operates its **own orchestration layer**. Non-custodial. Provider-agnostic. ERP owns all accounting effect. See §4.3. |
 | **B2** | Firm GSTIN / PAN / state / address / bank | **OPEN — needs the user** | **No value invented.** WEB holds real bank details; ERP declares every business field PENDING and deliberately left them uninvented. Conflicts reported in §5. |
 | **B3** | Firm state codes | **OPEN — needs the user** | Four sources disagree: WEB 23/23/23, ERP seed 24/24/27, ERP BUSY data is MP, Play listing says Gujarat. Not reconciled by guess. |
 | **B4** | Inventory authority | **✅ APPROVED** | ERP item × godown. See §4.1. |
@@ -438,6 +488,46 @@ WEB/MOBILE password reset.
 ---
 
 ## 11. CHANGE HISTORY
+
+### 06-Oct-2026 — Payment Engine foundation (parallel workstream)
+
+**ERP** `7af89f0` · Business decision **B15 LOCKED** (see §4.3)
+
+SpareLink owns its payment **orchestration**. Owns **no money**.
+
+- **Domain core** — `src/lib/payments/domain.ts`. Strict state machine across all
+  11 states; `SUCCESS` is unreachable without a type-branded `TrustedVerification`
+  that only the callback verifier can produce. Firm resolution takes the order's
+  firm and refuses any client claim that disagrees. Partial-payment arithmetic
+  refuses over-allocation rather than clamping it. Refund ceiling enforced against
+  captured minus already-refunded. Reconciliation classifier covering all 9
+  statuses with explicit precedence. Integer paise throughout, reusing the
+  existing branded `Paise` rather than introducing a second money type.
+- **Provider abstraction** — `PaymentProviderAdapter` plus a configuration-driven
+  registry. No provider is named in engine code, and a guardrail test **fails the
+  build** if one appears, or if a custodial destination, a collected banking
+  secret, or a float in a monetary position appears. An adapter reports what the
+  rail said; it can never return "paid".
+- **Database** — 6 tables (`erp_payment`, `_attempt`, `_transaction`,
+  `_provider_event`, `_refund`, `erp_firm_payment_configuration`), 3 enums,
+  **13 CHECK constraints**, additive migration. The load-bearing object is the
+  unique `(provider, providerTransactionId)` index, which is what makes repeated
+  or replayed callbacks produce **one** accounting effect rather than several.
+  No credential column exists anywhere in the table set, by design. Firm
+  destinations are placeholders and default to inactive.
+- **Documents** — the four mandated payment engine documents.
+
+**Not done, deliberately.** No ERP posting (blocked on **B2**: a voucher needs a
+firm cash/bank account). No HTTP route. No real rail, adapter or PSP. No UPI or
+net-banking connectivity. No reconciliation feed. No rate limiting or signature
+scheme. No production write, no deploy, no push.
+
+**Not claimed.** Not an RBI-authorised Payment Aggregator. Not NPCI-certified.
+
+Applied to the **local development database only** — 18 migrations, 64 models,
+147 foreign keys, `db:check` 2/2. Verified: `prisma validate`, `tsc --noEmit` and
+`eslint` all clean; 67/67 payment engine tests; 79/79 inventory tests including the
+20-test reservation gate.
 
 ### 06-Oct-2026 — baseline establishment and first hardening
 

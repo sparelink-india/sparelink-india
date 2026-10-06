@@ -15,7 +15,7 @@
 
 | # | Decision | Status |
 |---|---|---|
-| B1 | Payment gateway | ✅ **RESOLVED BY REQUIREMENT — Cashfree NOT APPROVED** |
+| B1 | Payment gateway | ✅ **RULED — Cashfree NOT APPROVED**, superseded by B15 |
 | B2 | Firm legal identity (GSTIN/PAN/address/bank) | ⛔ **OPEN — needs the business owner** |
 | B3 | Firm state codes | ⛔ **OPEN — needs the business owner** |
 | B4 | Inventory authority | ✅ **APPROVED — ERP item × godown** |
@@ -28,7 +28,8 @@
 | B11 | Account-credit checkout | ✅ **RULED — untouched** |
 | B12 | Notifications | ✅ **RULED — provider-neutral architecture** |
 | B13 | ERP first-release scope | ✅ **RULED** |
-| B14 | Play Store release | ✅ **RULED — prepare, never publish** |
+| B14 | Play Store release | ✅ **RULED - prepare, never publish** |
+| B15 | Payment engine | ✅ **LOCKED - own orchestration, non-custodial, own no money** |
 
 ---
 
@@ -229,6 +230,59 @@ reporting · firm isolation · API.
 Prepare a production release: signing, versioning, release AAB, device QA, crash
 handling, deep links, `assetlinks.json`, Play assets, privacy policy. **Do not
 upload or publish.** That is a separate, explicit approval.
+
+---
+
+## B15 — SpareLink Payment Engine: ✅ LOCKED — own orchestration, own no money
+
+SpareLink will operate its **own payment orchestration layer**: checkout, payment
+records, firm routing, transaction verification, reconciliation, refund records,
+audit and ERP integration. **This decision does not depend on B2, B3, B6 or B8.**
+
+### What SpareLink affirmatively decided
+
+| Question | Ruling |
+|---|---|
+| Own payment orchestration | **YES** |
+| Cashfree | **NOT REQUIRED** — legacy code retained, isolated, `LEGACY / DISABLED / OPTIONAL PROVIDER`. **Not deleted.** |
+| Razorpay | **NOT REQUIRED** — already permanently disabled upstream |
+| Provider dependency in the core engine | **NONE** — adapters only; a provider name in engine source fails the build |
+| SpareLink bank account | **DOES NOT EXIST** |
+| SpareLink-held customer funds | **NONE** — no custody, wallet, settlement account, pool or escrow |
+| Settlement route | **Direct to each firm's own bank / payment destination** |
+| Firm resolution | **Server-side, from the order/invoice.** A client `firmId` is a claim to check, never authority |
+| Money arithmetic | **Integer paise only.** No floating point, ever |
+| Accounting effect | **ERP only**, via existing `postVoucher` / `allocatePayment`. The engine never writes ledger rows |
+| `BANK_TRANSFER` + UTR | **Not verified by submission alone** — `PENDING_VERIFICATION` until a statement or manual check |
+| Payment-rail costs | Bank / acquiring / UPI / PSP / net-banking charges acceptable. **Zero charges NOT promised.** No MDR hard-coded |
+
+### What is explicitly not claimed
+
+SpareLink Payment Engine is a proprietary software and orchestration layer. It is
+**NOT** an RBI-authorised Payment Aggregator and **NOT** NPCI-certified, because no
+such authorisation or certification exists. Production UPI and net-banking
+connectivity must go through an appropriately authorised bank / acquiring bank / PSP
+with whatever onboarding, certification and compliance that legally requires.
+
+**No approval is fabricated anywhere in this repository.**
+
+### Relationship to B1
+
+B1 is **not reversed** — it is strengthened. Cashfree was "not approved by an
+existing written requirement"; it is now "not required, because there is an
+affirmative alternative". The legacy code stays in place either way. Deleting a
+working implementation before the replacement is verified is the irreversible
+choice, and it is not the right one.
+
+### How this affects B2
+
+B2 does **not** block the engine's design, code or tests — firm ids and
+destinations are used as configuration placeholders, and a placeholder destination
+**defaults to inactive** so it cannot receive a payment.
+
+What B2 blocks is **activation**: real destinations (UPI ID, account number, IFSC,
+account name), and therefore Phase J onward. B2 already lists all of these as
+required fields.
 
 ---
 
