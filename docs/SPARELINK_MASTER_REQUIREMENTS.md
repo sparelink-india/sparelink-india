@@ -249,7 +249,15 @@ onboarding, certification and compliance that legally requires.
 "No approval is fabricated anywhere in this repository."
 
 **Documented in** `SPARELINK_PAYMENT_ENGINE_ARCHITECTURE.md` ·
-`_SECURITY.md` · `_API.md` · `_RECONCILIATION.md`.
+`_SECURITY.md` · `_API.md` · `_RECONCILIATION.md` ·
+`_COMPLIANCE_READINESS.md`.
+
+**B2 PARTIALLY RESOLVED 07-Oct-2026.** The owner supplied GSTIN, address, bank, IFSC, branch, UPI and account holder for all three firms. **Bank account NUMBERS were not supplied** and have not been invented — a destination cannot be activated without one. State codes confirmed **23 / 23 / 23**, which **closes B3**.
+
+**Two conflicts reported, not resolved:**
+
+1. **Hind Motors' UPI handle is `@okbizaxis` — an Axis Bank namespace — while its IFSC is `BKID0009027`, Bank of India.** A UPI collection would settle to an Axis account, not the Bank of India account reconciliation expects. This is precisely what `FIRM_MISMATCH` exists to catch. **Which is correct?**
+2. **Hind Motors' GSTIN was supplied as `23AARPA8557F1ZM`; WEB publishes `23AARPA8557FZ1M`.** Characters transposed. Neither was adopted for payments — payment routing does not need a GSTIN — but invoices cannot go out until it is settled.
 
 **B15 does NOT require B2, B3, B6 or B8.** Firm ids and destinations are used as
 configuration placeholders. What B2 blocks is *activation*, not design — a
@@ -264,8 +272,8 @@ applies while they remain open. No legal or financial fact is invented.
 |---|---|---|---|
 | **B1** | Cashfree approved or prohibited | **RULED — NOT APPROVED, and superseded by B15** | Code retained, isolated and gated; marked `LEGACY / DISABLED / OPTIONAL PROVIDER`. **Not deleted.** Not an approved production path. See §4.2. |
 | **B15** | Payment engine ownership | **✅ LOCKED** | SpareLink operates its **own orchestration layer**. Non-custodial. Provider-agnostic. ERP owns all accounting effect. See §4.3. |
-| **B2** | Firm GSTIN / PAN / state / address / bank | **OPEN — needs the user** | **No value invented.** WEB holds real bank details; ERP declares every business field PENDING and deliberately left them uninvented. Conflicts reported in §5. |
-| **B3** | Firm state codes | **OPEN — needs the user** | Four sources disagree: WEB 23/23/23, ERP seed 24/24/27, ERP BUSY data is MP, Play listing says Gujarat. Not reconciled by guess. |
+| **B2** | Firm GSTIN / PAN / state / address / bank | **⚠️ PARTIAL — account numbers missing** | Owner supplied GSTIN, address, bank, IFSC, branch, UPI, account holder 07-Oct-2026. **Account NUMBERS not supplied and not invented.** A destination cannot be activated without one. Also 2 conflicts open: Hind Motors UPI `@okbizaxis` vs BOI IFSC, and Hind Motors GSTIN transposition. |
+| **B3** | Firm state codes | **✅ RESOLVED 07-Oct-2026 — 23 / 23 / 23** | Owner confirmed Madhya Pradesh. ERP seed 24/24/27 is wrong and should be corrected to match. |
 | **B4** | Inventory authority | **✅ APPROVED** | ERP item × godown. See §4.1. |
 | **B5** | Accounting authority | **RULED** | **ERP is authoritative** for accounting, ledger, receivables, payables. WEB `party_ledger_entry` is **legacy/transition data**, retained, not extended, not deleted. |
 | **B6** | Credit semantics | **OPEN — not invented** | Existing behaviour preserved exactly. `0 ⇒ enforcement OFF` (WEB) and `WARN` default (ERP) both stay until the final rule is written. |

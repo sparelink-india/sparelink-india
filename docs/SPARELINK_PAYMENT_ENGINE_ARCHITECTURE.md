@@ -118,18 +118,18 @@ state, not a failure, and can return a payment to where it came from.
 
 | Phase | Scope | State |
 |---|---|---|
-| **A** Architecture | this document | ✅ |
-| **B** Database / domain model | 6 tables, 13 CHECKs, migration | ✅ |
-| **C** ERP payment service boundary | calls `postVoucher` | ⛔ **B2** — needs a firm cash/bank account |
-| **D** Provider adapter interface | `PaymentProviderAdapter` + registry | ✅ |
-| **E** Sandbox/mock UPI adapter | | ⛔ blocked on D→E sequencing; next |
-| **F** Sandbox/mock net-banking adapter | | not started |
-| **G** Reconciliation | classifier ✅ · persistence pending | partial |
-| **H** WEB integration | | not started |
-| **I** MOBILE integration | | not started |
-| **J** Production bank/PSP | | requires authorised arrangement |
-| **K** Certification / compliance | | requires J |
-| **L** Production activation | | requires J + K + approval |
+| **A** Architecture | this document | COMPLETE |
+| **B** Database / domain model | 9 tables, 26 CHECKs, 5 migrations | COMPLETE |
+| **C** ERP payment service boundary | `postVerifiedPayment` -> `postVoucher` -> `allocatePayment` | **COMPLETE.** GL resolved by `systemKey`; no account invented |
+| **D** Provider adapter interface | `PaymentProviderAdapter` + registry | COMPLETE |
+| **E** Sandbox UPI adapter + DB gate | HMAC + timestamp + replay; **gate 21/21 PASS** | COMPLETE |
+| **F** Sandbox net-banking adapter | same engine, shared state machine | COMPLETE |
+| **G** Reconciliation | classifier + persistence + feed abstraction + queue + report | **COMPLETE** (no live feed - none can exist) |
+| **H** WEB integration | | **NOT STARTED** |
+| **I** MOBILE integration | | **NOT STARTED** |
+| **J** Production provider architecture | credential store, keyring, adapter contract, 3-gate config, flag OFF | **Architecture COMPLETE / connection BLOCKED** |
+| **K** Certification / compliance | readiness package + 22-item activation gate | **Package COMPLETE / 5 of 22 gates satisfied** |
+| **L** Production activation | | **BLOCKED** - see COMPLIANCE_READINESS section 6 |
 
 ---
 
