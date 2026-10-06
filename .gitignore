@@ -35,6 +35,12 @@ yarn-error.log*
 
 # vercel
 .vercel
+# `.vercel/` has always been ignored. `.vercel-disabled/` is a byte-identical
+# copy of the same project identity - it carries the same live `projectId` and
+# `orgId` - and it was never covered by the rule above, so renaming the folder
+# left the deployment identity in the repository while the ignore stopped
+# matching it. Ignoring both is what the original rule already intended.
+.vercel-disabled/
 
 # runtime junction/symlink to catalogue image store — do not duplicate ~3.4 GB
 /public/catalogue-images
@@ -94,3 +100,47 @@ next-env.d.ts
 *.backup
 bank details.txt
 /sparelink-safety-backups/
+
+# ---------------------------------------------------------------------------
+# Secret-adjacent local artefacts.
+#
+# These files were sitting untracked AND un-ignored in the repository root.
+# Nothing is deleted by this change: the files stay on disk exactly as they
+# are, they are simply never staged and never uploaded.
+#
+# `admin.txt` and `bank details.txt` are local working documents that may hold
+# credentials. `r2-object-keys.json` is a Cloudflare R2 object listing, which is
+# infrastructure reconnaissance rather than source. The remaining entries are
+# captured HTTP responses and build/scratch output.
+# ---------------------------------------------------------------------------
+/admin.txt
+/body.txt
+/cart.txt
+/details.txt
+/r2-object-keys.json
+/r2-object-keys-*.json
+/r2-missing.txt
+/r2-upload-completed.txt
+/r2-test-banner.*
+/build.log
+/output/
+/working/
+/catalogue-view-qa-output.txt
+/dashboard-text-*.txt
+/smoke-test-results.*
+/preview-*.txt
+
+# Private keys and credential material, regardless of extension.
+*.pem
+*.key
+*.p12
+*.pfx
+id_rsa
+id_ed25519
+.netrc
+
+# `.env.r2.example` is a documentation template and SHOULD be committed, but
+# `.env.*` above swallows it. The narrow un-ignore below fixes that without
+# widening the exception to every future example file.
+!.env.r2.example
+!.env.*.example
