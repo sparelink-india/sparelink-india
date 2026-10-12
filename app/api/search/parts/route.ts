@@ -17,6 +17,7 @@ import { extractGSTRate } from "@/lib/gst";
 import { resolveStorefrontPricing } from "@/lib/customer-discount";
 import { publicListingPrice } from "@/lib/party-pricing";
 import { resolvePensolConfigsForUser } from "@/lib/pensol-discount";
+import { searchWithRankingFallback } from "@/lib/search-typesense-fallback";
 import {
   applyPensolNet,
   isPensolProduct,
@@ -67,6 +68,32 @@ type PartSpec = {
   uom?: string | null;
   gst?: string | number | null;
   hsn?: string | null;
+};
+
+/**
+ * The route's failure contract, extracted so tests can invoke it directly.
+ * The exception must reach the server log — a bare `catch {}` with a literal
+ * message once made every failure indistinguishable. Only the thrown value
+ * is logged: no request headers, cookies, API keys, session tokens, customer
+ * records or raw search input. The client always sees the same generic 500.
+ */
+export function searchFailureResponse(error: unknown) {
+  console.error("Parts search failed:", error);
+
+  return NextResponse.json(
+    { error: "Unable to search parts right now. Please try again." },
+    { status: 500 },
+  );
+}
+
+/**
+ * Test seam for the Typesense client. Production code always resolves the
+ * real module client (null when unconfigured); tests override `getClient`
+ * to simulate an unconfigured, failing, or succeeding backend without
+ * touching auth, the database, or the network.
+ */
+export const searchRuntime = {
+  getClient: (): typeof typesense => typesense,
 };
 
 function parsePartSpec(raw: string | null | undefined): PartSpec {
@@ -149,7 +176,7 @@ export async function GET(request: NextRequest) {
     );
   }
 
-  if (!typesense) {
+  if (!searchRuntime.getClient()) {
     return NextResponse.json(
       { error: "Search service is not configured" },
       { status: 503 },
@@ -308,7 +335,8 @@ export async function GET(request: NextRequest) {
     };
 
     async function searchTypesense(params: Record<string, unknown>) {
-      return typesense!.collections("parts").documents().search(params as never);
+      const client = searchRuntime.getClient();
+      return client!.collections("parts").documents().search(params as never);
     }
 
     async function searchPartNumberQueries(queries: string[]) {
@@ -318,9 +346,13 @@ export async function GET(request: NextRequest) {
       let found = 0;
       let facetCounts: unknown = [];
       for (const q of uniqueQueries) {
-        let result;
-        try {
-          result = await searchTypesense({
+        // Exactly one fallback, and only for a query-shape rejection. Any
+        // infrastructure failure propagates on the first throw instead of being
+        // retried into an opaque 500.
+        const result = await searchWithRankingFallback(
+          searchTypesense,
+          { ...defaultSearchParams, q },
+          {
             ...defaultSearchParams,
             q,
             query_by: "part_number,part_number_search",
@@ -328,10 +360,8 @@ export async function GET(request: NextRequest) {
             infix: "off,always",
             num_typos: 0,
             drop_tokens_threshold: 0,
-          });
-        } catch {
-          result = await searchTypesense({ ...defaultSearchParams, q });
-        }
+          },
+        );
         found += typeof result.found === "number" ? result.found : result.hits?.length ?? 0;
         if (!Array.isArray(facetCounts) || facetCounts.length === 0) {
           facetCounts = (result as { facet_counts?: unknown }).facet_counts ?? [];
@@ -350,6 +380,20 @@ export async function GET(request: NextRequest) {
       }
       return { hits: merged, found: Math.max(found, merged.length), facet_counts: facetCounts };
     }
+
+    // Plain shape for the single ranking fallback on the main search path:
+    // identical scoping (query, filters, pagination, facets) but none of the
+    // ranking knobs that stricter Typesense builds reject with 400/422.
+    const fallbackSearchParams = {
+      q: typesenseQuery,
+      query_by: "part_number,name,description,brand,category",
+      filter_by: filterBy,
+      page: searchPage,
+      per_page: searchPerPage,
+      prefix: true,
+      facet_by: "brand,category",
+      max_facet_values: 24,
+    };
 
     const sessionPromise = getServerSession();
     const hsnQuery = parseExactHsnQuery(query);
@@ -399,7 +443,11 @@ export async function GET(request: NextRequest) {
           }
         : intent.isPartNumberQuery && typesenseQuery !== "*"
           ? await searchPartNumberQueries([intent.originalQuery])
-          : await searchTypesense(defaultSearchParams);
+          : await searchWithRankingFallback(
+              searchTypesense,
+              fallbackSearchParams,
+              defaultSearchParams,
+            );
     } else if (intent.isPartNumberQuery && typesenseQuery !== "*") {
       const digitQuery = partNumberDigits(intent.originalQuery);
       const pnQueries = [intent.originalQuery];
@@ -408,7 +456,14 @@ export async function GET(request: NextRequest) {
       }
       searchResults = await searchPartNumberQueries(pnQueries);
     } else {
-      searchResults = await searchTypesense(defaultSearchParams);
+      // Same single-fallback contract as the part-number path: a rankable
+      // 400/422 retries once with plain parameters; anything else propagates
+      // to the outer handler as an honest 500.
+      searchResults = await searchWithRankingFallback(
+        searchTypesense,
+        fallbackSearchParams,
+        defaultSearchParams,
+      );
     }
 
     const hits = searchResults.hits ?? [];
@@ -895,12 +950,7 @@ export async function GET(request: NextRequest) {
         source: pricing.source,
       },
     });
-  } catch {
-    console.error("Parts search failed");
-
-    return NextResponse.json(
-      { error: "Unable to search parts right now. Please try again." },
-      { status: 500 },
-    );
+  } catch (error) {
+    return searchFailureResponse(error);
   }
 }
