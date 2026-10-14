@@ -1,3 +1,5 @@
+import { isCustomerVisibleProduct } from "@/lib/ci-sync/types";
+
 const MIN_360_FRAMES = 12;
 
 const SPEC_SKIP_KEYS = new Set([
@@ -301,4 +303,58 @@ export function buildProductSpecCards(input: {
     cards.push({ label: "UOM", value: String(input.uom).trim() });
   }
   return cards;
+}
+
+export type RelatedCandidate = {
+  id: string;
+  categoryId: string | null;
+  brand: string | null;
+  isPublished: boolean;
+  approvalStatus: string | null;
+};
+
+/**
+ * Related-product selection over candidate rows that already share the
+ * current part's category or brand (the SQL query provides those; this
+ * function must not invent fitment compatibility).
+ *
+ * Guarantees, in order: the current product is never included, ids are
+ * deduplicated, rows without any relationship evidence are skipped,
+ * non-admin viewers only see customer-visible rows (the canonical
+ * `isCustomerVisibleProduct` rule), and the result is capped. An empty
+ * input yields an empty output so callers render nothing.
+ */
+export function pickRelatedProducts<T extends RelatedCandidate>(
+  current: { id: string; categoryId: string | null; brand: string | null },
+  candidates: T[],
+  isAdmin: boolean,
+  limit = 8,
+): T[] {
+  const seen = new Set<string>([current.id]);
+  const out: T[] = [];
+  const currentBrand = (current.brand || "").trim().toLowerCase();
+  for (const candidate of candidates) {
+    if (!candidate.id || seen.has(candidate.id)) continue;
+    const sharesCategory =
+      candidate.categoryId != null &&
+      current.categoryId != null &&
+      candidate.categoryId === current.categoryId;
+    const candidateBrand = (candidate.brand || "").trim().toLowerCase();
+    const sharesBrand =
+      Boolean(candidateBrand) && Boolean(currentBrand) && candidateBrand === currentBrand;
+    if (!sharesCategory && !sharesBrand) continue;
+    if (
+      !isAdmin &&
+      !isCustomerVisibleProduct({
+        isPublished: candidate.isPublished,
+        approvalStatus: candidate.approvalStatus,
+      })
+    ) {
+      continue;
+    }
+    seen.add(candidate.id);
+    out.push(candidate);
+    if (out.length >= limit) break;
+  }
+  return out;
 }

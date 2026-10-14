@@ -8,6 +8,7 @@ import {
   excludeKnownIds,
   extractSpecificationEntries,
   isGenuine360Sequence,
+  pickRelatedProducts,
   shouldShowDescription,
   uniqueNonEmpty,
 } from "./product-detail-fields";
@@ -148,6 +149,67 @@ describe("product detail fields", () => {
         source_rate: "375",
       }).length,
       0,
+    );
+  });
+});
+
+describe("pickRelatedProducts", () => {
+  const current = { id: "p1", categoryId: "c1", brand: "MEKO" };
+  const row = (over: Record<string, unknown> = {}) => ({
+    id: "p2",
+    categoryId: "c1",
+    brand: "MEKO",
+    isPublished: true,
+    approvalStatus: "APPROVED",
+    ...over,
+  });
+
+  it("excludes the current product even when it matches", () => {
+    const out = pickRelatedProducts(current, [row({ id: "p1" }), row({ id: "p2" })], false);
+    assert.deepEqual(out.map((r) => r.id), ["p2"]);
+  });
+
+  it("deduplicates repeated ids", () => {
+    const out = pickRelatedProducts(
+      current,
+      [row({ id: "p2" }), row({ id: "p2" }), row({ id: "p3" })],
+      false,
+    );
+    assert.deepEqual(out.map((r) => r.id), ["p2", "p3"]);
+  });
+
+  it("keeps brand-only and category-only matches, drops unrelated rows", () => {
+    const out = pickRelatedProducts(
+      current,
+      [
+        row({ id: "a", categoryId: "c1", brand: "OTHER" }),
+        row({ id: "b", categoryId: "c9", brand: "MEKO" }),
+        row({ id: "c", categoryId: "c9", brand: "OTHER" }),
+        row({ id: "d", categoryId: null, brand: null }),
+      ],
+      false,
+    );
+    assert.deepEqual(out.map((r) => r.id), ["a", "b"]);
+  });
+
+  it("matches brand case-insensitively", () => {
+    const out = pickRelatedProducts(current, [row({ id: "b", categoryId: "c9", brand: "meko" })], false);
+    assert.deepEqual(out.map((r) => r.id), ["b"]);
+  });
+
+  it("hides unpublished rows from customers but shows them to admins", () => {
+    const hidden = row({ id: "h", isPublished: false });
+    assert.deepEqual(pickRelatedProducts(current, [hidden], false).map((r) => r.id), []);
+    assert.deepEqual(pickRelatedProducts(current, [hidden], true).map((r) => r.id), ["h"]);
+  });
+
+  it("caps the result and returns nothing for empty input", () => {
+    const many = Array.from({ length: 20 }, (_, i) => row({ id: `p${i + 2}` }));
+    assert.equal(pickRelatedProducts(current, many, false).length, 8);
+    assert.deepEqual(pickRelatedProducts(current, [], false), []);
+    assert.deepEqual(
+      pickRelatedProducts({ id: "p1", categoryId: null, brand: null }, [row()], false),
+      [],
     );
   });
 });

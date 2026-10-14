@@ -6,27 +6,23 @@ import { Errors } from "typesense";
 import {
   GET,
   searchFailureResponse,
-  searchRuntime,
 } from "@/app/api/search/parts/route";
 
 /**
- * ROUTE-LEVEL SEARCH FAILURE TESTS.
+ * ROUTE-LEVEL SEARCH CONTRACT TESTS (PostgreSQL backend).
  *
- * These invoke the real `GET` handler with stubbed Typesense clients through
- * the exported `searchRuntime` seam — the smallest seam that makes the
- * handler testable without touching auth, the database, or the network.
- * Auth/session, DB reads, and pricing are deliberately NOT stubbed: every
- * path below either answers before those dependencies (503) or fails inside
- * `try` before any of them is awaited, so no live dependency is reached.
+ * PostgreSQL is the search backend: there is no separate search service to
+ * be "unconfigured", so the old 503 branch is gone. A missing database
+ * surfaces from getDb() and is answered by the outer handler as an honest
+ * 500 — exactly what these tests assert, with no environment surgery (the
+ * test process has no DATABASE_URL) and no live connections (nothing is
+ * ever queried: getDb() throws on its presence guard first).
  *
- * Two guards keep the runner honest:
- * - `console.error` is spied (and restored) so Fix A is asserted, not assumed.
- * - a scoped `unhandledRejection` listener absorbs the intentionally
- *   never-awaited session promise the handler creates on error paths. It is
- *   removed afterwards, so real leaks elsewhere still crash the suite.
+ * Auth/session, pricing, and enrichment are deliberately NOT stubbed.
+ * Every path below answers before any of them is awaited, so no live
+ * dependency is reached and no unhandled session promise can escape.
  */
 
-const SEARCH_503_MESSAGE = "Search service is not configured";
 const SEARCH_500_MESSAGE = "Unable to search parts right now. Please try again.";
 
 function request(path: string): NextRequest {
@@ -52,37 +48,51 @@ async function withErrorSpy<T>(run: (errors: unknown[][]) => Promise<T>): Promis
 }
 
 describe("GET /api/search/parts failure behaviour", () => {
-  it("answers 503 with the existing message when Typesense is unconfigured", async () => {
-    const original = searchRuntime.getClient;
-    searchRuntime.getClient = () => null;
-    try {
-      const response = await GET(request("/api/search/parts?q=brake"));
-      assert.equal(response.status, 503);
-      const body = (await response.json()) as { error?: string };
-      assert.equal(body.error, SEARCH_503_MESSAGE);
-    } finally {
-      searchRuntime.getClient = original;
-    }
+  it("rejects a missing query with 400 before touching any dependency", async () => {
+    const response = await GET(request("/api/search/parts"));
+    assert.equal(response.status, 400);
   });
 
-  it("answers 500 with the existing message and logs the real error on dependency failure", async () => {
-    // Invokes the route's extracted failure contract directly. Invoking the
-    // full GET would create an un-awaited session promise that rejects
-    // outside any request scope in plain node and fails the file; the
-    // contract itself — bind, log, generic 500 — is identical either way,
-    // and the test below pins that the catch block actually calls it.
-    const boom = new Errors.ServerError("typesense transport exploded", "", 500);
+  it("rejects an overlong query with 400 before touching any dependency", async () => {
+    const response = await GET(request(`/api/search/parts?q=${"x".repeat(201)}`));
+    assert.equal(response.status, 400);
+  });
+
+  it("answers 500 with the existing message when the database is unavailable", async () => {
+    const { result: response, errors } = await withErrorSpy(async () => {
+      return GET(request("/api/search/parts?q=brake&suggest=1"));
+    });
+    assert.equal(response.status, 500);
+    const body = (await response.json()) as Record<string, unknown>;
+    assert.equal(body.error, SEARCH_500_MESSAGE);
+    assert.ok(errors.length >= 1, "the failure must reach the server log");
+  });
+
+  it("answers 500 with the existing message and logs a sanitised diagnostic on dependency failure", async () => {
+    // Invokes the route's extracted failure contract directly: it is the
+    // exact code the outer catch runs, without needing a live backend. The
+    // diagnostic derives from the actual exception (name/code/status below)
+    // but never carries the raw object, its message, stack, or any request
+    // internals — see describeSearchFailure in the route module.
+    const boom = new Errors.ServerError("database transport exploded", "", 500);
     const { result: response, errors } = await withErrorSpy(async () => {
       return searchFailureResponse(boom);
     });
     assert.equal(response.status, 500);
     const body = (await response.json()) as Record<string, unknown>;
     assert.equal(body.error, SEARCH_500_MESSAGE);
-    // Fix A: the genuine exception reaches the server log ...
-    assert.ok(
-      errors.some((args) => args.includes(boom)),
-      "console.error must receive the thrown error object",
-    );
+    const diagnostic = errors
+      .flat()
+      .find(
+        (arg): arg is Record<string, unknown> =>
+          typeof arg === "object" &&
+          arg !== null &&
+          ["category", "code", "httpStatus", "name"].every((field) => field in arg),
+      );
+    assert.ok(diagnostic, "the log must carry the sanitised diagnostic");
+    assert.equal(diagnostic.name, "ServerError");
+    assert.equal(diagnostic.httpStatus, 500);
+    assert.equal(diagnostic.category, "upstream_error");
     // ... while the client sees only the generic message.
     assert.ok(
       !JSON.stringify(body).includes("exploded"),
@@ -102,10 +112,10 @@ describe("GET /api/search/parts failure behaviour", () => {
   });
 
   it("keeps the success envelope shape (results/found/facets) on the happy path", async () => {
-    // A full 200 needs live Typesense, database rows, and a request-scoped
-    // session, so it cannot run hermetically; the fallback unit suite proves
-    // success values pass through untouched. This pins the route's side of
-    // the contract: the success block must still emit all three keys.
+    // A full 200 needs a live database with catalogue rows, so it cannot run
+    // hermetically; the PostgreSQL module returns the same success shape the
+    // route already processes. This pins the route's side of the contract:
+    // the success block must still emit all three keys.
     const source = await import("node:fs").then((fs) =>
       fs.readFileSync("app/api/search/parts/route.ts", "utf8"),
     );
@@ -115,5 +125,19 @@ describe("GET /api/search/parts failure behaviour", () => {
         `success envelope must still include ${key}`,
       );
     }
+  });
+
+  it("no longer gates on Typesense configuration", async () => {
+    const source = await import("node:fs").then((fs) =>
+      fs.readFileSync("app/api/search/parts/route.ts", "utf8"),
+    );
+    assert.ok(
+      !source.includes("Search service is not configured"),
+      "the unconfigured-service 503 belongs to the retired backend",
+    );
+    assert.ok(
+      !source.includes('collections("parts")'),
+      "no Typesense collection reads may remain on the search path",
+    );
   });
 });

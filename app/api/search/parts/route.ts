@@ -8,7 +8,6 @@ import {
   rankSearchHits,
 } from "@/lib/search-intent";
 import { isCustomerVisibleProduct } from "@/lib/ci-sync/types";
-import { typesense } from "@/lib/typesense";
 import { getDb } from "@/lib/db";
 import { getServerSession } from "@/lib/auth-server";
 import { catalogueImageUrls } from "@/lib/catalogue-image-index";
@@ -17,7 +16,12 @@ import { extractGSTRate } from "@/lib/gst";
 import { resolveStorefrontPricing } from "@/lib/customer-discount";
 import { publicListingPrice } from "@/lib/party-pricing";
 import { resolvePensolConfigsForUser } from "@/lib/pensol-discount";
-import { searchWithRankingFallback } from "@/lib/search-typesense-fallback";
+import {
+  parseSearchSort,
+  searchPartNumbersPostgres,
+  searchPartsFetch,
+  searchPartsPage,
+} from "@/lib/search-postgres";
 import {
   applyPensolNet,
   isPensolProduct,
@@ -43,7 +47,6 @@ import {
 import { isCustomerVisibleCatalogueBrand } from "@/lib/public-brands";
 import {
   findStorefrontCategory,
-  typesenseCategoryFilter,
 } from "@/lib/storefront-categories";
 import {
   classifyWaterPumpSegment,
@@ -71,30 +74,115 @@ type PartSpec = {
 };
 
 /**
+ * Fields the failure log is allowed to carry.
+ *
+ * An Axios error carries its own request: `config.url` holds the full query
+ * string, `config.headers` holds `X-TYPESENSE-API-KEY`, and `request` holds the
+ * serialised HTTP frame with the key again. `message` and `stack` can echo the
+ * node hostname and the connection target. Logging the thrown object therefore
+ * published the Typesense API key to the platform log in cleartext, which is
+ * why only this fixed, enumerable shape is ever emitted.
+ */
+export type SearchFailureDiagnostic = {
+  name: string;
+  code: string | null;
+  httpStatus: number | null;
+  category: string;
+};
+
+type ErrorShape = {
+  name?: unknown;
+  code?: unknown;
+  httpStatus?: unknown;
+  cause?: unknown;
+};
+
+/** Error names and codes are identifiers, never free text. */
+const SAFE_NAME = /^[A-Za-z][A-Za-z0-9_.-]{0,63}$/;
+const SAFE_CODE = /^[A-Z][A-Z0-9_]{0,31}$/;
+
+/**
+ * Coarse, non-reversible classification.
+ *
+ * A category answers "which subsystem broke" without republishing anything the
+ * caller typed or anything the server holds as a credential. The host and the
+ * key are deliberately absent: they are recoverable from the Vercel environment
+ * configuration, and repeating them in a log is what turned a search outage
+ * into a credential disclosure.
+ */
+function classifySearchFailure(
+  code: string | null,
+  httpStatus: number | null,
+): string {
+  if (code === "ENOTFOUND" || code === "EAI_AGAIN") return "unreachable_host";
+  if (code === "ECONNREFUSED") return "connection_refused";
+  if (code === "ECONNRESET") return "connection_reset";
+  if (code === "ETIMEDOUT" || code === "ESOCKETTIMEDOUT") return "timeout";
+  if (httpStatus !== null) {
+    if (httpStatus === 401 || httpStatus === 403) return "credentials_rejected";
+    if (httpStatus === 404) return "collection_missing";
+    if (httpStatus === 429) return "rate_limited";
+    if (httpStatus >= 500) return "upstream_error";
+    if (httpStatus >= 400) return "query_rejected";
+  }
+  return "unknown";
+}
+
+/**
+ * Reduce an arbitrary thrown value to the four fields above. Never returns a
+ * reference to the original error, so no nested `config`, `request`, `headers`,
+ * `message` or `stack` can reach the log through this object.
+ */
+export function describeSearchFailure(error: unknown): SearchFailureDiagnostic {
+  const shape = (
+    typeof error === "object" && error !== null ? error : {}
+  ) as ErrorShape;
+
+  const rawName = typeof shape.name === "string" ? shape.name : "";
+  const name = SAFE_NAME.test(rawName) ? rawName : "UnknownError";
+
+  // Axios nests the socket-level failure one level down.
+  const cause =
+    typeof shape.cause === "object" && shape.cause !== null
+      ? (shape.cause as ErrorShape)
+      : ({} as ErrorShape);
+  const rawCode =
+    typeof shape.code === "string"
+      ? shape.code
+      : typeof cause.code === "string"
+        ? cause.code
+        : "";
+  const code = SAFE_CODE.test(rawCode) ? rawCode : null;
+
+  const rawStatus =
+    typeof shape.httpStatus === "number"
+      ? shape.httpStatus
+      : typeof cause.httpStatus === "number"
+        ? cause.httpStatus
+        : null;
+  const httpStatus =
+    rawStatus !== null && Number.isInteger(rawStatus) && rawStatus >= 100 && rawStatus <= 599
+      ? rawStatus
+      : null;
+
+  return { name, code, httpStatus, category: classifySearchFailure(code, httpStatus) };
+}
+
+/**
  * The route's failure contract, extracted so tests can invoke it directly.
- * The exception must reach the server log — a bare `catch {}` with a literal
- * message once made every failure indistinguishable. Only the thrown value
- * is logged: no request headers, cookies, API keys, session tokens, customer
- * records or raw search input. The client always sees the same generic 500.
+ * The failure must reach the server log — a bare `catch {}` with a literal
+ * message once made every failure indistinguishable — but only as a sanitised
+ * diagnostic. Nothing derived from the request, the query, the credentials or
+ * the host is ever emitted. The client always sees the same generic 500.
  */
 export function searchFailureResponse(error: unknown) {
-  console.error("Parts search failed:", error);
+  console.error("Parts search failed:", describeSearchFailure(error));
 
   return NextResponse.json(
     { error: "Unable to search parts right now. Please try again." },
     { status: 500 },
   );
 }
-
-/**
- * Test seam for the Typesense client. Production code always resolves the
- * real module client (null when unconfigured); tests override `getClient`
- * to simulate an unconfigured, failing, or succeeding backend without
- * touching auth, the database, or the network.
- */
-export const searchRuntime = {
-  getClient: (): typeof typesense => typesense,
-};
 
 function parsePartSpec(raw: string | null | undefined): PartSpec {
   if (!raw) return {};
@@ -118,10 +206,6 @@ function resolveImageUrls(...candidates: Array<string | null | undefined>) {
 function sanitizeSearchId(value: string): string | null {
   const trimmed = value.trim();
   return /^[A-Za-z0-9._-]+$/.test(trimmed) ? trimmed : null;
-}
-
-function typesenseIdFilter(ids: string[]): string {
-  return `id:=[${ids.join(",")}]`;
 }
 
 export async function GET(request: NextRequest) {
@@ -153,6 +237,17 @@ export async function GET(request: NextRequest) {
     ? Math.min(12, Math.max(1, Number.isFinite(requestedPerPage) ? Math.floor(requestedPerPage) : 12))
     : Math.min(50, Math.max(1, Number.isFinite(requestedPerPage) ? Math.floor(requestedPerPage) : 24));
 
+  // Server-backed result ordering. Unknown keys fall back to relevance so
+  // no client value can reach SQL text; the paged path below applies this,
+  // while part-number/suggest flows keep their exact-first semantics.
+  const sort = parseSearchSort(request.nextUrl.searchParams.get("sort") ?? undefined);
+  // Stock filter over authoritative physical state (active listings with
+  // sellable units). "1" keeps in-stock parts only, "0" out-of-stock only;
+  // anything else leaves stock unfiltered. Firm allow-listing stays
+  // enforced downstream at cart/order time.
+  const inStockParam = (request.nextUrl.searchParams.get("inStock") ?? "").trim();
+  const inStock = inStockParam === "1" ? true : inStockParam === "0" ? false : undefined;
+
   const categorySlug = (request.nextUrl.searchParams.get("category") ?? "").trim().toLowerCase();
   const storefrontCategory = categorySlug ? findStorefrontCategory(categorySlug) : null;
   const hasVehicleParams = Boolean(
@@ -176,13 +271,9 @@ export async function GET(request: NextRequest) {
     );
   }
 
-  if (!searchRuntime.getClient()) {
-    return NextResponse.json(
-      { error: "Search service is not configured" },
-      { status: 503 },
-    );
-  }
-
+  // PostgreSQL is the search backend: there is no separate search service
+  // to be "unconfigured". A missing database surfaces from getDb() below
+  // and is answered by the outer handler as an honest 500.
   try {
     const db = getDb();
     const intent = parseSearchIntent(query || nameContains || "*");
@@ -286,20 +377,13 @@ export async function GET(request: NextRequest) {
       categoryNames = [categoryNameParam];
     }
 
-    const categoryFilter = typesenseCategoryFilter(categoryNames);
-    const brandFilter = brandParam
-      ? `brand:=\`${brandParam.replace(/[`\\]/g, "")}\``
-      : null;
-    const filterClauses = [
-      scopedPartIds ? typesenseIdFilter(scopedPartIds) : null,
-      categoryFilter,
-      brandFilter,
-    ].filter((item): item is string => Boolean(item));
-
     const usePostFilter = Boolean(segmentParam || otherType);
     const useVehicleFilter = Boolean(scopedPartIds) && !suggest;
     const browseQuery = nameContains || query;
-    const typesenseQuery =
+    // Intent-normalised text for PostgreSQL retrieval. "*" marks a pure
+    // browse scope (vehicle/category only), which matches everything the
+    // filters below allow.
+    const searchText =
       useVehicleFilter && (matchedFromQuery || !browseQuery)
         ? "*"
         : browseQuery
@@ -309,8 +393,6 @@ export async function GET(request: NextRequest) {
     const partNumberFetchSize = suggest
       ? suggestFetchSize
       : Math.min(250, Math.max(perPage, 100));
-    const filterBy = filterClauses.length ? filterClauses.join(" && ") : undefined;
-    const searchPage = useVehicleFilter || usePostFilter || intent.isPartNumberQuery ? 1 : page;
     const searchPerPage = useVehicleFilter || usePostFilter
       ? Math.min(250, Math.max(scopedPartIds?.length ?? 24, perPage))
       : intent.isPartNumberQuery
@@ -319,83 +401,23 @@ export async function GET(request: NextRequest) {
           ? suggestFetchSize
           : perPage;
 
-    const defaultSearchParams = {
-      q: typesenseQuery,
-      query_by: "part_number,name,description,brand,category",
-      query_by_weights: "6,5,1,3,2",
-      filter_by: filterBy,
-      page: searchPage,
-      per_page: searchPerPage,
-      prefix: true,
-      num_typos: intent.isPartNumberQuery ? 0 : 1,
-      prioritize_exact_match: true,
-      prioritize_token_position: true,
-      facet_by: "brand,category",
-      max_facet_values: 24,
-    };
-
-    async function searchTypesense(params: Record<string, unknown>) {
-      const client = searchRuntime.getClient();
-      return client!.collections("parts").documents().search(params as never);
-    }
-
-    async function searchPartNumberQueries(queries: string[]) {
-      const uniqueQueries = [...new Set(queries.map((item) => item.trim()).filter(Boolean))];
-      const merged: NonNullable<Awaited<ReturnType<typeof searchTypesense>>["hits"]> = [];
-      const seen = new Set<string>();
-      let found = 0;
-      let facetCounts: unknown = [];
-      for (const q of uniqueQueries) {
-        // Exactly one fallback, and only for a query-shape rejection. Any
-        // infrastructure failure propagates on the first throw instead of being
-        // retried into an opaque 500.
-        const result = await searchWithRankingFallback(
-          searchTypesense,
-          { ...defaultSearchParams, q },
-          {
-            ...defaultSearchParams,
-            q,
-            query_by: "part_number,part_number_search",
-            query_by_weights: "8,6",
-            infix: "off,always",
-            num_typos: 0,
-            drop_tokens_threshold: 0,
-          },
-        );
-        found += typeof result.found === "number" ? result.found : result.hits?.length ?? 0;
-        if (!Array.isArray(facetCounts) || facetCounts.length === 0) {
-          facetCounts = (result as { facet_counts?: unknown }).facet_counts ?? [];
-        }
-        for (const hit of result.hits ?? []) {
-          const doc = (hit.document as PartDocument | undefined) ?? {};
-          const key = String(doc.id || doc.part_number || "");
-          if (!key || seen.has(key)) continue;
-          seen.add(key);
-          merged.push(hit);
-        }
-
-        if (merged.length > 0) {
-          break
-        }
-      }
-      return { hits: merged, found: Math.max(found, merged.length), facet_counts: facetCounts };
-    }
-
-    // Plain shape for the single ranking fallback on the main search path:
-    // identical scoping (query, filters, pagination, facets) but none of the
-    // ranking knobs that stricter Typesense builds reject with 400/422.
-    const fallbackSearchParams = {
-      q: typesenseQuery,
-      query_by: "part_number,name,description,brand,category",
-      filter_by: filterBy,
-      page: searchPage,
-      per_page: searchPerPage,
-      prefix: true,
-      facet_by: "brand,category",
-      max_facet_values: 24,
-    };
-
     const sessionPromise = getServerSession();
+    // Resolved before retrieval so the PostgreSQL WHERE clause can apply
+    // customer-visibility rules server-side. Awaiting the same promise later
+    // (pricing, suggest admin check) is unaffected. Downstream visibility
+    // filtering stays in place as defense in depth.
+    const searchIsAdmin = (await sessionPromise)?.user?.role === "admin";
+
+    // Shared PostgreSQL retrieval filter. Visibility, brand, category and
+    // vehicle scope all live in the query; text matching is added per path.
+    const pgFilterBase = {
+      brand: brandParam || null,
+      categoryNames,
+      scopedPartIds,
+      isAdmin: searchIsAdmin,
+      sort,
+      inStock,
+    };
     const hsnQuery = parseExactHsnQuery(query);
 
     let searchResults;
@@ -441,33 +463,28 @@ export async function GET(request: NextRequest) {
             found: visibleHsnParts.length,
             facet_counts: [],
           }
-        : intent.isPartNumberQuery && typesenseQuery !== "*"
-          ? await searchPartNumberQueries([intent.originalQuery])
-          : await searchWithRankingFallback(
-              searchTypesense,
-              fallbackSearchParams,
-              defaultSearchParams,
-            );
-    } else if (intent.isPartNumberQuery && typesenseQuery !== "*") {
+        : intent.isPartNumberQuery && searchText !== "*"
+          ? await searchPartNumbersPostgres(db, [intent.originalQuery], pgFilterBase, partNumberFetchSize)
+          : await searchPartsFetch(db, { ...pgFilterBase, text: searchText }, searchPerPage);
+    } else if (intent.isPartNumberQuery && searchText !== "*") {
       const digitQuery = partNumberDigits(intent.originalQuery);
       const pnQueries = [intent.originalQuery];
       if (digitQuery && digitQuery.toLowerCase() !== intent.originalQuery.toLowerCase()) {
         pnQueries.push(digitQuery);
       }
-      searchResults = await searchPartNumberQueries(pnQueries);
+      searchResults = await searchPartNumbersPostgres(db, pnQueries, pgFilterBase, partNumberFetchSize);
     } else {
-      // Same single-fallback contract as the part-number path: a rankable
-      // 400/422 retries once with plain parameters; anything else propagates
-      // to the outer handler as an honest 500.
-      searchResults = await searchWithRankingFallback(
-        searchTypesense,
-        fallbackSearchParams,
-        defaultSearchParams,
-      );
+      // Paged PostgreSQL retrieval: one page of ts_rank-ordered rows plus
+      // totals and facets over the full filtered set. Unpaged flows above
+      // fetch a superset the route ranks and slices in memory, as before.
+      searchResults =
+        useVehicleFilter || usePostFilter
+          ? await searchPartsFetch(db, { ...pgFilterBase, text: searchText }, searchPerPage)
+          : await searchPartsPage(db, { ...pgFilterBase, text: searchText }, page, perPage);
     }
 
     const hits = searchResults.hits ?? [];
-    const typesenseFound =
+    const searchFound =
       typeof searchResults.found === "number" ? searchResults.found : hits.length;
     const documentFromHit = (hit: (typeof hits)[number]): PartDocument =>
       ((hit.document as PartDocument | undefined) ?? {}) as PartDocument;
@@ -596,7 +613,7 @@ export async function GET(request: NextRequest) {
       resolveStorefrontPricing(session),
       resolvePensolConfigsForUser(revealPensolRates ? session.user.id : null),
     ]);
-    const typesenseIds = [
+    const searchIds = [
       ...new Set(documents.map((doc) => doc.id).filter((id): id is string => Boolean(id))),
     ];
     const partNumbers = [
@@ -608,7 +625,7 @@ export async function GET(request: NextRequest) {
     ];
 
     const partConditions = [];
-    if (typesenseIds.length) partConditions.push(inArray(part.id, typesenseIds));
+    if (searchIds.length) partConditions.push(inArray(part.id, searchIds));
     if (partNumbers.length) partConditions.push(inArray(part.partNumber, partNumbers));
 
     const dbParts = partConditions.length
@@ -894,7 +911,7 @@ export async function GET(request: NextRequest) {
     const pagedResults = shouldPage
       ? filteredResults.slice((page - 1) * perPage, page * perPage)
       : filteredResults;
-    const found = shouldPage ? filteredResults.length : typesenseFound;
+    const found = shouldPage ? filteredResults.length : searchFound;
 
     type FacetCount = { field_name?: string; counts?: Array<{ value?: string; count?: number }> };
     const facetPayload = (searchResults as { facet_counts?: FacetCount[] }).facet_counts ?? [];
@@ -943,6 +960,8 @@ export async function GET(request: NextRequest) {
       found,
       page,
       perPage,
+      sort,
+      inStock: inStock ?? null,
       facets: { brands, categories },
       vehicles,
       pricing: {
