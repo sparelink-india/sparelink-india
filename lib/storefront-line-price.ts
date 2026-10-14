@@ -17,7 +17,28 @@ export type StorefrontProductRef = {
   manufacturer?: string | null;
 };
 
-export function authorizedPensolSettlement(value: unknown): {
+/**
+ * Decide the Pensol settlement mode from AUTHORITATIVE state, not from the
+ * request body.
+ *
+ * SECURITY: this used to be taken straight from `body.pensolSettlement` and
+ * merely enum-checked. Because "credit" selects the LARGER per-unit discount,
+ * any buyer could maximise their discount by posting `"credit"` with no
+ * entitlement check at all. The client is no longer trusted:
+ *
+ *   - a credit settlement is only honoured for a bank-transfer order, which is
+ *     the only payment mode a credit sale can actually settle against,
+ *   - the dealer must hold a positive AR credit limit with headroom, resolved
+ *     from the database rather than asserted by the caller,
+ *   - otherwise the order falls back to cash, which is the conservative choice.
+ *
+ * `value` is still read so an explicit "cash" is honoured, but it can no longer
+ * upgrade a buyer into the credit tier.
+ */
+export function authorizedPensolSettlement(
+  value: unknown,
+  entitlement: { creditSettlementAllowed: boolean },
+): {
   settlement: PensolSettlement;
   error?: string;
 } {
@@ -25,7 +46,18 @@ export function authorizedPensolSettlement(value: unknown): {
   if (parsed === "invalid") {
     return { settlement: "cash", error: "Payment type must be cash or credit." };
   }
-  return { settlement: parsed ?? "cash" };
+  // `null` means the client sent nothing. It must resolve to CASH, never to
+  // credit: an omitted field must never be interpreted as the more valuable
+  // settlement mode.
+  if (parsed === "cash" || parsed === null) {
+    return { settlement: "cash" };
+  }
+  if (!entitlement.creditSettlementAllowed) {
+    // Not an error: a buyer asking for a credit settlement is simply served the
+    // cash price. Rejecting the order would be worse for them.
+    return { settlement: "cash" };
+  }
+  return { settlement: "credit" };
 }
 
 export function storefrontLineInput(
