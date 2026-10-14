@@ -40,7 +40,14 @@ export function SignOutButton({ className }: SignOutButtonProps) {
       disabled={isSigningOut}
       className={
         className ??
-        "rounded-lg border border-zinc-300 px-3 py-1.5 text-xs font-semibold text-zinc-700 transition-colors hover:bg-zinc-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-950 disabled:cursor-not-allowed disabled:opacity-60"
+        // The defaults were fixed zinc values (border-zinc-300 / text-zinc-700),
+        // so the button stayed dark-on-dark once `html.dark` was set: 1.85:1.
+        // Swapped for the Precision tokens the rest of the account chrome uses
+        // (--sl-rule-2 / --sl-ink-2 / --sl-sunken). The surface stays
+        // transparent, as it was, rather than gaining a background it never
+        // had; `.sl-focus` replaces the old hand-rolled focus ring so the ring
+        // is the system's own brand outline in both themes.
+        "sl-focus rounded-[var(--sl-r)] border border-[var(--sl-rule-2)] px-3 py-1.5 text-xs font-semibold text-[var(--sl-ink-2)] transition-colors hover:bg-[var(--sl-sunken)] disabled:cursor-not-allowed disabled:opacity-60"
       }
     >
       {isSigningOut ? t("signOutBusy") : t("signOut")}

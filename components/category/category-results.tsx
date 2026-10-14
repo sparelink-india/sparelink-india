@@ -19,6 +19,9 @@ type Listing = {
   id: string;
   dealerName: string;
   pricePaise: number;
+  /** Present in the catalogue response and rendered by the other product
+   *  surfaces; the local type simply had not declared it. */
+  mrpPaise?: number | null;
   listInclusivePaise?: number;
   netInclusivePaise?: number;
   discountPercent?: number;
@@ -54,36 +57,44 @@ export type CategoryBrowseQuery = {
   brand?: string;
   make?: string;
   model?: string;
+  /** Server-backed result ordering (relevance default) and stock filter. */
+  sort?: string;
+  inStock?: boolean;
 };
 
 /**
  * Product-grid skeleton that mirrors the real card shape (image well, brand
  * line, two title lines, price, stock, button) so the layout does not jump
- * when results arrive. Uses `.sl-skeleton`, which is already disabled under
+ * when results arrive. Uses `.sl-skel`, which is already disabled under
  * `prefers-reduced-motion`.
  */
 function CategorySkeleton({ label }: { label: string }) {
   return (
     <div aria-busy="true" aria-live="polite">
       <span className="sr-only">{label}</span>
-      <div className="mt-8 flex items-center gap-3">
-        <div className="sl-skeleton h-5 w-32" />
-        <div className="sl-skeleton h-4 w-20" />
+      <div className="flex items-center gap-3 border-b border-[var(--sl-rule)] pb-5">
+        <div className="sl-skel h-8 w-56" />
+        <div className="sl-skel ml-auto h-8 w-16" />
       </div>
-      <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+      <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
         {Array.from({ length: 8 }, (_, index) => (
           <div
             key={index}
-            className="sl-v2-card overflow-hidden p-3"
+            className="sl-panel overflow-hidden p-3"
             aria-hidden="true"
           >
-            <div className="sl-skeleton aspect-square w-full" />
-            <div className="sl-skeleton mt-3 h-3 w-20" />
-            <div className="sl-skeleton mt-2 h-4 w-full" />
-            <div className="sl-skeleton mt-1.5 h-4 w-3/4" />
-            <div className="sl-skeleton mt-3 h-5 w-28" />
-            <div className="sl-skeleton mt-2 h-3 w-16" />
-            <div className="sl-skeleton mt-3 h-11 w-full rounded-[var(--sl-radius)]" />
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:gap-4">
+              <div className="sl-skel mx-auto aspect-square w-full max-w-[13rem] sm:mx-0 sm:w-[11rem] md:w-[12.5rem]" />
+              <div className="min-w-0 flex-1">
+                <div className="sl-skel h-3 w-16" />
+                <div className="sl-skel mt-2.5 h-4 w-full" />
+                <div className="sl-skel mt-1.5 h-4 w-3/4" />
+                <div className="mt-3 flex items-center justify-between gap-2 border-t border-[var(--sl-rule)] pt-2.5">
+                  <div className="sl-skel h-5 w-24" />
+                  <div className="sl-skel h-8 w-24" />
+                </div>
+              </div>
+            </div>
           </div>
         ))}
       </div>
@@ -137,28 +148,33 @@ function FilterSidebar({
 }) {
   const [brandOpen, setBrandOpen] = useState(true);
   const [vehicleOpen, setVehicleOpen] = useState(true);
+  const { t } = useI18n();
   const hasActive = Boolean(activeBrand || activeCategory || activeMake || activeModel);
   const SHOWN = 8;
 
   return (
-    <div className="sl-surface p-4">
-      <div className="flex items-center justify-between gap-2">
-        <h2 className="sl-h3">{heading}</h2>
+    <div className="sl-panel">
+      <div className="flex items-center justify-between gap-2 border-b border-[var(--sl-rule)] bg-[var(--sl-sunken)] px-3 py-2.5">
+        <h2 className="sl-label mb-0 flex items-center gap-2">
+          <span className="inline-block h-3 w-[3px] bg-[var(--sl-brand)]" aria-hidden />
+          {heading}
+        </h2>
         {hasActive ? (
           <button
             type="button"
             onClick={onReset}
-            className="min-h-9 rounded-[var(--sl-radius-sm)] px-2 text-xs font-semibold text-[var(--sl-primary)] underline-offset-2 hover:underline"
+            className="sl-focus text-[0.75rem] font-bold text-[var(--sl-brand)] underline-offset-2 hover:underline"
           >
-            Clear
+            {t("common.clearFilters")}
           </button>
         ) : null}
       </div>
+      <div className="px-3 pb-3">
 
       {brands.length > 0 ? (
-        <div className="mt-4 border-t border-slate-100 pt-3">
+        <div className="mt-3 border-t border-[var(--sl-rule)] pt-3">
           <FilterGroup
-            label="Brand"
+            label={t("search.brandFilter")}
             open={brandOpen}
             onToggle={() => setBrandOpen((v) => !v)}
             count={brands.length}
@@ -179,8 +195,8 @@ function FilterSidebar({
       ) : null}
 
       {categories.length > 0 ? (
-        <div className="mt-3 border-t border-slate-100 pt-3">
-          <FilterGroup label="Category" open onToggle={() => undefined} count={categories.length}>
+        <div className="border-t border-[var(--sl-rule)] pt-3">
+          <FilterGroup label={t("search.categoryFilter")} open onToggle={() => undefined} count={categories.length}>
             {categories.slice(0, SHOWN).map((option) => (
               <FilterRow
                 key={`cat-${option.value}`}
@@ -200,9 +216,9 @@ function FilterSidebar({
       ) : null}
 
       {vehicles.length > 0 ? (
-        <div className="mt-3 border-t border-slate-100 pt-3">
+        <div className="border-t border-[var(--sl-rule)] pt-3">
           <FilterGroup
-            label="Vehicle / Fitment"
+            label={t("search.tabVehicles")}
             open={vehicleOpen}
             onToggle={() => setVehicleOpen((v) => !v)}
             count={vehicles.length}
@@ -227,8 +243,11 @@ function FilterSidebar({
       ) : null}
 
       {brands.length === 0 && categories.length === 0 && vehicles.length === 0 ? (
-        <p className="mt-3 text-xs text-[var(--sl-muted)]">No filters available.</p>
+        <p className="sl-small mt-3 border-t border-[var(--sl-rule)] pt-3">
+          {t("category.noFilters")}
+        </p>
       ) : null}
+      </div>
     </div>
   );
 }
@@ -252,26 +271,28 @@ function FilterGroup({
         type="button"
         onClick={onToggle}
         aria-expanded={open}
-        className="flex min-h-11 w-full items-center justify-between gap-2 text-left text-sm font-semibold text-[var(--sl-text)]"
+        className="sl-focus flex min-h-11 w-full items-center justify-between gap-2 text-left"
       >
-        <span>
-          {label}
-          <span className="ml-1.5 text-xs font-normal text-[var(--sl-muted)]">({count})</span>
+        <span className="sl-label mb-0">{label}</span>
+        <span className="flex items-center gap-2">
+          <span className="sl-num text-[0.6875rem] font-semibold text-[var(--sl-ink-3)]">
+            {count}
+          </span>
+          <svg
+            className={`h-3.5 w-3.5 shrink-0 text-[var(--sl-ink-3)] transition-transform duration-200 ${open ? "rotate-180" : ""}`}
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+            strokeWidth="2.2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            aria-hidden
+          >
+            <path d="M6 9l6 6 6-6" />
+          </svg>
         </span>
-        <svg
-          className={`h-3.5 w-3.5 shrink-0 text-[var(--sl-muted)] transition-transform duration-200 ${open ? "rotate-180" : ""}`}
-          fill="none"
-          viewBox="0 0 24 24"
-          stroke="currentColor"
-          strokeWidth="2.2"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          aria-hidden
-        >
-          <path d="M6 9l6 6 6-6" />
-        </svg>
       </button>
-      {open ? <div className="mt-1 space-y-0.5">{children}</div> : null}
+      {open ? <div className="mt-1 pb-1">{children}</div> : null}
     </div>
   );
 }
@@ -292,14 +313,16 @@ function FilterRow({
       type="button"
       onClick={onClick}
       aria-pressed={active}
-      className={`flex min-h-10 w-full items-center justify-between gap-2 rounded-[var(--sl-radius-sm)] px-2 text-left text-[13px] transition-colors duration-200 ${
+      className={`sl-focus flex min-h-10 w-full items-center justify-between gap-2 border-l-2 px-2 text-left text-[0.8125rem] transition-colors ${
         active
-          ? "bg-[var(--sl-primary-soft)] font-semibold text-[var(--sl-primary)]"
-          : "text-[var(--sl-text-soft)] hover:bg-[var(--sl-surface-sunk)]"
+          ? "border-[var(--sl-brand)] bg-[var(--sl-brand-soft)] font-semibold text-[var(--sl-brand)]"
+          : "border-transparent text-[var(--sl-ink-2)] hover:bg-[var(--sl-sunken)] hover:text-[var(--sl-ink)]"
       }`}
     >
       <span className="min-w-0 truncate">{label}</span>
-      <span className="shrink-0 text-[11px] text-[var(--sl-muted)]">{count}</span>
+      <span className="sl-num shrink-0 text-[0.6875rem] text-[var(--sl-ink-3)]">
+        {count}
+      </span>
     </button>
   );
 }
@@ -321,8 +344,24 @@ function buildSearchUrl(browse: CategoryBrowseQuery, page: number) {
   if (browse.brand) params.set("brand", browse.brand);
   if (browse.make) params.set("make", browse.make);
   if (browse.model) params.set("model", browse.model);
+  // Server-backed ordering and stock filter. `sort` passes through only when
+  // set (the API defaults to relevance); `inStock` is sent as 1/0 only when
+  // the checkbox state is explicit, so unrelated flows keep prior behaviour.
+  if (browse.sort) params.set("sort", browse.sort);
+  if (browse.inStock !== undefined) params.set("inStock", browse.inStock ? "1" : "0");
   return `/api/search/parts?${params.toString()}`;
 }
+
+export type CategoryResultsProps = {
+  path: string;
+  title: string;
+  titleKey?: MessageKey;
+  description?: string;
+  descriptionKey?: MessageKey;
+  image?: string | null;
+  browse: CategoryBrowseQuery;
+  crumbs: CategoryCrumb[];
+};
 
 export function CategoryResults({
   path,
@@ -333,16 +372,7 @@ export function CategoryResults({
   image,
   browse,
   crumbs,
-}: {
-  path: string;
-  title: string;
-  titleKey?: MessageKey;
-  description?: string;
-  descriptionKey?: MessageKey;
-  image?: string | null;
-  browse: CategoryBrowseQuery;
-  crumbs: CategoryCrumb[];
-}) {
+}: CategoryResultsProps) {
   const { t } = useI18n();
   const heading = titleKey ? t(titleKey) : title;
   const summary = descriptionKey ? t(descriptionKey) : description;
@@ -363,6 +393,17 @@ export function CategoryResults({
   const [detailTarget, setDetailTarget] = useState<{ partId?: string; sku?: string } | null>(null);
   const [retryToken, setRetryToken] = useState(0);
   const [filtersOpen, setFiltersOpen] = useState(false);
+  // Keyboard users cannot reach the backdrop click, so Escape must close the
+  // mobile filter sheet too. Scoped to the open state and cleaned up so the
+  // page-level search shortcuts keep working everywhere else.
+  useEffect(() => {
+    if (!filtersOpen) return;
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setFiltersOpen(false);
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [filtersOpen]);
   // Local filter selections. Merged over the route-supplied `browse` so a
   // filter genuinely changes the request the API receives (and therefore the
   // results), using parameters the endpoint already supports.
@@ -371,11 +412,15 @@ export function CategoryResults({
     categoryName?: string;
     make?: string;
     model?: string;
+    sort?: string;
+    inStock?: boolean;
   }>({});
   const activeBrand = filterState.brand ?? "";
   const activeCategory = filterState.categoryName ?? "";
   const activeMake = filterState.make ?? "";
   const activeModel = filterState.model ?? "";
+  const activeSort = filterState.sort ?? "";
+  const activeInStock = filterState.inStock ?? false;
   const pagedUrl = buildSearchUrl(
     { ...browse, ...filterState },
     activePage,
@@ -476,14 +521,29 @@ export function CategoryResults({
 
   return (
     <div>
-      <nav className="text-sm text-[var(--sl-muted)]" aria-label="Breadcrumb">
+      <nav
+        className="flex flex-wrap items-center gap-x-1.5 gap-y-1 rounded-[var(--sl-r)] border border-[var(--sl-rule)] bg-[var(--sl-sunken)] px-3 py-2"
+        aria-label={t("a11y.breadcrumb")}
+      >
         {crumbs.map((crumb, index) => (
-          <span key={`${crumb.href}-${index}`}>
-            {index > 0 ? " / " : null}
+          <span key={`${crumb.href}-${index}`} className="flex items-center gap-1.5">
+            {index > 0 ? (
+              <span aria-hidden className="text-[var(--sl-rule-strong)]">
+                /
+              </span>
+            ) : null}
             {index === crumbs.length - 1 ? (
-              <span className="text-slate-800">{crumb.key ? t(crumb.key) : crumb.label}</span>
+              <span
+                aria-current="page"
+                className="text-[0.8125rem] font-bold text-[var(--sl-ink)]"
+              >
+                {crumb.key ? t(crumb.key) : crumb.label}
+              </span>
             ) : (
-              <Link href={crumb.href} className="hover:underline">
+              <Link
+                href={crumb.href}
+                className="sl-focus text-[0.8125rem] text-[var(--sl-ink-3)] transition-colors hover:text-[var(--sl-brand)]"
+              >
                 {crumb.key ? t(crumb.key) : crumb.label}
               </Link>
             )}
@@ -496,34 +556,45 @@ export function CategoryResults({
         it is stated once, above the filters and the grid, rather than repeated
         above the grid itself.
       */}
-      <div className="sl-v2-card mt-6 flex flex-wrap items-center gap-4 p-4 sm:p-5">
+      <div className="mt-4 flex flex-wrap items-center gap-4 border-b border-[var(--sl-rule)] pb-5 sm:gap-5">
         {image ? (
-          <div className="relative h-14 w-14 shrink-0 overflow-hidden rounded-[var(--sl-radius-sm)] bg-[var(--sl-surface-sunk)]">
+          <div className="sl-panel-sunk h-16 w-16 shrink-0 sm:h-20 sm:w-20">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src={image}
               alt=""
               width={128}
               height={128}
-              className="h-full w-full object-contain p-1.5"
+              className="h-full w-full object-contain p-2"
             />
           </div>
         ) : null}
         <div className="min-w-0 flex-1">
-          <h1 className="sl-h1">{heading}</h1>
-          {summary ? <p className="sl-body mt-1.5">{summary}</p> : null}
+          <h1 className="sl-display flex items-center gap-2.5">
+            <span
+              className="hidden h-6 w-[3px] shrink-0 bg-[var(--sl-brand)] sm:block"
+              aria-hidden
+            />
+            {heading}
+          </h1>
+          {summary ? <p className="sl-body mt-2 max-w-2xl">{summary}</p> : null}
         </div>
-        {loading ? (
-          <div
-            className="sl-skeleton h-6 w-20 shrink-0"
-            role="status"
-            aria-live="polite"
-          />
-        ) : (
-          <span className="sl-v2-badge sl-v2-badge-brand shrink-0">
-            {found} {found === 1 ? t("category.item") : t("category.items")}
-          </span>
-        )}
+        {/* Live count as a figure rather than a pill, with a reserved box so
+            the heading never reflows when the count resolves. */}
+        <div className="shrink-0 border-l border-[var(--sl-rule)] pl-4 sm:pl-5">
+          {loading ? (
+            <div className="sl-skel h-8 w-16" role="status" aria-live="polite" />
+          ) : (
+            <>
+              <p className="sl-num text-[1.75rem] font-extrabold leading-none tracking-tight text-[var(--sl-ink)]">
+                {found}
+              </p>
+              <p className="sl-label mb-0 mt-1 !text-[0.625rem]">
+                {found === 1 ? t("category.item") : t("category.items")}
+              </p>
+            </>
+          )}
+        </div>
       </div>
 
       {error ? (
@@ -541,12 +612,12 @@ export function CategoryResults({
         Desktop: a sticky sidebar beside the product grid. Both render the
         same FilterSidebar so behaviour cannot drift between breakpoints.
       */}
-      <div className="mt-5 flex items-center justify-between gap-3 lg:hidden">
+      <div className="mt-4 flex items-center justify-between gap-3 border-y border-[var(--sl-rule)] py-2 lg:hidden">
         <button
           type="button"
           onClick={() => setFiltersOpen(true)}
           aria-expanded={filtersOpen}
-          className="sl-v2-btn sl-v2-btn-secondary min-h-11 px-4 text-sm"
+          className="sl-btn sl-btn-secondary !min-h-10 px-3.5 text-[0.8125rem]"
         >
           <svg
             className="h-4 w-4"
@@ -558,22 +629,22 @@ export function CategoryResults({
           >
             <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M7 12h10M10 18h4" />
           </svg>
-          Filters
+          {t("search.filters")}
         </button>
         {loading ? null : (
           <button
             type="button"
             onClick={() => setFilterState({})}
-            className="sl-v2-btn sl-v2-btn-ghost !min-h-11 !text-[0.8125rem]"
+            className="sl-btn sl-btn-ghost !min-h-10 !text-[0.8125rem]"
           >
             {t("common.clearFilters")}
           </button>
         )}
       </div>
 
-      <div className="mt-5 grid gap-6 lg:grid-cols-[16rem_minmax(0,1fr)]">
+      <div className="mt-5 grid gap-5 lg:grid-cols-[17rem_minmax(0,1fr)]">
         <aside className="hidden lg:block">
-          <div className="sticky top-24">
+          <div className="sticky top-[var(--v3-header-h)]">
             <FilterSidebar
               heading={t("category.categories")}
               brands={brands}
@@ -605,19 +676,77 @@ export function CategoryResults({
             />
           ) : (
             <>
-              <div className="mt-4 grid grid-cols-2 gap-3 xl:grid-cols-3">
+              {/* Column count is capped at 3. The page is a two-column layout
+                  from `lg` up - a 17rem filter rail plus this results column -
+                  and the container itself is capped at 1280px, so at 2xl this
+                  column is only ~940px wide. A 4th column therefore fitted
+                  ~226px cards, and because the image well was a FIXED
+                  `md:w-[12.5rem]` (200px) with `shrink-0`, it consumed the whole
+                  card: 226 - 24 (p-3) - 200 - 16 (gap) = -14px, so the
+                  information column collapsed to ZERO width. The image rendered
+                  perfectly and the name, part number, price and CTA were clipped
+                  away - exactly the "image present, details missing" report.
+                  Three columns keeps cards around 305px. */}
+              <div className="mb-3 flex flex-wrap items-center gap-x-4 gap-y-2">
+                <label
+                  htmlFor="sl-sort"
+                  className="text-[0.8125rem] font-medium text-[var(--sl-ink-soft)]"
+                >
+                  {t("search.sortBy")}
+                </label>
+                <select
+                  id="sl-sort"
+                  value={activeSort}
+                  onChange={(event) => {
+                    const value = event.target.value;
+                    setFilterState((prev) => ({
+                      ...prev,
+                      sort: value || undefined,
+                    }));
+                  }}
+                  className="sl-input !h-10 !w-auto pr-8 text-[0.8125rem]"
+                >
+                  <option value="">{t("search.relevance")}</option>
+                  <option value="name_asc">{t("search.sortNameAsc")}</option>
+                  <option value="name_desc">{t("search.sortNameDesc")}</option>
+                </select>
+                <label
+                  htmlFor="sl-instock"
+                  className="inline-flex cursor-pointer items-center gap-2 text-[0.8125rem] font-medium text-[var(--sl-ink-soft)]"
+                >
+                  <input
+                    id="sl-instock"
+                    type="checkbox"
+                    checked={activeInStock}
+                    onChange={(event) => {
+                      const checked = event.target.checked;
+                      setFilterState((prev) => ({
+                        ...prev,
+                        inStock: checked || undefined,
+                      }));
+                    }}
+                    className="h-4 w-4 accent-[#7a1233]"
+                  />
+                  {t("search.inStock")}
+                </label>
+              </div>
+              <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
                 {results.map((hit, index) => {
               const partData = hit.document ?? {};
               const listing = hit.listings?.[0];
               return (
                 <article
                   key={partData.id || partData.part_number || index}
-                  className="sl-v2-card sl-v2-card-hover overflow-hidden p-3 sm:p-4"
+                  className="sl-panel overflow-hidden p-3 transition-[box-shadow,transform] duration-150 ease-[var(--sl-ease)] hover:-translate-y-0.5 hover:shadow-[var(--sl-e-3)]"
                 >
-                  <div className="flex items-start gap-3 sm:gap-4">
+                  <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:gap-4">
+                    {/* The well is a share of the card, not a fixed width, and
+                        `shrink-0` is dropped from `sm` up so a narrow card can
+                        never let the image starve the information column again.
+                        The square ratio is preserved by `aspect-square`. */}
                     <button
                       type="button"
-                      className="h-[160px] w-[160px] shrink-0 overflow-hidden rounded-[var(--sl-radius)] bg-gradient-to-b from-white to-brand-50/50 min-[430px]:h-[168px] min-[430px]:w-[168px] md:h-[240px] md:w-[250px]"
+                      className="sl-panel-sunk mx-auto aspect-square w-full max-w-[13rem] shrink sm:mx-0 sm:w-[42%] sm:max-w-[12.5rem] md:w-[45%]"
                       onClick={() =>
                         setDetailTarget({
                           partId: partData.id,
@@ -639,7 +768,7 @@ export function CategoryResults({
                         height={240}
                         loading={index < 4 ? "eager" : "lazy"}
                         decoding="async"
-                        className="h-full w-full object-contain p-2"
+                        className="h-full w-full object-contain p-3"
                         onError={(event) => {
                           const el = event.currentTarget as HTMLImageElement;
                           const original = hit.imageUrl || listing?.imageUrl;
@@ -651,15 +780,20 @@ export function CategoryResults({
                         }}
                       />
                     </button>
-                    <div className="min-w-0 flex-1 overflow-hidden">
-                      <h3 className="line-clamp-3 break-words sl-h3">
+                    <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
+                      <h3 className="sl-h3 sl-clamp-2 break-words">
                         {partData.name || t("product.partFallback")}
                       </h3>
-                      <p className="mt-1 text-xs text-[var(--sl-muted)]">
-                        {[partData.brand, partData.part_number].filter(Boolean).join(" · ")}
-                      </p>
+                      {partData.brand ? (
+                        <p className="sl-label mb-0 mt-1.5 !text-[0.5625rem]">
+                          {partData.brand}
+                        </p>
+                      ) : null}
+                      {partData.part_number ? (
+                        <p className="sl-partno mt-1">{partData.part_number}</p>
+                      ) : null}
                       {listing ? (
-                        <div className="mt-2">
+                        <div className="mt-auto flex flex-wrap items-baseline gap-x-2 gap-y-1 border-t border-[var(--sl-rule)] pt-2.5">
                           <InclusivePrice
                             pricePaise={listing.pricePaise}
                             listInclusivePaise={listing.listInclusivePaise}
@@ -668,6 +802,12 @@ export function CategoryResults({
                             gstRate={listing.gstRate}
                             align="left"
                           />
+                          {listing.mrpPaise && listing.mrpPaise > listing.pricePaise ? (
+                            <p className="sl-price-strike">
+                              {t("price.mrp")} ₹
+                              {(listing.mrpPaise / 100).toLocaleString("en-IN")}
+                            </p>
+                          ) : null}
                           <button
                             type="button"
                             disabled={
@@ -680,7 +820,7 @@ export function CategoryResults({
                               )
                             }
                             onClick={() => void addToCart(listing.id)}
-                            className="sl-v2-btn sl-v2-btn-primary mt-2 min-h-10 px-3 text-xs disabled:opacity-50"
+                            className="sl-btn sl-btn-primary sl-btn-sm ml-auto !min-h-9"
                           >
                             {!isAuthoritativeSellingPricePaise(
                               listing.listInclusivePaise,
@@ -694,7 +834,9 @@ export function CategoryResults({
                           </button>
                         </div>
                       ) : (
-                        <p className="mt-2 text-xs text-[var(--sl-muted)]">{t("product.noListing")}</p>
+                        <p className="sl-small mt-2 border-t border-[var(--sl-rule)] pt-2.5">
+                          {t("product.noListing")}
+                        </p>
                       )}
                     </div>
                   </div>
@@ -703,27 +845,30 @@ export function CategoryResults({
             })}
           </div>
           {totalPages > 1 ? (
-            <div className="mt-8 flex flex-wrap items-center gap-3">
+            <nav
+              className="mt-8 flex items-center justify-center gap-3 border-t border-[var(--sl-rule)] pt-5"
+              aria-label={t("search.page", { page: activePage, pages: totalPages })}
+            >
               <button
                 type="button"
                 disabled={activePage <= 1}
                 onClick={() => goToPage(activePage - 1)}
-                className="min-h-10 rounded-[var(--sl-radius-sm)] border border-[var(--sl-border)] bg-white px-4 text-sm font-semibold disabled:opacity-40"
+                className="sl-btn sl-btn-secondary sl-btn-sm"
               >
                 {t("search.prev")}
               </button>
-              <p className="text-sm text-[var(--sl-text-soft)]">
+              <p className="sl-num px-2 text-[0.8125rem] font-semibold text-[var(--sl-ink-2)]">
                 {t("search.page", { page: activePage, pages: totalPages })}
               </p>
               <button
                 type="button"
                 disabled={activePage >= totalPages}
                 onClick={() => goToPage(activePage + 1)}
-                className="min-h-10 rounded-[var(--sl-radius-sm)] border border-[var(--sl-border)] bg-white px-4 text-sm font-semibold disabled:opacity-40"
+                className="sl-btn sl-btn-secondary sl-btn-sm"
               >
                 {t("search.next")}
               </button>
-            </div>
+            </nav>
           ) : null}
         </>
       )}
@@ -743,15 +888,17 @@ export function CategoryResults({
             type="button"
             aria-label={t("common.close")}
             onClick={() => setFiltersOpen(false)}
-            className="absolute inset-0 bg-brand-950/60 backdrop-blur-[2px]"
+            className="absolute inset-0 bg-[var(--sl-overlay)] backdrop-blur-[2px]"
           />
-          <div className="relative max-h-[85dvh] w-full overflow-y-auto rounded-t-2xl bg-[var(--sl-cream)] p-4 shadow-[0_-20px_50px_-20px_rgba(42,8,18,0.6)]">
-            <div className="mb-3 flex items-center justify-between gap-3">
-              <h2 className="sl-h2 text-base">{t("category.categories")}</h2>
+          <div className="relative flex max-h-[85dvh] w-full flex-col overflow-hidden rounded-t-[var(--sl-r-lg)] bg-[var(--sl-page)] shadow-[var(--sl-e-3)]">
+            {/* Sheet header is a sticky ruled bar, so the close control and the
+                result count stay reachable while a long facet list scrolls. */}
+            <div className="flex items-center justify-between gap-3 border-b border-[var(--sl-rule)] bg-[var(--sl-surface)] px-4 py-3">
+              <h2 className="sl-h2">{t("category.categories")}</h2>
               <button
                 type="button"
                 onClick={() => setFiltersOpen(false)}
-                className="sl-v2-focus-invert flex h-9 w-9 items-center justify-center rounded-full border border-[var(--sl-border)] bg-white text-[var(--sl-primary)]"
+                className="sl-focus flex h-9 w-9 items-center justify-center rounded-[var(--sl-r)] border border-[var(--sl-rule-strong)] bg-[var(--sl-surface)] text-[var(--sl-brand)]"
                 aria-label={t("common.close")}
               >
                 <svg
@@ -767,6 +914,7 @@ export function CategoryResults({
                 </svg>
               </button>
             </div>
+            <div className="min-h-0 flex-1 overflow-y-auto p-4">
             <FilterSidebar
               heading={t("category.categories")}
               brands={brands}
@@ -779,13 +927,20 @@ export function CategoryResults({
               onChange={(patch) => setFilterState((prev) => ({ ...prev, ...patch }))}
               onReset={() => setFilterState({})}
             />
-            <button
-              type="button"
-              onClick={() => setFiltersOpen(false)}
-              className="sl-v2-btn sl-v2-btn-primary mt-3 min-h-11 w-full"
-            >
-              {loading ? t("common.loading") : `${found} ${found === 1 ? "item" : "items"}`}
-            </button>
+            </div>
+            {/* Apply bar pinned to the bottom of the sheet, on a hairline, so
+                it never scrolls away from the thumb. */}
+            <div className="border-t border-[var(--sl-rule)] bg-[var(--sl-surface)] p-3">
+              <button
+                type="button"
+                onClick={() => setFiltersOpen(false)}
+                className="sl-btn sl-btn-primary w-full"
+              >
+                {loading
+                  ? t("common.loading")
+                  : `${found} ${found === 1 ? t("category.item") : t("category.items")}`}
+              </button>
+            </div>
           </div>
         </div>
       ) : null}

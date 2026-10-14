@@ -14,22 +14,26 @@ export function BrandLogo({
 }) {
   const [failed, setFailed] = useState(false);
 
+  /* The mark is exactly 2:1 (1774x887), so locking the width and the height to
+     the same ratio gives a fixed logo box that cannot reflow the header row at
+     any viewport. `object-contain` still guards against distortion if the
+     asset is ever replaced with a different ratio. */
   const imgClass = compact
     ? "h-11 w-auto max-w-[150px] object-contain object-left"
-    : "h-11 w-auto max-w-[min(150px,40vw)] object-contain object-left lg:h-[72px] lg:max-w-[220px] xl:h-[88px] xl:max-w-[280px]";
+    : "h-11 w-[88px] object-contain object-left md:h-[60px] md:w-[120px] lg:h-[72px] lg:w-[144px]";
 
   return (
     <Link
       href="/"
       aria-label="SpareLink India home"
-      className="inline-flex items-center rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-600"
+      className="inline-flex items-center rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--sl-brand-on-dark)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--sl-graphite)]"
     >
       {failed ? (
         <span
           className={
             invert
-              ? "text-lg font-extrabold tracking-tight text-white sm:text-xl"
-              : "text-lg font-extrabold tracking-tight text-brand-700 sm:text-xl"
+              ? "text-lg font-extrabold tracking-tight text-[var(--sl-graphite)]"
+              : "text-lg font-extrabold tracking-tight text-[var(--sl-brand-ink)]"
           }
         >
           SPARELINK INDIA

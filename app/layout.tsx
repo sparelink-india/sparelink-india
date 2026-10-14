@@ -1,11 +1,22 @@
 import type { Metadata, Viewport } from "next";
 import type { ReactNode } from "react";
-import { Geist, Geist_Mono, Noto_Sans_Devanagari } from "next/font/google";
+import { Geist, Geist_Mono, Noto_Sans_Devanagari, Space_Grotesk, JetBrains_Mono } from "next/font/google";
 import { cookies } from "next/headers";
+import { AnalyticsRoot } from "@/components/analytics/analytics-root";
 import { PasswordChangeGuard } from "@/components/password-change-guard";
 import { PreferencesProvider } from "@/components/preferences-provider";
 import { LOCALE_COOKIE, PREFERENCE_BOOTSTRAP, THEME_COOKIE } from "@/lib/i18n";
 import "./globals.css";
+// V3 storefront system. Imported after globals.css so the V2 stylesheet keeps
+// serving any page that has not been migrated yet; V3 pages use the v3-*
+// classes and never mix the two vocabularies in one component.
+import "./v3.css";
+// "Precision" design system (generation 4) — the TARGET visual language.
+// Imported last so it wins any equal-specificity collision. Token and class
+// names are namespaced `--sl-*` / `.sl-*`, so it cannot accidentally restyle a
+// surface that has not been migrated yet. See the header of app/sparelink.css
+// for the migration plan; do not add new surfaces to globals.css or v3.css.
+import "./sparelink.css";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -21,6 +32,20 @@ const notoDevanagari = Noto_Sans_Devanagari({
   variable: "--font-hi",
   subsets: ["devanagari"],
   weight: ["400", "600", "700"],
+});
+
+const spaceGrotesk = Space_Grotesk({
+  variable: "--font-space-grotesk",
+  subsets: ["latin"],
+  weight: ["400", "500", "600", "700"],
+  display: "swap",
+});
+
+const jetbrainsMono = JetBrains_Mono({
+  variable: "--font-jetbrains-mono",
+  subsets: ["latin"],
+  weight: ["400", "500", "600", "700"],
+  display: "swap",
 });
 
 const siteDescription =
@@ -74,7 +99,7 @@ export default async function RootLayout({
     <html
       lang={locale}
       suppressHydrationWarning
-      className={`${geistSans.variable} ${geistMono.variable} ${notoDevanagari.variable} h-full antialiased ${theme}`.trim()}
+      className={`${geistSans.variable} ${geistMono.variable} ${notoDevanagari.variable} ${spaceGrotesk.variable} ${jetbrainsMono.variable} h-full antialiased ${theme}`.trim()}
     >
       <head>
         <script dangerouslySetInnerHTML={{ __html: PREFERENCE_BOOTSTRAP }} />
@@ -82,6 +107,17 @@ export default async function RootLayout({
       <body className="flex min-h-full flex-col bg-background font-sans text-foreground">
         <PreferencesProvider initialLocale={locale} initialTheme={themeName}>
           <PasswordChangeGuard />
+          {/*
+            Customer Intelligence & Experience Analytics.
+
+            Mounted above the page content so it observes route changes for the
+            whole site. It renders nothing visible except the consent banner, which
+            appears only until the customer has answered. No V3 storefront layout,
+            class or token is changed by its presence.
+
+            Default consent is DENIED: nothing is measured until someone opts in.
+          */}
+          <AnalyticsRoot />
           {children}
         </PreferencesProvider>
       </body>

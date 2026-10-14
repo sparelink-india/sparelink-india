@@ -3,7 +3,7 @@
 import { useI18n } from "@/components/preferences-provider";
 
 /**
- * V2 order status timeline.
+ * Order status timeline (Precision restyle of the V2/V3 original).
  *
  * IMPORTANT — these stages are NOT invented. They are exactly the order
  * statuses the application writes and reads:
@@ -53,7 +53,7 @@ export function OrderStatusTimeline({
   if (!known) {
     return (
       <div
-        className={`rounded-[var(--sl-radius-sm)] border border-[var(--sl-border-strong)] bg-[var(--sl-surface-sunk)] px-4 py-3 ${className}`}
+        className={`rounded-[var(--sl-r)] border border-[var(--sl-rule-2)] bg-[var(--sl-sunken)] px-4 py-3 ${className}`}
       >
         <p className="sl-small">
           {t("track.statusUnknown", { status: status || t("track.statusNone") })}
@@ -66,9 +66,9 @@ export function OrderStatusTimeline({
     return (
       <div
         role="status"
-        className={`rounded-[var(--sl-radius)] border border-[#f0c8c5] bg-[var(--sl-danger-soft)] px-4 py-3.5 ${className}`}
+        className={`rounded-[var(--sl-r)] border border-[var(--sl-bad-line)] bg-[var(--sl-bad-soft)] px-4 py-3.5 ${className}`}
       >
-        <p className="sl-h3 !text-[var(--sl-danger)]">{t("track.stageCancelled")}</p>
+        <p className="sl-h3 text-[var(--sl-bad)]">{t("track.stageCancelled")}</p>
         <p className="sl-small mt-1">{t("track.cancelledBody")}</p>
       </div>
     );
@@ -88,12 +88,12 @@ export function OrderStatusTimeline({
                   so the line stops at the end of the flow. */}
               <div className="flex flex-col items-center">
                 <span
-                  className={`inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full border-2 ${
+                  className={`inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-[var(--sl-r-xs)] border-2 ${
                     done
-                      ? "border-[var(--sl-primary)] bg-[var(--sl-primary)] text-white"
+                      ? "border-[var(--sl-brand)] bg-[var(--sl-brand)] text-white"
                       : currentStep
-                        ? "border-[var(--sl-primary)] bg-white text-[var(--sl-primary)]"
-                        : "border-[var(--sl-border-strong)] bg-white text-transparent"
+                        ? "border-[var(--sl-brand)] bg-[var(--sl-surface)] text-[var(--sl-brand-ink)]"
+                        : "border-[var(--sl-rule-strong)] bg-[var(--sl-surface)] text-transparent"
                   }`}
                   aria-hidden
                 >
@@ -110,13 +110,13 @@ export function OrderStatusTimeline({
                       <path d="M4 12.5l5 5L20 6.5" />
                     </svg>
                   ) : currentStep ? (
-                    <span className="h-2 w-2 rounded-full bg-[var(--sl-primary)]" />
+                    <span className="h-2 w-2 rounded-[var(--sl-r-xs)] bg-[var(--sl-brand)]" />
                   ) : null}
                 </span>
                 {!isLast ? (
                   <span
                     className={`w-0.5 flex-1 ${
-                      done ? "bg-[var(--sl-primary)]" : "bg-[var(--sl-border)]"
+                      done ? "bg-[var(--sl-brand)]" : "bg-[var(--sl-rule)]"
                     }`}
                     style={{ minHeight: "1.5rem" }}
                     aria-hidden
@@ -128,10 +128,10 @@ export function OrderStatusTimeline({
                 <p
                   className={`text-sm ${
                     currentStep
-                      ? "font-bold text-[var(--sl-text)]"
+                      ? "font-bold text-[var(--sl-ink)]"
                       : done
-                        ? "font-semibold text-[var(--sl-text-soft)]"
-                        : "text-[var(--sl-muted)]"
+                        ? "font-semibold text-[var(--sl-ink-2)]"
+                        : "text-[var(--sl-ink-3)]"
                   }`}
                 >
                   {t(stage.labelKey)}
@@ -152,9 +152,9 @@ export function OrderStatusTimeline({
       </ol>
 
       {paymentStatus ? (
-        <p className="sl-small mt-4 border-t border-[var(--sl-border)] pt-3.5">
+        <p className="sl-small mt-4 border-t border-[var(--sl-rule)] pt-3.5">
           {t("track.paymentLabel")}{" "}
-          <span className="sl-v2-badge sl-v2-badge-brand ml-1">
+          <span className="sl-badge sl-badge-brand ml-1">
             {paymentStatus}
           </span>
         </p>

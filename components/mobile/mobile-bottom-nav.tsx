@@ -6,67 +6,151 @@ import { useEffect, useState, type ReactNode } from "react";
 
 import { useI18n } from "@/components/preferences-provider";
 
+/**
+ * V3 mobile navigation.
+ *
+ * THE COMPOSITION CHANGED. V2 rendered five equal-width columns, each a 48px
+ * column with a 20px icon stacked over a 10px label, and marked the active
+ * item only by tinting the text burgundy. There was no indicator of *where* in
+ * the bar you were, so on a five-item bar the active item was identified by
+ * colour alone — the least reliable cue on a small, sunlit screen. The cart
+ * badge was also a red that exists nowhere else in the V3 palette.
+ *
+ * V3 is a bar with a rule, not a set of tiles:
+ *
+ *   A 2px burgundy TOP RULE marks the active item, positioned over its own
+ *     column. Position is a stronger, faster cue than colour, and it matches
+ *     the desktop primary nav, which marks the active page with the same
+ *     device — so the two navigations are one system.
+ *   Each destination is a full-height touch target with the icon and label on
+ *     ONE line at the top and the count chip inline, rather than a tall stack.
+ *     This is what keeps the bar at 52px instead of 62px, which matters when
+ *     it is fixed to the bottom of a 667px phone.
+ *   The count chip is a square in brand burgundy with a hairline of the bar
+ *     colour around it, so it stays legible against the icon it overlaps.
+ *
+ * The keyboard-open behaviour is preserved: the bar hides when the on-screen
+ * keyboard covers more than 120px, so it can never sit on top of the field
+ * being typed into. All five destinations, their active rules and the cart
+ * count are unchanged.
+ */
+
 type NavKey = "home" | "search" | "orders" | "cart" | "account";
 
 function HomeIcon({ active }: { active: boolean }) {
   return (
-    <svg className="h-5 w-5" fill={active ? "currentColor" : "none"} viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.8" aria-hidden>
-      <path strokeLinecap="round" strokeLinejoin="round" d="M3 10.5L12 3l9 7.5V20a1 1 0 01-1 1h-5v-6H9v6H4a1 1 0 01-1-1v-9.5z" />
+    <svg
+      className="h-[18px] w-[18px]"
+      fill={active ? "currentColor" : "none"}
+      viewBox="0 0 24 24"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      aria-hidden
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        d="M3 10.5L12 3l9 7.5V20a1 1 0 01-1 1h-5v-6H9v6H4a1 1 0 01-1-1v-9.5z"
+      />
     </svg>
   );
 }
 
 function SearchIcon({ active }: { active: boolean }) {
   return (
-    <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={active ? "2.2" : "1.8"} aria-hidden>
-      <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-5.2-5.2m1.2-4.3a6.5 6.5 0 11-13 0 6.5 6.5 0 0113 0z" />
+    <svg
+      className="h-[18px] w-[18px]"
+      fill="none"
+      viewBox="0 0 24 24"
+      stroke="currentColor"
+      strokeWidth={active ? "2.2" : "1.8"}
+      aria-hidden
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        d="M21 21l-5.2-5.2m1.2-4.3a6.5 6.5 0 11-13 0 6.5 6.5 0 0113 0z"
+      />
     </svg>
   );
 }
 
 function OrdersIcon({ active }: { active: boolean }) {
   return (
-    <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={active ? "2.2" : "1.8"} aria-hidden>
-      <path strokeLinecap="round" strokeLinejoin="round" d="M9 5h6M7 9h10M7 13h6M6 3h12a1 1 0 011 1v16l-4-2-4 2-4-2-4 2V4a1 1 0 011-1z" />
+    <svg
+      className="h-[18px] w-[18px]"
+      fill="none"
+      viewBox="0 0 24 24"
+      stroke="currentColor"
+      strokeWidth={active ? "2.2" : "1.8"}
+      aria-hidden
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        d="M9 5h6M7 9h10M7 13h6M6 3h12a1 1 0 011 1v16l-4-2-4 2-4-2-4 2V4a1 1 0 011-1z"
+      />
     </svg>
   );
 }
 
 function CartIcon({ active }: { active: boolean }) {
   return (
-    <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={active ? "2.2" : "1.8"} aria-hidden>
-      <path strokeLinecap="round" strokeLinejoin="round" d="M3 3h2l.4 2M7 13h10l3-8H6.4M7 13L5.4 5M7 13l-2 6h14M10 21a1.5 1.5 0 100-3 1.5 1.5 0 000 3zm8 0a1.5 1.5 0 100-3 1.5 1.5 0 000 3z" />
+    <svg
+      className="h-[18px] w-[18px]"
+      fill="none"
+      viewBox="0 0 24 24"
+      stroke="currentColor"
+      strokeWidth={active ? "2.2" : "1.8"}
+      aria-hidden
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        d="M3 3h2l.4 2M7 13h10l3-8H6.4M7 13L5.4 5M7 13l-2 6h14M10 21a1.5 1.5 0 100-3 1.5 1.5 0 000 3zm8 0a1.5 1.5 0 100-3 1.5 1.5 0 000 3z"
+      />
     </svg>
   );
 }
 
 function AccountIcon({ active }: { active: boolean }) {
   return (
-    <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={active ? "2.2" : "1.8"} aria-hidden>
-      <path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM4 21a8 8 0 1116 0" />
+    <svg
+      className="h-[18px] w-[18px]"
+      fill="none"
+      viewBox="0 0 24 24"
+      stroke="currentColor"
+      strokeWidth={active ? "2.2" : "1.8"}
+      aria-hidden
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM4 21a8 8 0 1116 0"
+      />
     </svg>
   );
 }
 
-function Badge({ count }: { count: number }) {
+/** Square count chip in brand burgundy, ringed so it reads over the icon. */
+function CountChip({ count }: { count: number }) {
   if (count <= 0) return null;
   return (
-    <span className="absolute -right-1.5 -top-1 inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-[#c81e1e] px-1 text-[10px] font-bold leading-none text-white">
+    // The ring is the bar colour, so it tracks the bar in dark mode too.
+    // --sl-surface is white in light, which is exactly what ring-white gave.
+    <span className="sl-num absolute -right-2 -top-1.5 inline-flex h-[15px] min-w-[15px] items-center justify-center rounded-[2px] bg-[var(--sl-brand)] px-1 text-[9px] font-bold leading-none text-white ring-2 ring-[var(--sl-surface)]">
       {count > 99 ? "99+" : count}
     </span>
   );
 }
 
-export function MobileBottomNav({
-  cartCount: cartCountProp,
-}: {
-  cartCount?: number;
-}) {
+export function MobileBottomNav({ cartCount: cartCountProp }: { cartCount?: number }) {
   const { t } = useI18n();
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const [fetchedCartCount, setFetchedCartCount] = useState<number | null>(null);
-  const cartCount = typeof cartCountProp === "number" ? cartCountProp : (fetchedCartCount ?? 0);
+  const cartCount =
+    typeof cartCountProp === "number" ? cartCountProp : (fetchedCartCount ?? 0);
   const [keyboardOpen, setKeyboardOpen] = useState(false);
 
   useEffect(() => {
@@ -159,26 +243,28 @@ export function MobileBottomNav({
 
   return (
     <nav
-      className="mobile-bottom-nav md:hidden"
+      className="mobile-bottom-nav border-t border-[var(--sl-rule-2)] bg-[color-mix(in_srgb,var(--sl-surface)_97%,transparent)] backdrop-blur-md md:hidden"
       aria-label={t("mobile.primaryNav")}
     >
-      <ul className="mx-auto flex max-w-lg items-stretch justify-between gap-0.5 px-1">
+      <ul className="mx-auto flex max-w-lg items-stretch">
         {items.map((item) => {
           const Icon = item.icon;
           return (
             <li key={item.key} className="min-w-0 flex-1">
               <Link
                 href={item.href}
-                className={`relative flex min-h-12 flex-col items-center justify-center gap-0.5 rounded-lg px-1 py-1 text-[10px] font-semibold transition-colors ${
-                  item.active
-                    ? "text-[var(--sl-primary)]"
-                    : "text-slate-500 hover:text-slate-800"
-                }`}
                 aria-current={item.active ? "page" : undefined}
+                className={`sl-focus relative flex min-h-[52px] items-center justify-center gap-1.5 px-1 text-[0.6875rem] font-semibold transition-colors ${
+                  item.active
+                    ? // The 2px top rule is the active indicator: position, not
+                      // colour alone. Matches the desktop primary nav.
+                      "text-[var(--sl-brand-ink)] after:absolute after:inset-x-2 after:top-0 after:h-0.5 after:bg-[var(--sl-brand-ink)]"
+                    : "text-[var(--sl-ink-3)]"
+                }`}
               >
                 <span className="relative inline-flex">
                   <Icon active={item.active} />
-                  {item.badge != null ? <Badge count={item.badge} /> : null}
+                  {item.badge != null ? <CountChip count={item.badge} /> : null}
                 </span>
                 <span className="truncate">{item.label}</span>
               </Link>

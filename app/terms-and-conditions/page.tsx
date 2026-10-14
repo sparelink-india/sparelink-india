@@ -7,6 +7,14 @@ import {
   PUBLIC_DISPLAY_EMAIL,
   PUBLIC_SUPPORT_PHONE,
 } from "@/lib/business-contacts";
+import { pageMetadata } from "@/lib/seo";
+
+export const metadata = pageMetadata({
+  title: "Terms & Conditions",
+  description:
+    "The terms that govern use of SpareLink India, including pricing, availability, orders, payment, cancellations and returns.",
+  path: "/terms-and-conditions",
+});
 
 const SECTIONS = [
   ["terms.usageTitle", "terms.usageBody"],
@@ -66,7 +74,7 @@ export default function TermsAndConditionsPage() {
                   <br />
                   <T k="common.email" />: {PUBLIC_DISPLAY_EMAIL}
                 </p>
-                <Link href="/help-support" className="mt-2 inline-block font-semibold text-[var(--sl-primary)] underline">
+                <Link href="/help-support" className="mt-2 inline-block font-semibold text-[var(--sl-brand-ink)] underline">
                   <T k="nav.help" />
                 </Link>
               </div>

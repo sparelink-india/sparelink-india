@@ -41,6 +41,7 @@ function isNoGarageResponse(response: Response) {
 export function VehicleQuickSelector({
   limit,
   browseAllHref = "/vehicle-fitment",
+  isAuthenticated = true,
 }: {
   /**
    * Optional cap on the saved-vehicle chips rendered. Omitted (the default)
@@ -50,13 +51,23 @@ export function VehicleQuickSelector({
    */
   limit?: number;
   browseAllHref?: string;
+  /**
+   * Whether a session exists. The saved-vehicle list is per-account and answers
+   * 401 to an anonymous caller, so when this is false the garage calls are
+   * skipped rather than made and rejected. Defaults to true so every existing
+   * call site keeps its current behaviour unless it opts in.
+   */
+  isAuthenticated?: boolean;
 } = {}) {
   const { t } = useI18n();
   const router = useRouter();
   const [vehicles, setVehicles] = useState<VehicleRow[]>([]);
   const [garage, setGarage] = useState<GarageVehicle[]>([]);
   const [garageState, setGarageState] = useState<"loading" | "ready" | "guest" | "error">(
-    "loading",
+    /* Seeded from the prop rather than corrected inside an effect: a signed-out
+       visitor is already in the "guest" state on the very first render, so there
+       is no state to synchronise and no extra render. */
+    isAuthenticated ? "loading" : "guest",
   );
   const [make, setMake] = useState("");
   const [model, setModel] = useState("");
@@ -66,6 +77,11 @@ export function VehicleQuickSelector({
   const [selectedGarageId, setSelectedGarageId] = useState<string | null>(null);
 
   const loadGarage = useCallback(async () => {
+    /* No session means no saved vehicles, and /api/garage would answer 401, so
+       there is nothing to fetch. */
+    if (!isAuthenticated) {
+      return;
+    }
     try {
       const response = await fetch("/api/garage", { cache: "no-store" });
       if (isNoGarageResponse(response)) {
@@ -85,7 +101,7 @@ export function VehicleQuickSelector({
       setGarage([]);
       setGarageState("guest");
     }
-  }, []);
+  }, [isAuthenticated]);
 
   useEffect(() => {
     let active = true;
@@ -101,6 +117,14 @@ export function VehicleQuickSelector({
       .finally(() => {
         if (active) setLoading(false);
       });
+
+    /* Signed out: the saved-vehicle list cannot exist, and garageState was already
+       seeded to "guest", so there is simply nothing to ask for and nothing to
+       set. This is the same outcome the 401 branch below produced, minus the
+       guaranteed-failed request and its console error. */
+    if (!isAuthenticated) {
+      return;
+    }
 
     void fetch("/api/garage", { cache: "no-store" })
       .then(async (response) => {
@@ -134,7 +158,7 @@ export function VehicleQuickSelector({
     return () => {
       active = false;
     };
-  }, []);
+  }, [isAuthenticated]);
 
   const makes = useMemo(() => {
     const set = new Set<string>();
@@ -216,42 +240,31 @@ export function VehicleQuickSelector({
   return (
     <section
       aria-labelledby="vehicle-selector-heading"
-      className="sl-v2-card p-3 sm:p-4"
+      className="sl-panel p-3 sm:p-4"
     >
-      <div className="flex items-center justify-between gap-2">
-        <div>
-          <p className="text-[11px] font-bold uppercase tracking-widest text-[var(--sl-primary)]">
+      <div className="flex items-center justify-between gap-3 border-b border-[var(--sl-rule)] pb-2.5">
+        <div className="min-w-0">
+          <p className="sl-eyebrow sl-eyebrow-plain flex items-center gap-2">
+            <span
+              className="inline-block h-[3px] w-5 bg-[var(--sl-brand)]"
+              aria-hidden
+            />
             {t("vehicleSelect.kicker")}
           </p>
-          <h2 id="vehicle-selector-heading" className="sl-h3 text-base">
+          <h2 id="vehicle-selector-heading" className="sl-h3 mt-1.5">
             {t("vehicleSelect.title")}
           </h2>
         </div>
-        <Link
-          href={browseAllHref}
-          className="inline-flex shrink-0 items-center gap-1 text-xs font-semibold text-[var(--sl-primary)] underline-offset-2 transition-colors duration-200 hover:text-[var(--sl-primary)] hover:underline"
-        >
+        <Link href={browseAllHref} className="sl-btn sl-btn-ghost sl-btn-sm shrink-0">
           {t("vehicleSelect.browseAll")}
-          <svg
-            className="h-3.5 w-3.5"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-            strokeWidth="2.2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            aria-hidden
-          >
-            <path d="M5 12h14M13 6l6 6-6 6" />
-          </svg>
         </Link>
       </div>
 
       {garageState === "loading" ? (
-        <div className="sl-skeleton mt-3 h-10 w-full rounded-[var(--sl-radius)]" aria-hidden />
+        <div className="sl-skel mt-3 h-11 w-full" aria-hidden />
       ) : garageState === "guest" ? (
-        <p className="mt-3 text-xs text-[var(--sl-muted)]">
-          <Link href="/login" className="font-semibold text-[var(--sl-primary)] underline-offset-2 hover:underline">
+        <p className="sl-small mt-3">
+          <Link href="/login" className="sl-focus font-semibold text-[var(--sl-brand-ink)] underline-offset-2 hover:underline">
             {t("nav.login")}
           </Link>{" "}
           {t("garage.loginHint")}
@@ -265,84 +278,87 @@ export function VehicleQuickSelector({
         </p>
       ) : garage.length > 0 ? (
         <div className="mt-3">
-          <p className="mb-1.5 text-[11px] font-bold uppercase tracking-wide text-[var(--sl-muted)]">
-            {t("garage.savedVehicles")}
-          </p>
-          <div className="flex gap-2 overflow-x-auto pb-1">
+          <p className="sl-label mb-1.5">{t("garage.savedVehicles")}</p>
+          {/* Ruled rows rather than a pill strip: a saved vehicle is a record,
+              not a tag. The selected one is marked with the burgundy left rule
+              used by the filter rail and the category menu. */}
+          <ul className="divide-y divide-[var(--sl-rule)] border-y border-[var(--sl-rule)]">
             {visibleGarage.map((vehicle) => {
               const active = selectedGarageId === vehicle.id;
               return (
-                <button
-                  key={vehicle.id}
-                  type="button"
-                  onClick={() => applyGarageVehicle(vehicle)}
-                  onDoubleClick={() => router.push(garageFitmentHref(vehicle.make, vehicle.model))}
-                  className={`min-h-11 shrink-0 rounded-full border px-3 text-left text-xs font-semibold ${
-                    active
-                      ? "border-brand-700 bg-[var(--sl-primary)] text-white"
-                      : "border-[var(--sl-border-strong)] bg-white text-[var(--sl-text-soft)] transition-colors duration-200 hover:bg-[var(--sl-primary-soft)] hover:text-[var(--sl-primary)]"
-                  }`}
-                  aria-pressed={active}
-                >
-                  <span className="block max-w-[10.5rem] truncate">
-                    {garageVehicleLabel(vehicle)}
-                  </span>
-                </button>
+                <li key={vehicle.id}>
+                  <button
+                    type="button"
+                    onClick={() => applyGarageVehicle(vehicle)}
+                    onDoubleClick={() =>
+                      router.push(garageFitmentHref(vehicle.make, vehicle.model))
+                    }
+                    aria-pressed={active}
+                    className={`sl-focus flex min-h-11 w-full items-center justify-between gap-3 border-l-2 px-2.5 py-1.5 text-left transition-colors ${
+                      active
+                        ? "border-[var(--sl-brand)] bg-[var(--sl-brand-soft)]"
+                        : "border-transparent hover:bg-[var(--sl-sunken)]"
+                    }`}
+                  >
+                    <span className="min-w-0">
+                      <span className="sl-clamp-1 block text-[0.8125rem] font-semibold text-[var(--sl-ink)]">
+                        {vehicle.make}
+                      </span>
+                      <span className="sl-clamp-1 block text-[0.75rem] text-[var(--sl-ink-3)]">
+                        {vehicle.model}
+                      </span>
+                    </span>
+                    <span
+                      className={`sl-num shrink-0 text-[0.6875rem] font-bold ${
+                        active
+                          ? "text-[var(--sl-brand-ink)]"
+                          : "text-[var(--sl-ink-3)]"
+                      }`}
+                    >
+                      {garageVehicleLabel(vehicle)}
+                    </span>
+                  </button>
+                </li>
               );
             })}
-          </div>
-          {hiddenGarageCount > 0 ? (
-            <Link
-              href={browseAllHref}
-              className="mt-2 inline-flex items-center gap-1.5 text-xs font-semibold text-[var(--sl-primary)] transition-colors duration-200 hover:text-[var(--sl-primary)]"
-            >
-              {hiddenGarageCount} more · {t("vehicleSelect.browseAll")}
-              <svg
-                className="h-3.5 w-3.5"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-                strokeWidth="2.2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                aria-hidden
-              >
-                <path d="M5 12h14M13 6l6 6-6 6" />
-              </svg>
-            </Link>
-          ) : null}
-          {selectedGarageId ? (
-            <button
-              type="button"
-              onClick={() => {
-                const selected = garage.find((row) => row.id === selectedGarageId);
-                if (selected) router.push(garageFitmentHref(selected.make, selected.model));
-              }}
-              className="mt-2 inline-flex items-center gap-1 text-xs font-semibold text-[var(--sl-primary)] transition-colors duration-200 hover:text-[var(--sl-primary)]"
-            >
-              {t("garage.viewParts")}
-              <svg
-                className="h-3.5 w-3.5"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-                strokeWidth="2.2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                aria-hidden
-              >
-                <path d="M5 12h14M13 6l6 6-6 6" />
-              </svg>
-            </button>
+          </ul>
+          {hiddenGarageCount > 0 || selectedGarageId ? (
+            <div className="mt-2.5 flex flex-wrap items-center gap-3">
+              {hiddenGarageCount > 0 ? (
+                <Link
+                  href={browseAllHref}
+                  className="sl-focus text-[0.75rem] font-semibold text-[var(--sl-brand-ink)]"
+                >
+                  {t("vehicleSelect.moreCount", { count: String(hiddenGarageCount) })} · {t("vehicleSelect.browseAll")}
+                </Link>
+              ) : null}
+              {selectedGarageId ? (
+                <button
+                  type="button"
+                  onClick={() => {
+                    const selected = garage.find((row) => row.id === selectedGarageId);
+                    if (selected) {
+                      router.push(garageFitmentHref(selected.make, selected.model));
+                    }
+                  }}
+                  className="sl-focus text-[0.75rem] font-semibold text-[var(--sl-brand-ink)]"
+                >
+                  {t("garage.viewParts")}
+                </button>
+              ) : null}
+            </div>
           ) : null}
         </div>
       ) : (
-        <p className="mt-3 text-xs text-[var(--sl-muted)]">{t("garage.emptyShort")}</p>
+        <p className="sl-small mt-3">{t("garage.emptyShort")}</p>
       )}
 
-      <div className="mt-3 grid gap-2 sm:grid-cols-2">
+      {/* The gutter number states the order, so "make, then model" is part
+          of the layout rather than something the field sequence implies. */}
+      <div className="mt-4 grid gap-2.5 sm:grid-cols-2">
         <div>
-          <label htmlFor="vq-make" className="mb-1 block text-xs font-semibold text-[var(--sl-text-soft)]">
+          <label htmlFor="vq-make" className="sl-label mb-1 flex items-center gap-2 !text-[0.625rem]">
+            <span className="sl-part !text-[var(--sl-brand-ink)]">01</span>
             {t("vehicleSelect.make")}
           </label>
           <select
@@ -354,7 +370,7 @@ export function VehicleQuickSelector({
               setModel("");
               setSelectedGarageId(null);
             }}
-            className="min-h-11 w-full rounded-[var(--sl-radius)] border border-[var(--sl-border)] bg-[var(--sl-surface-sunk)] px-3 text-sm outline-none focus:border-brand-600 focus:bg-white focus:ring-2 focus:ring-[var(--sl-primary)]/20"
+            className="sl-select !h-11 !w-full !max-w-none !text-[0.875rem]"
           >
             <option value="">{loading ? t("vehicleSelect.loading") : t("vehicleSelect.chooseMake")}</option>
             {makes.map((value) => (
@@ -365,7 +381,8 @@ export function VehicleQuickSelector({
           </select>
         </div>
         <div>
-          <label htmlFor="vq-model" className="mb-1 block text-xs font-semibold text-[var(--sl-text-soft)]">
+          <label htmlFor="vq-model" className="sl-label mb-1 flex items-center gap-2 !text-[0.625rem]">
+            <span className="sl-part !text-[var(--sl-brand-ink)]">02</span>
             {t("vehicleSelect.model")}
           </label>
           <select
@@ -376,7 +393,7 @@ export function VehicleQuickSelector({
               setModel(e.target.value);
               setSelectedGarageId(null);
             }}
-            className="min-h-11 w-full rounded-[var(--sl-radius)] border border-[var(--sl-border)] bg-[var(--sl-surface-sunk)] px-3 text-sm outline-none focus:border-brand-600 focus:bg-white focus:ring-2 focus:ring-[var(--sl-primary)]/20 disabled:opacity-50"
+            className="sl-select !h-11 !w-full !max-w-none !text-[0.875rem] disabled:opacity-50"
           >
             <option value="">{t("vehicleSelect.chooseModel")}</option>
             {models.map((value) => (
@@ -389,17 +406,20 @@ export function VehicleQuickSelector({
       </div>
 
       {garageMessage ? (
-        <p className="mt-2 text-xs font-medium text-emerald-700" role="status">
+        <p className="sl-small mt-2 !text-[var(--sl-ok)]" role="status">
           {garageMessage}
         </p>
       ) : null}
 
+      {/* One primary action. Save is secondary beside it rather than a second
+          primary, so the eye lands on "show parts" first. The previous primary
+          was bg-slate-950, which is not a brand or state colour. */}
       <div className="mt-3 grid gap-2 sm:grid-cols-2">
         <button
           type="button"
           disabled={!make}
           onClick={showParts}
-          className="btn-press flex min-h-12 items-center justify-center rounded-[var(--sl-radius)] bg-slate-950 text-sm font-bold text-white disabled:cursor-not-allowed disabled:bg-slate-300"
+          className="sl-btn sl-btn-primary !min-h-12 disabled:!border-[var(--sl-rule)] disabled:!bg-[var(--sl-sunken)] disabled:!text-[var(--sl-ink-3)]"
         >
           {t("vehicleSelect.showParts")}
         </button>
@@ -408,15 +428,12 @@ export function VehicleQuickSelector({
             type="button"
             disabled={saving}
             onClick={() => void saveCurrentToGarage()}
-            className="btn-press sl-v2-btn sl-v2-btn-primary min-h-12 disabled:opacity-50"
+            className="sl-btn sl-btn-secondary !min-h-12 disabled:opacity-50"
           >
             {saving ? t("garage.saving") : t("garage.saveVehicle")}
           </button>
         ) : garageState === "guest" && make && model ? (
-          <Link
-            href="/login"
-            className="sl-v2-btn sl-v2-btn-secondary min-h-12"
-          >
+          <Link href="/login" className="sl-btn sl-btn-secondary !min-h-12">
             {t("garage.loginToSave")}
           </Link>
         ) : null}

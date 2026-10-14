@@ -6,6 +6,7 @@ import { useEffect, useState } from "react";
 import { InclusivePrice } from "@/components/inclusive-price";
 import { ProductDetailModal } from "@/components/product-detail-modal";
 import { useI18n } from "@/components/preferences-provider";
+import { VehicleModelImage } from "@/components/vehicle-fitment/vehicle-model-image";
 import type { FitmentModel } from "@/lib/vehicle-fitment";
 import { isAuthoritativeSellingPricePaise } from "@/lib/storefront-price-display";
 
@@ -126,85 +127,162 @@ export function FitmentModelCatalogue({
 
   return (
     <div>
-      <div className="sl-surface overflow-hidden rounded-[var(--sl-radius-lg)]">
-        <div className="aspect-[21/9] bg-gradient-to-b from-white to-brand-50/50 sm:aspect-[21/8]">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src={model.photo || "/images/vehicles/placeholder.svg"}
-            alt={model.photo ? model.model : `${model.model} photo unavailable`}
-            width={1200}
-            height={514}
-            className="h-full w-full object-contain"
-          />
-        </div>
-        <div className="p-5">
-          <p className="text-xs font-bold uppercase tracking-widest text-emerald-600">
-            {model.make}
-          </p>
-          <h1 className="sl-h1 mt-1 text-3xl">
-            {model.model}
-          </h1>
-          <p className="mt-2 text-sm text-[var(--sl-text-soft)]">{t("fitment.compatibleParts")}</p>
+      {/* ---- VEHICLE REFERENCE HEADER ----
+          A 3:2 well on the left, the identity as a specification block on the
+          right. Same well ratio as the model tiles on /vehicle-fitment/[make],
+          so a vehicle looks identical wherever it appears in the catalogue. */}
+      <div className="sl-panel">
+        <div className="flex flex-col lg:flex-row">
+          <div className="sl-panel-sunk relative aspect-[3/2] w-full shrink-0 overflow-hidden lg:w-[26rem]">
+            {/* This is the only vehicle on the page and it sits above the fold,
+                so it is the one image that is always preloaded. Everything else
+                in the fitment catalogue is lazy. */}
+            <VehicleModelImage
+              model={model}
+              priority
+              sizes="(min-width: 1024px) 416px, 92vw"
+              className="h-full w-full object-contain p-3"
+            />
+          </div>
+
+          <dl className="flex min-w-0 flex-1 flex-col justify-center border-t border-[var(--sl-rule)] p-4 lg:border-l lg:border-t-0 lg:p-5">
+            <div className="border-b border-[var(--sl-rule)] pb-3">
+              <dt className="sl-metric-label flex items-center gap-2">
+                <span
+                  className="inline-block h-[3px] w-5 bg-[var(--sl-brand)]"
+                  aria-hidden
+                />
+                {t("fitment.stepMake")}
+              </dt>
+              <dd className="sl-h3 mt-1.5">{model.make}</dd>
+            </div>
+            <div className="border-b border-[var(--sl-rule)] py-3">
+              <dt className="sl-metric-label">{t("fitment.stepModel")}</dt>
+              <dd>
+                <h1 className="sl-display mt-1">{model.model}</h1>
+              </dd>
+            </div>
+            <div className="pt-3">
+              <dt className="sl-metric-label !text-[0.5625rem]">
+                {t("fitment.compatibleParts")}
+              </dt>
+              <dd className="mt-1 flex items-baseline gap-2">
+                {/* The count is whatever the search actually returned. It is
+                    not shown while loading, so a transient 0 is never rendered
+                    as "0 parts". */}
+                {!loading ? (
+                  <>
+                    <span className="sl-num text-[1.5rem] font-extrabold leading-none text-[var(--sl-brand-ink)]">
+                      {found}
+                    </span>
+                    <span className="sl-small">
+                      {t("fitment.parts")}
+                    </span>
+                  </>
+                ) : null}
+              </dd>
+            </div>
+          </dl>
         </div>
       </div>
 
-      <div className="mt-6 flex flex-wrap gap-2">
-        <button
-          type="button"
-          onClick={() => setFilter({})}
-          className={`min-h-10 rounded-full border px-4 text-sm font-semibold ${
-            !fuel && !variant
-              ? "border-brand-700 bg-[var(--sl-primary)] text-white"
-              : "border-[var(--sl-border-strong)] bg-white text-[var(--sl-text-soft)] transition-colors duration-200 hover:bg-[var(--sl-primary-soft)] hover:text-[var(--sl-primary)]"
-          }`}
+      {/* ---- RULED FILTER BAR ----
+          One hairline-divided row, horizontally scrollable so a popular model
+          with six variants does not wrap into three rows and push the parts
+          list down. The active filter is marked by a burgundy left rule rather
+          than a filled button. */}
+      <div className="mt-4 border-y border-[var(--sl-rule)]">
+        <div
+          className="-mx-1 flex items-stretch overflow-x-auto px-1"
+          role="group"
+          aria-label={t("fitment.filters")}
         >
-          {t("fitment.filterAll")}
-        </button>
-        {fuels.map((item) => (
           <button
-            key={item}
             type="button"
-            onClick={() => setFilter({ fuel: item || "" })}
-            className={`min-h-10 rounded-full border px-4 text-sm font-semibold capitalize ${
-              fuel === item
-                ? "border-brand-700 bg-[var(--sl-primary)] text-white"
-                : "border-[var(--sl-border-strong)] bg-white text-[var(--sl-text-soft)] transition-colors duration-200 hover:bg-[var(--sl-primary-soft)] hover:text-[var(--sl-primary)]"
+            onClick={() => setFilter({})}
+            aria-pressed={!fuel && !variant}
+            className={`sl-focus min-h-11 shrink-0 border-l-2 px-3 text-[0.8125rem] font-semibold transition-colors ${
+              !fuel && !variant
+                ? "border-[var(--sl-brand)] bg-[var(--sl-brand-soft)] text-[var(--sl-brand-ink)]"
+                : "border-transparent text-[var(--sl-ink-2)] hover:bg-[var(--sl-sunken)]"
             }`}
           >
-            {item ? item.charAt(0).toUpperCase() + item.slice(1) : item}
+            {t("fitment.filterAll")}
           </button>
-        ))}
-        {model.variants.map((item) => (
-          <button
-            key={item.id}
-            type="button"
-            onClick={() => setFilter({ variant: item.label })}
-            className={`min-h-10 rounded-full border px-4 text-sm font-semibold ${
-              variant === item.label
-                ? "border-brand-700 bg-[var(--sl-primary)] text-white"
-                : "border-[var(--sl-border-strong)] bg-white text-[var(--sl-text-soft)] transition-colors duration-200 hover:bg-[var(--sl-primary-soft)] hover:text-[var(--sl-primary)]"
-            }`}
-          >
-            {item.label}
-          </button>
-        ))}
+          {fuels.map((item) => (
+            <button
+              key={item}
+              type="button"
+              onClick={() => setFilter({ fuel: item || "" })}
+              aria-pressed={fuel === item}
+              className={`sl-focus min-h-11 shrink-0 border-l-2 px-3 text-[0.8125rem] font-semibold capitalize transition-colors ${
+                fuel === item
+                  ? "border-[var(--sl-brand)] bg-[var(--sl-brand-soft)] text-[var(--sl-brand-ink)]"
+                  : "border-transparent text-[var(--sl-ink-2)] hover:bg-[var(--sl-sunken)]"
+              }`}
+            >
+              {item ? item.charAt(0).toUpperCase() + item.slice(1) : item}
+            </button>
+          ))}
+          {model.variants.map((item) => (
+            <button
+              key={item.id}
+              type="button"
+              onClick={() => setFilter({ variant: item.label })}
+              aria-pressed={variant === item.label}
+              className={`sl-focus min-h-11 shrink-0 border-l-2 px-3 text-[0.8125rem] font-semibold transition-colors ${
+                variant === item.label
+                  ? "border-[var(--sl-brand)] bg-[var(--sl-brand-soft)] text-[var(--sl-brand-ink)]"
+                  : "border-transparent text-[var(--sl-ink-2)] hover:bg-[var(--sl-sunken)]"
+              }`}
+            >
+              {item.label}
+            </button>
+          ))}
+        </div>
       </div>
 
       {error ? (
-        <p className="mt-6 text-sm text-rose-700" role="alert">
+        <p
+          className="mt-4 border border-[var(--sl-bad-line)] bg-[var(--sl-bad-soft)] px-3 py-2.5 text-[0.8125rem] font-semibold text-[var(--sl-bad)]"
+          role="alert"
+        >
           {error}
         </p>
       ) : null}
 
       {loading ? (
-        <p className="mt-8 text-sm text-[var(--sl-muted)]">{t("search.searching")}</p>
+        /* A shaped skeleton, not a bare "Searching..." sentence. It mirrors
+           the two-column part grid below, so the layout does not jump when
+           results arrive. */
+        <div className="mt-6" role="status" aria-live="polite">
+          <span className="sr-only">{t("search.searching")}</span>
+          <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2">
+            {Array.from({ length: 4 }, (_, index) => (
+              <div key={index} className="sl-panel flex gap-3 p-3" aria-hidden="true">
+                <div className="sl-skel h-16 w-16 shrink-0" />
+                <div className="min-w-0 flex-1">
+                  <div className="sl-skel h-3 w-full" />
+                  <div className="sl-skel mt-2 h-3 w-2/3" />
+                  <div className="sl-skel mt-3 h-4 w-20" />
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
       ) : (
         <>
-          <h2 className="sl-h2 mt-8 text-lg">
-            {found === 1
-              ? t("search.foundOne", { query: model.model })
-              : t("search.found", { count: found, query: model.model })}
-          </h2>
+          <div className="mb-5 mt-5 flex items-baseline gap-3 border-b border-[var(--sl-rule)] pb-3">
+            <span
+              aria-hidden
+              className="w-[3px] shrink-0 self-stretch bg-[var(--sl-brand)]"
+            />
+            <h2 className="sl-h2">
+              {found === 1
+                ? t("search.foundOne", { query: model.model })
+                : t("search.found", { count: found, query: model.model })}
+            </h2>
+          </div>
           <div className="mt-4 grid gap-4 md:grid-cols-2">
             {results.map((hit, index) => {
               const partData = hit.document ?? {};
@@ -212,12 +290,12 @@ export function FitmentModelCatalogue({
               return (
                 <article
                   key={partData.id || partData.part_number || index}
-                  className="sl-v2-card sl-v2-card-hover p-4"
+                  className="sl-panel p-4 transition-[box-shadow,transform] duration-150 hover:-translate-y-0.5 hover:shadow-[var(--sl-e-3)]"
                 >
                   <div className="flex gap-4">
                     <button
                       type="button"
-                      className="h-20 w-20 shrink-0 overflow-hidden rounded-[var(--sl-radius)] bg-gradient-to-b from-white to-brand-50/50"
+                      className="sl-panel-sunk relative h-20 w-20 shrink-0 overflow-hidden sl-focus"
                       onClick={() =>
                         setDetailTarget({
                           partId: partData.id,
@@ -237,10 +315,10 @@ export function FitmentModelCatalogue({
                       />
                     </button>
                     <div className="min-w-0 flex-1">
-                      <h3 className="font-bold text-slate-950">
+                      <h3 className="text-[0.9375rem] font-semibold leading-snug text-[var(--sl-ink)]">
                         {partData.name || t("product.partFallback")}
                       </h3>
-                      <p className="mt-1 text-xs text-[var(--sl-muted)]">
+                      <p className="sl-partno mt-1">
                         {[partData.brand, partData.part_number].filter(Boolean).join(" · ")}
                       </p>
                       {listing ? (
@@ -265,7 +343,7 @@ export function FitmentModelCatalogue({
                               )
                             }
                             onClick={() => void addToCart(listing.id)}
-                            className="mt-2 min-h-10 rounded-[var(--sl-radius-sm)] bg-[var(--sl-primary)] px-3 text-xs font-bold text-white disabled:opacity-50"
+                            className="sl-btn sl-btn-primary sl-focus mt-2"
                           >
                             {!isAuthoritativeSellingPricePaise(
                               listing.listInclusivePaise,
@@ -277,7 +355,7 @@ export function FitmentModelCatalogue({
                           </button>
                         </div>
                       ) : (
-                        <p className="mt-2 text-xs text-[var(--sl-muted)]">{t("product.noListing")}</p>
+                        <p className="mt-2 text-xs text-[var(--sl-ink-3)]">{t("product.noListing")}</p>
                       )}
                     </div>
                   </div>

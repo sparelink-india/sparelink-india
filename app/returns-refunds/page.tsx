@@ -7,6 +7,14 @@ import {
   PUBLIC_DISPLAY_EMAIL,
   PUBLIC_SUPPORT_PHONE,
 } from "@/lib/business-contacts";
+import { pageMetadata } from "@/lib/seo";
+
+export const metadata = pageMetadata({
+  title: "Returns & Refunds",
+  description:
+    "Our return and refund policy for spare parts ordered from Ambaji Traders, Hind Motors and India Sales, including eligibility and timelines.",
+  path: "/returns-refunds",
+});
 
 export default function ReturnsRefundsPage() {
   return (
@@ -112,7 +120,7 @@ export default function ReturnsRefundsPage() {
                   <br />
                   <T k="common.email" />: {PUBLIC_DISPLAY_EMAIL}
                 </p>
-                <Link href="/help-support" className="mt-2 inline-block font-semibold text-[var(--sl-primary)] underline">
+                <Link href="/help-support" className="mt-2 inline-block font-semibold text-[var(--sl-brand-ink)] underline">
                   <T k="help.open" />
                 </Link>
               </div>

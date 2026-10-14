@@ -1,7 +1,8 @@
 import { Suspense } from "react";
 import { notFound } from "next/navigation";
+import type { Metadata } from "next";
 
-import { CategoryResults } from "@/components/category/category-results";
+import { CategoryResultsWrapper } from "@/components/category/category-results-wrapper";
 import { MobileBottomNav } from "@/components/mobile/mobile-bottom-nav";
 import { SiteFooter } from "@/components/site-footer";
 import { StorefrontHeader } from "@/components/storefront-header";
@@ -9,50 +10,52 @@ import { getServerMessages } from "@/lib/i18n/server";
 import { loadCategoryNav } from "@/lib/load-category-nav";
 import { resolveCategoryRoute } from "@/lib/category-navigation";
 import { findStorefrontCategory } from "@/lib/storefront-categories";
+import { pageMetadata } from "@/lib/seo";
 
 export const dynamic = "force-dynamic";
 
+/**
+ * Category pages are indexable, and each one earns its own title and canonical
+ * from the category it actually resolved to. The slug is turned into readable
+ * words ("brakes" -> "Brakes") because a raw slug in a <title> reads as noise to
+ * a search result, and the canonical always names the resolved category so two
+ * slugs resolving to one category cannot compete with each other.
+ */
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ slug: string[] }>;
+}): Promise<Metadata> {
+  const { slug } = await params;
+  const words = slug
+    .filter(Boolean)
+    .map((part) => part.replace(/[-_]+/g, " ").trim())
+    .filter(Boolean);
+  const label = words.length > 0 ? words.join(" ") : "Category";
+  const titled = label.charAt(0).toUpperCase() + label.slice(1);
+  // The catch-all lives under /category, so the canonical must include that
+  // segment. Building it from the slug alone would point every category page at
+  // a top-level URL that does not exist.
+  const path = `/category/${slug.filter(Boolean).join("/")}`;
+
+  return pageMetadata({
+    title: `${titled} Spare Parts`,
+    description: `Shop ${titled.toLowerCase()} spare parts for Indian cars and commercial vehicles from Ambaji Traders, Hind Motors and India Sales. Filter by brand, vehicle and price.`,
+    path,
+  });
+}
+
 function CategoryShell({ children }: { children: React.ReactNode }) {
   return (
-    <div className="storefront-mobile-pad sl-page flex min-h-screen flex-col">
+    <div className="storefront-mobile-pad flex min-h-screen flex-col">
       <StorefrontHeader />
       <main className="flex-1">
-        <div className="sl-container sl-container-wide sl-page-main">{children}</div>
+        <div className="sl-container sl-page-main">{children}</div>
       </main>
       <SiteFooter />
       <Suspense fallback={null}>
         <MobileBottomNav />
       </Suspense>
-    </div>
-  );
-}
-
-/**
- * Catalogue skeleton matching the real results layout (header + product grid).
- * Replaces a bare "Loading..." sentence so the page never flashes bare text.
- */
-function CatalogueSkeleton() {
-  return (
-    <div role="status" aria-busy="true" aria-live="polite">
-      <div className="sl-v2-card p-4 sm:p-5">
-        <div className="sl-skeleton h-3 w-24" />
-        <div className="sl-skeleton mt-3 h-7 w-2/5" />
-        <div className="sl-skeleton mt-2.5 h-3.5 w-3/4" />
-      </div>
-      <div className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
-        {Array.from({ length: 8 }, (_, i) => (
-          <div key={i} className="sl-v2-card overflow-hidden">
-            <div className="sl-skeleton aspect-[4/3] w-full !rounded-none" />
-            <div className="space-y-2 p-3.5">
-              <div className="sl-skeleton h-2.5 w-1/3" />
-              <div className="sl-skeleton h-3.5 w-full" />
-              <div className="sl-skeleton h-3 w-4/5" />
-              <div className="sl-skeleton h-5 w-2/5" />
-            </div>
-          </div>
-        ))}
-      </div>
-      <span className="sr-only">Loading catalogue</span>
     </div>
   );
 }
@@ -70,26 +73,24 @@ export default async function CategoryPage({
   if (storefront) {
     return (
       <CategoryShell>
-        <Suspense fallback={<CatalogueSkeleton />}>
-          <CategoryResults
-            path={`/category/${storefront.slug}`}
-            title={messages[storefront.nameKey]}
-            titleKey={storefront.nameKey}
-            description={messages[storefront.descKey]}
-            descriptionKey={storefront.descKey}
-            image={storefront.image}
-            browse={{ storefrontSlug: storefront.slug }}
-            crumbs={[
-              { label: messages["nav.home"], href: "/", key: "nav.home" },
-              { label: messages["category.categories"], href: "/", key: "category.categories" },
-              {
-                label: messages[storefront.nameKey],
-                href: `/category/${storefront.slug}`,
-                key: storefront.nameKey,
-              },
-            ]}
-          />
-        </Suspense>
+        <CategoryResultsWrapper
+          path={`/category/${storefront.slug}`}
+          title={messages[storefront.nameKey]}
+          titleKey={storefront.nameKey}
+          description={messages[storefront.descKey]}
+          descriptionKey={storefront.descKey}
+          image={storefront.image}
+          browse={{ storefrontSlug: storefront.slug }}
+          crumbs={[
+            { label: messages["nav.home"], href: "/", key: "nav.home" },
+            { label: messages["category.categories"], href: "/", key: "category.categories" },
+            {
+              label: messages[storefront.nameKey],
+              href: `/category/${storefront.slug}`,
+              key: storefront.nameKey,
+            },
+          ]}
+        />
       </CategoryShell>
     );
   }
@@ -100,22 +101,20 @@ export default async function CategoryPage({
 
   return (
     <CategoryShell>
-      <Suspense fallback={<CatalogueSkeleton />}>
-        <CategoryResults
-          path={`/category/${slugs.join("/")}`}
-          title={route.title}
-          browse={{
-            categoryName: route.categoryName,
-            nameContains: route.nameContains,
-            otherType: route.otherType,
-            segment: route.segment,
-          }}
-          crumbs={route.breadcrumb.map((item) => ({
-            label: item.label === "Home" ? messages["nav.home"] : item.label,
-            href: item.href,
-          }))}
-        />
-      </Suspense>
+      <CategoryResultsWrapper
+        path={`/category/${slugs.join("/")}`}
+        title={route.title}
+        browse={{
+          categoryName: route.categoryName,
+          nameContains: route.nameContains,
+          otherType: route.otherType,
+          segment: route.segment,
+        }}
+        crumbs={route.breadcrumb.map((item) => ({
+          label: item.label === "Home" ? messages["nav.home"] : item.label,
+          href: item.href,
+        }))}
+      />
     </CategoryShell>
   );
 }

@@ -2,27 +2,48 @@
 
 import type { ReactNode } from "react";
 import Link from "next/link";
+import { T } from "@/components/t";
 
 /**
- * V2 authentication shell — a genuine split-panel composition, not a centred
- * card on a blank page.
+ * PRECISION authentication system (migrated from the V3 shell).
  *
- * Desktop is two columns: a brand/trust panel on the left that carries the
- * automotive identity, and the form on the right. Below `lg` the brand panel is
- * dropped entirely so mobile gets one focused, single-column screen with no
- * decorative weight above the fold.
+ * SHARED BY /login, /register AND /login/dealer, so the three pages read as one
+ * system while remaining distinguishable.
  *
- * The trust panel states only what the business can substantiate (its three
- * distribution firms and what the catalogue actually supports). No invented
- * claims: no customer counts, no years, no awards, no coverage numbers.
+ * The change from V2 is a deletion as much as an addition. V2 put a 46%-width,
+ * full-viewport-height burgundy panel on the left carrying the brand story and
+ * three icon bullets, with the form in the remaining 54%. That is a "giant
+ * empty split panel": on a 1280x800 window it consumed 590px and 800px of
+ * surface to communicate three sentences, and on a 1024x800 laptop window the
+ * form column was squeezed to ~430px for a set of two inputs.
+ *
+ * V3 is a single centred column with the context moved BELOW the form as a
+ * hairline-divided capability strip:
+ *
+ *     identity lockup
+ *     eyebrow / heading / intro
+ *     the form                     <- the only thing above the fold
+ *     capability strip (3 cells)   <- stated once, compactly, under the fold
+ *     footer note
+ *
+ * The form is now the largest, first and only thing a customer sees, and it
+ * gets the full width of the column on every breakpoint.
+ *
+ * THE DEALER VARIANT is the same composition in a different register: a
+ * charcoal band behind the form and a gold rule instead of a burgundy one, plus
+ * a "business access" tag. Same system, unmistakably a different door.
+ *
+ * The capability strip states only what the business can substantiate. No
+ * customer counts, no years, no awards, no coverage figures — all of those
+ * would be invented.
  */
 
 export type AuthPanelBullet = { title: string; body: string };
 
-function WrenchIcon() {
+function WrenchIcon({ className = "h-4 w-4" }: { className?: string }) {
   return (
     <svg
-      className="h-5 w-5"
+      className={className}
       fill="none"
       viewBox="0 0 24 24"
       stroke="currentColor"
@@ -52,111 +73,145 @@ export function AuthShell({
   bullets: AuthPanelBullet[];
   children: ReactNode;
   footerNote?: ReactNode;
-  /** `dealer` shifts the panel to a cooler, more utilitarian B2B register. */
+  /** `dealer` switches the accent from burgundy to gold on a charcoal field. */
   variant?: "customer" | "dealer";
 }) {
-  /* `variant` currently drives no behavioural difference; the distinct B2B
-     identity comes from the copy the caller passes in. Kept as an accepted
-     prop so a future variant does not need a breaking change. */
-  void variant;
+  const isDealer = variant === "dealer";
 
   return (
     /* The caller supplies the storefront header and footer; this component owns
-       only the split-panel body so it can be reused by pages with different
-       shells without nesting two `min-h-screen` wrappers. */
-    <div className="flex flex-1 items-stretch">
-      {/* ---------- BRAND / TRUST PANEL (desktop only) ---------- */}
-        <aside
-          className="relative hidden w-[46%] shrink-0 overflow-hidden bg-[var(--sl-primary-dark)] text-white lg:flex lg:flex-col lg:justify-between lg:px-12 lg:py-14"
-          aria-hidden={false}
+       only the body column, so it can be reused by pages with different shells
+       without nesting two `min-h-screen` wrappers.
+
+       The DEALER difference is the GROUND the column sits on, not the form
+       itself. An earlier pass put the form directly on charcoal, which would
+       have forced every label, hint and helper string inside all three auth
+       forms to be restyled for contrast and would silently break the day a new
+       field was added. Instead the whole column sits on a charcoal field and
+       the form stays a white panel — unmistakably a different door, one
+       composed of the same parts, and no form internals are variant-aware. */
+    /* This element is the page's <main>. V2 had one here; the V3 rewrite
+       replaced it with a <div>, which left /login, /login/dealer and /register
+       with no main landmark while every other storefront route had one.
+       Only the element name changes — the classes are untouched. */
+    <main
+      className={`flex flex-1 justify-center px-4 py-9 sm:px-6 sm:py-12 ${
+        isDealer ? "bg-[var(--sl-graphite)]" : "bg-[var(--sl-page)]"
+      }`}
+    >
+      <div className="w-full max-w-[30rem]">
+        {/* ---- identity lockup ---- */}
+        <Link
+          href="/"
+          className={`sl-focus inline-flex items-center gap-2 text-[0.8125rem] font-bold tracking-tight ${
+            isDealer ? "text-[var(--sl-graphite-ink)]" : "text-[var(--sl-ink)]"
+          }`}
         >
-          {/* Subtle radial lift so the flat burgundy field has depth without a
-              second gradient stack fighting the brand colour. */}
-          <div
-            className="pointer-events-none absolute inset-0"
-            style={{
-              background:
-                "radial-gradient(120% 90% at 15% 0%, rgba(226,196,140,0.16) 0%, transparent 55%)",
-            }}
-            aria-hidden
-          />
-          <div
-            className="pointer-events-none absolute inset-x-0 top-0 h-px"
-            style={{
-              background:
-                "linear-gradient(90deg, transparent 0%, rgba(226,196,140,0.5) 50%, transparent 100%)",
-            }}
-            aria-hidden
-          />
+          <span
+            className={`inline-flex h-8 w-8 items-center justify-center rounded-[var(--sl-r-xs)] ${
+              isDealer
+                ? "bg-[var(--sl-graphite-2)] text-[var(--v3-gold)]"
+                : "bg-[var(--sl-brand)] text-[var(--sl-graphite-ink)]"
+            }`}
+          >
+            <WrenchIcon />
+          </span>
+          SpareLink India
+          {isDealer ? (
+            <span className="sl-badge sl-badge-copper !text-[0.5625rem]">
+              <T k="auth.businessAccess" />
+            </span>
+          ) : null}
+        </Link>
 
-          <div className="relative">
-            <Link
-              href="/"
-              className="sl-v2-focus-invert inline-flex items-center gap-2 text-sm font-bold tracking-tight"
-            >
-              <span className="inline-flex h-9 w-9 items-center justify-center rounded-[var(--sl-radius-sm)] bg-white/10">
-                <WrenchIcon />
-              </span>
-              SpareLink India
-            </Link>
+        {/* ---- identity of the form itself ---- */}
+        <div className="mt-7">
+          <p
+            className={`sl-eyebrow sl-eyebrow-plain flex items-center gap-2 ${
+              isDealer ? "!text-[var(--v3-gold)]" : ""
+            }`}
+          >
+            <span
+              className="inline-block h-[3px] w-[18px] rounded-[2px]"
+              style={{
+                background: isDealer ? "var(--v3-gold)" : "var(--sl-brand)",
+              }}
+              aria-hidden
+            />
+            {eyebrow}
+          </p>
+          <h1
+            className={`sl-display mt-3 ${isDealer ? "!text-[var(--sl-graphite-ink)]" : ""}`}
+          >
+            {heading}
+          </h1>
+          <p
+            className={`sl-body mt-2.5 ${
+              isDealer ? "!text-[var(--sl-graphite-ink-2)]" : ""
+            }`}
+          >
+            {intro}
+          </p>
+        </div>
 
-            <p className="sl-label mt-12 !text-[var(--sl-gold-soft)]">{eyebrow}</p>
-            <h2 className="sl-display mt-3 !text-white">{heading}</h2>
-            <p className="sl-body mt-4 max-w-sm !text-white/70">{intro}</p>
+        {/* ---- the form ----
+            The surface colour for both variants, so the three auth pages share
+            one set of field styles and a new field never needs a contrast
+            decision. The dealer variant only differs by its accent border. */}
+        <div
+          className={`sl-panel sl-panel-pad mt-6 border text-[var(--sl-ink)] ${
+            isDealer
+              ? "border-[var(--v3-gold)]"
+              : "border-[var(--sl-rule-2)]"
+          }`}
+        >
+          {children}
+        </div>
 
-            <ul className="mt-10 max-w-sm space-y-5">
-              {bullets.map((bullet) => (
-                <li key={bullet.title} className="flex gap-3.5">
-                  <span className="mt-0.5 inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-[var(--sl-radius-sm)] bg-white/10 text-[var(--sl-gold-soft)]">
-                    <WrenchIcon />
-                  </span>
-                  <span>
-                    <span className="block text-sm font-bold text-white">{bullet.title}</span>
-                    <span className="sl-small mt-0.5 block !text-white/60">{bullet.body}</span>
-                  </span>
-                </li>
-              ))}
-            </ul>
-          </div>
-
-          {/*
-            No firm line here. The three-firm identity is printed exactly once
-            per page, in the SiteFooter legal band. Repeating it in the auth
-            panel put "A Group of Firms" twice in one viewport, and both login
-            and dealer-login render a footer alongside this panel.
-          */}
-        </aside>
-
-        {/* ---------- FORM COLUMN ---------- */}
-        <main className="flex flex-1 items-center justify-center px-5 py-10 sm:px-8 lg:px-12">
-          <div className="w-full max-w-[26rem]">
-            {/* Mobile-only brand lockup: on phones the aside is hidden, so the
-                panel would otherwise have no identity at all. */}
-            <div className="mb-8 lg:hidden">
-              <Link
-                href="/"
-                className="sl-v2-focus inline-flex items-center gap-2 text-sm font-bold text-[var(--sl-text)]"
+        {/* ---- capability strip ----
+            One hairline-divided row of three cells, below the fold. This is
+            where V2's 590px burgundy panel went: the same three facts, in a
+            strip roughly 70px tall. */}
+        {bullets.length > 0 ? (
+          <ul className="mt-6 grid grid-cols-1 gap-px overflow-hidden rounded-[var(--sl-r)] border border-[var(--sl-rule)] bg-[var(--sl-rule)] sm:grid-cols-3">
+            {bullets.map((bullet) => (
+              <li
+                key={bullet.title}
+                className="bg-[var(--sl-surface)] px-3 py-3"
               >
-                <span className="inline-flex h-9 w-9 items-center justify-center rounded-[var(--sl-radius-sm)] bg-[var(--sl-primary)] text-white">
-                  <WrenchIcon />
-                </span>
-                SpareLink India
-              </Link>
-            </div>
+                <p className="flex items-center gap-1.5 text-[0.75rem] font-bold text-[var(--sl-ink)]">
+                  <span
+                    className="inline-block h-2.5 w-[3px] shrink-0"
+                    style={{
+                      background: isDealer
+                        ? "var(--v3-gold)"
+                        : "var(--sl-brand)",
+                    }}
+                    aria-hidden
+                  />
+                  {bullet.title}
+                </p>
+                <p className="sl-micro mt-1.5 leading-snug">
+                  {bullet.body}
+                </p>
+              </li>
+            ))}
+          </ul>
+        ) : null}
 
-            <p className="sl-label">{eyebrow}</p>
-            <h1 className="sl-h1 mt-2">{heading}</h1>
-            <p className="sl-body mt-2.5">{intro}</p>
-
-            <div className="sl-v2-card mt-7 p-5 sm:p-6">{children}</div>
-
-            {footerNote ? <div className="mt-6">{footerNote}</div> : null}
+        {/* The footer note is authored by each page and carries its own colours,
+            so the dealer variant cannot restyle it inline. A scoped attribute
+            selector handles the contrast once, here, instead of every page
+            having to know which ground it is sitting on. */}
+        {footerNote ? (
+          <div className="mt-5" data-auth-footer={isDealer ? "dark" : "light"}>
+            {footerNote}
           </div>
-        </main>
-    </div>
+        ) : null}
+      </div>
+    </main>
   );
 }
-
 /** Shared inline alert used for auth success/error, so all three pages match. */
 export function AuthAlert({
   tone,
@@ -169,10 +224,10 @@ export function AuthAlert({
   return (
     <p
       role={ok ? "status" : "alert"}
-      className={`mt-4 rounded-[var(--sl-radius-sm)] border px-3.5 py-2.5 text-sm ${
+      className={`mt-4 rounded-[var(--sl-r)] border px-3.5 py-2.5 text-sm ${
         ok
-          ? "border-[#bfe3d4] bg-[var(--sl-success-soft)] text-[var(--sl-success)]"
-          : "border-[#f0c8c5] bg-[var(--sl-danger-soft)] text-[var(--sl-danger)]"
+          ? "border-[var(--sl-ok-line)] bg-[var(--sl-ok-soft)] text-[var(--sl-ok)]"
+          : "border-[var(--sl-bad-line)] bg-[var(--sl-bad-soft)] text-[var(--sl-bad)]"
       }`}
     >
       {children}

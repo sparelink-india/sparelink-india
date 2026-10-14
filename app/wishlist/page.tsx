@@ -100,18 +100,30 @@ export default function WishlistPage() {
   }
 
   return (
-    <div className="sl-page flex min-h-screen flex-col">
+    <div className="flex min-h-screen flex-col bg-[var(--sl-page)] text-[var(--sl-ink)]">
       <StorefrontHeader />
       <main className="sl-container sl-page-main flex-1">
         {/* Page header with a live count, so the state of the list is stated
             before the grid rather than inferred from it. */}
-        <div className="flex flex-wrap items-end justify-between gap-3 border-b border-[var(--sl-border)] pb-5">
-          <div>
-            <p className="sl-label">{t("nav.account")}</p>
-            <h1 className="sl-h1 mt-1.5">{t("wishlist.title")}</h1>
+        <div className="flex flex-wrap items-end justify-between gap-3 border-b border-[var(--sl-rule)] pb-5">
+          <div className="min-w-0">
+            <p className="sl-eyebrow">{t("nav.account")}</p>
+            <div className="mt-2 flex flex-wrap items-baseline gap-x-4 gap-y-2">
+              <h1 className="sl-display">{t("wishlist.title")}</h1>
+              {items.length > 0 ? (
+                <span className="flex shrink-0 items-baseline gap-2">
+                  <span className="sl-num text-[1.25rem] font-extrabold leading-none text-[var(--sl-brand-ink)]">
+                    {items.length}
+                  </span>
+                  <span className="sl-micro font-bold uppercase tracking-[var(--sl-track-caps)]">
+                    {t("wishlist.title")}
+                  </span>
+                </span>
+              ) : null}
+            </div>
           </div>
           {!loading && !needsLogin && items.length > 0 ? (
-            <span className="sl-v2-badge sl-v2-badge-brand">
+            <span className="sl-badge sl-badge-brand">
               {items.length} {items.length === 1 ? t("wishlist.item") : t("wishlist.items")}
             </span>
           ) : null}
@@ -160,11 +172,14 @@ export default function WishlistPage() {
 
         <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
           {items.map((item) => (
-            <article key={item.id} className="sl-v2-card sl-v2-card-hover flex flex-col overflow-hidden">
+            <article
+              key={item.id}
+              className="sl-panel flex flex-col overflow-hidden transition-[box-shadow,transform] duration-150 ease-[var(--sl-ease)] hover:-translate-y-0.5 hover:shadow-[var(--sl-e-3)] focus-within:shadow-[var(--sl-e-3)]"
+            >
               {/* Catalogue presentation: `object-contain` on a clean stage.
                   The previous version used `object-cover`, which cropped parts
                   out of frame. */}
-              <div className="relative aspect-[4/3] w-full overflow-hidden bg-[var(--sl-surface-sunk)]">
+              <div className="relative aspect-[4/3] w-full overflow-hidden border-b border-[var(--sl-rule)] bg-[var(--sl-sunken)]">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
                   src={item.thumbUrl || item.imageUrl || "/images/products/placeholder.svg"}
@@ -187,12 +202,12 @@ export default function WishlistPage() {
 
               <div className="flex flex-1 flex-col p-3.5">
                 {item.partNumber ? (
-                  <p className="sl-partno">
-                    <span className="sr-only">Part number: </span>
+                  <p className="sl-part sl-wrap-any">
+                    <span className="sr-only">{t("partNo.srLabel")}</span>
                     {item.partNumber}
                   </p>
                 ) : null}
-                <h2 className="sl-h3 mt-1 line-clamp-2">
+                <h2 className="sl-clamp-2 mt-1 text-[0.9375rem] font-bold leading-snug text-[var(--sl-ink)]">
                   {item.partName || t("product.partFallback")}
                 </h2>
 
@@ -207,7 +222,7 @@ export default function WishlistPage() {
                       gstRate={item.gstRate}
                     />
                   ) : (
-                    <p className="sl-small">{t("product.priceCheckout")}</p>
+                    <p className="sl-meta">{t("product.priceCheckout")}</p>
                   )}
                 </div>
 
@@ -216,14 +231,14 @@ export default function WishlistPage() {
                     type="button"
                     onClick={() => void addToCart(item)}
                     disabled={!item.listingId}
-                    className="sl-v2-btn sl-v2-btn-primary w-full !min-h-11 !text-[0.8125rem]"
+                    className="sl-btn sl-btn-primary sl-btn-block"
                   >
                     {t("product.addToCart")}
                   </button>
                   <button
                     type="button"
                     onClick={() => void removeItem(item)}
-                    className="sl-v2-btn sl-v2-btn-ghost w-full !min-h-11 !text-[0.8125rem] hover:!bg-[var(--sl-danger-soft)] hover:!text-[var(--sl-danger)]"
+                    className="sl-btn sl-btn-ghost sl-btn-block hover:border-[var(--sl-bad-line)] hover:bg-[var(--sl-bad-soft)] hover:text-[var(--sl-bad)]"
                   >
                     {t("cart.remove")}
                   </button>

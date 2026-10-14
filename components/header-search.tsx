@@ -158,9 +158,9 @@ function CompactPrice({ listing }: { listing?: Listing }) {
   const net = listing?.netInclusivePaise ?? list;
   const priced = isAuthoritativeSellingPricePaise(list, net, listing?.pricePaise);
   if (!priced) {
-    return <span className="text-sm font-extrabold text-[var(--sl-text-soft)]">{t("price.onRequest")}</span>;
+    return <span className="text-sm font-extrabold text-[var(--sl-ink-2)]">{t("price.onRequest")}</span>;
   }
-  return <span className="text-base font-extrabold text-slate-950">₹{rupees(net || list)}</span>;
+  return <span className="text-base font-extrabold text-[var(--sl-ink)]">₹{rupees(net || list)}</span>;
 }
 
 function stockText(
@@ -190,15 +190,15 @@ function SidebarRow({
   return (
     <button
       type="button"
-      className="flex w-full items-center gap-3 px-2 py-2.5 text-left text-sm text-slate-800 hover:bg-[var(--sl-surface-sunk)]"
+      className="flex w-full items-center gap-3 px-2 py-2.5 text-left text-sm text-[var(--sl-ink)] hover:bg-[var(--sl-sunken)]"
       onMouseDown={(event) => event.preventDefault()}
       onClick={onClick}
     >
-      <span className="flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-md bg-slate-100">
+      <span className="flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-[var(--sl-r)] bg-[var(--sl-sunken)]">
         {icon}
       </span>
       <span className="min-w-0 flex-1 truncate font-medium">{label}</span>
-      <span className="shrink-0 text-[var(--sl-muted)]" aria-hidden>
+      <span className="shrink-0 text-[var(--sl-ink-3)]" aria-hidden>
         ›
       </span>
     </button>
@@ -240,21 +240,50 @@ export function OrderSearchFilters({
   onClearFilters?: () => void;
   orderPage?: boolean;
 }) {
+  /* This component had no translation hook, so the two selects below rendered
+     their labels and options in English regardless of the language setting. */
+  const { t } = useI18n();
   return (
-    <div className="flex flex-nowrap items-center gap-2 sm:gap-2.5">
-      <label className="flex shrink-0 items-center gap-1 whitespace-nowrap text-xs font-semibold text-[var(--sl-text-soft)]">
-        <span>Category:</span>
+    /* Every control in this row is the same height with the same 3px radius and
+       the same 1px `--sl-rule-strong` border, so the two dropdowns and the Clear
+       button read as one family. `leading-none` plus the flex centring in each
+       label is what stops the captions floating off the controls: a <span>, a
+       native <select> and a <button> all default to different UA line-heights,
+       so centring their boxes alone still leaves their text on different
+       baselines. Focus is a border colour change, not a ring, so a focused
+       control does not grow visual weight and appear to shift against its
+       neighbours.
+
+       ---- MOBILE ONLY, below the 640px `sm` breakpoint ----
+
+       This row was `flex-nowrap` at every width, which is fine on a desktop but
+       not on a phone. Measured against `.sl-container`'s 1rem gutter, the three
+       groups need 456px, so at 375px (343px available) the 113px overflow was
+       absorbed by flex-shrink on the two selects - crushing the Category
+       dropdown to ~72px and the Stock dropdown to ~41px, wide enough to hide
+       most of their own text. `min-w-0` is what let them shrink that far.
+
+       So below `sm` the row wraps instead: the Category group takes a full-width
+       line and the Stock group shares a second line with Clear filters
+       (143 + 8 + 104 = 255px, which fits 343px with room to spare). Nothing is
+       compressed, so each select is back to its natural width. The first
+       viewport at which the single line fits on its own is 640px, which is
+       exactly the `sm` breakpoint, so the switch is clean at every width.
+
+       From 640px up this is the previous layout, unchanged: `flex-nowrap`,
+       `gap-2.5`, `h-9` controls, the same `max-w-32` caps. */
+    <div className="flex flex-wrap items-center gap-2 sm:flex-nowrap sm:gap-2.5">
+      <label className="flex w-full shrink-0 items-center gap-1.5 whitespace-nowrap text-xs font-semibold leading-none text-[var(--sl-ink-2)] sm:w-auto">
+        <span>{t("search.categoryLabel")}</span>
         <select
           value={activeCategory}
           onChange={(event) => onCategoryChange?.(event.target.value)}
-          className={`h-9 w-auto min-w-0 max-w-32 rounded-md px-2 text-xs font-semibold text-slate-800 outline-none focus:ring-2 focus:ring-[var(--sl-primary)]/20 lg:max-w-32 xl:max-w-44 ${
-            orderPage
-              ? "border border-[var(--sl-border-strong)] bg-white"
-              : "bg-[var(--sl-surface-sunk)]"
+          className={`h-11 w-auto min-w-0 max-w-32 rounded-[var(--sl-r)] border border-[var(--sl-rule-strong)] px-2 text-xs font-semibold leading-none text-[var(--sl-ink)] outline-none transition-colors focus:border-[var(--sl-brand)] max-sm:max-w-40 sm:h-9 lg:max-w-32 xl:max-w-44 ${
+            orderPage ? "bg-[var(--sl-surface)]" : "bg-[var(--sl-sunken)]"
           }`}
-          aria-label="Category"
+          aria-label={t("search.ariaCategory")}
         >
-          <option value="">All Categories</option>
+          <option value="">{t("search.allCategories")}</option>
           {categories.map((row) => (
             <option key={row.value} value={row.value}>
               {row.value}
@@ -266,33 +295,40 @@ export function OrderSearchFilters({
         </select>
       </label>
 
-      <label className="flex shrink-0 items-center gap-1 whitespace-nowrap text-xs font-semibold text-[var(--sl-text-soft)]">
-        <span>Stock:</span>
+      {/* The Stock group keeps its natural width on the second line beside the
+          Clear button rather than growing, so the two controls on that line
+          keep the same size they have on desktop. */}
+      <label className="flex shrink-0 items-center gap-1.5 whitespace-nowrap text-xs font-semibold leading-none text-[var(--sl-ink-2)]">
+        <span>{t("search.stockLabel")}</span>
         <select
           value={stockFilter}
           onChange={(event) =>
             onStockFilterChange?.(event.target.value === "in_stock" ? "in_stock" : "all")
           }
-          className={`h-9 w-auto min-w-0 max-w-32 rounded-md px-2 text-xs font-semibold text-slate-800 outline-none focus:ring-2 focus:ring-[var(--sl-primary)]/20 lg:max-w-32 xl:max-w-36 ${
-            orderPage
-              ? "border border-[var(--sl-border-strong)] bg-white"
-              : "bg-[var(--sl-surface-sunk)]"
+          className={`h-11 w-auto min-w-0 max-w-32 rounded-[var(--sl-r)] border border-[var(--sl-rule-strong)] px-2 text-xs font-semibold leading-none text-[var(--sl-ink)] outline-none transition-colors focus:border-[var(--sl-brand)] sm:h-9 lg:max-w-32 xl:max-w-36 ${
+            orderPage ? "bg-[var(--sl-surface)]" : "bg-[var(--sl-sunken)]"
           }`}
-          aria-label="Stock"
+          aria-label={t("search.ariaStock")}
         >
-          <option value="all">All Stock</option>
-          <option value="in_stock">In Stock</option>
+          <option value="all">{t("search.allStock")}</option>
+          <option value="in_stock">{t("search.inStock")}</option>
         </select>
       </label>
 
+      {/* h-11 below `sm` so the tap target clears the 44px V3 minimum on a
+          phone, matching the search button's own `min-h-11`; h-9 from 640px up,
+          identical to before. The stock select above takes the same h-11 so
+          both controls on this line stay the same height. */}
       <button
         type="button"
         onClick={() => onClearFilters?.()}
-        className={`h-9 shrink-0 whitespace-nowrap rounded-md px-2 text-xs font-semibold text-[var(--sl-text-soft)] hover:bg-[var(--sl-surface-sunk)] hover:text-[var(--sl-primary)] ${
-          orderPage ? "border border-[var(--sl-primary)]" : ""
+        className={`inline-flex h-11 shrink-0 items-center justify-center whitespace-nowrap rounded-[var(--sl-r)] border px-2 text-xs font-semibold leading-none outline-none transition-colors focus:border-[var(--sl-brand)] sm:h-9 ${
+          orderPage
+            ? "border-[var(--sl-brand)] text-[var(--sl-brand)] hover:bg-[var(--sl-brand-soft)]"
+            : "border-[var(--sl-rule-strong)] text-[var(--sl-ink-2)] hover:bg-[var(--sl-sunken)] hover:text-[var(--sl-brand)]"
         }`}
       >
-        Clear Filters
+        {t("common.clearFilters")}
       </button>
     </div>
   );
@@ -306,7 +342,7 @@ export function HeaderSearchField({
   onOpenProduct,
   onAddToCart,
   panelHost,
-  suppressFilters = false,
+  searchClassName,
   orderMode = false,
   orderPage = false,
   categoryOptions = [],
@@ -326,18 +362,12 @@ export function HeaderSearchField({
   onAddToCart?: (listingId: string, unitPaise?: number) => Promise<void> | void;
   panelHost?: HTMLElement | null;
   /**
-   * Optional full-width host for the order-mode filter row (Category / Stock /
-   * Clear Filters). When supplied the filters portal here instead of rendering
-   * inline, so the header can give them a full container width and guarantee
-   * they stay on a single line. Falls back to inline rendering when absent.
+   * Class applied to the `<form>`, replacing the built-in `sl-search`.
+   * The masthead passes a Precision `.sl-input` plate (plus the row's flex and
+   * padding utilities) so the field is a ruled square rather than a 999px
+   * pill. Behaviour, markup and the autocomplete panel are untouched.
    */
-  /**
-   * When true the order-mode filter row is NOT rendered inline. The storefront
-   * header sets this on its desktop field because it renders
-   * `<OrderSearchFilters>` itself, in a dedicated full-width row below the
-   * search pill.
-   */
-  suppressFilters?: boolean;
+  searchClassName?: string;
   orderMode?: boolean;
   orderPage?: boolean;
   categoryOptions?: FacetRow[];
@@ -563,11 +593,11 @@ export function HeaderSearchField({
       ref={panelRef}
       role="listbox"
       aria-label={t("search.tabsLabel")}
-      className="absolute inset-x-3 z-[70] mt-1.5 flex max-h-[min(76dvh,720px)] min-h-[min(48dvh,480px)] w-auto flex-col overflow-hidden rounded-[var(--sl-radius-lg)] border border-[var(--sl-border)] bg-white shadow-[0_18px_50px_rgba(15,23,42,0.18)] md:inset-x-6"
+      className="absolute inset-x-3 z-[70] mt-1.5 flex max-h-[min(76dvh,720px)] min-h-[min(48dvh,480px)] w-auto flex-col overflow-hidden rounded-[var(--sl-r-lg)] border border-[var(--sl-rule)] bg-[var(--sl-surface)] shadow-[var(--sl-e-3)] md:inset-x-6"
     >
       {showIdle ? (
         <div className="p-4">
-          <p className="mb-2 text-[11px] font-bold uppercase tracking-wide text-[var(--sl-muted)]">
+          <p className="mb-2 text-[11px]  tracking-wide text-[var(--sl-ink-3)]">
             {t("search.recentSearches")}
           </p>
           <div className="flex flex-wrap gap-2">
@@ -575,7 +605,7 @@ export function HeaderSearchField({
               <button
                 key={item}
                 type="button"
-                className="sl-chip text-sm"
+                className="sl-badge sl-badge-neutral text-sm"
                 onMouseDown={(event) => event.preventDefault()}
                 onClick={() => {
                   onChange(item);
@@ -589,7 +619,7 @@ export function HeaderSearchField({
         </div>
       ) : (
         <>
-          <div className="shrink-0 overflow-x-auto border-b border-[var(--sl-border)]/70 bg-[var(--sl-primary-soft)]/30 px-3 py-2.5" role="tablist">
+          <div className="shrink-0 overflow-x-auto border-b border-[var(--sl-rule)]/70 bg-[var(--sl-brand-soft)]/30 px-3 py-2.5" role="tablist">
             <div className="flex min-w-max gap-2">
               {panelTabs.map((item) => {
                 const active = panelTab === item.id;
@@ -601,10 +631,10 @@ export function HeaderSearchField({
                     aria-selected={active}
                     onMouseDown={(event) => event.preventDefault()}
                     onClick={() => setPanelTab(item.id)}
-                    className={`inline-flex h-10 items-center gap-2 rounded-[var(--sl-radius)] px-3 text-xs font-bold transition-colors duration-200 ${
+                    className={`inline-flex h-10 items-center gap-2 rounded-[var(--sl-r)] px-3 text-xs font-bold transition-colors duration-200 ${
                       active
-                        ? "bg-[var(--sl-primary)] text-white shadow-[0_6px_16px_-8px_rgba(122,18,51,0.7)]"
-                        : "border border-[var(--sl-border)] bg-[var(--sl-primary-soft)]/50 text-[var(--sl-text-soft)] hover:bg-[var(--sl-primary-soft)] hover:text-[var(--sl-primary)]"
+                        ? "bg-[var(--sl-brand)] text-white shadow-[var(--sl-e-1)]"
+                        : "border border-[var(--sl-rule)] bg-[var(--sl-brand-soft)]/50 text-[var(--sl-ink-2)] hover:bg-[var(--sl-brand-soft)] hover:text-[var(--sl-brand)]"
                     }`}
                   >
                     <TabIcon kind={item.id} />
@@ -618,9 +648,9 @@ export function HeaderSearchField({
           </div>
 
           <div className="grid min-h-0 min-w-0 flex-1 grid-cols-1 overflow-hidden md:grid-cols-[minmax(11rem,17.5rem)_minmax(0,1fr)]">
-            <aside className="hidden min-h-0 min-w-0 flex-col overflow-y-auto border-r border-[var(--sl-border)] bg-white md:flex">
+            <aside className="hidden min-h-0 min-w-0 flex-col overflow-y-auto border-r border-[var(--sl-rule)] bg-[var(--sl-surface)] md:flex">
               <section className="shrink-0 px-3 pt-4">
-                <p className="px-2 text-[11px] font-bold uppercase tracking-[0.14em] text-[var(--sl-muted)]">
+                <p className="px-2 text-[11px]  tracking-[0.14em] text-[var(--sl-ink-3)]">
                   {t("search.relatedCategories")}
                 </p>
                 <div className="mt-1">
@@ -633,7 +663,7 @@ export function HeaderSearchField({
                         setOpen(true);
                       }}
                       icon={
-                        <svg className="h-4 w-4 text-[var(--sl-muted)]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.8">
+                        <svg className="h-4 w-4 text-[var(--sl-ink-3)]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.8">
                           <path strokeLinecap="round" strokeLinejoin="round" d="M4 7h16M4 12h10M4 17h7" />
                         </svg>
                       }
@@ -641,9 +671,9 @@ export function HeaderSearchField({
                   ))}
                 </div>
               </section>
-              <div className="mx-5 my-2 border-t border-[var(--sl-border)]" />
+              <div className="mx-5 my-2 border-t border-[var(--sl-rule)]" />
               <section className="shrink-0 px-3">
-                <p className="px-2 text-[11px] font-bold uppercase tracking-[0.14em] text-[var(--sl-muted)]">
+                <p className="px-2 text-[11px]  tracking-[0.14em] text-[var(--sl-ink-3)]">
                   {t("search.popularBrands")}
                 </p>
                 <div className="mt-1">
@@ -662,7 +692,7 @@ export function HeaderSearchField({
                             // eslint-disable-next-line @next/next/no-img-element
                             <img src={logo} alt="" className="h-7 w-7 object-contain" />
                           ) : (
-                            <span className="text-[9px] font-bold text-[var(--sl-muted)]">
+                            <span className="text-[9px] font-bold text-[var(--sl-ink-3)]">
                               {row.value.slice(0, 2).toUpperCase()}
                             </span>
                           )
@@ -673,15 +703,15 @@ export function HeaderSearchField({
                 </div>
               </section>
               <div className="mt-auto p-3">
-                <div className="rounded-[var(--sl-radius)] bg-slate-100 p-4">
-                  <div className="mb-2 flex items-center gap-2 text-[var(--sl-muted)]">
+                <div className="rounded-[var(--sl-r)] bg-[var(--sl-sunken)] p-4">
+                  <div className="mb-2 flex items-center gap-2 text-[var(--sl-ink-3)]">
                     <SearchIcon className="h-4 w-4" />
-                    <p className="text-sm font-bold text-[var(--sl-text)]">{t("search.cantFindTitle")}</p>
+                    <p className="text-sm font-bold text-[var(--sl-ink)]">{t("search.cantFindTitle")}</p>
                   </div>
-                  <p className="text-[12px] leading-relaxed text-[var(--sl-text-soft)]">{t("search.cantFindHint")}</p>
+                  <p className="text-[12px] leading-relaxed text-[var(--sl-ink-2)]">{t("search.cantFindHint")}</p>
                   <Link
                     href="/vehicle-fitment"
-                    className="mt-3 inline-flex min-h-10 w-full items-center justify-center gap-2 rounded-[var(--sl-radius-sm)] border-2 border-brand-600 bg-white px-3 text-xs font-bold text-[var(--sl-primary)]"
+                    className="mt-3 inline-flex min-h-10 w-full items-center justify-center gap-2 rounded-[var(--sl-r-xs)] border-2 border-[var(--sl-brand-hover)] bg-[var(--sl-surface)] px-3 text-xs font-bold text-[var(--sl-brand)]"
                     onMouseDown={(event) => event.preventDefault()}
                   >
                     <SearchIcon className="h-3.5 w-3.5" />
@@ -702,10 +732,10 @@ export function HeaderSearchField({
               }}
             >
               {canSuggest && suggesting && suggestions.length === 0 ? (
-                <p className="px-5 py-8 text-sm text-[var(--sl-muted)]">{t("search.searching")}</p>
+                <p className="px-5 py-8 text-sm text-[var(--sl-ink-3)]">{t("search.searching")}</p>
               ) : null}
               {canSuggest && !suggesting && showProductRows && suggestions.length === 0 ? (
-                <p className="px-5 py-8 text-sm text-[var(--sl-muted)]">{t("search.none", { query: value.trim() })}</p>
+                <p className="px-5 py-8 text-sm text-[var(--sl-ink-3)]">{t("search.none", { query: value.trim() })}</p>
               ) : null}
 
               {panelTab === "brands"
@@ -715,7 +745,7 @@ export function HeaderSearchField({
                       <button
                         key={row.value}
                         type="button"
-                        className="flex w-full items-center gap-3 border-b border-slate-100 px-5 py-3 text-left hover:bg-[var(--sl-surface-sunk)]"
+                        className="flex w-full items-center gap-3 border-b border-[var(--sl-rule)] px-5 py-3 text-left hover:bg-[var(--sl-sunken)]"
                         onMouseDown={(event) => event.preventDefault()}
                         onClick={() => {
                           onChange(row.value);
@@ -727,7 +757,7 @@ export function HeaderSearchField({
                           <img src={logo} alt="" className="h-8 w-12 object-contain" />
                         ) : null}
                         <span className="flex-1 font-semibold">{row.value}</span>
-                        <span className="text-xs text-[var(--sl-muted)]">{row.count}</span>
+                        <span className="text-xs text-[var(--sl-ink-3)]">{row.count}</span>
                       </button>
                     );
                   })
@@ -738,7 +768,7 @@ export function HeaderSearchField({
                     <button
                       key={row.value}
                       type="button"
-                      className="flex w-full items-center justify-between border-b border-slate-100 px-5 py-3 text-left hover:bg-[var(--sl-surface-sunk)]"
+                      className="flex w-full items-center justify-between border-b border-[var(--sl-rule)] px-5 py-3 text-left hover:bg-[var(--sl-sunken)]"
                       onMouseDown={(event) => event.preventDefault()}
                       onClick={() => {
                         onChange(row.value);
@@ -746,7 +776,7 @@ export function HeaderSearchField({
                       }}
                     >
                       <span className="font-semibold">{row.value}</span>
-                      <span className="text-xs text-[var(--sl-muted)]">{row.count}</span>
+                      <span className="text-xs text-[var(--sl-ink-3)]">{row.count}</span>
                     </button>
                   ))
                 : null}
@@ -757,22 +787,22 @@ export function HeaderSearchField({
                         <Link
                           key={`${vehicle.make}-${vehicle.model}`}
                           href={`/vehicle-fitment/${slugifyFitment(vehicle.make)}`}
-                          className="flex items-center justify-between border-b border-slate-100 px-5 py-3 hover:bg-[var(--sl-surface-sunk)]"
+                          className="flex items-center justify-between border-b border-[var(--sl-rule)] px-5 py-3 hover:bg-[var(--sl-sunken)]"
                           onMouseDown={(event) => event.preventDefault()}
                         >
                           <span className="font-semibold">
                             {vehicle.make} {vehicle.model}
                           </span>
-                          <span className="text-xs text-[var(--sl-muted)]">{vehicle.count}</span>
+                          <span className="text-xs text-[var(--sl-ink-3)]">{vehicle.count}</span>
                         </Link>
                       ))
                     : (
-                      <p className="px-5 py-8 text-sm text-[var(--sl-muted)]">{t("search.none", { query: value.trim() })}</p>
+                      <p className="px-5 py-8 text-sm text-[var(--sl-ink-3)]">{t("search.none", { query: value.trim() })}</p>
                     ))
                 : null}
 
               {panelTab === "articles" ? (
-                <p className="px-5 py-8 text-sm text-[var(--sl-muted)]">{t("search.none", { query: value.trim() })}</p>
+                <p className="px-5 py-8 text-sm text-[var(--sl-ink-3)]">{t("search.none", { query: value.trim() })}</p>
               ) : null}
 
               {showProductRows
@@ -792,8 +822,8 @@ export function HeaderSearchField({
                         id={`${listId}-option-${index}`}
                         role="option"
                         aria-selected={index === activeIndex}
-                        className={`flex min-w-0 flex-col gap-3 border-b border-slate-100 px-3 py-3 sm:flex-row sm:items-center sm:gap-4 sm:px-4 sm:py-3.5 ${
-                          index === activeIndex ? "bg-[var(--sl-surface-sunk)]" : "bg-white"
+                        className={`flex min-w-0 flex-col gap-3 border-b border-[var(--sl-rule)] px-3 py-3 sm:flex-row sm:items-center sm:gap-4 sm:px-4 sm:py-3.5 ${
+                          index === activeIndex ? "bg-[var(--sl-sunken)]" : "bg-[var(--sl-surface)]"
                         }`}
                       >
                         <button
@@ -803,7 +833,7 @@ export function HeaderSearchField({
                           onMouseDown={(event) => event.preventDefault()}
                           onClick={() => chooseProduct(item)}
                         >
-                          <span className="relative h-16 w-16 shrink-0 overflow-hidden rounded-[var(--sl-radius)] border border-[var(--sl-border)] bg-[var(--sl-surface-sunk)] sm:h-[88px] sm:w-[88px]">
+                          <span className="relative h-16 w-16 shrink-0 overflow-hidden rounded-[var(--sl-r)] border border-[var(--sl-rule)] bg-[var(--sl-sunken)] sm:h-[88px] sm:w-[88px]">
                             <Image
                               src={
                                 item.thumbUrl ||
@@ -818,16 +848,16 @@ export function HeaderSearchField({
                             />
                           </span>
                           <span className="min-w-0 flex-1">
-                            <span className="block truncate text-[15px] font-bold text-slate-950">
+                            <span className="block truncate text-[15px] font-bold text-[var(--sl-ink)]">
                               <SearchHighlight text={item.name} query={value} />
                             </span>
-                            <span className="mt-1 block truncate text-xs text-[var(--sl-muted)]">
+                            <span className="mt-1 block truncate text-xs text-[var(--sl-ink-3)]">
                               {[item.brand, item.partNumber ? `${t("search.partNo")} ${item.partNumber}` : ""]
                                 .filter(Boolean)
                                 .join(" | ")}
                             </span>
                             {item.category ? (
-                              <span className="mt-2 inline-flex rounded bg-slate-100 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-[var(--sl-text-soft)]">
+                              <span className="mt-2 inline-flex rounded bg-[var(--sl-sunken)] px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-[var(--sl-ink-2)]">
                                 {item.category}
                               </span>
                             ) : null}
@@ -837,10 +867,28 @@ export function HeaderSearchField({
                           {stock ? (
                             <span
                               className={`text-[11px] font-bold ${
-                                canAdd ? "text-emerald-700" : "text-[var(--sl-muted)]"
+                                canAdd ? "text-[var(--sl-ok)]" : "text-[var(--sl-ink-3)]"
                               }`}
                             >
-                              {canAdd ? `✓ ${stock}` : stock}
+                              {canAdd ? (
+                                <>
+                                  <svg
+                                    className="mr-1 inline-block h-3 w-3 align-[-0.05em]"
+                                    viewBox="0 0 24 24"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    strokeWidth="2.6"
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    aria-hidden
+                                  >
+                                    <path d="M5 13l4 4L19 7" />
+                                  </svg>
+                                  {stock}
+                                </>
+                              ) : (
+                                stock
+                              )}
                             </span>
                           ) : null}
                           <CompactPrice listing={item.listing} />
@@ -848,7 +896,7 @@ export function HeaderSearchField({
                             <button
                               type="button"
                               disabled={!canAdd || addingId === item.listing?.id}
-                              className="inline-flex min-h-9 items-center rounded-[var(--sl-radius-sm)] bg-[var(--sl-primary)] px-3 text-[11px] font-bold text-white disabled:opacity-50"
+                              className="inline-flex min-h-9 items-center rounded-[var(--sl-r-xs)] bg-[var(--sl-brand)] px-3 text-[11px] font-bold text-white disabled:opacity-50"
                               onMouseDown={(event) => event.preventDefault()}
                               onClick={(event) => void addListing(item, event)}
                             >
@@ -862,14 +910,14 @@ export function HeaderSearchField({
                 : null}
 
               {loadingMore ? (
-                <p className="px-5 py-3 text-xs text-[var(--sl-muted)]">{t("search.searching")}</p>
+                <p className="px-5 py-3 text-xs text-[var(--sl-ink-3)]">{t("search.searching")}</p>
               ) : null}
             </div>
           </div>
 
-          <div className="flex shrink-0 flex-col gap-3 border-t border-[var(--sl-border)] bg-[var(--sl-surface-sunk)] px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex shrink-0 flex-col gap-3 border-t border-[var(--sl-rule)] bg-[var(--sl-sunken)] px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
             <div className="min-w-0">
-              <p className="mb-1.5 text-[11px] font-bold uppercase tracking-wide text-[var(--sl-muted)]">
+              <p className="sl-label mb-1.5">
                 {t("search.recentSearches")}
               </p>
               <div className="flex gap-2 overflow-x-auto">
@@ -878,7 +926,7 @@ export function HeaderSearchField({
                     <button
                       key={item}
                       type="button"
-                      className="shrink-0 rounded-full border border-[var(--sl-border)] bg-white px-3 py-1 text-xs font-semibold text-[var(--sl-text-soft)]"
+                      className="shrink-0 rounded-[var(--sl-r-xs)] border border-[var(--sl-rule)] bg-[var(--sl-surface)] px-3 py-1 text-xs font-semibold text-[var(--sl-ink-2)]"
                       onMouseDown={(event) => event.preventDefault()}
                       onClick={() => {
                         onChange(item);
@@ -889,21 +937,21 @@ export function HeaderSearchField({
                     </button>
                   ))
                 ) : (
-                  <span className="text-xs text-[var(--sl-muted)]">—</span>
+                  <span className="text-xs text-[var(--sl-ink-3)]">—</span>
                 )}
               </div>
             </div>
             <div className="flex min-w-0 gap-2 overflow-x-auto">
               <Link
                 href="/vehicle-fitment"
-                className="inline-flex shrink-0 items-center gap-1 rounded-[var(--sl-radius-sm)] border border-[var(--sl-border)] bg-white px-3 py-2 text-xs font-bold text-slate-800"
+                className="inline-flex shrink-0 items-center gap-1 rounded-[var(--sl-r-xs)] border border-[var(--sl-rule)] bg-[var(--sl-surface)] px-3 py-2 text-xs font-bold text-[var(--sl-ink)]"
                 onMouseDown={(event) => event.preventDefault()}
               >
                 {t("search.byVehicle")} ›
               </Link>
               <button
                 type="button"
-                className="inline-flex shrink-0 items-center gap-1 rounded-[var(--sl-radius-sm)] border border-[var(--sl-border)] bg-white px-3 py-2 text-xs font-bold text-slate-800"
+                className="inline-flex shrink-0 items-center gap-1 rounded-[var(--sl-r-xs)] border border-[var(--sl-rule)] bg-[var(--sl-surface)] px-3 py-2 text-xs font-bold text-[var(--sl-ink)]"
                 onMouseDown={(event) => event.preventDefault()}
                 onClick={() => rootRef.current?.querySelector("input")?.focus()}
               >
@@ -911,7 +959,7 @@ export function HeaderSearchField({
               </button>
               <button
                 type="button"
-                className="inline-flex shrink-0 items-center gap-1 rounded-[var(--sl-radius-sm)] border border-[var(--sl-border)] bg-white px-3 py-2 text-xs font-bold text-slate-800"
+                className="inline-flex shrink-0 items-center gap-1 rounded-[var(--sl-r-xs)] border border-[var(--sl-rule)] bg-[var(--sl-surface)] px-3 py-2 text-xs font-bold text-[var(--sl-ink)]"
                 onMouseDown={(event) => event.preventDefault()}
                 onClick={() => rootRef.current?.querySelector("input")?.focus()}
               >
@@ -928,14 +976,18 @@ export function HeaderSearchField({
     <div ref={rootRef} className="relative min-w-0 w-full">
       <form
         data-storefront-search
-        className="sl-search w-full min-w-0"
+        className={`${searchClassName ?? "sl-search"} w-full min-w-0`}
         onSubmit={(event) => {
           event.preventDefault();
           submitForm();
         }}
       >
         <div className="flex h-full min-w-0 flex-1 items-center">
-          <span className="sl-search-icon pl-1" aria-hidden>
+          {/* No extra left padding here: the field plate (`sl-search`,
+              `sl-input` or the hero field) already supplies its own gutter,
+              and the old `pl-1` on top of it left the icon 14px from
+              the edge while the filled button sat 4px from the other one. */}
+          <span className="sl-search-icon flex shrink-0 items-center" aria-hidden>
             <SearchIcon />
           </span>
           <input
@@ -943,13 +995,9 @@ export function HeaderSearchField({
             value={value}
             role="combobox"
             aria-label={
-              orderPage
-                ? isMobileViewport
-                  ? "Search by item, part no., HSN"
-                  : "Search by item name, part no., or HSN"
-                : orderMode
-                  ? "Search by item name, part no., or HSN"
-                  : t("search.placeholderHeader")
+              orderPage && isMobileViewport
+                ? t("search.placeholderShort")
+                : t("search.placeholderHeader")
             }
             aria-expanded={showDropdown}
             aria-controls={listId}
@@ -994,13 +1042,9 @@ export function HeaderSearchField({
               }
             }}
             placeholder={
-              orderPage
-                ? isMobileViewport
-                  ? "Search by item, part no., HSN..."
-                  : "Search by item name, part no., or HSN..."
-                : orderMode
-                  ? "Search by item name, part no., or HSN..."
-                  : t("search.placeholderHeader")
+              orderPage && isMobileViewport
+                ? t("search.placeholderShort")
+                : t("search.placeholderHeader")
             }
             className="sl-search-input"
           />
@@ -1033,11 +1077,11 @@ export function HeaderSearchField({
         <button
           type="submit"
           disabled={searchLoading}
-          aria-label={orderMode ? "Search catalogue" : t("nav.search")}
+          aria-label={orderMode ? t("search.searchCatalogue") : t("nav.search")}
           className={`${
             orderPage
               ? "hidden"
-              : "inline-flex min-h-11 shrink-0 items-center gap-1.5 bg-[var(--sl-primary)] px-2.5 text-sm font-bold text-white hover:bg-[var(--sl-primary-dark)] disabled:opacity-60 sm:px-3"
+              : "inline-flex min-h-11 shrink-0 items-center gap-1.5 bg-[var(--sl-brand)] px-2.5 text-sm font-bold text-white hover:bg-[var(--sl-brand-hover)] disabled:opacity-60 sm:px-3"
           }`}
         >
           <SearchIcon />
@@ -1047,13 +1091,13 @@ export function HeaderSearchField({
           <Link
             href={mobileCartHref}
             aria-label={t("nav.cart")}
-            className={`relative inline-flex min-h-11 shrink-0 items-center justify-center px-2.5 text-[var(--sl-text-soft)] hover:bg-[var(--sl-surface-sunk)] md:hidden ${
-              orderPage ? "rounded-[var(--sl-radius-sm)]" : ""
+            className={`relative inline-flex min-h-11 shrink-0 items-center justify-center px-2.5 text-[var(--sl-ink-2)] hover:bg-[var(--sl-sunken)] md:hidden ${
+              orderPage ? "rounded-[var(--sl-r-xs)]" : ""
             }`}
           >
             <CartIcon />
             {mobileCartCount > 0 ? (
-              <span className="absolute right-0.5 top-1 inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-[#c81e1e] px-1 text-[9px] font-bold leading-none text-white">
+              <span className="absolute right-0.5 top-1 inline-flex h-4 min-w-4 items-center justify-center rounded-[var(--sl-r-xs)] bg-[var(--sl-bad)] px-1 text-[9px] font-bold leading-none text-white">
                 {mobileCartCount > 99 ? "99+" : mobileCartCount}
               </span>
             ) : null}
@@ -1076,7 +1120,7 @@ export function HeaderSearchField({
          * differs, and `flex-nowrap` with shrink-0 children keeps the row on one
          * line at every desktop width.
          */}
-        {orderMode && !suppressFilters ? (
+        {orderMode ? (
           <OrderSearchFilters
             categories={orderCategories}
             activeCategory={activeCategory}

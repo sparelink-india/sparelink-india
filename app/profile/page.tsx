@@ -9,6 +9,7 @@ import { SiteFooter } from "@/components/site-footer";
 import { StorefrontHeader } from "@/components/storefront-header";
 import { MobileBottomNav } from "@/components/mobile/mobile-bottom-nav";
 import { GarageVehiclesPanel } from "@/components/garage-vehicles-panel";
+import { Notice, Skeleton } from "@/components/page-states";
 import { useI18n } from "@/components/preferences-provider";
 
 type ProfileData = {
@@ -151,204 +152,206 @@ export default function ProfilePage() {
   ];
 
   return (
-    <div className="storefront-mobile-pad sl-page flex min-h-screen flex-col text-[var(--sl-text)]">      <StorefrontHeader />
-      <div className="hidden border-b border-[var(--sl-border)] bg-white px-4 py-2 md:block">
-        <div className="mx-auto flex max-w-4xl flex-wrap items-center justify-end gap-3 text-xs font-semibold text-[var(--sl-text-soft)]">
-          <Link href="/orders" className="hover:text-slate-950">
+    <div className="storefront-mobile-pad flex min-h-screen flex-col bg-[var(--sl-page)] text-[var(--sl-ink)]">      <StorefrontHeader />
+      <div className="hidden border-b border-[var(--sl-rule)] bg-[var(--sl-surface)] px-4 py-2 md:block">
+        <div className="mx-auto flex max-w-4xl flex-wrap items-center justify-end gap-3">
+          <Link href="/orders" className="sl-navlink sl-focus">
             {t("nav.orders")}
           </Link>
-          <Link href="/cart" className="hover:text-slate-950">
+          <Link href="/cart" className="sl-navlink sl-focus">
             {t("nav.cart")}
           </Link>
-          <Link href="/" className="rounded-full border border-[var(--sl-border-strong)] px-3 py-1.5 hover:bg-slate-100">
+          <Link href="/" className="sl-btn sl-btn-secondary sl-btn-sm">
             {t("nav.orderParts")}
           </Link>
-          <SignOutButton className="rounded-full border border-[var(--sl-border-strong)] px-3 py-1.5 text-xs font-semibold text-[var(--sl-text-soft)] transition-colors hover:bg-slate-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-950 disabled:cursor-not-allowed disabled:opacity-60" />
+          <SignOutButton className="sl-btn sl-btn-secondary sl-btn-sm sl-focus" />
         </div>
       </div>
 
-      <main className="mx-auto max-w-4xl px-3 py-5 sm:px-6 sm:py-10">
-        {/*
-          V2 account dashboard: navigation rail + content.
-          The rail is `hidden lg:block` and the mobile grid is `lg:hidden`, so
-          exactly one navigation surface renders at any width. Previously the
-          nav was `md:hidden` only, which left desktop users with no account
-          navigation at all.
-        */}
-        <div className="grid gap-6 lg:grid-cols-[15rem_minmax(0,1fr)] lg:items-start lg:gap-8">
-          <aside className="hidden lg:sticky lg:top-24 lg:block">
-            <h1 id="account-hub-heading" className="sl-h2">
+      <main className="sl-container sl-container-prose-lg sl-page-main">
+        {/* ---------- ACCOUNT REFERENCE LAYOUT ----------
+            One navigation object at every breakpoint, then the content column
+            at full width.
+
+            V2 had two: a sticky 15rem sidebar on desktop and a 2-column grid of
+            bordered boxes on mobile. The sidebar is a dashboard idiom, and 240px
+            of page width to list five links left the actual account form
+            squeezed into 65% of a 4xl container. */}
+        <div className="flex min-w-0 flex-col">
+          <nav
+            className="border-y border-[var(--sl-rule)]"
+            aria-label={t("account.hubTitle")}
+          >
+            <h1 id="account-hub-heading" className="sr-only">
               {t("account.hubTitle")}
             </h1>
-            <nav className="mt-4 flex flex-col gap-1" aria-label={t("account.hubTitle")}>
-              {ACCOUNT_LINKS.map((item) => (
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  className="sl-v2-focus sl-nav flex min-h-11 items-center rounded-[var(--sl-radius-sm)] px-3 text-[var(--sl-text-soft)] transition-colors hover:bg-[var(--sl-primary-soft)] hover:text-[var(--sl-primary)]"
-                >
-                  {item.label}
-                </Link>
+            {/* Scrolls horizontally on a phone rather than wrapping to three
+                rows, so the object below it never moves. */}
+            <ul className="-mx-1 flex items-stretch overflow-x-auto px-1">
+              {ACCOUNT_LINKS.map((item, index) => (
+                <li key={item.href} className="shrink-0">
+                  <Link
+                    href={item.href}
+                    className="sl-focus flex min-h-12 items-center gap-2 border-b-2 border-transparent px-3 text-[0.8125rem] font-semibold text-[var(--sl-ink-2)] transition-colors hover:border-[var(--sl-brand)] hover:bg-[var(--sl-brand-soft)] hover:text-[var(--sl-brand-ink)]"
+                  >
+                    {/* Clause index, the same device as the policy contents
+                        and the category menu. */}
+                    <span className="sl-part text-[0.625rem] text-[var(--sl-ink-3)]">
+                      {String(index + 1).padStart(2, "0")}
+                    </span>
+                    {item.label}
+                  </Link>
+                </li>
               ))}
-            </nav>
-            <div className="mt-4 border-t border-[var(--sl-border)] pt-4">
-              <SignOutButton className="sl-v2-btn sl-v2-btn-ghost w-full !justify-start" />
-            </div>
-          </aside>
+              <li className="ml-auto hidden shrink-0 items-center pl-3 sm:flex">
+                <SignOutButton className="sl-btn sl-btn-ghost sl-btn-sm" />
+              </li>
+            </ul>
+          </nav>
 
           <div className="min-w-0">
-        <section className="mb-6 lg:hidden" aria-labelledby="account-hub-heading-m">
-          <h1 id="account-hub-heading-m" className="sl-h2">
-            {t("account.hubTitle")}
-          </h1>
-          <nav className="mt-3 grid grid-cols-2 gap-2">
-            {ACCOUNT_LINKS.map((item) => (
-              <Link
-                key={item.href}
-                href={item.href}
-                className="sl-v2-focus sl-nav flex min-h-12 items-center rounded-[var(--sl-radius-sm)] border border-[var(--sl-border)] bg-white px-3 text-[var(--sl-text-soft)]"
-              >
-                {item.label}
-              </Link>
-            ))}
-          </nav>
-          <div className="mt-3">
-            <SignOutButton className="sl-v2-btn sl-v2-btn-ghost w-full" />
-          </div>
+        <section className="mt-6 sm:hidden" aria-label={t("account.hubTitle")}>
+          <SignOutButton className="sl-btn sl-btn-ghost sl-btn-block" />
         </section>
 
         <div className="mb-6 md:mt-2">
           <GarageVehiclesPanel />
         </div>
 
-        <div id="profile-form" className="flex flex-col gap-2 border-b border-[var(--sl-border)] pb-5 sm:flex-row sm:items-center sm:justify-between">
+        <div id="profile-form" className="flex flex-col gap-2 border-b border-[var(--sl-rule)] pb-5 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <h2 className="text-xl font-bold tracking-tight text-slate-950 sm:text-3xl md:text-2xl">
+            <h2 className="sl-h2">
               {t("profile.title")}
             </h2>
-            <p className="mt-1 text-xs text-[var(--sl-muted)]">
+            <p className="sl-hint">
               {t("profile.subtitle")}
             </p>
           </div>
-          <span className="inline-flex items-center gap-1.5 self-start rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-xs font-bold text-emerald-700">
-            <span className="h-2 w-2 rounded-full bg-emerald-500" />
+          <span className="sl-badge sl-badge-ok self-start">
+            <span className="h-2 w-2 rounded-[2px] bg-[var(--sl-ok)]" />
             {profile?.customerType === "b2b" ? t("profile.b2b") : t("profile.b2c")}
           </span>
         </div>
 
         {error && (
-          <div
-            role="alert"
-            className="mt-6 flex items-start gap-2.5 rounded-[var(--sl-radius)] border border-rose-200 bg-rose-50 p-4 text-xs font-medium text-rose-800"
-          >
-            <span className="font-bold text-rose-600">✕</span>
-            <span>{error}</span>
+          <div className="mt-6">
+            <Notice tone="error">{error}</Notice>
           </div>
         )}
 
         {success && (
-          <div
-            role="status"
-            className="mt-6 flex items-start gap-2.5 rounded-[var(--sl-radius)] border border-emerald-200 bg-emerald-50 p-4 text-xs font-medium text-emerald-800"
-          >
-            <span className="font-bold text-emerald-600">✓</span>
-            <span>{success}</span>
+          <div className="mt-6">
+            <Notice tone="success">{success}</Notice>
           </div>
         )}
 
         {loading ? (
-          <div className="mt-8 space-y-4">
-            <div className="h-40 animate-pulse rounded-[var(--sl-radius-lg)] bg-white border border-[var(--sl-border)]" />
-          </div>
+          <Skeleton className="mt-8 h-40 w-full" />
         ) : (
           <form onSubmit={handleSubmit} className="mt-8 space-y-8">
             {/* 1. Account Details */}
-            <section className="rounded-[var(--sl-radius-lg)] border border-[var(--sl-border)] bg-white p-6 shadow-xs">
-              <h2 className="text-base font-bold text-slate-950 sm:text-lg">
+            <section className="sl-panel sl-panel-pad">
+              <h2 className="sl-h2 flex items-center gap-2">
                 {t("profile.identity")}
               </h2>
-              <p className="mt-0.5 text-xs text-[var(--sl-muted)]">
+              <p className="sl-hint">
                 {t("profile.mobileHint")}
               </p>
 
               <div className="mt-5 grid gap-4 sm:grid-cols-2">
                 <div>
-                  <span className="mb-1 block text-xs font-semibold text-[var(--sl-text-soft)]">
+                  <label htmlFor="pf-mobileverified" className="sl-label">
                     {t("profile.mobileVerified")}
-                  </span>
+                  </label>
                   <input
+                    id="pf-mobileverified"
                     disabled
                     value={profile?.phoneNumber || t("profile.mobileFallback")}
-                    className="h-11 w-full rounded-[var(--sl-radius)] border border-[var(--sl-border)] bg-slate-100/80 px-3.5 text-sm font-medium text-[var(--sl-muted)] cursor-not-allowed"
+                    className="sl-input"
                   />
-                  <p className="mt-1 text-[11px] font-medium text-emerald-600">
-                    ✓ {t("profile.verifiedOtp")}
+                  <p className="mt-1 flex items-center gap-1.5 text-[11px] font-medium text-[var(--sl-ok)]">
+                    <svg
+                      className="h-3.5 w-3.5 shrink-0"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2.4"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      aria-hidden
+                    >
+                      <path d="M5 13l4 4L19 7" />
+                    </svg>
+                    {t("profile.verifiedOtp")}
                   </p>
                 </div>
 
                 <div>
-                  <span className="mb-1 block text-xs font-semibold text-[var(--sl-text-soft)]">
-                    {t("profile.contactPerson")} <span className="text-rose-500">*</span>
-                  </span>
+                  <label htmlFor="pf-contactperson" className="sl-label">
+                    {t("profile.contactPerson")} <span className="text-[var(--sl-bad)]">*</span>
+                  </label>
                   <input
+                    id="pf-contactperson"
                     required
                     value={contactName}
                     onChange={(e) => setContactName(e.target.value)}
                     placeholder={t("profile.phName")}
-                    className="h-11 w-full rounded-[var(--sl-radius)] border border-[var(--sl-border)] bg-[var(--sl-surface-sunk)]/50 px-3.5 text-sm font-medium outline-none focus:border-slate-950 focus:bg-white focus:ring-2 focus:ring-slate-950/10"
+                    className="sl-input"
                   />
                 </div>
               </div>
             </section>
 
             {/* 2. Business / Workshop & GSTIN */}
-            <section className="rounded-[var(--sl-radius-lg)] border border-[var(--sl-border)] bg-white p-6 shadow-xs">
+            <section className="sl-panel sl-panel-pad">
               <div className="flex items-center justify-between">
-                <h2 className="text-base font-bold text-slate-950 sm:text-lg">
+                <h2 className="sl-h2 flex items-center gap-2">
                   {t("profile.businessTitle")}
                 </h2>
-                <span className="text-xs font-semibold text-[var(--sl-muted)]">
+                <span className="text-xs font-semibold text-[var(--sl-ink-3)]">
                   {t("profile.optionalB2c")}
                 </span>
               </div>
-              <p className="mt-0.5 text-xs text-[var(--sl-muted)]">
+              <p className="sl-hint">
                 {t("profile.gstHint")}
               </p>
 
               <div className="mt-5 grid gap-4 sm:grid-cols-2">
                 <div className="sm:col-span-2">
-                  <span className="mb-1 block text-xs font-semibold text-[var(--sl-text-soft)]">
+                  <label htmlFor="pf-firmname" className="sl-label">
                     {t("profile.firmName")}
-                  </span>
+                  </label>
                   <input
+                    id="pf-firmname"
                     value={businessName}
                     onChange={(e) => setBusinessName(e.target.value)}
                     placeholder={t("profile.phBusiness")}
-                    className="h-11 w-full rounded-[var(--sl-radius)] border border-[var(--sl-border)] bg-[var(--sl-surface-sunk)]/50 px-3.5 text-sm font-medium outline-none focus:border-slate-950 focus:bg-white focus:ring-2 focus:ring-slate-950/10"
+                    className="sl-input"
                   />
                 </div>
 
                 <div className="sm:col-span-2">
-                  <span className="mb-1 block text-xs font-semibold text-[var(--sl-text-soft)]">
+                  <label htmlFor="pf-gstinlabel" className="sl-label">
                     {t("profile.gstinLabel")}
-                  </span>
+                  </label>
                   <input
+                    id="pf-gstinlabel"
                     maxLength={15}
                     value={gstin}
                     onChange={(e) => setGstin(e.target.value.toUpperCase())}
                     placeholder="e.g. 24AAACR1234K1Z0"
-                    className={`h-11 w-full font-mono rounded-[var(--sl-radius)] border bg-[var(--sl-surface-sunk)]/50 px-3.5 text-sm font-medium outline-none focus:bg-white focus:ring-2 ${
+                    className={`sl-input font-mono focus:ring-2 ${
                       gstin.trim() && gstinValidation
                         ? gstinValidation.valid
-                          ? "border-emerald-500 text-emerald-950 focus:border-emerald-600 focus:ring-emerald-500/10"
-                          : "border-rose-300 text-rose-950 focus:border-rose-500 focus:ring-rose-500/10"
-                        : "border-[var(--sl-border)] focus:border-slate-950 focus:ring-slate-950/10"
+                          ? "border-[var(--sl-rule-strong)] text-[var(--sl-ok)] focus:border-[var(--sl-rule-strong)] focus:ring-[var(--sl-ok)]"
+                          : "border-[var(--sl-bad-line)] text-[var(--sl-bad)] focus:border-[var(--sl-bad-line)] focus:ring-[var(--sl-bad)]"
+                        : "border-[var(--sl-rule)]"
                     }`}
                   />
                   {gstin.trim() && gstinValidation && (
                     <p
                       className={`mt-1.5 text-xs font-medium ${
-                        gstinValidation.valid ? "text-emerald-700" : "text-rose-600"
+                        gstinValidation.valid ? "text-[var(--sl-ok)]" : "text-[var(--sl-bad)]"
                       }`}
                     >
                       {gstinValidation.message}
@@ -359,165 +362,176 @@ export default function ProfilePage() {
             </section>
 
             {/* 3. Address & Logistics */}
-            <section className="rounded-[var(--sl-radius-lg)] border border-[var(--sl-border)] bg-white p-6 shadow-xs">
-              <h2 className="text-base font-bold text-slate-950 sm:text-lg">
+            <section className="sl-panel sl-panel-pad">
+              <h2 className="sl-h2 flex items-center gap-2">
                 {t("profile.addressTitle")}
               </h2>
-              <p className="mt-0.5 text-xs text-[var(--sl-muted)]">
+              <p className="sl-hint">
                 {t("profile.addressHint")}
               </p>
 
               <div className="mt-5 grid gap-4 sm:grid-cols-2">
                 <div className="sm:col-span-2">
-                  <span className="mb-1 block text-xs font-semibold text-[var(--sl-text-soft)]">
+                  <label htmlFor="pf-line1" className="sl-label">
                     {t("profile.line1")}
-                  </span>
+                  </label>
                   <input
+                    id="pf-line1"
                     value={shippingAddressLine1}
                     onChange={(e) => setShippingAddressLine1(e.target.value)}
                     placeholder={t("profile.phPlot")}
-                    className="h-11 w-full rounded-[var(--sl-radius)] border border-[var(--sl-border)] bg-[var(--sl-surface-sunk)]/50 px-3.5 text-sm font-medium outline-none focus:border-slate-950 focus:bg-white focus:ring-2 focus:ring-slate-950/10"
+                    className="sl-input"
                   />
                 </div>
 
                 <div className="sm:col-span-2">
-                  <span className="mb-1 block text-xs font-semibold text-[var(--sl-text-soft)]">
+                  <label htmlFor="pf-line2" className="sl-label">
                     {t("profile.line2")}
-                  </span>
+                  </label>
                   <input
+                    id="pf-line2"
                     value={shippingAddressLine2}
                     onChange={(e) => setShippingAddressLine2(e.target.value)}
                     placeholder={t("profile.phLandmark")}
-                    className="h-11 w-full rounded-[var(--sl-radius)] border border-[var(--sl-border)] bg-[var(--sl-surface-sunk)]/50 px-3.5 text-sm font-medium outline-none focus:border-slate-950 focus:bg-white focus:ring-2 focus:ring-slate-950/10"
+                    className="sl-input"
                   />
                 </div>
 
                 <div>
-                  <span className="mb-1 block text-xs font-semibold text-[var(--sl-text-soft)]">
+                  <label htmlFor="pf-city" className="sl-label">
                     {t("profile.city")}
-                  </span>
+                  </label>
                   <input
+                    id="pf-city"
                     value={shippingCity}
                     onChange={(e) => setShippingCity(e.target.value)}
                     placeholder={t("profile.phCity")}
-                    className="h-11 w-full rounded-[var(--sl-radius)] border border-[var(--sl-border)] bg-[var(--sl-surface-sunk)]/50 px-3.5 text-sm font-medium outline-none focus:border-slate-950 focus:bg-white focus:ring-2 focus:ring-slate-950/10"
+                    className="sl-input"
                   />
                 </div>
 
                 <div>
-                  <span className="mb-1 block text-xs font-semibold text-[var(--sl-text-soft)]">
+                  <label htmlFor="pf-state" className="sl-label">
                     {t("profile.state")}
-                  </span>
+                  </label>
                   <input
+                    id="pf-state"
                     value={shippingState}
                     onChange={(e) => setShippingState(e.target.value)}
                     placeholder={t("profile.phState")}
-                    className="h-11 w-full rounded-[var(--sl-radius)] border border-[var(--sl-border)] bg-[var(--sl-surface-sunk)]/50 px-3.5 text-sm font-medium outline-none focus:border-slate-950 focus:bg-white focus:ring-2 focus:ring-slate-950/10"
+                    className="sl-input"
                   />
                 </div>
 
                 <div>
-                  <span className="mb-1 block text-xs font-semibold text-[var(--sl-text-soft)]">
+                  <label htmlFor="pf-pincode" className="sl-label">
                     {t("profile.pincode")}
-                  </span>
+                  </label>
                   <input
+                    id="pf-pincode"
                     maxLength={6}
                     value={shippingPincode}
                     onChange={(e) => setShippingPincode(e.target.value)}
                     placeholder={t("profile.phPincode")}
-                    className="h-11 w-full rounded-[var(--sl-radius)] border border-[var(--sl-border)] bg-[var(--sl-surface-sunk)]/50 px-3.5 text-sm font-medium outline-none focus:border-slate-950 focus:bg-white focus:ring-2 focus:ring-slate-950/10"
+                    className="sl-input"
                   />
                 </div>
               </div>
             </section>
 
             {/* 4. Transport & Shipping Preference */}
-            <section className="rounded-[var(--sl-radius-lg)] border border-[var(--sl-border)] bg-white p-6 shadow-xs">
-              <h2 className="text-base font-bold text-slate-950 sm:text-lg">
+            <section className="sl-panel sl-panel-pad">
+              <h2 className="sl-h2 flex items-center gap-2">
                 {t("profile.fulfillTitle")}
               </h2>
-              <p className="mt-0.5 text-xs text-[var(--sl-muted)]">
+              <p className="sl-hint">
                 {t("profile.fulfillHint")}
               </p>
 
               <div className="mt-5 space-y-4">
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                  <label className="flex items-center gap-2.5 rounded-[var(--sl-radius)] border border-[var(--sl-border)] p-3.5 text-xs font-bold text-slate-800 cursor-pointer has-checked:border-slate-950 has-checked:bg-[var(--sl-surface-sunk)]">
+                  <label className="sl-focus flex items-center gap-2.5 rounded-[var(--sl-r)] border border-[var(--sl-rule)] p-3.5 text-xs font-bold text-[var(--sl-ink)] cursor-pointer transition-colors has-checked:border-[var(--sl-brand)] has-checked:bg-[var(--sl-brand-soft)]">
                     <input
                       type="radio"
                       name="shippingPref"
                       value="courier"
                       checked={shippingPreference === "courier"}
                       onChange={() => setShippingPreference("courier")}
+                      className="sl-check"
                     />
                     <span>{t("register.courier")}</span>
                   </label>
 
-                  <label className="flex items-center gap-2.5 rounded-[var(--sl-radius)] border border-[var(--sl-border)] p-3.5 text-xs font-bold text-slate-800 cursor-pointer has-checked:border-slate-950 has-checked:bg-[var(--sl-surface-sunk)]">
+                  <label className="sl-focus flex items-center gap-2.5 rounded-[var(--sl-r)] border border-[var(--sl-rule)] p-3.5 text-xs font-bold text-[var(--sl-ink)] cursor-pointer transition-colors has-checked:border-[var(--sl-brand)] has-checked:bg-[var(--sl-brand-soft)]">
                     <input
                       type="radio"
                       name="shippingPref"
                       value="self_pickup"
                       checked={shippingPreference === "self_pickup"}
                       onChange={() => setShippingPreference("self_pickup")}
+                      className="sl-check"
                     />
                     <span>{t("register.pickup")}</span>
                   </label>
 
-                  <label className="flex items-center gap-2.5 rounded-[var(--sl-radius)] border border-[var(--sl-border)] p-3.5 text-xs font-bold text-slate-800 cursor-pointer has-checked:border-slate-950 has-checked:bg-[var(--sl-surface-sunk)]">
+                  <label className="sl-focus flex items-center gap-2.5 rounded-[var(--sl-r)] border border-[var(--sl-rule)] p-3.5 text-xs font-bold text-[var(--sl-ink)] cursor-pointer transition-colors has-checked:border-[var(--sl-brand)] has-checked:bg-[var(--sl-brand-soft)]">
                     <input
                       type="radio"
                       name="shippingPref"
                       value="transport"
                       checked={shippingPreference === "transport"}
                       onChange={() => setShippingPreference("transport")}
+                      className="sl-check"
                     />
                     <span>{t("register.transport")}</span>
                   </label>
                 </div>
 
                 {shippingPreference === "transport" && (
-                  <div className="rounded-[var(--sl-radius)] bg-[var(--sl-surface-sunk)] border border-[var(--sl-border)] p-4 space-y-4 animate-in fade-in">
-                    <p className="text-xs font-bold text-slate-950">
+                  <div className="rounded-[var(--sl-r)] bg-[var(--sl-sunken)] border border-[var(--sl-rule)] p-4 space-y-4 sl-fade-in">
+                    <p className="text-xs font-bold text-[var(--sl-ink)]">
                       {t("profile.transportSaved")}
                     </p>
 
                     <div className="grid gap-3 sm:grid-cols-3">
                       <div>
-                        <span className="mb-1 block text-xs font-semibold text-[var(--sl-text-soft)]">
-                          {t("profile.transportName")} <span className="text-rose-500">*</span>
-                        </span>
+                        <label htmlFor="pf-transportname" className="sl-label">
+                          {t("profile.transportName")} <span className="text-[var(--sl-bad)]">*</span>
+                        </label>
                         <input
+                          id="pf-transportname"
                           required={shippingPreference === "transport"}
                           value={transportName}
                           onChange={(e) => setTransportName(e.target.value)}
                           placeholder={t("profile.phTransporter")}
-                          className="h-10 w-full rounded-[var(--sl-radius)] border border-[var(--sl-border)] bg-white px-3 text-xs font-medium outline-none focus:border-slate-950"
+                          className="sl-input"
                         />
                       </div>
 
                       <div>
-                        <span className="mb-1 block text-xs font-semibold text-[var(--sl-text-soft)]">
+                        <label htmlFor="pf-transportphone" className="sl-label">
                           {t("profile.transportPhone")}
-                        </span>
+                        </label>
                         <input
+                          id="pf-transportphone"
                           value={transportPhone}
                           onChange={(e) => setTransportPhone(e.target.value)}
                           placeholder={t("profile.phTransportPhone")}
-                          className="h-10 w-full rounded-[var(--sl-radius)] border border-[var(--sl-border)] bg-white px-3 text-xs font-medium outline-none focus:border-slate-950"
+                          className="sl-input"
                         />
                       </div>
 
                       <div>
-                        <span className="mb-1 block text-xs font-semibold text-[var(--sl-text-soft)]">
+                        <label htmlFor="pf-transportgstin" className="sl-label">
                           {t("profile.transportGstin")}
-                        </span>
+                        </label>
                         <input
+                          id="pf-transportgstin"
                           maxLength={15}
                           value={transportGstin}
                           onChange={(e) => setTransportGstin(e.target.value.toUpperCase())}
                           placeholder={t("profile.phTransportGstin")}
-                          className="h-10 w-full font-mono rounded-[var(--sl-radius)] border border-[var(--sl-border)] bg-white px-3 text-xs font-medium outline-none focus:border-slate-950"
+                          className="sl-input font-mono"
                         />
                       </div>
                     </div>
@@ -526,10 +540,10 @@ export default function ProfilePage() {
               </div>
             </section>
 
-            <div className="flex items-center justify-end gap-3 pt-4 border-t border-[var(--sl-border)]">
+            <div className="flex flex-col gap-3 border-t border-[var(--sl-rule)] pt-4 sm:flex-row sm:items-center sm:justify-end">
               <Link
                 href="/"
-                className="sl-v2-btn sl-v2-btn-secondary"
+                className="sl-btn sl-btn-secondary"
               >
                 {t("common.cancel")}
               </Link>
@@ -537,7 +551,7 @@ export default function ProfilePage() {
               <button
                 type="submit"
                 disabled={saving}
-                className="sl-v2-btn sl-v2-btn-primary"
+                className="sl-btn sl-btn-primary"
               >
                 {saving ? t("profile.saving") : t("profile.save")}
               </button>
@@ -554,4 +568,3 @@ export default function ProfilePage() {
     </div>
   );
 }
-

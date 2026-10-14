@@ -153,79 +153,113 @@ export default function HelpSupportPage() {
   ];
 
   return (
-    <div className="sl-page flex min-h-screen flex-col">
+    <div className="flex min-h-screen flex-col bg-[var(--sl-page)] text-[var(--sl-ink)]">
       <StorefrontHeader />
 
-      <main className="sl-container sl-container-wide sl-page-main flex-1">
-        {/* ---------- SUPPORT HERO ---------- */}
-        <div className="relative overflow-hidden rounded-[var(--sl-radius-lg)] bg-[var(--sl-primary-dark)] px-5 py-9 text-white sm:px-10 sm:py-12">
-          <div
-            className="pointer-events-none absolute inset-0"
-            style={{
-              background:
-                "radial-gradient(120% 100% at 12% 0%, rgba(226,196,140,0.18) 0%, transparent 55%)",
-            }}
-            aria-hidden
-          />
-          <div className="relative max-w-2xl">
-            <p className="sl-label !text-[var(--sl-gold-soft)]">{t("nav.help")}</p>
-            <h1 className="sl-h1 mt-2 !text-white">{t("help.title")}</h1>
-            <p className="sl-body mt-2.5 !text-white/75">{t("contact.intro")}</p>
-          </div>
+      <main className="sl-container sl-page-main flex-1">
+        {/* ---------- PAGE IDENTITY ----------
+            No hero. A support page is a directory, and the customer arrived
+            because something is wrong, so the first thing on the page is a way
+            to get help. V2 opened with a burgundy panel carrying a radial gold
+            gradient — roughly 260px of decoration before the first actionable
+            element. */}
+        <div className="mb-5 flex flex-wrap items-baseline gap-3 border-b border-[var(--sl-rule)] pb-3">
+          <h1 className="sl-display">{t("help.title")}</h1>
         </div>
+        <p className="sl-body mt-3 max-w-2xl">{t("contact.intro")}</p>
 
-        {/* ---------- INSTANT CHANNELS ---------- */}
-        <section className="sl-band" aria-label={t("help.title")}>
-          <div className="grid gap-3 sm:grid-cols-3">
-            <WhatsAppCta
-              href={whatsappHref}
-              label={t("wa.label")}
-              className="sl-v2-card sl-v2-card-hover flex min-h-14 items-center justify-center px-4 py-3 font-semibold"
-            />
+        {/* ---------- CONTACT RECORD ----------
+            Three peers, one treatment. V2 gave WhatsApp a bordered panel and
+            phone and email outline buttons, so three channels for the same job
+            did not look like the same kind of thing. */}
+        <section className="mt-5" aria-label={t("help.title")}>
+          <div className="grid grid-cols-1 gap-px overflow-hidden rounded-[var(--sl-r)] border border-[var(--sl-rule)] bg-[var(--sl-rule)] sm:grid-cols-3">
+            <div className="flex flex-col items-start gap-2 bg-[var(--sl-surface)] px-4 py-3.5">
+              <span className="sl-eyebrow sl-eyebrow-plain !text-[0.5625rem]">{t("wa.label")}</span>
+              <WhatsAppCta
+                href={whatsappHref}
+                label={t("wa.label")}
+                className="sl-btn sl-btn-secondary sl-btn-sm !min-h-10"
+                tone="inherit"
+
+              />
+            </div>
             {telHref ? (
-              <a href={telHref} className="sl-v2-btn sl-v2-btn-secondary">
-                <PhoneIcon />
-                {t("help.call")}
-              </a>
+              <div className="flex flex-col items-start gap-2 bg-[var(--sl-surface)] px-4 py-3.5">
+                <span className="sl-eyebrow sl-eyebrow-plain !text-[0.5625rem]">{t("help.call")}</span>
+                <a href={telHref} className="sl-btn sl-btn-secondary sl-btn-sm !min-h-10">
+                  <PhoneIcon />
+                  {t("help.call")}
+                </a>
+              </div>
             ) : null}
-            <a href={`mailto:${PUBLIC_DISPLAY_EMAIL}`} className="sl-v2-btn sl-v2-btn-secondary">
-              <MailIcon />
-              {t("help.emailUs")}
-            </a>
+            <div className="flex flex-col items-start gap-2 bg-[var(--sl-surface)] px-4 py-3.5">
+              <span className="sl-eyebrow sl-eyebrow-plain !text-[0.5625rem]">{t("help.emailUs")}</span>
+              <a
+                href={`mailto:${PUBLIC_DISPLAY_EMAIL}`}
+                className="sl-btn sl-btn-secondary sl-btn-sm !min-h-10"
+              >
+                <MailIcon />
+                {t("help.emailUs")}
+              </a>
+            </div>
           </div>
         </section>
 
         {/* ---------- SELF-SERVICE CATEGORIES ---------- */}
-        <section className="sl-band border-t border-[var(--sl-border)]" aria-labelledby="help-categories">
-          <h2 id="help-categories" className="sl-h2">
-            {t("help.faqs")}
-          </h2>
-          <div className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+        <section className="sl-band border-t border-[var(--sl-rule)]" aria-labelledby="help-categories">
+          <div className="mb-5 flex flex-wrap items-baseline gap-3 border-b border-[var(--sl-rule)] pb-3">
+            <h2 id="help-categories" className="sl-h2">
+              {t("help.faqs")}
+            </h2>
+          </div>
+          {/* A ruled two-column list, not a 3-up icon grid. Six categories in
+              three columns is two rows of boxes, so finding "returns" meant
+              scanning three of them. Label left, what it covers right: one
+              scannable pass. */}
+          <ul className="mt-5 divide-y divide-[var(--sl-rule)] border-y border-[var(--sl-rule)] sm:grid sm:grid-cols-2 sm:divide-y-0">
             {categories.map((category) => (
+              <li key={category.title} className="sm:border-b sm:border-[var(--sl-rule)]">
               <Link
-                key={category.title}
                 href={category.href}
-                className="sl-v2-card sl-v2-card-hover sl-v2-rule group flex items-start gap-3.5 p-5"
+                className="sl-focus group flex items-center gap-3 py-3 transition-colors sm:pr-4"
               >
-                <span className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-[var(--sl-radius-sm)] bg-[var(--sl-primary-soft)] text-[var(--sl-primary)]">
+                <span className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-[2px] bg-[var(--sl-brand-soft)] text-[var(--sl-brand-ink)]">
                   {category.icon}
                 </span>
-                <span className="min-w-0">
-                  <span className="sl-h3 block transition-colors group-hover:text-[var(--sl-primary)]">
+                <span className="min-w-0 flex-1 sm:grid sm:grid-cols-[11rem_minmax(0,1fr)] sm:items-baseline sm:gap-4">
+                  <span className="sl-eyebrow sl-eyebrow-plain block !text-[0.625rem] !text-[var(--sl-ink)] transition-colors group-hover:!text-[var(--sl-brand-ink)]">
                     {category.title}
                   </span>
-                  <span className="sl-small mt-1 block">{category.body}</span>
+                  <span className="sl-small !text-[0.75rem] sm:mt-0 sm:block">
+                    {category.body}
+                  </span>
                 </span>
+                <svg
+                  className="h-3.5 w-3.5 shrink-0 text-[var(--sl-rule-2)] transition-all group-hover:translate-x-0.5 group-hover:text-[var(--sl-brand-ink)]"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                  strokeWidth="2.2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  aria-hidden
+                >
+                  <path d="M9 5l7 7-7 7" />
+                </svg>
               </Link>
+              </li>
             ))}
-          </div>
+          </ul>
         </section>
 
         {/* ---------- FAQ ---------- */}
-        <section className="sl-band border-t border-[var(--sl-border)]" aria-labelledby="help-faq">
-          <h2 id="help-faq" className="sl-h2">
-            {t("help.faqTitle")}
-          </h2>
+        <section className="sl-band border-t border-[var(--sl-rule)]" aria-labelledby="help-faq">
+          <div className="mb-5 flex flex-wrap items-baseline gap-3 border-b border-[var(--sl-rule)] pb-3">
+            <h2 id="help-faq" className="sl-h2">
+              {t("help.faqTitle")}
+            </h2>
+          </div>
           <div className="mt-5 grid gap-3 lg:grid-cols-3">
             {(
               [
@@ -234,7 +268,7 @@ export default function HelpSupportPage() {
                 ["help.faq3q", "help.faq3a"],
               ] as const
             ).map(([q, a]) => (
-              <article key={q} className="sl-v2-card p-5">
+              <article key={q} className="sl-panel p-5">
                 <h3 className="sl-h3">{t(q)}</h3>
                 <p className="sl-body mt-2 text-[0.875rem]">{t(a)}</p>
               </article>
@@ -245,7 +279,7 @@ export default function HelpSupportPage() {
         {/* ---------- ESCALATION FORM ----------
             The form is grouped: who you are, which order, what happened.
             This is the only place a support request is created. */}
-        <section className="sl-band border-t border-[var(--sl-border)]" aria-labelledby="help-form">
+        <section className="sl-band border-t border-[var(--sl-rule)]" aria-labelledby="help-form">
           <div className="max-w-2xl">
             <h2 id="help-form" className="sl-h2">
               {t("help.submit")}
@@ -253,7 +287,7 @@ export default function HelpSupportPage() {
             <p className="sl-body mt-2">{t("help.contactEscalation")}</p>
           </div>
 
-          <form onSubmit={handleSubmit} className="sl-v2-card mt-5 space-y-5 p-5 sm:p-6">
+          <form onSubmit={handleSubmit} className="sl-panel mt-5 space-y-5 p-5 sm:p-6">
             <fieldset>
               <legend className="sl-label">{t("help.groupYou")}</legend>
               <div className="mt-3 grid gap-4 sm:grid-cols-2">
@@ -265,7 +299,7 @@ export default function HelpSupportPage() {
                     id="hs-name"
                     value={name}
                     onChange={(event) => setName(event.target.value)}
-                    className="sl-v2-input"
+                    className="sl-input"
                     required
                     maxLength={120}
                     autoComplete="name"
@@ -280,7 +314,7 @@ export default function HelpSupportPage() {
                     type="tel"
                     value={mobile}
                     onChange={(event) => setMobile(event.target.value)}
-                    className="sl-v2-input"
+                    className="sl-input"
                     required
                     maxLength={30}
                     autoComplete="tel"
@@ -295,7 +329,7 @@ export default function HelpSupportPage() {
                     type="email"
                     value={email}
                     onChange={(event) => setEmail(event.target.value)}
-                    className="sl-v2-input"
+                    className="sl-input"
                     required
                     maxLength={120}
                     autoComplete="email"
@@ -304,7 +338,7 @@ export default function HelpSupportPage() {
               </div>
             </fieldset>
 
-            <fieldset className="border-t border-[var(--sl-border)] pt-5">
+            <fieldset className="border-t border-[var(--sl-rule)] pt-5">
               <legend className="sl-label">{t("help.groupIssue")}</legend>
               <div className="mt-3 space-y-4">
                 <div>
@@ -315,7 +349,7 @@ export default function HelpSupportPage() {
                     id="hs-order"
                     value={orderId}
                     onChange={(event) => setOrderId(event.target.value)}
-                    className="sl-v2-input !font-mono"
+                    className="sl-input !font-mono"
                     maxLength={80}
                   />
                   <p className="sl-small mt-1.5">{t("help.orderIdHint")}</p>
@@ -328,7 +362,7 @@ export default function HelpSupportPage() {
                     id="hs-subject"
                     value={subject}
                     onChange={(event) => setSubject(event.target.value)}
-                    className="sl-v2-input"
+                    className="sl-input"
                     required
                     maxLength={180}
                   />
@@ -341,7 +375,7 @@ export default function HelpSupportPage() {
                     id="hs-message"
                     value={message}
                     onChange={(event) => setMessage(event.target.value)}
-                    className="sl-v2-input min-h-28 py-2.5"
+                    className="sl-input min-h-28 py-2.5"
                     required
                     maxLength={4000}
                   />
@@ -349,7 +383,7 @@ export default function HelpSupportPage() {
               </div>
             </fieldset>
 
-            <button type="submit" disabled={busy} className="sl-v2-btn sl-v2-btn-primary w-full sm:w-auto">
+            <button type="submit" disabled={busy} className="sl-btn sl-btn-primary w-full sm:w-auto">
               {busy ? t("product.adding") : t("help.send")}
             </button>
 
@@ -359,17 +393,17 @@ export default function HelpSupportPage() {
         </section>
 
         {/* ---------- POLICY LINKS ---------- */}
-        <section className="sl-band border-t border-[var(--sl-border)]">
+        <section className="sl-band border-t border-[var(--sl-rule)]">
           <p className="sl-small">
-            <Link href="/returns-refunds" className="sl-v2-focus font-semibold text-[var(--sl-primary)] hover:underline">
+            <Link href="/returns-refunds" className="sl-focus font-semibold text-[var(--sl-brand-ink)] hover:underline">
               {t("help.returnsShort")}
             </Link>
             {" · "}
-            <Link href="/shipping-policy" className="sl-v2-focus font-semibold text-[var(--sl-primary)] hover:underline">
+            <Link href="/shipping-policy" className="sl-focus font-semibold text-[var(--sl-brand-ink)] hover:underline">
               {t("help.shippingShort")}
             </Link>
             {" · "}
-            <Link href="/privacy-policy" className="sl-v2-focus font-semibold text-[var(--sl-primary)] hover:underline">
+            <Link href="/privacy-policy" className="sl-focus font-semibold text-[var(--sl-brand-ink)] hover:underline">
               {t("help.privacyShort")}
             </Link>
           </p>

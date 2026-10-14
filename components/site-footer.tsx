@@ -2,167 +2,294 @@
 
 import type { ReactNode } from "react";
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { ReportProblemControl } from "@/components/analytics/report-problem";
 import { BrandLogo } from "@/components/brand-logo";
 import { useI18n } from "@/components/preferences-provider";
 import { WhatsAppCta } from "@/components/whatsapp-cta";
-import { FIRM_STRIP, COPYRIGHT_YEAR } from "@/lib/brand";
+import { COPYRIGHT_YEAR, FIRM_STRIP } from "@/lib/brand";
 import { getWhatsAppChatUrl } from "@/lib/whatsapp";
 
-type FooterNavGroup = { id: string; name: string; href: string | null };
+/**
+ * A link in the footer index. `label` is already resolved so the arrays below
+ * can be built in one place and read as data, not markup.
+ */
+type FooterLink = { href: string; label: string };
+
+/** The link arrays, built once per render from the active dictionary. */
+type FooterIndex = {
+  shop: FooterLink[];
+  categories: FooterLink[];
+  vehicle: FooterLink[];
+  dealer: FooterLink[];
+  utility: FooterLink[];
+};
 
 /**
- * V2 footer.
+ * The storefront footer, rebuilt to the approved reference.
  *
- * Structured column directory over the seven groups the storefront actually
- * needs: Shop, Categories, Vehicle, Brands, Support, Company, Dealer.
+ * Three bands:
  *
- * The Categories column is populated from the SAME endpoint the header's
- * category menu already reads (`/api/catalogue/categories`), so the footer can
- * never drift from the real catalogue taxonomy and no category is invented.
- * That endpoint is read-only here — it is not modified.
+ *   1. DIRECTORY  brand block + four link columns, one row on desktop.
+ *   2. UTILITY    one horizontal row of seven inline links, no labels.
+ *   3. BAR        warm gold: the three-firm identity and the copyright.
+ *
+ * THE GROUND IS LIGHT. The previous footer was charcoal with a 2px burgundy
+ * top rule, burgundy ticks on the column headings, a catalogue-fitment
+ * caveat and a green underlined WhatsApp link. On a dark ground every one
+ * of those accents had to fight the background, and the four burgundy
+ * heading ticks read as a bar chart rather than as structure. On the light
+ * cool grey the logo, the headings and the links are one quiet block using
+ * the same tokens as the page, and the only saturated colour left in the
+ * component is the gold bar - which is what makes it an accent.
+ *
+ * THE CATEGORIES COLUMN IS ONE LINK, ON PURPOSE. The reference shows a
+ * single "All Categories" entry, so that is all this renders. The previous
+ * version fetched `/api/catalogue/categories` after mount to pin three live
+ * catalogue group landing pages above that link; with the groups gone the
+ * request had no consumer, so it is gone with them. The endpoint itself is
+ * untouched and every other page that reads it still does.
+ *
+ * NO PHONE NUMBER. WhatsApp Us and Contact Us are the two routes that
+ * actually carry a request, and the published support number is already on
+ * the contact page and in the header's help entry. Printing it a third time
+ * in the footer is a third place to keep it correct, and it is the single
+ * largest line of type in the old design.
+ *
+ * NO LABELS ON THE UTILITY ROW. A heading like "SUPPORT" above seven links
+ * that are all, without exception, support pages is redundant, and a heading
+ * above a one-line row is the one thing guaranteed to cost height without
+ * buying meaning. The fitment caveat that used to sit beside it is gone for
+ * the same reason; the warning still lives where a buyer reads it, on the
+ * fitment route and in the product view.
  */
 export function SiteFooter() {
   const { t } = useI18n();
   const whatsappHref = getWhatsAppChatUrl();
-  const [groups, setGroups] = useState<FooterNavGroup[]>([]);
 
-  useEffect(() => {
-    let active = true;
-    void fetch("/api/catalogue/categories", { cache: "no-store" })
-      .then((response) => (response.ok ? response.json() : null))
-      .then((data) => {
-        if (!active) return;
-        const list: FooterNavGroup[] = Array.isArray(data?.groups) ? data.groups : [];
-        // A directory must stay scannable: cap the column and point the rest of
-        // the catalogue at the real index rather than rendering 40 links.
-        setGroups(list.filter((group) => Boolean(group.href)).slice(0, 8));
-      })
-      .catch(() => {
-        if (active) setGroups([]);
-      });
-    return () => {
-      active = false;
-    };
-  }, []);
+  const index: FooterIndex = {
+    shop: [
+      { href: "/", label: t("nav.home") },
+      { href: "/offers", label: t("nav.offers") },
+      { href: "/cart", label: t("nav.cart") },
+      { href: "/orders", label: t("nav.orders") },
+    ],
+    /* One entry, the catalogue's own landing page. The individual group
+       names (Water Pump Assy, Automotive Cables, Filters) are reachable
+       from the header's category menu and from /category/filters; the
+       footer column is a shortcut, not a second sitemap. */
+    categories: [{ href: "/category/filters", label: t("footer.allCategories") }],
+    vehicle: [
+      { href: "/vehicle-fitment", label: t("nav.fitment") },
+      { href: "/brands", label: t("nav.brands") },
+    ],
+    dealer: [
+      { href: "/login/dealer", label: t("nav.dealer") },
+      { href: "/dealer", label: t("footer.quickOrder") },
+    ],
+    /* The seven utility destinations in one flat row, in reference
+       order. Each name is self-describing, so there are no group labels. */
+    utility: [
+      { href: "/help-support", label: t("nav.help") },
+      { href: "/returns-refunds", label: t("legal.returns") },
+      { href: "/shipping-policy", label: t("legal.shipping") },
+      { href: "/terms-and-conditions", label: t("legal.terms") },
+      { href: "/privacy-policy", label: t("legal.privacy") },
+      { href: "/about-us", label: t("nav.about") },
+      { href: "/contact-us", label: t("nav.contact") },
+    ],
+  };
 
   return (
-    <footer className="relative mt-auto bg-[var(--sl-primary-dark)] text-white">
-      {/* Single hairline seam. Depth comes from the flat burgundy field, not
-          from stacked gradients. */}
-      <div
-        className="pointer-events-none absolute inset-x-0 top-0 h-px"
-        style={{
-          background:
-            "linear-gradient(90deg, transparent 0%, rgba(226,196,140,0.45) 50%, transparent 100%)",
-        }}
-        aria-hidden
-      />
+    <footer className="v3-footer relative mt-auto">
+      {/* ---------- BAND 1: DIRECTORY ----------
+          4 + 2 + 2 + 2 + 2 across on desktop, so the brand block is four
+          columns wide and the four link columns are equal and flush. The
+          link columns get `auto-rows` from the shared `items-start`, which
+          is what keeps all four headings on one baseline: the columns are
+          top-aligned inside one grid row, so a one-link column and a
+          four-link column start at the same y. */}
+      <div className="sl-container grid grid-cols-2 items-start gap-x-5 gap-y-6 py-8 md:grid-cols-4 lg:grid-cols-12 lg:gap-x-6">
+        <div className="col-span-2 md:col-span-4 lg:col-span-4">
+          {/* The full logo, not the header's compact lockup: this is the
+              largest mark on the site outside the header itself, and it is
+              the one place the footer's brand block is the subject. No
+              `invert` - the ground is light, so it is the same asset the
+              header renders, unmodified. */}
+          <BrandLogo />
 
-      {/* Vertical rhythm tightened after screenshot review. Column architecture,
-          order and every link are unchanged \u2014 only the block padding and row
-          gap were reduced, which removes the dead space at the bottom of the
-          desktop footer without touching the layout. */}
-      <div className="sl-container grid gap-x-8 gap-y-8 py-10 sm:grid-cols-2 lg:grid-cols-4 lg:py-11">
-        {/* Identity */}
-        <div>
-          <BrandLogo invert />
-          <p className="sl-body mt-3 !text-white/70">{t("footer.blurb")}</p>
-          <div className="mt-5">
-            <WhatsAppCta href={whatsappHref} className="sl-v2-btn !border-white/25 !bg-white/10 !text-white hover:!bg-white/20" />
-          </div>
+          {/* Two lines, hard ceiling. See `.v3-footer-blurb`. */}
+          <p className="v3-footer-blurb sl-clamp-2 mt-2.5 max-w-xs">
+            {t("footer.blurb")}
+          </p>
+
+          {/* Two routes, one row, both icon-led. Deliberately not two
+              buttons: at 13px these are links, and a filled WhatsApp pill
+              here is the loudest thing in a band whose job is to be
+              quiet. `WhatsAppCta` still owns the destination and the
+              unconfigured-number state; `.v3-footer-link` overrides its
+              green and its underline so it matches Contact Us. */}
+          <address className="mt-3 flex flex-wrap items-center gap-x-5 not-italic">
+            <WhatsAppCta
+              href={whatsappHref}
+              /* `tone="inherit"` hands the colour back to the caller: this
+                 component no longer hardcodes a green, so `.v3-footer-link`
+                 supplies `--v3-footer-ink-2` exactly as it does for Contact
+                 Us, and the two rows read as the same kind of link. */
+              className="v3-footer-link sl-focus"
+              tone="inherit"
+            />
+            <Link
+              href="/contact-us"
+              className="v3-footer-link sl-focus gap-2 font-semibold"
+            >
+              <ContactIcon />
+              {t("nav.contact")}
+            </Link>
+          </address>
         </div>
 
-        <FooterColumn title={t("footer.shop")}>
-          <FooterLink href="/">{t("nav.home")}</FooterLink>
-          <FooterLink href="/offers">{t("nav.offers")}</FooterLink>
-          <FooterLink href="/cart">{t("nav.cart")}</FooterLink>
-          <FooterLink href="/wishlist">{t("nav.wishlist")}</FooterLink>
-          <FooterLink href="/orders">{t("nav.orders")}</FooterLink>
-          <FooterLink href="/track-order">{t("nav.track")}</FooterLink>
-        </FooterColumn>
+        <FooterColumn
+          className="lg:col-span-2"
+          title={t("footer.shop")}
+          links={index.shop}
+        />
 
-        {/* Real catalogue taxonomy, read live from the existing endpoint. */}
-        <FooterColumn title={t("footer.categories")}>
-          {groups.length > 0 ? (
-            groups.map((group) => (
-              <FooterLink key={group.id} href={group.href ?? "/category/filters"}>
-                {group.name}
-              </FooterLink>
-            ))
-          ) : (
-            /* Reserve the column height so the footer never reflows when the
-               catalogue request resolves. No placeholder names invented. */
-            <span className="text-white/40">&nbsp;</span>
-          )}
-          <FooterLink href="/category/filters">{t("footer.allCategories")}</FooterLink>
-        </FooterColumn>
+        <FooterColumn
+          className="lg:col-span-2"
+          title={t("footer.categories")}
+          links={index.categories}
+        />
 
-        <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-1">
-          <FooterColumn title={t("footer.vehicle")}>
-            <FooterLink href="/vehicle-fitment">{t("nav.fitment")}</FooterLink>
-            <FooterLink href="/brands">{t("nav.brands")}</FooterLink>
-            <FooterLink href="/help-support">{t("nav.help")}</FooterLink>
-          </FooterColumn>
+        <FooterColumn
+          className="lg:col-span-2"
+          title={t("footer.vehicle")}
+          links={index.vehicle}
+        />
 
-          <FooterColumn title={t("footer.company")}>
-            <FooterLink href="/about-us">{t("nav.about")}</FooterLink>
-            <FooterLink href="/about-us#hind-motors">Hind Motors</FooterLink>
-            <FooterLink href="/about-us#ambaji-traders">Ambaji Traders</FooterLink>
-            <FooterLink href="/about-us#india-sales">India Sales</FooterLink>
-            <FooterLink href="/contact-us">{t("nav.contact")}</FooterLink>
-          </FooterColumn>
-        </div>
-
-        <FooterColumn title={t("footer.dealer")}>
-          <FooterLink href="/login/dealer">{t("nav.dealer")}</FooterLink>
-          <FooterLink href="/dealer">Quick Order</FooterLink>
-          <FooterLink href="/register">{t("nav.register")}</FooterLink>
-          <FooterLink href="/login">{t("nav.login")}</FooterLink>
-        </FooterColumn>
-
-        <FooterColumn title={t("footer.support")}>
-          <FooterLink href="/help-support">{t("nav.help")}</FooterLink>
-          <FooterLink href="/returns-refunds">{t("legal.returns")}</FooterLink>
-          <FooterLink href="/shipping-policy">{t("legal.shipping")}</FooterLink>
-          <FooterLink href="/terms-and-conditions">{t("legal.terms")}</FooterLink>
-          <FooterLink href="/privacy-policy">{t("legal.privacy")}</FooterLink>
-        </FooterColumn>
+        <FooterColumn
+          className="lg:col-span-2"
+          title={t("footer.dealer")}
+          links={index.dealer}
+        />
       </div>
 
-      {/*
-        The three-firm identity is printed exactly ONCE, here in the legal band.
-        It previously also appeared in the brand column, so the tagline rendered
-        twice in one viewport.
-      */}
-      <div className="sl-container border-t border-white/10 py-4">
-        <p className="sl-nav text-center text-[var(--sl-gold-soft)]">{FIRM_STRIP}</p>
-        <p className="mt-1.5 text-center text-xs text-white/55">
-          &copy; {COPYRIGHT_YEAR} {t("footer.rights")}
-        </p>
+      {/* ---------- BAND 2: UTILITY ROW ----------
+          Seven links, one row, no label, no caveat. The leading four
+          columns are held empty on desktop so the row starts under the
+          SHOP column rather than under the logo - the reference places
+          it in the right-hand two thirds - and right-aligns to the
+          container edge. Below lg the spacer collapses and the row simply
+          wraps from the left, which is the only sane behaviour for seven
+          links on a phone. */}
+      <div className="v3-footer-rule border-t">
+        <nav
+          aria-label={t("nav.help")}
+          className="sl-container grid gap-y-0.5 py-4 lg:grid-cols-12 lg:py-5"
+        >
+          <span className="hidden lg:col-span-4 lg:block" aria-hidden />
+          <ul className="flex flex-wrap items-baseline lg:col-span-8 lg:justify-end">
+            {index.utility.map((link, position) => (
+              <li key={link.href} className="flex items-baseline">
+                {position > 0 ? (
+                  <span className="v3-footer-sep" aria-hidden>
+                    |
+                  </span>
+                ) : null}
+                <FooterLink href={link.href}>{link.label}</FooterLink>
+              </li>
+            ))}
+            <li className="flex items-baseline">
+              <span className="v3-footer-sep" aria-hidden>
+                |
+              </span>
+              {/* Customer Intelligence & Experience Analytics.
+
+                  A control rather than a link, so it can open a dialog. It lives in
+                  the footer deliberately: a floating button over the catalogue would
+                  alter the V3 visual language, and the footer already carries the
+                  support row. Its label and styling match every other footer link.
+
+                  There is no screen capture behind it. A screenshot exists only if
+                  the customer picks a file themselves. */}
+              <ReportProblemControl />
+            </li>
+          </ul>
+        </nav>
+      </div>
+
+      {/* ---------- BAND 3: IDENTITY + COPYRIGHT ----------
+          The three-firm identity is printed exactly ONCE, here, and shares
+          a line with the copyright instead of stacking on two. Gold
+          appears here and nowhere else in the footer. */}
+      <div className="v3-footer-bar">
+        <div className="sl-container flex flex-col items-center gap-1 py-4 text-center sm:flex-row sm:justify-between sm:text-left lg:py-5">
+          <p className="v3-footer-firms">{FIRM_STRIP}</p>
+          <p className="v3-footer-note">
+            &copy; {COPYRIGHT_YEAR} {t("footer.rights")}
+          </p>
+        </div>
       </div>
     </footer>
   );
 }
 
-function FooterColumn({ title, children }: { title: string; children: ReactNode }) {
+/**
+ * One band-1 column: a heading and a short stack of links.
+ *
+ * The heading is a plain `<h2>` in tracked caps. It is not the bordered-head
+ * device (`border-b border-[var(--sl-rule)]` plus the 3px brand rule), which
+ * carries a burgundy tick in the left margin - four of those side by
+ * side is the bar-chart effect the previous revision shipped, and the
+ * reference has no mark of any kind on its headings.
+ */
+function FooterColumn({
+  title,
+  links,
+  className = "",
+}: {
+  title: string;
+  links: FooterLink[];
+  className?: string;
+}) {
   return (
-    <div>
-      <h2 className="sl-label !text-white/85">{title}</h2>
-      {/* Short gold rule: the accent is a separator, never a fill. */}
-      <div className="mt-2 mb-3.5 h-px w-8 bg-[var(--sl-gold)]/70" aria-hidden />
-      <nav className="flex flex-col items-start gap-2.5">{children}</nav>
+    <div className={className}>
+      <h2 className="v3-footer-heading">{title}</h2>
+      <nav className="mt-2 flex flex-col items-start">
+        {links.map((link) => (
+          <FooterLink key={link.href} href={link.href}>
+            {link.label}
+          </FooterLink>
+        ))}
+      </nav>
     </div>
   );
 }
 
 function FooterLink({ href, children }: { href: string; children: ReactNode }) {
   return (
-    <Link
-      href={href}
-      className="rounded text-sm text-white/70 transition-colors duration-200 hover:text-white"
-    >
+    <Link href={href} className="v3-footer-link sl-focus whitespace-nowrap">
       {children}
     </Link>
+  );
+}
+
+/**
+ * The handset that stands in for "Contact Us". Same 24x24 stroke geometry as
+ * the contact page's phone icon so the two are the same mark at two sizes.
+ */
+function ContactIcon({ className = "h-4 w-4" }: { className?: string }) {
+  return (
+    <svg
+      className={className}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <path d="M22 16.9v3a2 2 0 01-2.2 2 19.8 19.8 0 01-8.6-3.1 19.5 19.5 0 01-6-6A19.8 19.8 0 012.1 4.2 2 2 0 014.1 2h3a2 2 0 012 1.7c.1 1 .4 1.9.7 2.8a2 2 0 01-.5 2.1L8.1 9.9a16 16 0 006 6l1.3-1.2a2 2 0 012.1-.5c.9.3 1.8.6 2.8.7a2 2 0 011.7 2z" />
+    </svg>
   );
 }

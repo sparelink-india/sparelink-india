@@ -7,6 +7,14 @@ import {
 } from "@/lib/business-contacts";
 import { getTelHref } from "@/lib/support-contacts";
 import { getWhatsAppChatUrl } from "@/lib/whatsapp";
+import { pageMetadata } from "@/lib/seo";
+
+export const metadata = pageMetadata({
+  title: "About Ambaji Traders, Hind Motors & India Sales",
+  description:
+    "SpareLink India is the online sales platform of three separate proprietorship firms — Ambaji Traders, Hind Motors and India Sales. Learn who we are and how we work.",
+  path: "/about-us",
+});
 
 /**
  * V2 About page — an editorial layout, not a wall of equal-weight headings.
@@ -62,7 +70,7 @@ function FirmMark({ index }: { index: number }) {
   return (
     <span
       aria-hidden
-      className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-[var(--sl-radius-sm)] bg-[var(--sl-primary)] text-sm font-extrabold text-white tabular-nums"
+      className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-[2px] bg-[var(--sl-brand)] text-sm font-extrabold text-white tabular-nums"
     >
       {String(index + 1).padStart(2, "0")}
     </span>
@@ -74,29 +82,22 @@ export default function AboutUsPage() {
   const telHref = getTelHref(PUBLIC_SUPPORT_PHONE);
 
   return (
-    <StorefrontShell wide>
-      {/* ---------- HERO ---------- */}
-      <div className="relative overflow-hidden rounded-[var(--sl-radius-lg)] bg-[var(--sl-primary-dark)] px-5 py-10 text-white sm:px-10 sm:py-14">
-        <div
-          className="pointer-events-none absolute inset-0"
-          style={{
-            background:
-              "radial-gradient(120% 100% at 10% 0%, rgba(226,196,140,0.18) 0%, transparent 55%)",
-          }}
-          aria-hidden
-        />
-        <div className="relative max-w-3xl">
-          <p className="sl-label !text-[var(--sl-gold-soft)]">
-            <T k="nav.about" />
-          </p>
-          <h1 className="sl-display mt-2.5 !text-white">
-            <T k="about.title" />
-          </h1>
-          <p className="sl-body mt-3 !text-white/75">
-            <T k="about.subtitle" />
-          </p>
-        </div>
+    <StorefrontShell>
+      {/* ---------- PAGE IDENTITY ----------
+          No hero panel and no gradient. The V3 head plus a 3px gold rule — the
+          one place this page uses gold — and the company record starts
+          immediately below. */}
+      <div className="mb-5 flex flex-wrap items-baseline gap-3 border-b border-[var(--sl-rule)] pb-3">
+        <h1 className="sl-display">
+          <T k="about.title" />
+        </h1>
+        <p className="sl-eyebrow ml-auto hidden shrink-0 !text-[0.625rem] sm:inline-flex">
+          <T k="nav.about" />
+        </p>
       </div>
+      <p className="sl-body mt-3 max-w-3xl">
+        <T k="about.subtitle" />
+      </p>
 
       {/* ---------- INTRODUCTION ---------- */}
       <section className="sl-band" aria-labelledby="about-intro">
@@ -104,7 +105,10 @@ export default function AboutUsPage() {
           <h2 id="about-intro" className="sr-only">
             <T k="about.title" />
           </h2>
-          <div className="space-y-4">
+          {/* The lede gets a burgundy left rule rather than a heading, so the
+              three paragraphs read as an opening statement without adding a
+              title the page does not have. */}
+          <div className="space-y-4 border-l-2 border-[var(--sl-brand)] pl-4 sm:pl-5">
             <p className="sl-body">
               <T k="about.p1" />
             </p>
@@ -119,58 +123,97 @@ export default function AboutUsPage() {
       </section>
 
       {/* ---------- THE THREE FIRMS ----------
-          Three distinct proprietorship businesses. Each card states its own
-          proprietor and GSTIN so the legal separation is explicit. */}
-      <section className="sl-band border-t border-[var(--sl-border)]" aria-labelledby="about-firms">
-        <div className="max-w-2xl">
+          A register, not a partners grid. These are three SEPARATE
+          proprietorship businesses, each with its own proprietor and GSTIN.
+          V2 rendered them as three equal cards, and equal visual weight
+          implies a shared identity — the opposite of what the page is
+          documenting.
+
+          Each firm is therefore a full-width ruled record: the mark sits in the
+          left margin, the name titles the record, and the proprietor, GSTIN
+          and description are hairline-divided specification rows. The
+          description runs beside the data rather than under it, so a record is
+          one object you read top to bottom. */}
+      <section className="sl-band border-t border-[var(--sl-rule)]" aria-labelledby="about-firms">
+        <div className="mb-5 flex flex-wrap items-baseline gap-3 border-b border-[var(--sl-rule)] pb-3">
           <h2 id="about-firms" className="sl-h2">
             <T k="about.partners" />
           </h2>
+          <span className="sl-num ml-auto shrink-0 text-[1.25rem] font-extrabold leading-none text-[var(--sl-brand-ink)]">
+            {FIRMS.length}
+          </span>
         </div>
 
-        <div className="mt-6 grid gap-3 md:grid-cols-3">
+        <ul className="mt-5 space-y-3">
           {FIRMS.map((firm, index) => (
-            <article id={firm.id} key={firm.id} className="sl-v2-card sl-v2-rule flex flex-col p-5">
-              <div className="flex items-center gap-3">
-                <FirmMark index={index} />
-                <div className="min-w-0">
-                  <h3 className="sl-h3">{firm.name}</h3>
-                  <p className="sl-small mt-0.5">
-                    <T k="about.proprietor" vars={{ name: firm.proprietor }} />
+            <li key={firm.id}>
+              <article
+                id={firm.id}
+                className="sl-panel scroll-mt-32 overflow-hidden lg:flex"
+              >
+                {/* Identity column: mark + firm name. */}
+                <div className="flex items-center gap-3 border-b border-[var(--sl-rule)] p-4 lg:w-64 lg:shrink-0 lg:flex-col lg:items-start lg:gap-2 lg:border-b-0 lg:border-r lg:p-5">
+                  <FirmMark index={index} />
+                  <div className="min-w-0">
+                    <h3 className="sl-h3">{firm.name}</h3>
+                    <p className="sl-small mt-0.5 !text-[0.75rem]">
+                      <T k="about.proprietor" vars={{ name: firm.proprietor }} />
+                    </p>
+                  </div>
+                </div>
+
+                {/* Specification column: registration data as a ruled table
+                    beside the firm's own description. */}
+                <div className="min-w-0 flex-1 p-4 lg:p-5">
+                  <dl className="divide-y divide-[var(--sl-rule)] border-y border-[var(--sl-rule)]">
+                    <div className="flex items-baseline justify-between gap-4 py-2">
+                      <dt className="sl-eyebrow sl-eyebrow-plain !text-[0.5625rem]">GSTIN</dt>
+                      <dd className="sl-partno !text-[0.75rem] !text-[var(--sl-ink)]">
+                        {firm.gstin}
+                      </dd>
+                    </div>
+                    <div className="flex items-baseline justify-between gap-4 py-2">
+                      <dt className="sl-eyebrow sl-eyebrow-plain !text-[0.5625rem]">
+                        <T k="about.proprietor" vars={{ name: "" }} />
+                      </dt>
+                      <dd className="text-right text-[0.8125rem] font-medium text-[var(--sl-ink)]">
+                        {firm.proprietor}
+                      </dd>
+                    </div>
+                  </dl>
+                  <p className="sl-body mt-3.5 !text-[0.875rem]">
+                    <T k={firm.textKey} />
                   </p>
                 </div>
-              </div>
-              {/* GSTIN is registration data, so it gets the catalogue-code
-                  treatment rather than body copy. */}
-              <p className="sl-partno mt-3.5">
-                <span className="sr-only">GSTIN: </span>
-                GSTIN {firm.gstin}
-              </p>
-              <p className="sl-body mt-3 flex-1 text-[0.875rem]">
-                <T k={firm.textKey} />
-              </p>
-            </article>
+              </article>
+            </li>
           ))}
-        </div>
+        </ul>
       </section>
 
       {/* ---------- WHAT WE STAND FOR ---------- */}
-      <section className="sl-band border-t border-[var(--sl-border)]" aria-labelledby="about-stand">
-        <div className="max-w-2xl">
+      <section className="sl-band border-t border-[var(--sl-rule)]" aria-labelledby="about-stand">
+        <div className="mb-5 flex flex-wrap items-baseline gap-3 border-b border-[var(--sl-rule)] pb-3">
           <h2 id="about-stand" className="sl-h2">
             <T k="about.stand" />
           </h2>
         </div>
 
-        {/* Grid, not a definition list: these are parallel principles, and a
-            3-up grid makes that parallelism visible. */}
-        <dl className="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+        {/* A ruled two-column list, not a grid of boxes. These are parallel
+            statements, and boxing each one made them impossible to scan
+            against each other. Label left, statement right, one hairline
+            between rows — the same device as the cart summary and the order
+            financial section. */}
+        <dl className="mt-5 divide-y divide-[var(--sl-rule)] border-y border-[var(--sl-rule)]">
           {PRINCIPLES.map((principle) => (
-            <div key={principle.titleKey} className="sl-v2-card p-5">
-              <dt className="sl-h3">
+            <div
+              key={principle.titleKey}
+              className="grid gap-1 py-3 sm:grid-cols-[14rem_minmax(0,1fr)] sm:items-baseline sm:gap-6"
+            >
+              <dt className="sl-eyebrow sl-eyebrow-plain !text-[0.625rem] !text-[var(--sl-ink)]">
                 <T k={principle.titleKey} />
               </dt>
-              <dd className="sl-body mt-2 text-[0.875rem]">
+              <dd className="sl-body !text-[0.875rem]">
                 <T k={principle.textKey} />
               </dd>
             </div>
@@ -179,8 +222,8 @@ export default function AboutUsPage() {
       </section>
 
       {/* ---------- PRODUCT NETWORK ---------- */}
-      <section className="sl-band border-t border-[var(--sl-border)]" aria-labelledby="about-network">
-        <div className="max-w-2xl">
+      <section className="sl-band border-t border-[var(--sl-rule)]" aria-labelledby="about-network">
+        <div className="mb-5 flex flex-wrap items-baseline gap-3 border-b border-[var(--sl-rule)] pb-3">
           <h2 id="about-network" className="sl-h2">
             <T k="about.network" />
           </h2>
@@ -199,8 +242,8 @@ export default function AboutUsPage() {
       </section>
 
       {/* ---------- VISION ---------- */}
-      <section className="sl-band border-t border-[var(--sl-border)]" aria-labelledby="about-vision">
-        <div className="max-w-2xl">
+      <section className="sl-band border-t border-[var(--sl-rule)]" aria-labelledby="about-vision">
+        <div className="mb-5 flex flex-wrap items-baseline gap-3 border-b border-[var(--sl-rule)] pb-3">
           <h2 id="about-vision" className="sl-h2">
             <T k="about.vision" />
           </h2>
@@ -217,8 +260,8 @@ export default function AboutUsPage() {
 
       {/* ---------- TRUST / CONTACT CTA ----------
           Real contact details only, taken from lib/business-contacts. */}
-      <section className="sl-band border-t border-[var(--sl-border)]">
-        <div className="sl-v2-card overflow-hidden">
+      <section className="sl-band border-t border-[var(--sl-rule)]">
+        <div className="sl-panel overflow-hidden">
           <div className="grid gap-6 p-6 sm:p-8 lg:grid-cols-[1fr_auto] lg:items-center">
             <div>
               <p className="sl-h3">SpareLink India</p>
@@ -230,7 +273,7 @@ export default function AboutUsPage() {
                 {telHref ? (
                   <a
                     href={telHref}
-                    className="sl-v2-focus sl-nav inline-flex min-h-11 items-center gap-2 rounded-[var(--sl-radius-sm)] text-[var(--sl-text-soft)] transition-colors hover:text-[var(--sl-primary)]"
+                    className="sl-focus inline-flex min-h-11 items-center gap-2 rounded-[var(--sl-r-sm)] text-[0.8125rem] font-semibold text-[var(--sl-ink-2)] transition-colors hover:text-[var(--sl-brand-ink)]"
                   >
                     <PhoneIcon />
                     {PUBLIC_SUPPORT_PHONE}
@@ -238,7 +281,7 @@ export default function AboutUsPage() {
                 ) : null}
                 <a
                   href={`mailto:${PUBLIC_DISPLAY_EMAIL}`}
-                  className="sl-v2-focus sl-nav inline-flex min-h-11 items-center gap-2 rounded-[var(--sl-radius-sm)] text-[var(--sl-text-soft)] transition-colors hover:text-[var(--sl-primary)]"
+                  className="sl-focus inline-flex min-h-11 items-center gap-2 rounded-[var(--sl-r-sm)] text-[0.8125rem] font-semibold text-[var(--sl-ink-2)] transition-colors hover:text-[var(--sl-brand-ink)]"
                 >
                   <MailIcon />
                   {PUBLIC_DISPLAY_EMAIL}
@@ -247,10 +290,15 @@ export default function AboutUsPage() {
             </div>
 
             <div className="flex flex-col gap-2 sm:flex-row lg:flex-col">
-              <WhatsAppCta href={whatsappHref} className="sl-v2-btn sl-v2-btn-primary" />
+              <WhatsAppCta
+                href={whatsappHref}
+                className="sl-btn sl-btn-primary"
+                tone="inherit"
+              />
+
               <a
                 href="/contact-us"
-                className="sl-v2-btn sl-v2-btn-secondary whitespace-nowrap"
+                className="sl-btn sl-btn-secondary whitespace-nowrap"
               >
                 <T k="nav.contact" />
               </a>

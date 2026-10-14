@@ -33,39 +33,39 @@ export function InclusivePrice({
   if (!priced) {
     return (
       <div className={align === "right" ? "text-right" : "text-left"}>
-        <p className="text-sm font-bold text-slate-800">{t("price.onRequest")}</p>
+        <p className="text-sm font-bold text-[var(--sl-ink)]">{t("price.onRequest")}</p>
       </div>
     );
   }
 
   return (
     <div className={align === "right" ? "text-right" : "text-left"}>
-      <p className="text-[11px] font-medium uppercase tracking-wide text-ink-500">
+      <p className="text-[11px] font-medium uppercase tracking-wide text-[var(--sl-ink-3)]">
         {t("price.listRate")}
       </p>
       <p
         className={
           showDiscount
-            ? "text-sm font-semibold text-ink-500"
-            : "text-base font-extrabold text-ink-900"
+            ? "sl-num text-sm font-semibold text-[var(--sl-ink-3)]"
+            : "sl-num text-base font-extrabold text-[var(--sl-ink)]"
         }
       >
         ₹{rupees(list)}
       </p>
-      <p className="text-[11px] font-medium text-emerald-700">{t("price.inclGst")}</p>
+      <p className="text-[11px] font-medium text-[var(--sl-ok)]">{t("price.inclGst")}</p>
       {showDiscount ? (
         <>
-          <p className="mt-1 text-[11px] font-medium uppercase tracking-wide text-ink-500">
+          <p className="mt-1 text-[11px] font-medium uppercase tracking-wide text-[var(--sl-ink-3)]">
             {t("price.netRate")}
           </p>
-          <p className="text-base font-extrabold text-ink-900">₹{rupees(net)}</p>
-          <p className="text-[11px] font-semibold text-brand-700">
+          <p className="sl-num text-base font-extrabold text-[var(--sl-ink)]">₹{rupees(net)}</p>
+          <p className="text-[11px] font-semibold text-[var(--sl-brand)]">
             {t("price.inclTaxDiscount", { percent: String(discountPercent) })}
           </p>
         </>
       ) : null}
       {gstRate != null ? (
-        <p className="text-[11px] text-ink-500">GST {gstRate}%</p>
+        <p className="text-[11px] text-[var(--sl-ink-3)]">GST {gstRate}%</p>
       ) : null}
     </div>
   );

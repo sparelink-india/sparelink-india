@@ -6,7 +6,21 @@ export type PublicBrand = {
   logo: string;
   relationship: PublicBrandRelationship;
   searchQuery: string;
+  /**
+   * A short relationship line only. It is NOT brand copy and must never be
+   * promoted into the description slot on the brand card.
+   */
   tagline?: string;
+  /**
+   * Optional approved brand copy, rendered on the brand card when present.
+   *
+   * No approved description content exists for any brand today, so this is
+   * unset across the whole list and the catalogue is designed to read as
+   * complete without it. It exists so approved copy can be added later
+   * without another layout change — never so a placeholder can be filled in
+   * from a tagline or invented.
+   */
+  description?: string;
 };
 
 /**

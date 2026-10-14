@@ -1,0 +1,1328 @@
+/* ===================================================================
+   SPARELINK INDIA — "PRECISION" DESIGN SYSTEM  (generation 4)
+   ===================================================================
+
+   A new visual language for the storefront, built alongside the V2 and
+   V3 layers rather than by editing them, so every page keeps working
+   while it is migrated one surface at a time.
+
+   WHAT MAKES THIS DIFFERENT FROM V3
+   ---------------------------------
+   V3 was an industrial CATALOGUE: hairline rules carry the structure,
+   radii are 3px, and depth is almost nil. That reads as a parts list.
+
+   This system is an industrial WORKSHOP TERMINAL: it reads as a machine.
+   The changes are structural, not cosmetic.
+
+     concern        V3 (retained)          V4 (this system)
+     --------------- ---------------------- -----------------------
+     structure      hairline rules only    rules + depth + inset
+     radius         3px / 5px              8px / 12px, 4px small
+     elevation      1px rule               3-step layered shadow
+     header         white, ink rule        graphite band, brand rail
+     accent         none                   copper, for provenance
+     numerals       default                tabular for money/parts
+     display        loose                  tight tracking, big steps
+
+   WHY A NEW ACCENT EXISTS
+   -----------------------
+   V3 spent its whole palette on burgundy plus three state colours, which
+   left "genuine / original / premium" with no ink of its own: the badges
+   were outlined in burgundy, the same colour as the primary action, so a
+   trust signal and a call to action looked identical. Copper is added
+   specifically to carry provenance. It is never used for a primary action,
+   so it can never be mistaken for one.
+
+   BRAND COLOUR IS NOT UP FOR REGRABBLE
+   -------------------------------------
+   --sl-brand stays #7a1233. That value is baked into the logo SVG, the
+   OG theme colour, the V3 layer and the deployed manifest. Changing it
+   would put a burgundy logo on a different-coloured page.
+
+   LAYERING — LOAD-BEARING, NOT STYLISTIC
+   --------------------------------------
+   Everything sits inside `@layer components`, exactly as v3.css does.
+   Tailwind v4 emits utilities in `@layer utilities`, and an UNLAYERED
+   rule outranks a layered one regardless of specificity or media query,
+   so an unlayered `.sl-btn` would silently beat `md:hidden`. Inside
+   `components` the utilities layer wins, which is the intended order and
+   needs no `!important` anywhere in this file.
+
+   MIGRATION STATE
+   ---------------
+   This file is the TARGET system. Surfaces are moved onto it
+   incrementally. globals.css (V2) and v3.css remain in place for
+   surfaces not yet migrated; both are scheduled for removal once the
+   migration is complete. Do not add new surfaces to them.
+   =================================================================== */
+
+@layer components {
+
+:root {
+  /* ================================================================
+     1. COLOUR TOKENS
+     Semantic names only. No component may hardcode a hex value; if a
+     value is needed that has no token here, the token set is wrong.
+     ================================================================ */
+
+  /* --- brand -------------------------------------------------- */
+  --sl-brand: #7a1233;            /* unchanged: baked into the logo */
+  --sl-brand-hover: #611029;
+  --sl-brand-active: #4d0b20;
+  --sl-brand-soft: #fdf4f7;
+  --sl-brand-softer: #fbf0f3;
+  --sl-brand-ink: #7a1233;        /* brand as text on a light surface */
+  --sl-brand-line: #e8cdd7;
+  --sl-brand-on-dark: #f4d3de;    /* brand family readable on graphite */
+
+  /* --- graphite: the machine band ---------------------------- */
+  --sl-graphite: #17110f;
+  --sl-graphite-2: #241b18;
+  --sl-graphite-3: #3a2d28;
+  --sl-graphite-line: #4a3a34;
+  --sl-graphite-ink: #f7f2ee;     /* 14.8:1 on --sl-graphite */
+  --sl-graphite-ink-2: #cbbdb6;   /*  8.1:1 */
+  --sl-graphite-ink-3: #9c8d85;   /*  5.4:1 */
+
+  /* --- provenance accent (new in this system) --------------- */
+  /* Carries genuine / original / premium provenance and nothing else.
+     Deliberately NOT a button colour: a trust badge and a call to
+     action must never be the same ink. */
+  --sl-copper: #b45309;
+  --sl-copper-hover: #92400e;
+  --sl-copper-ink: #8a4208;       /* as small text: 5.6:1 on white */
+  --sl-copper-soft: #fdf5e9;
+  --sl-copper-line: #ecd5b0;
+
+  /* --- surfaces --------------------------------------------- */
+  --sl-page: #f7f3ef;             /* warm neutral, never white */
+  --sl-surface: #ffffff;
+  --sl-sunken: #f1ebe5;
+  --sl-sunken-2: #e9e1da;
+  --sl-overlay: rgb(23 17 15 / 0.55);
+
+  /* --- rules ------------------------------------------------- */
+  --sl-rule: #e6dfd9;
+  --sl-rule-2: #d8cec6;
+  --sl-rule-strong: #bfb2a8;
+
+  /* --- ink --------------------------------------------------- */
+  --sl-ink: #14100e;              /* 17.4:1 on white */
+  --sl-ink-2: #4a423d;            /*  8.6:1 */
+  --sl-ink-3: #6e645e;            /*  5.4:1 — AA for body-size text */
+
+  /* --- state -------------------------------------------------
+     Each has a solid, a soft fill and a line, so a state never has
+     to be communicated by colour alone. */
+  --sl-ok: #0f6b4f;
+  --sl-ok-soft: #e7f4ee;
+  --sl-ok-line: #bfe0d1;
+  --sl-warn: #8a5a12;
+  --sl-warn-soft: #fbf1df;
+  --sl-warn-line: #ecd7ab;
+  --sl-bad: #9b1c17;
+  --sl-bad-soft: #fbeceb;
+  --sl-bad-line: #eec4c1;
+  --sl-info: #1d4ed8;
+  --sl-info-soft: #eef2ff;
+  --sl-info-line: #c7d2fe;
+
+  /* ================================================================
+     2. TYPE SCALE
+     A modular scale on a 1.25 ratio, in rem so it tracks the user's
+     browser font size. The jump from --sl-t-6 to --sl-t-display is
+     deliberately larger than the rest: that is what produces the
+     "new generation" read at the top of a page.
+     ================================================================ */
+  --sl-t-display: clamp(2.5rem, 1.55rem + 3.9vw, 4.5rem);
+  --sl-t-1: clamp(2rem, 1.45rem + 2.3vw, 3rem);
+  --sl-t-2: clamp(1.625rem, 1.34rem + 1.2vw, 2.125rem);
+  --sl-t-3: clamp(1.3125rem, 1.19rem + 0.52vw, 1.5rem);
+  --sl-t-4: 1.125rem;
+  --sl-t-body: 1rem;
+  --sl-t-sm: 0.9375rem;
+  --sl-t-xs: 0.8125rem;
+  --sl-t-cap: 0.75rem;
+  --sl-t-micro: 0.6875rem;        /* 11px: badges and unit suffixes only */
+
+  --sl-lh-tight: 1.1;
+  --sl-lh-snug: 1.25;
+  --sl-lh-body: 1.6;
+  --sl-lh-loose: 1.75;
+
+  --sl-track-display: -0.028em;   /* tight display tracking */
+  --sl-track-tight: -0.014em;
+  --sl-track-normal: 0;
+  --sl-track-wide: 0.04em;
+  --sl-track-caps: 0.09em;
+
+  /* ================================================================
+     3. SPACE — a 4px base. Named by step, never by pixel value.
+     ================================================================ */
+  --sl-s-1: 0.25rem;
+  --sl-s-2: 0.5rem;
+  --sl-s-3: 0.75rem;
+  --sl-s-4: 1rem;
+  --sl-s-5: 1.5rem;
+  --sl-s-6: 2rem;
+  --sl-s-7: 2.5rem;
+  --sl-s-8: 3rem;
+  --sl-s-9: 4rem;
+  --sl-s-10: 5rem;
+
+  --sl-gutter: clamp(1rem, 0.55rem + 1.9vw, 2rem);
+  --sl-section: clamp(2.5rem, 1.7rem + 3.4vw, 5rem);
+  --sl-container: 1320px;
+  --sl-container-narrow: 760px;   /* long-form reading measure */
+
+  /* ================================================================
+     4. RADIUS + ELEVATION
+     V3 used 3px and no shadow. This system uses a real radius ladder
+     and a three-step elevation scale, because the depth cue is what
+     separates a "machine" from a "sheet of paper".
+     ================================================================ */
+  --sl-r-xs: 4px;
+  --sl-r-sm: 6px;
+  --sl-r: 8px;
+  --sl-r-md: 10px;
+  --sl-r-lg: 12px;
+  --sl-r-xl: 16px;
+  --sl-r-pill: 999px;
+
+  --sl-e-0: none;
+  --sl-e-1: 0 1px 2px rgb(20 16 14 / 0.05), 0 1px 0 var(--sl-rule);
+  --sl-e-2: 0 2px 4px rgb(20 16 14 / 0.05), 0 6px 14px -8px rgb(20 16 14 / 0.16),
+           0 0 0 1px var(--sl-rule);
+  --sl-e-3: 0 4px 8px rgb(20 16 14 / 0.06), 0 18px 36px -14px rgb(20 16 14 / 0.26),
+           0 0 0 1px var(--sl-rule);
+  --sl-e-focus: 0 0 0 3px rgb(122 18 51 / 0.28);
+
+  /* ================================================================
+     5. MOTION
+     Short and few. One easing curve, one duration pair.
+     ================================================================ */
+  --sl-dur-1: 120ms;
+  --sl-dur-2: 200ms;
+  --sl-ease: cubic-bezier(0.2, 0.7, 0.3, 1);
+}
+
+/* ===================================================================
+   BASE
+   =================================================================== */
+
+@layer base {
+
+  /* Money and part numbers must not reflow as digits change. Tabular
+     figures are set per use via .sl-num rather than globally, because
+     tabular figures in running prose look gappy. */
+  .sl-num {
+    font-variant-numeric: tabular-nums;
+    font-feature-settings: "tnum" 1;
+    letter-spacing: -0.01em;
+  }
+
+  /* Part numbers: monospace keeps digits aligned in a table column and
+     stops a 0/O or 1/l being misread on a printed invoice. */
+  .sl-part {
+    font-family: var(--font-geist-mono), ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-variant-numeric: tabular-nums;
+    font-size: var(--sl-t-cap);
+    letter-spacing: 0.01em;
+    color: var(--sl-ink-2);
+    /* Never clip a part number: it wraps instead of truncating. */
+     word-break: break-word;
+  }
+
+  /* A visible, high-contrast focus ring on everything. `:focus-visible`
+     so a mouse click never paints one, but keyboard always does. */
+  .sl-focus:focus-visible {
+    outline: 2px solid var(--sl-brand);
+    outline-offset: 2px;
+    border-radius: var(--sl-r-xs);
+  }
+  .sl-focus-invert:focus-visible {
+    outline: 2px solid var(--sl-brand-on-dark);
+    outline-offset: 2px;
+  }
+
+  /* Motion is opt-out, never opt-in. */
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
+  }
+}
+
+/* ===================================================================
+   LAYOUT PRIMITIVES
+   =================================================================== */
+
+@layer components {
+
+  .sl-container {
+    width: 100%;
+    max-width: var(--sl-container);
+    margin-inline: auto;
+    padding-inline: var(--sl-gutter);
+  }
+
+  /* A band: full-bleed ground, content aligned to the container. */
+  .sl-band {
+    padding-block: var(--sl-section);
+  }
+  .sl-band-tight {
+    padding-block: calc(var(--sl-section) * 0.6);
+  }
+
+  /* Section header: an eyebrow over a title over an optional lede.
+     The 3px rule is the system's smallest recurring mark. */
+  .sl-eyebrow {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--sl-s-2);
+    font-size: var(--sl-t-cap);
+    font-weight: 700;
+    letter-spacing: var(--sl-track-caps);
+    text-transform: uppercase;
+    color: var(--sl-brand-ink);
+  }
+  .sl-eyebrow::before {
+    content: "";
+    inline-size: 18px;
+    block-size: 3px;
+    background: var(--sl-brand);
+    border-radius: 2px;
+  }
+  .sl-eyebrow-plain::before { display: none; }
+
+  .sl-display {
+    font-size: var(--sl-t-display);
+    line-height: var(--sl-lh-tight);
+    letter-spacing: var(--sl-track-display);
+    font-weight: 700;
+    color: var(--sl-ink);
+    text-wrap: balance;
+  }
+  .sl-h1 { font-size: var(--sl-t-1); line-height: var(--sl-lh-tight); letter-spacing: var(--sl-track-display); font-weight: 700; color: var(--sl-ink); text-wrap: balance; }
+  .sl-h2 { font-size: var(--sl-t-2); line-height: var(--sl-lh-snug); letter-spacing: var(--sl-track-tight); font-weight: 700; color: var(--sl-ink); text-wrap: balance; }
+  .sl-h3 { font-size: var(--sl-t-3); line-height: 1.35; letter-spacing: var(--sl-track-tight); font-weight: 650; color: var(--sl-ink); }
+  .sl-h4 { font-size: var(--sl-t-4); line-height: 1.4; letter-spacing: var(--sl-track-normal); font-weight: 650; color: var(--sl-ink); }
+
+  .sl-lede {
+    font-size: var(--sl-t-sm);
+    line-height: var(--sl-lh-loose);
+    color: var(--sl-ink-2);
+    max-width: 62ch;
+    text-wrap: pretty;
+  }
+  .sl-body { font-size: var(--sl-t-body); line-height: var(--sl-lh-body); color: var(--sl-ink); }
+  .sl-meta { font-size: var(--sl-t-xs); line-height: 1.5; color: var(--sl-ink-2); }
+  .sl-micro { font-size: var(--sl-t-micro); line-height: 1.4; color: var(--sl-ink-2); }
+
+  /* =================================================================
+     PANEL — the core surface. V3's panel was a flat white rectangle
+     separated only by a hairline; this one has a rule, a soft shadow
+     and an optional top accent, so it reads as a physical plate.
+     ================================================================= */
+  .sl-panel {
+    background: var(--sl-surface);
+    border-radius: var(--sl-r-lg);
+    box-shadow: var(--sl-e-2);
+    overflow: hidden;
+  }
+  .sl-panel-flat {
+    background: var(--sl-surface);
+    border-radius: var(--sl-r-lg);
+    box-shadow: var(--sl-e-1);
+  }
+  .sl-panel-sunk {
+    background: var(--sl-sunken);
+    border-radius: var(--sl-r-lg);
+  }
+  .sl-panel-pad { padding: clamp(1rem, 0.7rem + 1.2vw, 1.75rem); }
+
+  /* A 3px brand edge along the top. Used once per band, never stacked,
+     so the accent stays a signal rather than a texture. */
+  .sl-panel-edge { position: relative; }
+  .sl-panel-edge::before {
+    content: "";
+    position: absolute;
+    inset-inline: 0;
+    inset-block-start: 0;
+    block-size: 3px;
+    background: linear-gradient(90deg, var(--sl-brand) 0%, var(--sl-copper) 100%);
+    z-index: 1;
+  }
+
+  /* =================================================================
+     BUTTONS
+     ================================================================= */
+  .sl-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--sl-s-2);
+    /* 44px min target: comfortable on touch, still compact on desktop. */
+    min-block-size: 2.75rem;
+    padding-inline: var(--sl-s-5);
+    border-radius: var(--sl-r);
+    font-size: var(--sl-t-sm);
+    font-weight: 650;
+    line-height: 1.2;
+    letter-spacing: var(--sl-track-normal);
+    white-space: nowrap;
+    cursor: pointer;
+    user-select: none;
+    transition: background-color var(--sl-dur-1) var(--sl-ease),
+                border-color var(--sl-dur-1) var(--sl-ease),
+                color var(--sl-dur-1) var(--sl-ease),
+                box-shadow var(--sl-dur-1) var(--sl-ease),
+                transform var(--sl-dur-1) var(--sl-ease);
+  }
+  .sl-btn:disabled,
+  .sl-btn[aria-disabled="true"] {
+    opacity: 0.55;
+    cursor: not-allowed;
+    transform: none;
+  }
+
+  /* Primary: the single strongest action on a screen. */
+  .sl-btn-primary {
+    background: var(--sl-brand);
+    color: #fff;
+    border: 1px solid var(--sl-brand);
+    box-shadow: var(--sl-e-1);
+  }
+  .sl-btn-primary:hover:not(:disabled) { background: var(--sl-brand-hover); border-color: var(--sl-brand-hover); }
+  .sl-btn-primary:active:not(:disabled) { background: var(--sl-brand-active); transform: translateY(1px); }
+
+  /* Secondary: a real alternative, not a weaker primary. */
+  .sl-btn-secondary {
+    background: var(--sl-surface);
+    color: var(--sl-ink);
+    border: 1px solid var(--sl-rule-2);
+    box-shadow: var(--sl-e-1);
+  }
+  .sl-btn-secondary:hover:not(:disabled) { border-color: var(--sl-rule-strong); background: var(--sl-sunken); }
+
+  /* Ghost: for dense toolbars where a filled button would crowd. */
+  .sl-btn-ghost {
+    background: transparent;
+    color: var(--sl-ink-2);
+    border: 1px solid transparent;
+  }
+  .sl-btn-ghost:hover:not(:disabled) { background: var(--sl-sunken); color: var(--sl-ink); }
+
+  .sl-btn-dark {
+    background: var(--sl-graphite-3);
+    color: var(--sl-graphite-ink);
+    border: 1px solid var(--sl-graphite-line);
+  }
+  .sl-btn-dark:hover:not(:disabled) { background: #4a3a34; }
+
+  .sl-btn-danger {
+    background: var(--sl-bad);
+    color: #fff;
+    border: 1px solid var(--sl-bad);
+  }
+  .sl-btn-danger:hover:not(:disabled) { background: #7f1611; }
+
+  /* Sizes */
+  .sl-btn-sm { min-block-size: 2.125rem; padding-inline: var(--sl-s-3); font-size: var(--sl-t-xs); }
+  .sl-btn-lg { min-block-size: 3.25rem; padding-inline: var(--sl-s-6); font-size: var(--sl-t-body); }
+  .sl-btn-block { display: flex; inline-size: 100%; }
+
+  /* Square icon-only control. The 44px box is the touch target; the
+     glyph inside is optically centred, not mathematically. */
+  .sl-iconbtn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    inline-size: 2.75rem;
+    block-size: 2.75rem;
+    border-radius: var(--sl-r);
+    background: transparent;
+    color: var(--sl-ink-2);
+    border: 1px solid transparent;
+    cursor: pointer;
+    transition: background-color var(--sl-dur-1) var(--sl-ease), color var(--sl-dur-1) var(--sl-ease);
+  }
+  .sl-iconbtn:hover { background: var(--sl-sunken); color: var(--sl-ink); }
+  .sl-iconbtn-sm { inline-size: 2.25rem; block-size: 2.25rem; }
+  .sl-iconbtn-on-dark { color: var(--sl-graphite-ink-2); }
+  .sl-iconbtn-on-dark:hover { background: rgb(255 255 255 / 0.08); color: var(--sl-graphite-ink); }
+
+  /* =================================================================
+     FORM CONTROLS
+     ================================================================= */
+  .sl-input,
+  .sl-select,
+  .sl-textarea {
+    inline-size: 100%;
+    min-block-size: 2.75rem;
+    padding: var(--sl-s-3) var(--sl-s-4);
+    background: var(--sl-surface);
+    color: var(--sl-ink);
+    border: 1px solid var(--sl-rule-2);
+    border-radius: var(--sl-r);
+    font-size: var(--sl-t-body);
+    line-height: 1.4;
+    box-shadow: inset 0 1px 2px rgb(20 16 14 / 0.04);
+    transition: border-color var(--sl-dur-1) var(--sl-ease), box-shadow var(--sl-dur-1) var(--sl-ease);
+  }
+  .sl-textarea { min-block-size: 7rem; padding-block: var(--sl-s-3); resize: vertical; }
+  .sl-input::placeholder,
+  .sl-textarea::placeholder { color: var(--sl-ink-3); }
+
+  .sl-input:hover:not(:disabled),
+  .sl-select:hover:not(:disabled),
+  .sl-textarea:hover:not(:disabled) { border-color: var(--sl-rule-strong); }
+
+  .sl-input:focus-visible,
+  .sl-select:focus-visible,
+  .sl-textarea:focus-visible {
+    outline: none;
+    border-color: var(--sl-brand);
+    box-shadow: var(--sl-e-focus), inset 0 1px 2px rgb(20 16 14 / 0.04);
+  }
+  .sl-input:disabled,
+  .sl-select:disabled,
+  .sl-textarea:disabled { background: var(--sl-sunken); color: var(--sl-ink-3); cursor: not-allowed; }
+
+  .sl-input[aria-invalid="true"],
+  .sl-select[aria-invalid="true"] {
+    border-color: var(--sl-bad);
+    box-shadow: 0 0 0 3px rgb(155 28 23 / 0.14);
+  }
+
+  .sl-label {
+    display: block;
+    font-size: var(--sl-t-xs);
+    font-weight: 650;
+    color: var(--sl-ink-2);
+    margin-block-end: var(--sl-s-2);
+  }
+  .sl-hint { font-size: var(--sl-t-cap); color: var(--sl-ink-3); margin-block-start: var(--sl-s-2); }
+  .sl-error {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--sl-s-2);
+    font-size: var(--sl-t-xs);
+    color: var(--sl-bad);
+    margin-block-start: var(--sl-s-2);
+  }
+
+  /* Checkbox / radio: the native control is kept for keyboard and AT
+     behaviour and is visually replaced, never removed. */
+  .sl-check {
+    inline-size: 1.125rem;
+    block-size: 1.125rem;
+    accent-color: var(--sl-brand);
+    cursor: pointer;
+    flex: none;
+  }
+
+  /* =================================================================
+     BADGES
+     State and provenance are different axes and never share a colour.
+     ================================================================= */
+  .sl-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35em;
+    padding: 0.2em 0.6em;
+    border-radius: var(--sl-r-xs);
+    font-size: var(--sl-t-micro);
+    font-weight: 700;
+    letter-spacing: var(--sl-track-wide);
+    line-height: 1.5;
+    white-space: nowrap;
+    border: 1px solid transparent;
+  }
+  .sl-badge-neutral { background: var(--sl-sunken); color: var(--sl-ink-2); border-color: var(--sl-rule); }
+  .sl-badge-brand   { background: var(--sl-brand-soft); color: var(--sl-brand-ink); border-color: var(--sl-brand-line); }
+  .sl-badge-copper  { background: var(--sl-copper-soft); color: var(--sl-copper-ink); border-color: var(--sl-copper-line); }
+  .sl-badge-ok      { background: var(--sl-ok-soft); color: var(--sl-ok); border-color: var(--sl-ok-line); }
+  .sl-badge-warn    { background: var(--sl-warn-soft); color: var(--sl-warn); border-color: var(--sl-warn-line); }
+  .sl-badge-bad     { background: var(--sl-bad-soft); color: var(--sl-bad); border-color: var(--sl-bad-line); }
+  .sl-badge-info    { background: var(--sl-info-soft); color: var(--sl-info); border-color: var(--sl-info-line); }
+  .sl-badge-solid   { background: var(--sl-brand); color: #fff; }
+
+  /* =================================================================
+     PRICE
+     The one place the system's tabular figures earn their keep.
+     ================================================================= */
+  .sl-price {
+    font-size: var(--sl-t-3);
+    font-weight: 700;
+    line-height: 1.1;
+    color: var(--sl-ink);
+    font-variant-numeric: tabular-nums;
+    letter-spacing: -0.02em;
+  }
+  .sl-price-mrp {
+    font-size: var(--sl-t-xs);
+    color: var(--sl-ink-3);
+    text-decoration: line-through;
+    font-variant-numeric: tabular-nums;
+  }
+  .sl-price-off {
+    font-size: var(--sl-t-micro);
+    font-weight: 700;
+    color: var(--sl-ok);
+    letter-spacing: var(--sl-track-wide);
+  }
+  .sl-price-unit { font-size: var(--sl-t-micro); color: var(--sl-ink-3); }
+
+  /* =================================================================
+     STATES: empty / error / loading
+     One vocabulary, used on every surface.
+     ================================================================= */
+  .sl-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    gap: var(--sl-s-3);
+    padding: var(--sl-s-8) var(--sl-s-5);
+  }
+  .sl-state-icon {
+    display: grid;
+    place-items: center;
+    inline-size: 3.5rem;
+    block-size: 3.5rem;
+    border-radius: var(--sl-r-lg);
+    background: var(--sl-sunken);
+    color: var(--sl-ink-3);
+    border: 1px solid var(--sl-rule);
+  }
+  .sl-state-bad .sl-state-icon { background: var(--sl-bad-soft); color: var(--sl-bad); border-color: var(--sl-bad-line); }
+  .sl-state-title { font-size: var(--sl-t-4); font-weight: 650; color: var(--sl-ink); }
+  .sl-state-text { font-size: var(--sl-t-sm); color: var(--sl-ink-2); max-width: 46ch; line-height: var(--sl-lh-body); }
+
+  .sl-skel {
+    background: linear-gradient(90deg, var(--sl-sunken) 25%, var(--sl-sunken-2) 37%, var(--sl-sunken) 63%);
+    background-size: 400% 100%;
+    animation: sl-shimmer 1.4s ease-in-out infinite;
+    border-radius: var(--sl-r-sm);
+  }
+  @keyframes sl-shimmer {
+    0% { background-position: 100% 50%; }
+    100% { background-position: 0 50%; }
+  }
+
+  /* =================================================================
+     TABLE — dense, ruled, aligned. Numbers right, labels left.
+     ================================================================= */
+  .sl-table-wrap {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    border-radius: var(--sl-r-lg);
+    border: 1px solid var(--sl-rule);
+    background: var(--sl-surface);
+  }
+  .sl-table { inline-size: 100%; border-collapse: collapse; font-size: var(--sl-t-sm); }
+  .sl-table thead th {
+    position: sticky;
+    inset-block-start: 0;
+    z-index: 1;
+    background: var(--sl-sunken);
+    text-align: start;
+    font-size: var(--sl-t-cap);
+    font-weight: 700;
+    letter-spacing: var(--sl-track-wide);
+    text-transform: uppercase;
+    color: var(--sl-ink-2);
+    padding: var(--sl-s-3) var(--sl-s-4);
+    border-block-end: 1px solid var(--sl-rule);
+    white-space: nowrap;
+  }
+  .sl-table tbody td {
+    padding: var(--sl-s-3) var(--sl-s-4);
+    border-block-end: 1px solid var(--sl-rule);
+    color: var(--sl-ink);
+    vertical-align: middle;
+  }
+  .sl-table tbody tr:last-child td { border-block-end: 0; }
+  .sl-table tbody tr:hover { background: var(--sl-sunken); }
+  .sl-table .sl-num-cell { text-align: end; font-variant-numeric: tabular-nums; }
+
+  /* =================================================================
+     DIVIDERS + GRID
+     ================================================================= */
+  .sl-rule { block-size: 1px; background: var(--sl-rule); border: 0; }
+  .sl-grid { display: grid; gap: var(--sl-s-5); }
+  .sl-grid-2 { display: grid; gap: var(--sl-s-5); grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .sl-grid-3 { display: grid; gap: var(--sl-s-5); grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .sl-grid-4 { display: grid; gap: var(--sl-s-5); grid-template-columns: repeat(4, minmax(0, 1fr)); }
+  .sl-auto-grid { display: grid; gap: var(--sl-s-5); grid-template-columns: repeat(auto-fill, minmax(min(100%, 15rem), 1fr)); }
+
+  @media (max-width: 1023px) {
+    .sl-grid-4 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .sl-grid-3 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  }
+  @media (max-width: 639px) {
+    .sl-grid-2,
+    .sl-grid-3,
+    .sl-grid-4 { grid-template-columns: minmax(0, 1fr); }
+  }
+
+  /* =================================================================
+     NAV LINK — used by header, footer and mobile nav so all three
+     share one active/inactive definition.
+     ================================================================= */
+  .sl-navlink {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--sl-s-2);
+    position: relative;
+    padding: var(--sl-s-2) var(--sl-s-3);
+    border-radius: var(--sl-r-sm);
+    font-size: var(--sl-t-sm);
+    font-weight: 600;
+    color: var(--sl-ink-2);
+    transition: color var(--sl-dur-1) var(--sl-ease), background-color var(--sl-dur-1) var(--sl-ease);
+  }
+  .sl-navlink:hover { color: var(--sl-brand-ink); background: var(--sl-brand-softer); }
+  .sl-navlink[aria-current="page"] { color: var(--sl-brand-ink); background: var(--sl-brand-soft); }
+
+  .sl-navlink-on-dark { color: var(--sl-graphite-ink-2); }
+  .sl-navlink-on-dark:hover { color: var(--sl-graphite-ink); background: rgb(255 255 255 / 0.07); }
+  .sl-navlink-on-dark[aria-current="page"] { color: var(--sl-graphite-ink); background: rgb(255 255 255 / 0.1); }
+
+  /* =================================================================
+     DRAWER / MODAL
+     ================================================================= */
+  .sl-scrim {
+    position: fixed;
+    inset: 0;
+    z-index: 60;
+    background: var(--sl-overlay);
+    backdrop-filter: blur(2px);
+    animation: sl-fade var(--sl-dur-2) var(--sl-ease);
+  }
+  @keyframes sl-fade { from { opacity: 0; } to { opacity: 1; } }
+
+  .sl-drawer {
+    position: fixed;
+    inset-block: 0;
+    inset-inline-end: 0;
+    z-index: 61;
+    inline-size: min(24rem, 88vw);
+    background: var(--sl-surface);
+    box-shadow: var(--sl-e-3);
+    display: flex;
+    flex-direction: column;
+    animation: sl-slide-in var(--sl-dur-2) var(--sl-ease);
+  }
+  @keyframes sl-slide-in { from { transform: translateX(100%); } to { transform: translateX(0); } }
+
+  .sl-modal {
+    position: fixed;
+    inset: 0;
+    z-index: 61;
+    display: grid;
+    place-items: center;
+    padding: var(--sl-s-4);
+    pointer-events: none;
+  }
+  .sl-modal-panel {
+    pointer-events: auto;
+    inline-size: min(34rem, 100%);
+    max-block-size: min(85vh, 44rem);
+    overflow-y: auto;
+    background: var(--sl-surface);
+    border-radius: var(--sl-r-xl);
+    box-shadow: var(--sl-e-3);
+    animation: sl-pop var(--sl-dur-2) var(--sl-ease);
+  }
+  @keyframes sl-pop {
+    from { opacity: 0; transform: translateY(8px) scale(0.985); }
+    to { opacity: 1; transform: none; }
+  }
+
+  /* =================================================================
+     TABS
+     ================================================================= */
+  .sl-tabs {
+    display: flex;
+    gap: var(--sl-s-1);
+    border-block-end: 1px solid var(--sl-rule);
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+  .sl-tabs::-webkit-scrollbar { display: none; }
+  .sl-tab {
+    position: relative;
+    padding: var(--sl-s-3) var(--sl-s-4);
+    font-size: var(--sl-t-sm);
+    font-weight: 650;
+    color: var(--sl-ink-3);
+    white-space: nowrap;
+    border-block-end: 2px solid transparent;
+    margin-block-end: -1px;
+    transition: color var(--sl-dur-1) var(--sl-ease), border-color var(--sl-dur-1) var(--sl-ease);
+  }
+  .sl-tab:hover { color: var(--sl-ink); }
+  .sl-tab[aria-selected="true"] { color: var(--sl-brand-ink); border-block-end-color: var(--sl-brand); }
+
+  /* =================================================================
+     ACCORDION
+     ================================================================= */
+  .sl-acc {
+    border-block-end: 1px solid var(--sl-rule);
+  }
+  .sl-acc-btn {
+    inline-size: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--sl-s-3);
+    padding: var(--sl-s-4) 0;
+    text-align: start;
+    font-size: var(--sl-t-4);
+    font-weight: 650;
+    color: var(--sl-ink);
+    cursor: pointer;
+    background: none;
+    border: 0;
+  }
+  .sl-acc-panel { padding-block-end: var(--sl-s-4); color: var(--sl-ink-2); line-height: var(--sl-lh-body); }
+
+  /* =================================================================
+     BRAND / METRIC
+     ================================================================= */
+  .sl-brandmark {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--sl-s-3);
+  }
+  .sl-metric {
+    display: flex;
+    flex-direction: column;
+    gap: 0.15em;
+  }
+  .sl-metric-value {
+    font-size: var(--sl-t-2);
+    font-weight: 700;
+    line-height: 1.05;
+    color: var(--sl-ink);
+    font-variant-numeric: tabular-nums;
+    letter-spacing: -0.02em;
+  }
+  .sl-metric-label {
+    font-size: var(--sl-t-cap);
+    font-weight: 650;
+    letter-spacing: var(--sl-track-wide);
+    text-transform: uppercase;
+    color: var(--sl-ink-3);
+  }
+
+  /* =================================================================
+     ACCESSIBILITY UTILITIES
+     ================================================================= */
+  .sl-sr {
+    position: absolute;
+    inline-size: 1px;
+    block-size: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+    border: 0;
+  }
+  /* Visible only when focused: the skip link. */
+  .sl-skip {
+    position: absolute;
+    inset-inline-start: var(--sl-s-4);
+    inset-block-start: -4rem;
+    z-index: 100;
+    padding: var(--sl-s-3) var(--sl-s-4);
+    background: var(--sl-brand);
+    color: #fff;
+    font-weight: 650;
+    border-radius: var(--sl-r);
+    transition: inset-block-start var(--sl-dur-2) var(--sl-ease);
+  }
+  .sl-skip:focus { inset-block-start: var(--sl-s-4); }
+
+  /* =================================================================
+     HERO SEARCH PLATE
+     The hero's search is the SAME `HeaderSearchField` the masthead uses, so
+     suggestions, `/api/search/parts`, analytics and keyboard handling are one
+     implementation. Only presentation differs, and only because the hero field
+     sits on graphite rather than inside a white masthead.
+
+     `!important` for the same documented reason as the masthead plate above:
+     `.v3-search` is declared in v3.css's own layer and this file's selector
+     lands in a nested sub-layer of the same name, so specificity cannot win.
+     Scoped to `.sl-hero-search` alone; deleted together with v3.css.
+     ================================================================= */
+  .sl-hero-search .v3-search,
+  .sl-hero-search .sl-hero-search-field {
+    background: var(--sl-surface) !important;
+    border-color: var(--sl-rule-2) !important;
+    border-radius: var(--sl-r) !important;
+    box-shadow: 0 10px 34px -14px rgb(0 0 0 / 0.85), 0 0 0 1px rgb(255 255 255 / 0.07) !important;
+    transition: border-color var(--sl-dur-1) var(--sl-ease),
+                box-shadow var(--sl-dur-1) var(--sl-ease);
+  }
+  /* A taller plate than the masthead: this is the page's primary action, so it
+     gets a 3.25rem field rather than the masthead's 2.75rem. */
+  .sl-hero-search .v3-search,
+  .sl-hero-search .sl-hero-search-field {
+    min-block-size: 3.25rem;
+    padding-inline: 0.5rem 0.5rem;
+  }
+  .sl-hero-search .v3-search input,
+  .sl-hero-search .sl-hero-search-field input {
+    font-size: 1rem;
+    background: transparent;
+  }
+  .sl-hero-search .v3-search:focus-within,
+  .sl-hero-search .sl-hero-search-field:focus-within {
+    border-color: var(--sl-brand) !important;
+    box-shadow: 0 0 0 3px rgb(240 169 190 / 0.3), 0 10px 34px -14px rgb(0 0 0 / 0.85) !important;
+  }
+
+  /* Anything that must never overflow its column. Long part numbers and
+     long product names use this rather than a fixed max-width. */
+  .sl-wrap-any { min-width: 0; overflow-wrap: anywhere; }
+  .sl-clamp-1 { display: -webkit-box; -webkit-line-clamp: 1; -webkit-box-orient: vertical; overflow: hidden; }
+  .sl-clamp-2 { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+  .sl-clamp-3 { display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+
+  /* =================================================================
+     MASTHEAD SEARCH PLATE
+     The header search reuses `.v3-search` rather than being rewritten,
+     so its suggestion panel, keyboard handling and analytics wiring are
+     untouched. `.v3-search` paints itself with --v3-panel, which is a
+     LIGHT surface; on the new graphite masthead that is the right
+     contrast but the box had no elevation, so it read as a hole cut in
+     the band.
+
+     This is deliberately scoped to `.sl-masthead-search` rather than
+     restyling `.v3-search` globally, because the same class is used by
+     the homepage hero and the search page, where it sits on a light
+     ground and must stay flat.
+
+     WHY `!important` HERE, WHEN NOTHING ELSE IN THIS FILE USES IT
+     -----------------------------------------------------------
+     `.v3-search` is declared inside v3.css's own `@layer components`,
+     and so is this rule. The build nests same-named layers, which puts
+     this selector inside a SUB-layer of components; a sub-layer loses
+     to its parent's own declarations no matter how specific it is, so
+     `.sl-masthead-search .v3-search { border-radius }` (0,2,0) lost to
+     `.v3-search { border-radius }` (0,1,0).
+
+     Specificity cannot fix a layer-order problem, and restructuring the
+     build's layer graph to avoid one radius is not a trade worth making.
+     So the four properties that must win here are marked, and they are
+     marked *narrowly* — this selector alone, no other rule in this file
+     uses `!important`. If v3.css is ever removed as part of the
+     migration, this whole block is deleted with it.
+     ================================================================= */
+  .sl-masthead-search .v3-search {
+    background: var(--sl-surface) !important;
+    border-color: var(--sl-rule-2) !important;
+    border-radius: var(--sl-r) !important;
+    box-shadow: 0 2px 12px -6px rgb(0 0 0 / 0.7), 0 0 0 1px rgb(255 255 255 / 0.06) !important;
+    transition: border-color var(--sl-dur-1) var(--sl-ease),
+                box-shadow var(--sl-dur-1) var(--sl-ease);
+  }
+  .sl-masthead-search .v3-search:focus-within {
+    border-color: var(--sl-brand) !important;
+    box-shadow: 0 0 0 3px rgb(240 169 190 / 0.28), 0 2px 12px -6px rgb(0 0 0 / 0.7) !important;
+  }
+
+  /* =================================================================
+     MOBILE
+     A sticky action bar for the bottom of the viewport on a phone:
+     used by product, cart and checkout so the primary action is always
+     reachable without scrolling back.
+     ================================================================= */
+  .sl-mobile-bar {
+    position: fixed;
+    inset-inline: 0;
+    inset-block-end: 0;
+    z-index: 50;
+    display: flex;
+    align-items: center;
+    gap: var(--sl-s-3);
+    padding: var(--sl-s-3) var(--sl-gutter);
+    background: var(--sl-surface);
+    border-block-start: 1px solid var(--sl-rule);
+    box-shadow: 0 -6px 20px -12px rgb(20 16 14 / 0.3);
+    padding-block-end: max(var(--sl-s-3), env(safe-area-inset-bottom));
+  }
+  /* Reserve the space so the bar never covers content or a submit button. */
+  .sl-has-mobile-bar { padding-block-end: 5.5rem; }
+
+  @media (min-width: 768px) {
+    .sl-mobile-bar { display: none; }
+    .sl-has-mobile-bar { padding-block-end: 0; }
+  }
+
+  /* ===================================================================
+     SHORTAGE
+     ===================================================================
+
+     A customer asking for more than we hold must be able to SEE the two
+     figures side by side. Colour is used to reinforce this, never to carry
+     it alone: every shortage line also states the number in text, so the
+     information survives greyscale, colour-blindness, and a screen reader.
+
+     The negative tones come from the same scale as the rest of the system
+     rather than being hand-picked, so `--sl-warn` means one thing project
+     wide.
+     =================================================================== */
+  .sl-shortage {
+    display: flex;
+    flex-direction: column;
+    gap: var(--sl-s-2);
+    margin-block-start: var(--sl-s-3);
+    padding: var(--sl-s-3);
+    background: var(--sl-sunken);
+    border: 1px solid var(--sl-rule-2);
+    border-inline-start: 3px solid var(--sl-warn);
+    border-radius: var(--sl-r);
+  }
+  .sl-shortage__heading {
+    margin: 0;
+    font-size: 0.75rem;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--sl-ink-2);
+  }
+  .sl-shortage__lines {
+    display: flex;
+    flex-direction: column;
+    gap: var(--sl-s-1);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+  .sl-shortage__line {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: var(--sl-s-3);
+    font-size: 0.875rem;
+    color: var(--sl-ink);
+  }
+  .sl-shortage__lineValue {
+    /* Tabular figures so the two columns line up and a change is visible. */
+    font-variant-numeric: tabular-nums;
+    font-weight: 700;
+  }
+  .sl-shortage__lineValue--ok { color: var(--sl-ok); }
+  /* Text repeats the shortfall, so this is emphasis rather than the signal. */
+  .sl-shortage__lineValue--short { color: var(--sl-warn); }
+
+  .sl-shortage__done {
+    margin: 0;
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--sl-ok);
+  }
+  .sl-shortage__hint {
+    margin: 0;
+    font-size: 0.75rem;
+    color: var(--sl-ink-3);
+  }
+  .sl-shortage__error {
+    margin: 0;
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--sl-bad);
+  }
+  .sl-shortage__cta {
+    /* Full width so it is a comfortable target on a 360px modal, and two
+       buttons stacked rather than squeezed onto one narrow row. */
+    inline-size: 100%;
+    margin-block-start: var(--sl-s-1);
+  }
+  /* A focus ring is required, not decorative: this is the primary action
+     that records a customer's request. */
+  .sl-shortage__cta:focus-visible {
+    outline: 2px solid var(--sl-brand);
+    outline-offset: 2px;
+  }
+}
+
+} /* end @layer components */
+
+/* ===================================================================
+   DARK THEME
+   ===================================================================
+
+   Same rule V3 follows: the BRAND hue does not move, because burgundy is
+   baked into the logo. Only ground, ink, rules and the copper accent are
+   re-read, because those are the values that fail on a dark surface.
+
+   Every ink below is measured against --sl-surface-dark (#171b22), not
+   against the page, so a value is never chosen for the wrong ground.
+   =================================================================== */
+
+@layer components {
+
+html.dark {
+  color-scheme: dark;
+
+  /* Surfaces. The graphite band and the page are deliberately the same
+     family as in light mode so the header does not turn into a different
+     object when the theme flips. */
+  --sl-page: #0f1216;
+  --sl-surface: #171b22;
+  --sl-sunken: #1e232b;
+  --sl-sunken-2: #262c35;
+  --sl-overlay: rgb(0 0 0 / 0.66);
+
+  /* Rules. The light values are LIGHTER than the dark surfaces they sit
+     on, so at night they read as glow rather than as structure. */
+  --sl-rule: #2b323c;
+  --sl-rule-2: #39424e;
+  --sl-rule-strong: #4d5765;
+
+  /* Ink: 15.1 / 9.4 / 6.2 on --sl-surface. */
+  --sl-ink: #eef2f6;
+  --sl-ink-2: #c3ccd6;
+  --sl-ink-3: #97a1ae;
+
+  /* The graphite band inverts role in dark mode: it becomes the most
+     raised surface rather than the darkest, so the header still reads as
+     a distinct object. */
+  --sl-graphite: #10141a;
+  --sl-graphite-2: #171c23;
+  --sl-graphite-3: #222932;
+  --sl-graphite-line: #333c47;
+  --sl-graphite-ink: #f2f5f8;
+  --sl-graphite-ink-2: #bcc5d0;
+  --sl-graphite-ink-3: #8e99a6;
+
+  /* Brand as TEXT needs lightening: #7a1233 is 1.9:1 on a dark panel. */
+  --sl-brand-ink: #f0a9be;
+  --sl-brand-on-dark: #f4c3d2;
+  --sl-brand-soft: #2a1420;
+  --sl-brand-softer: #221019;
+  --sl-brand-line: #4a2436;
+
+  /* Copper as text needs the same treatment, and its fill darkens so a
+     copper badge stays a badge rather than a highlight. */
+  --sl-copper: #e0a458;
+  --sl-copper-hover: #eeb872;
+  --sl-copper-ink: #e8b877;
+  --sl-copper-soft: #2a1e0e;
+  --sl-copper-line: #4a351a;
+
+  /* State: lightened for text, darkened for the soft fill. */
+  --sl-ok: #5cc79c;   --sl-ok-soft: #10251c;   --sl-ok-line: #1f4536;
+  --sl-warn: #e0b062; --sl-warn-soft: #2a2010; --sl-warn-line: #4a3a1c;
+  --sl-bad: #f08c85;  --sl-bad-soft: #2b1315;  --sl-bad-line: #4d2224;
+  --sl-info: #93b0fb; --sl-info-soft: #141c33; --sl-info-line: #26335c;
+
+  /* Shadows must be softer at night: on a dark ground a large dark
+     shadow is invisible, so depth is carried by the 1px ring instead. */
+  --sl-e-1: 0 1px 0 var(--sl-rule);
+  --sl-e-2: 0 0 0 1px var(--sl-rule);
+  --sl-e-3: 0 0 0 1px var(--sl-rule-2), 0 18px 36px -18px rgb(0 0 0 / 0.8);
+  --sl-e-focus: 0 0 0 3px rgb(240 169 190 / 0.32);
+
+  --sl-part { color: var(--sl-ink-2); }
+  .sl-skel {
+    background: linear-gradient(90deg, var(--sl-sunken) 25%, var(--sl-sunken-2) 37%, var(--sl-sunken) 63%);
+    background-size: 400% 100%;
+  }
+  .sl-btn-primary {
+    background: var(--sl-brand);
+    border-color: var(--sl-brand);
+    color: #fff;
+  }
+  .sl-btn-primary:hover:not(:disabled) { background: var(--sl-brand-hover); border-color: var(--sl-brand-hover); }
+  .sl-btn-secondary {
+    background: var(--sl-sunken);
+    color: var(--sl-ink);
+    border-color: var(--sl-rule-2);
+  }
+  .sl-btn-secondary:hover:not(:disabled) { background: var(--sl-sunken-2); border-color: var(--sl-rule-strong); }
+  .sl-table thead th { background: var(--sl-sunken); }
+  .sl-table tbody tr:hover { background: var(--sl-sunken); }
+  .sl-input,
+  .sl-select,
+  .sl-textarea {
+    background: var(--sl-sunken);
+    color: var(--sl-ink);
+    border-color: var(--sl-rule-2);
+  }
+  .sl-mobile-bar { background: var(--sl-surface); border-block-start-color: var(--sl-rule); }
+  .sl-drawer,
+  .sl-modal-panel { background: var(--sl-surface); }
+}
+
+} /* end dark @layer components */
+
+/* ===================================================================
+   CROSS-GENERATION TOKEN UNIFICATION
+   ===================================================================
+
+   v3.css (70+ files) and this file describe the same product with two
+   palettes. Rather than restyle 70 files to reach one palette, the V3
+   tokens are re-pointed at the Precision tokens below, so every
+   `var(--v3-*)` call site — colour, radius, elevation, container, motion
+   — resolves to the Precision value with zero JSX churn.
+
+   This block is loaded after v3.css inside the same `components` layer,
+   so at equal specificity it wins; the `html.dark` half wins for the same
+   reason. v3.css's own comments already designate this file as the target
+   system, so this is the two palettes agreeing, not a third opinion.
+
+   Deliberately NOT re-pointed:
+     --v3-gold / --v3-gold-soft   the firm-identity accent (shared with
+                                  the mobile app's gold) — a different job
+                                  from copper's provenance role
+     --v3-wa-ink                  WhatsApp label green (external brand)
+     --v3-header-h                structural offset, not a design token
+     --v3-footer-gold(+ink)       the identity bar keeps its gold
+   =================================================================== */
+
+@layer components {
+
+  :root {
+    /* surfaces */
+    --v3-page: var(--sl-page);
+    --v3-panel: var(--sl-surface);
+    --v3-sunk: var(--sl-sunken);
+    --v3-sunk-deep: var(--sl-sunken-2);
+    --v3-inverse: var(--sl-graphite);
+
+    /* rules + ink */
+    --v3-rule: var(--sl-rule);
+    --v3-rule-strong: var(--sl-rule-2);
+    --v3-text: var(--sl-ink);
+    --v3-text-2: var(--sl-ink-2);
+    --v3-text-3: var(--sl-ink-3);
+
+    /* brand */
+    --v3-brand: var(--sl-brand);
+    --v3-brand-hover: var(--sl-brand-hover);
+    --v3-brand-soft: var(--sl-brand-soft);
+    --v3-brand-ink: var(--sl-brand-ink);
+    --v3-brand-line: var(--sl-brand-line);
+
+    /* state — one palette for ok / warn / bad site-wide */
+    --v3-ok: var(--sl-ok);
+    --v3-ok-soft: var(--sl-ok-soft);
+    --v3-ok-line: var(--sl-ok-line);
+    --v3-warn: var(--sl-warn);
+    --v3-warn-soft: var(--sl-warn-soft);
+    --v3-warn-line: var(--sl-warn-line);
+    --v3-bad: var(--sl-bad);
+    --v3-bad-soft: var(--sl-bad-soft);
+    --v3-bad-line: var(--sl-bad-line);
+
+    /* footer follows the Precision neutrals (and therefore dark mode) */
+    --v3-footer-surface: var(--sl-sunken);
+    --v3-footer-rule: var(--sl-rule);
+    --v3-footer-rule-strong: var(--sl-rule-2);
+    --v3-footer-ink: var(--sl-ink);
+    --v3-footer-ink-2: var(--sl-ink-2);
+
+    /* shape + depth: 3px hairline industrial → the Precision radius and
+       elevation ladder (8/12px, three-step shadow) */
+    --v3-r: var(--sl-r);
+    --v3-r-lg: var(--sl-r-lg);
+    --v3-lift: var(--sl-e-1);
+    --v3-lift-hi: var(--sl-e-2);
+
+    /* one container (1320px) and one motion curve for the whole site */
+    --v3-container: var(--sl-container);
+    --v3-ease: var(--sl-ease);
+  }
+
+  html.dark {
+    --v3-page: var(--sl-page);
+    --v3-panel: var(--sl-surface);
+    --v3-sunk: var(--sl-sunken);
+    --v3-sunk-deep: var(--sl-sunken-2);
+    --v3-inverse: var(--sl-graphite);
+    --v3-rule: var(--sl-rule);
+    --v3-rule-strong: var(--sl-rule-2);
+    --v3-text: var(--sl-ink);
+    --v3-text-2: var(--sl-ink-2);
+    --v3-text-3: var(--sl-ink-3);
+    --v3-brand-soft: var(--sl-brand-soft);
+    --v3-brand-ink: var(--sl-brand-ink);
+    --v3-brand-line: var(--sl-brand-line);
+    --v3-ok: var(--sl-ok);
+    --v3-ok-soft: var(--sl-ok-soft);
+    --v3-ok-line: var(--sl-ok-line);
+    --v3-warn: var(--sl-warn);
+    --v3-warn-soft: var(--sl-warn-soft);
+    --v3-warn-line: var(--sl-warn-line);
+    --v3-bad: var(--sl-bad);
+    --v3-bad-soft: var(--sl-bad-soft);
+    --v3-bad-line: var(--sl-bad-line);
+    --v3-footer-surface: var(--sl-sunken);
+    --v3-footer-rule: var(--sl-rule);
+    --v3-footer-rule-strong: var(--sl-rule-2);
+    --v3-footer-ink: var(--sl-ink);
+    --v3-footer-ink-2: var(--sl-ink-2);
+  }
+
+  /* =================================================================
+     SHARED UTILITIES ADDED DURING THE MIGRATION
+     ================================================================= */
+
+  /* Entrance for freshly-inserted content (an alert appearing, a panel
+     opening). Replaces `animate-in fade-in` from tailwindcss-animate,
+     which is not installed and therefore never animated anything. */
+  .sl-fade-in { animation: sl-fade var(--sl-dur-2) var(--sl-ease) both; }
+
+  /* BOTTOM SHEET — the thumb-reachable mobile counterpart of .sl-drawer,
+     used for filters and secondary actions on small screens. */
+  .sl-sheet {
+    position: fixed;
+    inset-inline: 0;
+    inset-block-end: 0;
+    z-index: 61;
+    max-block-size: 86vh;
+    overflow-y: auto;
+    background: var(--sl-surface);
+    border-start-start-radius: var(--sl-r-xl);
+    border-start-end-radius: var(--sl-r-xl);
+    box-shadow: var(--sl-e-3);
+    padding: var(--sl-s-4) var(--sl-gutter);
+    padding-block-end: max(var(--sl-s-5), env(safe-area-inset-bottom));
+    animation: sl-sheet-up var(--sl-dur-2) var(--sl-ease);
+  }
+  @keyframes sl-sheet-up {
+    from { transform: translateY(100%); }
+    to { transform: translateY(0); }
+  }
+
+  /* Sticky filter/sort rail under the header on listing pages. */
+  .sl-toolbar {
+    position: sticky;
+    inset-block-start: 0;
+    z-index: 30;
+    display: flex;
+    align-items: center;
+    gap: var(--sl-s-3);
+    flex-wrap: wrap;
+    padding-block: var(--sl-s-3);
+    background: color-mix(in srgb, var(--sl-page) 88%, transparent);
+    backdrop-filter: blur(8px);
+    border-block-end: 1px solid var(--sl-rule);
+  }
+
+  /* A pressed card/row: quiet, no bounce. */
+  .sl-press { transition: transform var(--sl-dur-1) var(--sl-ease), box-shadow var(--sl-dur-1) var(--sl-ease); }
+  .sl-press:active { transform: scale(0.985); }
+}

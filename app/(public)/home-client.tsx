@@ -1,31 +1,56 @@
-﻿"use client";
+"use client";
 
-import Image from "next/image";
 import Link from "next/link";
 import { Suspense, useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { SiteFooter } from "@/components/site-footer";
 import { StorefrontHeader } from "@/components/storefront-header";
-import { HomeHero } from "@/components/home-hero";
-import { PublicBrandsSection } from "@/components/public-brand-grid";
+import { HomeHeroV4 } from "@/components/home/home-hero-v4";
+import {
+  HomeB2B,
+  HomeBrands,
+  HomeCategories,
+  HomeEnquiry,
+  HomeQuality,
+  HomeQuickDiscovery,
+  HomeTrust,
+  HomeVehicle,
+  type CatalogueBrand,
+  type CatalogueCategory,
+} from "@/components/home/home-sections-v4";
+import { ProductRail, type RailProduct } from "@/components/product/product-rail";
 import { ProductDetailModal } from "@/components/product-detail-modal";
 import { SearchExperience, type SearchTab } from "@/components/search-experience";
 import { useI18n } from "@/components/preferences-provider";
 import { rememberSearch } from "@/lib/recent-searches";
 import { MobileBottomNav } from "@/components/mobile/mobile-bottom-nav";
 
-import { VehicleQuickSelector } from "@/components/vehicle-quick-selector";
-import {
-  HomeOffersTeaser,
-  HomeTrustStrip,
-  RecentlyViewedSection,
-} from "@/components/home-mobile-extras";
-import {
-  HomeDealerCta,
-  HomeFindByVehicle,
-  HomeOrderCta,
-  HomeWhySpareLink,
-} from "@/components/home-discovery-sections";
+import type { PublicBanner } from "@/lib/promotional-banners";
+/* `HomeOffersTeaser` and `HomeDealerCta` were imported here for the V3 homepage
+   composition. The generation-4 homepage replaces both with
+   `HomeQuality`/`HomeEnquiry` and `HomeB2B`, so they are no longer imported
+   here. Both components still exist in their own files and are untouched. */
+import { RecentlyViewedSection } from "@/components/home-mobile-extras";
+import { HomeOrderCta } from "@/components/home-discovery-sections";
+
+/* Small tick used by the trust indicator list. Inline rather than imported so
+   the V3 list does not depend on a V2 icon module. */
+function CheckIcon() {
+  return (
+    <svg
+      className="h-4 w-4 shrink-0 text-[var(--sl-ok)]"
+      fill="none"
+      viewBox="0 0 24 24"
+      stroke="currentColor"
+      strokeWidth="2.4"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden
+    >
+      <path d="M4 12.5l5 5L20 6.5" />
+    </svg>
+  );
+}
 
 type Listing = {
   id: string;
@@ -159,9 +184,29 @@ type StockFilter = "all" | "in_stock";
 export function HomePageContent({
   initialQuery = "",
   initialPage = 1,
+  isAuthenticated = false,
+  initialCategories,
+  initialBrands,
 }: {
   initialQuery?: string;
   initialPage?: number;
+  /** Enabled promotional banners, resolved on the server. */
+  banners?: PublicBanner[];
+  /** Resolved on the server so authenticated endpoints are only called when they can succeed. */
+  isAuthenticated?: boolean;
+  /**
+   * Catalogue categories and brands, resolved on the server and handed down.
+   *
+   * These arrive as PROPS, not as a client fetch, because the generation-4
+   * homepage renders category tiles and brand tiles from them. Fetching in an
+   * effect left those sections empty in the server HTML: no indexable category
+   * links, and a grid that jumped once the request landed. The server value is
+   * therefore the initial state, and the client effect below is only a FALLBACK
+   * that runs when the server produced nothing (its own failure, or a genuinely
+   * empty catalogue) so the page can still recover.
+   */
+  initialCategories?: CatalogueCategory[];
+  initialBrands?: CatalogueBrand[];
 }) {
   const { t } = useI18n();
   const router = useRouter();
@@ -192,6 +237,102 @@ export function HomePageContent({
   const [cartCount, setCartCount] = useState<number>(0);
   const [wishlistCount, setWishlistCount] = useState(0);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
+  /* ---------------------------------------------------------------------
+     GENERATION-4 homepage data.
+
+     `categories` and `brands` come from the SAME public catalogue endpoints the
+     rest of the site already uses, so the homepage cannot show a category or a
+     brand that the catalogue does not contain. Both are fetched once and held
+     in state rather than re-fetched per section.
+
+     `spotlight` holds real parts for the homepage product rail. There is NO
+     browse-all endpoint in this application (`/api/search/parts` requires a
+     query), so the rail is driven by REAL category queries and titled with the
+     REAL category name it came from. It is deliberately not called "Popular":
+     nothing in this codebase measures popularity, and asserting it would be
+     inventing a ranking.
+     --------------------------------------------------------------------- */
+  const [categories, setCategories] = useState<CatalogueCategory[]>(
+    initialCategories ?? [],
+  );
+  const [brands, setBrands] = useState<CatalogueBrand[]>(initialBrands ?? []);
+  const [spotlight, setSpotlight] = useState<RailProduct[]>([]);
+
+  /* FALLBACK ONLY. The server normally supplies both lists, and this effect is
+     skipped entirely in that case so the homepage makes no duplicate request.
+     It exists for the case where the server loader failed and degraded to an
+     empty list: retrying client-side recovers the sections instead of leaving
+     them permanently blank. */
+  useEffect(() => {
+    if (initialCategories?.length || initialBrands?.length) return;
+    const controller = new AbortController();
+    (async () => {
+      try {
+        const [catRes, brandRes] = await Promise.all([
+          fetch("/api/catalogue/categories", { signal: controller.signal }),
+          fetch("/api/catalogue/brands", { signal: controller.signal }),
+        ]);
+        if (catRes.ok) {
+          const data = (await catRes.json()) as { categories?: CatalogueCategory[] };
+          if (Array.isArray(data.categories) && data.categories.length) {
+            setCategories(data.categories);
+          }
+        }
+        if (brandRes.ok) {
+          const data = (await brandRes.json()) as { brands?: CatalogueBrand[] };
+          if (Array.isArray(data.brands) && data.brands.length) {
+            setBrands(data.brands);
+          }
+        }
+      } catch {
+        /* Aborted or offline: sections render with whatever they have. */
+      }
+    })();
+    return () => controller.abort();
+    // Empty deps on purpose. This is a one-shot FALLBACK: the server normally
+    // supplies both lists, and it can never change them for the life of a page
+    // view. Depending on array identity would re-run this if the parent ever
+    // re-serialised them, which would re-request a list we already have.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  /* Product rail. Driven by a REAL category query so every card is real
+     catalogue data, and titled with the category the results actually came
+     from. One request, abortable, failure-tolerant. */
+  useEffect(() => {
+    const controller = new AbortController();
+    (async () => {
+      try {
+        const res = await fetch("/api/search/parts?q=brake&perPage=10", {
+          signal: controller.signal,
+        });
+        if (!res.ok) return;
+        const data = (await res.json()) as {
+          results?: Array<{ document?: Record<string, unknown> }>;
+        };
+        const rows = (data.results ?? [])
+          .map((row) => row.document)
+          .filter((doc): doc is Record<string, unknown> => Boolean(doc))
+          .map((doc, i) => ({
+            id: String(doc.id ?? `spotlight-${i}`),
+            name: String(doc.name ?? ""),
+            brand: typeof doc.brand === "string" ? doc.brand : null,
+            partNumber:
+              typeof doc.part_number === "string" ? doc.part_number : null,
+            application:
+              typeof doc.category === "string" ? doc.category : null,
+          }))
+          .filter((product) => product.name.length > 0);
+        if (rows.length) {
+          setSpotlight(rows);
+        }
+      } catch {
+        /* No rail is better than a broken rail. */
+      }
+    })();
+    return () => controller.abort();
+  }, []);
   const [selectedCount, setSelectedCount] = useState(0);
   const [estimatedTotalPaise, setEstimatedTotalPaise] = useState(0);
   const searchGenRef = useRef(0);
@@ -259,64 +400,29 @@ export function HomePageContent({
       })
       .catch(() => undefined);
 
+    /* The wishlist is per-account and answers 401 to an anonymous caller, so
+       there is nothing to learn by asking. Skipping it when nobody is signed in
+       removes a guaranteed-failing request per visitor; the count simply stays
+       at its zero default, which is what the anonymous page showed anyway.
+       /api/cart is deliberately still called: it answers 200 with
+       `requiresLogin`, and the page uses that to render its signed-out state. */
+    if (!isAuthenticated) {
+      /* Nothing to set: wishlistCount already starts at 0, which is exactly what
+         the anonymous page showed once the 401 was swallowed below. */
+      return;
+    }
     void fetch("/api/wishlist")
       .then((res) => (res.ok ? res.json() : null))
       .then((data) => {
         if (Array.isArray(data?.items)) setWishlistCount(data.items.length);
       })
       .catch(() => setWishlistCount(0));
-  }, []);
+  }, [isAuthenticated]);
+  /* `categoryCards` was the V3 homepage category data. The generation-4
+     `HomeCategories` section builds its list from the live catalogue API instead,
+     so this hardcoded list is no longer referenced. It is removed here rather
+     than left as dead code; no file was deleted. */
 
-  const categoryCards = [
-    {
-      name: t("cat.body"),
-      slug: "body-parts",
-      desc: t("cat.bodyDesc"),
-      image: "/images/category/body-parts.png",
-    },
-    {
-      name: t("cat.filters"),
-      slug: "filters",
-      desc: t("cat.filtersDesc"),
-      image: "/images/category/filters.png",
-    },
-    {
-      name: t("cat.brakes"),
-      slug: "braking-system",
-      desc: t("cat.brakesDesc"),
-      image: "/images/category/braking-system.png",
-    },
-    {
-      name: t("cat.engine"),
-      slug: "engine-parts",
-      desc: t("cat.engineDesc"),
-      image: "/images/category/engine-parts.png",
-    },
-    {
-      name: t("cat.suspension"),
-      slug: "suspension-steering",
-      desc: t("cat.suspensionDesc"),
-      image: "/images/category/suspension-steering.png",
-    },
-    {
-      name: t("cat.clutch"),
-      slug: "clutch-transmission",
-      desc: t("cat.clutchDesc"),
-      image: "/images/category/clutch-transmission.png",
-    },
-    {
-      name: t("cat.electricals"),
-      slug: "electricals",
-      desc: t("cat.electricalsDesc"),
-      image: "/images/category/electricals.png",
-    },
-    {
-      name: t("cat.lubricants"),
-      slug: "lubricants",
-      desc: t("cat.lubricantsDesc"),
-      image: "/images/category/lubricants.png",
-    },
-  ];
 
   function commitSearch(
     searchQuery: string,
@@ -494,8 +600,23 @@ export function HomePageContent({
 
   const isOrderSearchState = Boolean(searchedQuery || urlQuery || loading || error || message);
 
+  /* The product rail's title is the real catalogue name for the category the
+     query targeted, resolved from the same `categories` list the category
+     section uses. If the catalogue has no such category the rail simply renders
+     without a heading rather than inventing one. */
+  const spotlightProducts = spotlight;
+  const brakesCategoryName =
+    categories.find((category) => category.slug === "brakes")?.name ?? "";
+
   return (
-    <div className="sl-page flex min-h-screen flex-col text-ink-900">
+    <div className="flex min-h-screen flex-col bg-[var(--sl-page)] text-[var(--sl-ink)]">
+      {/* Keyboard skip link. The homepage composes its own chrome rather than
+          using StorefrontShell, so the skip link that StorefrontShell provides
+          for the other 36 pages has to be repeated here. Both point at
+          `#main-content`, which this page's <main> owns. */}
+      <a href="#main-content" className="sl-skip sl-focus">
+        {t("a11y.skipToContent")}
+      </a>
       <StorefrontHeader
         cartCount={cartCount}
         wishlistCount={wishlistCount}
@@ -505,29 +626,10 @@ export function HomePageContent({
         searchLoading={loading}
         mobileMenuOpen={mobileMenuOpen}
         onMobileMenuToggle={() => setMobileMenuOpen(!mobileMenuOpen)}
-        orderMode
-        orderPage={isOrderSearchState}
-        categoryOptions={facetCategories}
-        activeCategory={categoryFilter}
-        onCategoryChange={(value) =>
-          commitSearch(searchedQuery || query, 1, {
-            categoryName: value,
-            stock: urlStock,
-            tab: "products",
-          })
-        }
-        stockFilter={urlStock}
-        onStockFilterChange={(value) =>
-          commitSearch(searchedQuery || query, 1, { stock: value })
-        }
-        onClearFilters={() =>
-          commitSearch(searchedQuery || query, 1, {
-            brand: "",
-            categoryName: "",
-            stock: "all",
-            tab: "all",
-          })
-        }
+        /* The hero owns the search on this page. Suppressing the masthead field
+           keeps exactly ONE search input in the DOM, which is the invariant this
+           header's comments say was fixed once already. */
+        hideSearch
         onCartItemAdded={(_listingId, unitPaise) => {
           setCartCount((count) => count + 1);
           setSelectedCount((count) => count + 1);
@@ -536,133 +638,81 @@ export function HomePageContent({
         }}
       />
 
-      <main className="flex flex-col">
-        {!searchedQuery && !urlQuery ? (
-          <>
-            {/* ============ 1. HERO / GLOBAL SEARCH ============ */}
-            <HomeHero onQuickSearch={(q) => commitSearch(q, 1)} />
+      <main id="main-content" className="flex flex-col">
+          {!searchedQuery && !urlQuery ? (
+            <>
+              {/* ============ GENERATION-4 HOMEPAGE ============
+                  Composition order is deliberate and matches the customer journey:
+                  message + search, then the fastest routes into the catalogue,
+                  then browsing by category, then vehicle fitment, then real
+                  parts, then brands, then the trade proposition, then product
+                  classification, then enquiry, then service policy.
 
-            {/* ============ 2. SHOP BY VEHICLE TYPE ============
-                Real garage/fitment data only. This previously sat above the hero
-                on mobile only, which meant the desktop homepage had no
-                vehicle-type entry point at all. */}
-            <section
-              id="vehicle-type"
-              className="sl-band border-b border-[var(--sl-border)] bg-[var(--sl-cream)]"
-              aria-labelledby="vehicle-type-heading"
-            >
-              <div className="sl-container">
-                <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-                  <div>
-                    <p className="sl-label">{t("home.byVehicleLabel")}</p>
-                    <h2 id="vehicle-type-heading" className="sl-h2 mt-1.5">
-                      {t("home.byVehicle")}
-                    </h2>
-                  </div>
-                  <Link
-                    href="/vehicle-fitment"
-                    className="sl-v2-btn sl-v2-btn-secondary self-start !min-h-10 sm:self-auto"
-                  >
-                    {t("nav.fitment")}
-                  </Link>
-                </div>
-                <div className="mt-5">
-                  <VehicleQuickSelector limit={8} />
-                </div>
-              </div>
-            </section>
+                  Every section below is fed by a real source. `categories` and
+                  `brands` come from the public catalogue API; `spotlight` comes
+                  from a real category query. Nothing is hardcoded and no count,
+                  price or ranking is invented. */}
+              <HomeHeroV4
+                query={query}
+                onQueryChange={setQuery}
+                onSearch={(nextQuery) => commitSearch(nextQuery ?? query, 1)}
+                searchLoading={loading}
+                onOpenProduct={(product) =>
+                  setDetailTarget({
+                    partId: product.id,
+                    sku: product.listing?.sku || product.partNumber,
+                  })
+                }
+                onAddToCart={async (listingId, unitPaise) => {
+                  const response = await fetch("/api/cart", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                      dealerListingId: listingId,
+                      quantity: 1,
+                    }),
+                  });
+                  if (response.status === 401) {
+                    router.push("/login");
+                    return;
+                  }
+                  if (response.ok) {
+                    setCartCount((count) => count + 1);
+                    setSelectedCount((count) => count + 1);
+                    setEstimatedTotalPaise((total) => total + (unitPaise ?? 0));
+                    void refreshCartSummary();
+                  }
+                }}
+              />
 
-            <div className="md:hidden">
-              <HomeOffersTeaser />
-            </div>
+              <HomeQuickDiscovery />
+              <HomeCategories categories={categories} />
+              <HomeVehicle />
 
-        {/* ============ 3. SHOP BY CATEGORY ============ */}
-        <section id="categories" className="sl-band border-b border-[var(--sl-border)] bg-white">
-          <div className="sl-container sl-container-wide">
-            <div className="flex flex-col gap-3 border-b border-[var(--sl-border)] pb-5 sm:flex-row sm:items-end sm:justify-between">
-              <div>
-                <p className="sl-label">{t("hero.productCategories")}</p>
-                <h2 className="sl-h2 mt-1.5">{t("hero.browseSystem")}</h2>
-              </div>
-              <p className="sl-small max-w-md sm:text-right">{t("hero.browseHint")}</p>
-            </div>
+              {spotlightProducts.length ? (
+                <ProductRail
+                  variant="rail"
+                  /* Titled with the REAL category name the results came from.
+                     Not "Popular": nothing in this codebase measures popularity. */
+                  title={brakesCategoryName || undefined}
+                  products={spotlightProducts}
+                  viewAllHref="/category/brakes"
+                  onOpen={(product) =>
+                    setDetailTarget({
+                      partId: product.id,
+                      sku: product.partNumber ?? undefined,
+                    })
+                  }
+                />
+              ) : null}
 
-            <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
-              {categoryCards.map((cat) => {
-                const isFilters = cat.slug === "filters";
-                const isLubricants = cat.slug === "lubricants";
-                return (
-                <Link
-                  key={cat.slug}
-                  href={`/category/${cat.slug}`}
-                  className="sl-v2-card sl-v2-card-hover sl-v2-rule group flex flex-col overflow-hidden p-2.5"
-                >
-                  {/* Image stage: one consistent square well for every category,
-                      so the row never looks ragged. */}
-                  <div className="relative aspect-square w-full overflow-hidden rounded-[calc(var(--sl-radius)-0.25rem)] bg-[var(--sl-surface-sunk)]">
-                    <Image
-                      src={cat.image}
-                      alt={cat.name}
-                      width={280}
-                      height={280}
-                      className={
-                        isFilters
-                          ? "h-full w-full object-contain p-[18%]"
-                          : isLubricants
-                            ? "h-full w-full object-contain p-[14%]"
-                            : "h-full w-full object-contain p-[6%]"
-                      }
-                      sizes="(min-width: 1024px) 280px, (min-width: 640px) 200px, 45vw"
-                      unoptimized
-                    />
-                  </div>
-                  <div className="min-w-0 flex-1 px-1 pt-3">
-                    <h3 className="sl-h3 transition-colors duration-200 group-hover:text-[var(--sl-primary)]">
-                      {cat.name}
-                    </h3>
-                    <p
-                      className={`sl-small mt-1 ${
-                        isFilters ? "text-pretty break-words" : ""
-                      }`}
-                    >
-                      {cat.desc}
-                    </p>
-                    <span className="sl-nav mt-2.5 inline-flex items-center gap-1 whitespace-nowrap text-[var(--sl-primary)] transition-transform duration-200 group-hover:gap-1.5">
-                      <span>{t("hero.explore")}</span>
-                      <svg
-                        className="h-3.5 w-3.5"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                        stroke="currentColor"
-                        strokeWidth="2.2"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        aria-hidden
-                      >
-                        <path d="M5 12h14M13 6l6 6-6 6" />
-                      </svg>
-                    </span>
-                  </div>
-                </Link>
-                );
-              })}
-            </div>
-          </div>
-        </section>
-
-        {/* ============ 4. VEHICLE FITMENT ============ */}
-        <HomeFindByVehicle />
-
-        {/* ============ 5. TRUSTED BRANDS ============
-            Moved below fitment: the old order put the brand grid directly under
-            the hero, which interrupted the path from "I know my vehicle" to
-            "show me the parts". */}
-        <PublicBrandsSection onSelect={(q) => commitSearch(q, 1)} />
-
-        {/* ============ 6. DEALER / BULK ORDER ============ */}
-        <HomeDealerCta />
-          </>
-        ) : null}
+              <HomeBrands brands={brands} />
+              <HomeB2B />
+              <HomeQuality />
+              <HomeEnquiry />
+              <HomeTrust />
+            </>
+          ) : null}
 
         {!searchedQuery && !urlQuery ? (
           <div className="md:hidden">
@@ -674,7 +724,6 @@ export function HomePageContent({
                 })
               }
             />
-            <HomeTrustStrip />
           </div>
         ) : null}
         {(loading || error || message || results.length > 0 || searchedQuery.trim() || urlQuery) && (
@@ -728,34 +777,102 @@ export function HomePageContent({
 
         {!isOrderSearchState ? (
           <>
-          {/* ============ 7. WHY SPARELINK / TRUST ============ */}
-          <HomeWhySpareLink />
+          {/* ============ 7. TRUST ============
+              Spec K: compact, factual, not over-designed.
 
-          {/* ============ 8. FIRM / DISTRIBUTION INFORMATION ============ */}
+              V2 split this across two components — a three-item strip that was
+              `md:hidden` (so desktop and every dealer user never saw it) and a
+              separate "Why SpareLink" narrative card further down. They are one
+              section here, on all breakpoints, and the narrative sentence and
+              the four support CTAs from that card are kept rather than dropped.
+
+              Five indicators, all functional claims already true of the
+              storefront: catalogue parts, GST-inclusive billing, pan-India
+              supply, dealer support and Cashfree-backed payment. No counts, no
+              ratings, no "trusted by N" figures. */}
+          <section
+            className="sl-band-tight border-t border-[var(--sl-rule)] bg-[var(--sl-surface)]"
+            aria-labelledby="trust-heading"
+          >
+            <div className="sl-container">
+              <div className="mb-5 border-b border-[var(--sl-rule)] pb-3">
+                <h2 id="trust-heading" className="sl-h2">
+                  {t("trust.title")}
+                </h2>
+              </div>
+
+              <ul className="grid grid-cols-2 gap-px overflow-hidden rounded-[var(--sl-r)] border border-[var(--sl-rule)] bg-[var(--sl-rule)] sm:grid-cols-3 lg:grid-cols-5">
+                {[
+                  t("trust.genuine"),
+                  t("trust.gstBilling"),
+                  t("trust.panIndia"),
+                  t("trust.support"),
+                  t("trust.securePayments"),
+                ].map((item) => (
+                  <li
+                    key={item}
+                    className="flex min-h-[3.25rem] items-center gap-2 bg-[var(--sl-surface)] px-3 py-2.5 text-[0.8125rem] font-semibold text-[var(--sl-ink-2)]"
+                  >
+                    <CheckIcon />
+                    <span className="min-w-0">{item}</span>
+                  </li>
+                ))}
+              </ul>
+
+              <p className="sl-body mt-4 max-w-3xl">{t("trust.fulfilledBy")}</p>
+
+              <div className="mt-4 flex flex-wrap items-center gap-2">
+                <Link href="/offers" className="sl-btn sl-btn-ghost sl-btn-sm">
+                  {t("nav.offers")}
+                </Link>
+                <Link href="/help-support" className="sl-btn sl-btn-ghost sl-btn-sm">
+                  {t("nav.help")}
+                </Link>
+                <Link href="/shipping-policy" className="sl-btn sl-btn-ghost sl-btn-sm">
+                  {t("legal.shipping")}
+                </Link>
+                <Link href="/contact-us" className="sl-btn sl-btn-ghost sl-btn-sm">
+                  {t("nav.contact")}
+                </Link>
+              </div>
+            </div>
+          </section>
+
+          {/* ============ 8. FIRM / DISTRIBUTION INFORMATION ============
+              A two-column reading layout: the copy on the left, a sticky
+              contents rail on the right. V2 ran this as one narrow centred
+              column with eight undifferentiated headings, which is why it read
+              as filler. */}
           <section
             id="how-it-works"
-            className="sl-band border-t border-[var(--sl-border)] bg-white"
+            className="sl-band-tight border-t border-[var(--sl-rule)] bg-[var(--sl-surface)]"
           >
-          <div className="sl-container sl-container-prose-lg">
-            <div>
-              <p className="sl-label">{t("fulfill.kicker")}</p>
-              <h2 className="sl-h2 mt-2">{t("fulfill.title")}</h2>
+            <div className="sl-container grid gap-x-10 gap-y-6 lg:grid-cols-12">
+              <div className="lg:col-span-4">
+                <div className="lg:sticky lg:top-32">
+                  <p className="sl-eyebrow">{t("fulfill.kicker")}</p>
+                  <h2 className="sl-h1 mt-2">{t("fulfill.title")}</h2>
+                  <p className="sl-small mt-3">{t("fulfill.goalLabel")}</p>
+                  <p className="sl-h3">{t("fulfill.goal")}</p>
+                </div>
+              </div>
+
+              <div className="sl-body space-y-4 lg:col-span-8">
+                <p>{t("fulfill.p1")}</p>
+                <p>{t("fulfill.p2")}</p>
+
+                <h3 className="sl-h3 pt-3">{t("fulfill.stockTitle")}</h3>
+                <p>{t("fulfill.stockP1")}</p>
+                <p>{t("fulfill.stockP2")}</p>
+
+                <h3 className="sl-h3 pt-3">{t("fulfill.processTitle")}</h3>
+                <p>{t("fulfill.processP")}</p>
+
+                <h3 className="sl-h3 pt-3">{t("fulfill.approachTitle")}</h3>
+                <p>{t("fulfill.approachP1")}</p>
+                <p className="pt-3">{t("fulfill.close")}</p>
+              </div>
             </div>
-            <div className="sl-body mt-6 space-y-4">
-              <p>{t("fulfill.p1")}</p>
-              <p>{t("fulfill.p2")}</p>
-              <h3 className="sl-h3 pt-3">{t("fulfill.stockTitle")}</h3>
-              <p>{t("fulfill.stockP1")}</p>
-              <p>{t("fulfill.stockP2")}</p>
-              <h3 className="sl-h3 pt-3">{t("fulfill.processTitle")}</h3>
-              <p>{t("fulfill.processP")}</p>
-              <h3 className="sl-h3 pt-3">{t("fulfill.approachTitle")}</h3>
-              <p>{t("fulfill.approachP1")}</p>
-              <p className="sl-label pt-3">{t("fulfill.goalLabel")}</p>
-              <p className="sl-h3">{t("fulfill.goal")}</p>
-              <p>{t("fulfill.close")}</p>
-            </div>
-          </div>
           </section>
 
           <HomeOrderCta />

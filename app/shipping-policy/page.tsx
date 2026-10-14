@@ -7,6 +7,14 @@ import {
   PUBLIC_DISPLAY_EMAIL,
   PUBLIC_SUPPORT_PHONE,
 } from "@/lib/business-contacts";
+import { pageMetadata } from "@/lib/seo";
+
+export const metadata = pageMetadata({
+  title: "Shipping Policy",
+  description:
+    "How Ambaji Traders, Hind Motors and India Sales dispatch spare parts, what delivery costs apply and how orders are tracked.",
+  path: "/shipping-policy",
+});
 
 /* Section anchors for the table of contents. The slug is derived from the
    i18n key itself, so an anchor can never point at the wrong section. */
@@ -59,7 +67,7 @@ export default function ShippingPolicyPage() {
                   <br />
                   <T k="common.email" />: {PUBLIC_DISPLAY_EMAIL}
                 </p>
-                <Link href="/help-support" className="mt-2 inline-block font-semibold text-[var(--sl-primary)] underline">
+                <Link href="/help-support" className="mt-2 inline-block font-semibold text-[var(--sl-brand-ink)] underline">
                   <T k="help.open" />
                 </Link>
               </div>

@@ -48,18 +48,18 @@ export default function ChangePasswordPage() {
   }
 
   return (
-    <div className="sl-page flex min-h-screen flex-col">
+    <div className="flex min-h-screen flex-col bg-[var(--sl-page)] text-[var(--sl-ink)]">
       <StorefrontHeader />
-      <main className="flex flex-1 items-center justify-center bg-[var(--sl-cream)] px-5 py-12 sm:px-8">
-        <div className="w-full max-w-[30rem]">
-          <div className="sl-v2-card p-6 sm:p-8">
-            <p className="sl-label">{t("account.security")}</p>
-            <h1 className="sl-h1 mt-2">{t("account.passwordTitle")}</h1>
+      <main className="flex flex-1 items-center justify-center bg-[var(--sl-page)] px-5 py-12 sm:px-8">
+        <div className="w-full sl-container-narrow">
+          <div className="sl-panel sl-panel-pad">
+            <p className="sl-eyebrow">{t("account.security")}</p>
+            <h1 className="sl-display mt-2">{t("account.passwordTitle")}</h1>
             <p className="sl-body mt-2.5">{t("account.bootstrapHint")}</p>
 
             <form onSubmit={handleSubmit} className="mt-7 space-y-4">
               <div>
-                <label htmlFor="cp-current" className="sl-label block">
+                <label htmlFor="cp-current" className="sl-label">
                   {t("account.current")}
                 </label>
                 <input
@@ -70,7 +70,7 @@ export default function ChangePasswordPage() {
                   value={currentPassword}
                   onChange={(event) => setCurrentPassword(event.target.value)}
                   placeholder={t("account.current")}
-                  className="sl-v2-input mt-1.5"
+                  className="sl-input"
                   aria-invalid={error ? true : undefined}
                   required
                 />
@@ -78,9 +78,9 @@ export default function ChangePasswordPage() {
 
               {/* Divider marks where the new credential begins, so the three
                   fields read as two groups rather than one flat stack. */}
-              <div className="border-t border-[var(--sl-border)] pt-4">
+              <div className="border-t border-[var(--sl-rule)] pt-4">
                 <div>
-                  <label htmlFor="cp-new" className="sl-label block">
+                  <label htmlFor="cp-new" className="sl-label">
                     {t("account.new")}
                   </label>
                   <input
@@ -92,12 +92,12 @@ export default function ChangePasswordPage() {
                     value={newPassword}
                     onChange={(event) => setNewPassword(event.target.value)}
                     placeholder={t("account.new")}
-                    className="sl-v2-input mt-1.5"
+                    className="sl-input"
                     required
                   />
                 </div>
                 <div className="mt-4">
-                  <label htmlFor="cp-confirm" className="sl-label block">
+                  <label htmlFor="cp-confirm" className="sl-label">
                     {t("account.confirm")}
                   </label>
                   <input
@@ -109,7 +109,7 @@ export default function ChangePasswordPage() {
                     value={confirmPassword}
                     onChange={(event) => setConfirmPassword(event.target.value)}
                     placeholder={t("account.confirm")}
-                    className="sl-v2-input mt-1.5"
+                    className="sl-input"
                     aria-invalid={
                       confirmPassword.length > 0 && newPassword !== confirmPassword
                         ? true
@@ -118,7 +118,7 @@ export default function ChangePasswordPage() {
                     required
                   />
                   {confirmPassword.length > 0 && newPassword !== confirmPassword ? (
-                    <p role="alert" className="sl-small mt-1.5 !text-[var(--sl-danger)]">
+                    <p role="alert" className="sl-error">
                       {t("account.mismatch")}
                     </p>
                   ) : null}
@@ -128,7 +128,7 @@ export default function ChangePasswordPage() {
               <button
                 type="submit"
                 disabled={busy}
-                className="sl-v2-btn sl-v2-btn-primary w-full"
+                className="sl-btn sl-btn-primary sl-btn-block"
               >
                 {busy ? t("product.adding") : t("account.save")}
               </button>

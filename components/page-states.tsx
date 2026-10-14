@@ -1,22 +1,22 @@
 import type { ReactNode } from "react";
 import Link from "next/link";
+import { T } from "@/components/t";
 
 /**
- * V2 global page states.
+ * Storefront page states — the shared loading / empty / error vocabulary.
  *
  * Requirement: no page may render a bare "Loading..." or "Searching..." string.
- * Every data-driven surface uses one of these three so the storefront states
- * read as a designed system rather than debug output.
+ * Every data-driven surface uses one of these so the storefront states read
+ * as a designed system rather than debug output.
+ *
+ * Styled entirely from the Precision layer (app/sparelink.css): `.sl-skel`
+ * shimmers, `.sl-state` centres an empty state, `.sl-panel` frames it, and
+ * every colour is a `--sl-*` token so light and dark come for free.
  */
 
 /** Shimmering block. `className` sets the final geometry. */
 export function Skeleton({ className = "" }: { className?: string }) {
-  return (
-    <div
-      className={`sl-skeleton ${className}`}
-      aria-hidden
-    />
-  );
+  return <div className={`sl-skel ${className}`} aria-hidden />;
 }
 
 /** A grid of product-shaped skeletons, used while catalogue data resolves. */
@@ -29,37 +29,52 @@ export function ProductGridSkeleton({ count = 8 }: { count?: number }) {
       aria-live="polite"
     >
       {Array.from({ length: count }, (_, index) => (
-        <div key={index} className="sl-v2-card overflow-hidden">
+        <div key={index} className="sl-panel overflow-hidden">
           <Skeleton className="aspect-[4/3] w-full !rounded-none" />
           <div className="space-y-2 p-3.5">
             <Skeleton className="h-2.5 w-1/3" />
             <Skeleton className="h-3.5 w-full" />
             <Skeleton className="h-3 w-4/5" />
             <Skeleton className="h-5 w-2/5" />
-            <Skeleton className="mt-3 h-11 w-full !rounded-[var(--sl-radius-sm)]" />
+            <Skeleton className="mt-3 h-11 w-full" />
           </div>
         </div>
       ))}
-      <span className="sr-only">Loading products</span>
+      <span className="sr-only">
+        <T k="states.loadingProducts" />
+      </span>
     </div>
   );
 }
 
 /** Generic skeleton for non-catalogue panels (forms, tables, sidebars). */
-export function PanelSkeleton({ rows = 3, className = "" }: { rows?: number; className?: string }) {
+export function PanelSkeleton({
+  rows = 3,
+  className = "",
+}: {
+  rows?: number;
+  className?: string;
+}) {
   return (
-    <div className={`space-y-3 ${className}`} role="status" aria-busy="true" aria-live="polite">
+    <div
+      className={`space-y-3 ${className}`}
+      role="status"
+      aria-busy="true"
+      aria-live="polite"
+    >
       {Array.from({ length: rows }, (_, index) => (
         <Skeleton key={index} className="h-4 w-full" />
       ))}
-      <span className="sr-only">Loading</span>
+      <span className="sr-only">
+        <T k="states.loading" />
+      </span>
     </div>
   );
 }
 
 /**
  * Empty state. Always pairs the explanation with a real next action, so the
- * user is never left at a dead end. Nothing here is invented content \u2014 the
+ * user is never left at a dead end. Nothing here is invented content — the
  * caller supplies the copy.
  */
 export function EmptyState({
@@ -76,25 +91,25 @@ export function EmptyState({
   icon?: ReactNode;
 }) {
   return (
-    <div className="sl-v2-card flex flex-col items-center px-6 py-14 text-center">
+    <div className="sl-panel sl-state">
       {icon ? (
-        <span className="mb-5 inline-flex h-14 w-14 items-center justify-center rounded-[var(--sl-radius)] bg-[var(--sl-primary-soft)] text-[var(--sl-primary)]">
+        <span className="sl-state-icon" aria-hidden>
           {icon}
         </span>
       ) : null}
-      <h2 className="sl-h2">{title}</h2>
-      <p className="sl-body mt-2 max-w-md">{body}</p>
+      <h2 className="sl-state-title">{title}</h2>
+      <p className="sl-state-text">{body}</p>
       {action || secondaryAction ? (
-        <div className="mt-6 flex flex-wrap items-center justify-center gap-2.5">
+        <div className="mt-2 flex flex-wrap items-center justify-center gap-2.5">
           {action ? (
-            <Link href={action.href} className="sl-v2-btn sl-v2-btn-primary">
+            <Link href={action.href} className="sl-btn sl-btn-primary">
               {action.label}
             </Link>
           ) : null}
           {secondaryAction ? (
             <Link
               href={secondaryAction.href}
-              className="sl-v2-btn sl-v2-btn-secondary"
+              className="sl-btn sl-btn-secondary"
             >
               {secondaryAction.label}
             </Link>
@@ -105,12 +120,16 @@ export function EmptyState({
   );
 }
 
-/** Error state with an optional retry that re-runs the page's own loader. */
+/**
+ * Error state with an optional retry that re-runs the page's own loader.
+ * The border, the icon well and the title all carry the error tone, so the
+ * status survives greyscale — colour reinforces it, never carries it alone.
+ */
 export function ErrorState({
   title,
   body,
   onRetry,
-  retryLabel = "Try again",
+  retryLabel,
   action,
 }: {
   title: string;
@@ -122,11 +141,11 @@ export function ErrorState({
   return (
     <div
       role="alert"
-      className="rounded-[var(--sl-radius)] border border-[#f0c8c5] bg-[var(--sl-danger-soft)] px-5 py-6"
+      className="sl-panel-flat sl-fade-in border border-[var(--sl-bad-line)] bg-[var(--sl-bad-soft)] px-5 py-6 [box-shadow:none]"
     >
       <div className="flex items-start gap-3.5">
         <svg
-          className="mt-0.5 h-5 w-5 shrink-0 text-[var(--sl-danger)]"
+          className="mt-0.5 h-5 w-5 shrink-0 text-[var(--sl-bad)]"
           fill="none"
           viewBox="0 0 24 24"
           stroke="currentColor"
@@ -139,7 +158,7 @@ export function ErrorState({
           <path d="M12 8v4.5M12 16h.01" />
         </svg>
         <div className="min-w-0 flex-1">
-          <h2 className="sl-h3 !text-[var(--sl-danger)]">{title}</h2>
+          <h2 className="sl-h3 text-[var(--sl-bad)]">{title}</h2>
           <p className="sl-body mt-1">{body}</p>
           {onRetry || action ? (
             <div className="mt-4 flex flex-wrap gap-2.5">
@@ -147,15 +166,15 @@ export function ErrorState({
                 <button
                   type="button"
                   onClick={onRetry}
-                  className="sl-v2-btn sl-v2-btn-secondary !min-h-10 !text-[0.8125rem]"
+                  className="sl-btn sl-btn-secondary sl-btn-sm"
                 >
-                  {retryLabel}
+                  {retryLabel ?? <T k="common.tryAgain" />}
                 </button>
               ) : null}
               {action ? (
                 <Link
                   href={action.href}
-                  className="sl-v2-btn sl-v2-btn-ghost !min-h-10 !text-[0.8125rem]"
+                  className="sl-btn sl-btn-ghost sl-btn-sm"
                 >
                   {action.label}
                 </Link>
@@ -178,14 +197,15 @@ export function Notice({
 }) {
   const map = {
     success:
-      "border-[#bfe3d4] bg-[var(--sl-success-soft)] text-[var(--sl-success)]",
-    error: "border-[#f0c8c5] bg-[var(--sl-danger-soft)] text-[var(--sl-danger)]",
-    info: "border-[var(--sl-border-strong)] bg-[var(--sl-surface-sunk)] text-[var(--sl-text-soft)]",
+      "border-[var(--sl-ok-line)] bg-[var(--sl-ok-soft)] text-[var(--sl-ok)]",
+    error:
+      "border-[var(--sl-bad-line)] bg-[var(--sl-bad-soft)] text-[var(--sl-bad)]",
+    info: "border-[var(--sl-rule-2)] bg-[var(--sl-sunken)] text-[var(--sl-ink-2)]",
   } as const;
   return (
     <p
       role={tone === "error" ? "alert" : "status"}
-      className={`rounded-[var(--sl-radius-sm)] border px-3.5 py-2.5 text-sm ${map[tone]}`}
+      className={`sl-fade-in rounded-[var(--sl-r-sm)] border px-3.5 py-2.5 text-sm ${map[tone]}`}
     >
       {children}
     </p>

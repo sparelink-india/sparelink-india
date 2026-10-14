@@ -4,6 +4,10 @@ import Link from "next/link";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { FormEvent, useCallback, useEffect, useRef, useState } from "react";
 import { SignOutButton } from "@/components/sign-out-button";
+import { useI18n } from "@/components/preferences-provider";
+import { StorefrontShell } from "@/components/storefront-shell";
+import { T } from "@/components/t";
+import type { MessageKey } from "@/lib/i18n";
 import { openCashfreeCheckout } from "@/lib/cashfree-browser";
 
 type BankConfig = {
@@ -93,19 +97,24 @@ function formatRupees(paise: number) {
   })}`;
 }
 
-function parentPaymentLabel(status: string) {
-  if (status === "paid") return "Paid";
-  if (status === "partial") return "Partially Paid";
-  return "Pending";
+/* These return a dictionary KEY rather than a literal, so the status reads
+   in the customer's language. The status strings themselves, the comparisons
+   and the fall-through order are unchanged - only the label moved. The return
+   type is MessageKey, so a key that does not exist fails the build rather than
+   rendering as a raw identifier next to a payment. */
+function parentPaymentLabel(status: string): MessageKey {
+  if (status === "paid") return "payStatus.paid";
+  if (status === "partial") return "payStatus.partial";
+  return "payStatus.pending";
 }
 
-function allocationPaymentLabel(status: string) {
-  if (status === "paid") return "Paid";
-  if (status === "failed") return "Failed";
-  if (status === "expired") return "Expired";
-  if (status === "user_dropped") return "Cancelled";
-  if (status === "pending") return "Pending verification";
-  return "Unpaid";
+function allocationPaymentLabel(status: string): MessageKey {
+  if (status === "paid") return "payStatus.paid";
+  if (status === "failed") return "payStatus.failed";
+  if (status === "expired") return "payStatus.expired";
+  if (status === "user_dropped") return "payStatus.cancelled";
+  if (status === "pending") return "payStatus.pendingVerification";
+  return "payStatus.unpaid";
 }
 
 function sleep(ms: number) {
@@ -113,6 +122,10 @@ function sleep(ms: number) {
 }
 
 export default function OrderPaymentPage() {
+  /* Needed for the two UTR form inputs, whose accessible names come from
+     the dictionary. The rest of the page uses the <T> component. */
+  const { t } = useI18n();
+
   const params = useParams();
   const searchParams = useSearchParams();
   const router = useRouter();
@@ -342,31 +355,31 @@ export default function OrderPaymentPage() {
 
   if (loading) {
     return (
-      <div className="sl-page min-h-screen text-ink-900">
-        <main className="mx-auto max-w-4xl px-4 py-16 sm:px-6">
-          <div className="sl-surface p-8 text-center text-sm text-ink-500">
-            Loading payment details...
+      <StorefrontShell>
+        <div className="py-10 sm:py-16">
+          <div className="sl-panel p-8 text-center text-sm text-[var(--sl-ink-2)]">
+            <T k="pay.loading" />
           </div>
-        </main>
-      </div>
+        </div>
+      </StorefrontShell>
     );
   }
 
   if (error && !order) {
     return (
-      <div className="sl-page min-h-screen text-ink-900">
-        <main className="mx-auto max-w-4xl px-4 py-16 sm:px-6">
-          <div className="rounded-2xl border border-rose-200 bg-rose-50 p-6 text-sm font-medium text-rose-800">
+      <StorefrontShell>
+        <div className="py-10 sm:py-16">
+          <div className="rounded-[var(--sl-r)] border border-[var(--sl-bad-line)] bg-[var(--sl-bad-soft)] p-6 text-sm font-medium text-[var(--sl-bad)]">
             {error}
           </div>
           <Link
             href="/orders"
             className="sl-btn sl-btn-secondary mt-4 min-h-11 px-4 text-xs"
           >
-            Back to My Orders
+            <T k="pay.backToOrders" />
           </Link>
-        </main>
-      </div>
+        </div>
+      </StorefrontShell>
     );
   }
 
@@ -377,107 +390,95 @@ export default function OrderPaymentPage() {
   const canPayBank = order.paymentMethod === "bank_transfer";
 
   return (
-    <div className="sl-page min-h-screen text-ink-900">
-      <header className="sticky top-0 z-30 border-b border-slate-200 bg-white/95 backdrop-blur-md">
-        <div className="mx-auto flex max-w-5xl items-center justify-between px-4 py-3.5 sm:px-6">
-          <Link href="/" className="flex items-center gap-2">
-            <span className="sl-type-page text-lg">
-              SpareLink
-            </span>
-            <span className="rounded bg-slate-100 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-emerald-700">
-              India
-            </span>
-          </Link>
-          <nav className="flex items-center gap-4 text-xs font-semibold text-ink-500">
-            <Link href="/orders" className="hover:text-slate-950">
-              My Orders
-            </Link>
-            <Link href="/cart" className="hover:text-slate-950">
-              Cart
-            </Link>
-            <SignOutButton className="rounded-lg border border-slate-300 px-3 py-1.5 text-xs font-semibold text-slate-700 transition-colors hover:bg-slate-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-950 disabled:cursor-not-allowed disabled:opacity-60" />
-          </nav>
-        </div>
-      </header>
-
-      <main className="mx-auto max-w-4xl px-4 py-10 sm:px-6">
-        <div className="flex flex-col gap-3 border-b border-slate-200 pb-5 sm:flex-row sm:items-center sm:justify-between">
+    <StorefrontShell>
+      {/*
+        The hand-rolled sticky <header> is gone: StorefrontHeader supplies the
+        brand, the nav and the <header> landmark, so a duplicate header is no
+        longer possible. The shell has no sign-out control, so SignOutButton
+        moves into the page's own heading row - dropping it would remove the
+        only way a signed-in customer can leave a payment screen.
+      */}
+      <div className="py-8 sm:py-10">
+        <div className="flex flex-col gap-3 border-b border-[var(--sl-rule)] pb-5 sm:flex-row sm:items-center sm:justify-between">
           <div>
-              <h1 className="sl-type-page text-2xl sm:text-3xl">
-              Order Payment
+            <h1 className="sl-h1">
+              <T k="pay.title" />
             </h1>
-            <p className="mt-1 text-xs text-slate-500">
-              Order #{order.orderNumber}. Pay each firm allocation separately.
-              Returning from checkout is not proof of payment.
+            <p className="sl-meta mt-1 !text-[var(--sl-ink-3)]">
+              <T k="pay.orderHint" vars={{ order: order.orderNumber }} />
             </p>
           </div>
-          <Link
-            href="/orders"
-            className="self-start rounded-xl border border-slate-300 bg-white px-3.5 py-1.5 text-xs font-semibold text-slate-700 shadow-2xs hover:bg-slate-100"
-          >
-            Back to Orders
-          </Link>
+          <div className="flex shrink-0 items-center gap-2.5">
+            <Link
+              href="/orders"
+              className="sl-btn sl-btn-secondary !min-h-10 !text-xs"
+            >
+              <T k="pay.backToOrders" />
+            </Link>
+            <SignOutButton />
+          </div>
         </div>
 
         {error && (
-          <div role="alert" className="mt-5 rounded-xl border border-rose-200 bg-rose-50 p-4 text-xs font-medium text-rose-800">
+          <div role="alert" className="mt-5 rounded-[var(--sl-r)] border border-[var(--sl-bad-line)] bg-[var(--sl-bad-soft)] p-4 text-xs font-medium text-[var(--sl-bad)]">
             {error}
           </div>
         )}
 
         {successMsg && (
-          <div role="status" className="mt-5 rounded-xl border border-emerald-200 bg-emerald-50 p-4 text-xs font-medium text-emerald-800">
+          <div role="status" className="mt-5 rounded-[var(--sl-r)] border border-[var(--sl-ok-line)] bg-[var(--sl-ok-soft)] p-4 text-xs font-medium text-[var(--sl-ok)]">
             {successMsg}
           </div>
         )}
 
-        <section className="sl-surface mt-6 p-6">
-          <div className="flex flex-col gap-4 border-b border-slate-100 pb-4 sm:flex-row sm:items-center sm:justify-between">
+        <section className="sl-panel mt-6 p-6">
+          <div className="flex flex-col gap-4 border-b border-[var(--sl-rule)] pb-4 sm:flex-row sm:items-center sm:justify-between">
             <div>
-              <h2 className="text-base font-bold text-slate-950 sm:text-lg">
-                Payment Summary
+              <h2 className="sl-h3">
+                <T k="pay.summary" />
               </h2>
-              <p className="mt-1 text-xs text-slate-500">
-                Parent status comes from SpareLink after each allocation is
-                verified.
+              <p className="sl-meta mt-1 !text-[var(--sl-ink-3)]">
+                <T k="pay.parentStatusHint" />
               </p>
             </div>
             <div className="text-left sm:text-right">
-              <span className="block text-[11px] font-semibold uppercase text-slate-500">
-                Order Total
+              <span className="block text-[11px] font-semibold uppercase text-[var(--sl-ink-3)]">
+                <T k="pay.orderTotal" />
               </span>
-              <span className="mt-1 block text-xl font-black text-slate-950">
+              <span className="mt-1 block text-xl font-black tabular-nums text-[var(--sl-ink)]">
                 {formatRupees(order.totalPaise)}
               </span>
             </div>
           </div>
 
           <div className="mt-5 grid gap-3 text-xs sm:grid-cols-3">
-            <div className="rounded-xl bg-slate-50 p-3.5">
-              <span className="block text-[11px] font-semibold uppercase text-slate-500">
-                Method
+            <div className="rounded-[var(--sl-r)] bg-[var(--sl-sunken)] p-3.5">
+              <span className="block text-[11px] font-semibold uppercase text-[var(--sl-ink-3)]">
+                <T k="pay.method" />
               </span>
-              <span className="mt-1 block font-bold text-slate-900">
-                {isCod
-                  ? "Cash on delivery"
-                  : order.paymentMethod === "bank_transfer"
-                    ? "Bank / UPI transfer"
-                    : "Online payment"}
-              </span>
-            </div>
-            <div className="rounded-xl bg-slate-50 p-3.5">
-              <span className="block text-[11px] font-semibold uppercase text-slate-500">
-                Parent Payment Status
-              </span>
-              <span className="mt-1 block font-bold text-slate-900">
-                {parentPaymentLabel(order.paymentStatus)}
+              <span className="mt-1 block font-bold text-[var(--sl-ink)]">
+                {isCod ? (
+                  <T k="pay.methodCod" />
+                ) : order.paymentMethod === "bank_transfer" ? (
+                  <T k="pay.methodBank" />
+                ) : (
+                  <T k="pay.methodOnline" />
+                )}
               </span>
             </div>
-            <div className="rounded-xl bg-slate-50 p-3.5">
-              <span className="block text-[11px] font-semibold uppercase text-slate-500">
-                Allocations
+            <div className="rounded-[var(--sl-r)] bg-[var(--sl-sunken)] p-3.5">
+              <span className="block text-[11px] font-semibold uppercase text-[var(--sl-ink-3)]">
+                <T k="pay.parentStatus" />
               </span>
-              <span className="mt-1 block font-bold text-slate-900">
+              <span className="mt-1 block font-bold text-[var(--sl-ink)]">
+                <T k={parentPaymentLabel(order.paymentStatus)} />
+              </span>
+            </div>
+            <div className="rounded-[var(--sl-r)] bg-[var(--sl-sunken)] p-3.5">
+              <span className="block text-[11px] font-semibold uppercase text-[var(--sl-ink-3)]">
+                <T k="pay.allocations" />
+              </span>
+              <span className="mt-1 block font-bold text-[var(--sl-ink)]">
                 {firmPayments.length}
               </span>
             </div>
@@ -485,9 +486,8 @@ export default function OrderPaymentPage() {
         </section>
 
         {isCod && (
-          <div className="mt-6 rounded-xl border border-amber-200 bg-amber-50 p-4 text-xs font-medium text-amber-800">
-            This order is cash on delivery. Online payment and UTR submission
-            are not used for COD.
+          <div className="mt-6 rounded-[var(--sl-r)] border border-[var(--sl-warn-line)] bg-[var(--sl-warn-soft)] p-4 text-xs font-medium text-[var(--sl-warn)]">
+            <T k="pay.codNotice" />
           </div>
         )}
 
@@ -512,26 +512,29 @@ export default function OrderPaymentPage() {
               return (
                 <div
                   key={firmPayment.firmOrderId}
-                  className="sl-card p-5 sm:p-6"
+                  className="sl-panel p-5 sm:p-6"
                 >
-                  <div className="flex flex-col gap-3 border-b border-slate-200 pb-4 sm:flex-row sm:items-start sm:justify-between">
+                  <div className="flex flex-col gap-3 border-b border-[var(--sl-rule)] pb-4 sm:flex-row sm:items-start sm:justify-between">
                     <div>
-                      <h3 className="text-base font-bold text-slate-950">
+                      <h3 className="text-base font-bold text-[var(--sl-ink)]">
                         {firmPayment.firmName}
                       </h3>
-                      <p className="mt-1 text-[11px] font-medium text-slate-500">
-                        Allocation: {firmPayment.allocationNumber}
+                      <p className="mt-1 text-[11px] font-medium text-[var(--sl-ink-3)]">
+                        <T
+                          k="pay.allocationOf"
+                          vars={{ number: firmPayment.allocationNumber }}
+                        />
                       </p>
                     </div>
-                    <div className="rounded-xl bg-slate-50 px-4 py-2 text-left sm:text-right">
-                      <span className="block text-[10px] font-semibold uppercase text-slate-500">
-                        Amount
+                    <div className="rounded-[var(--sl-r)] bg-[var(--sl-sunken)] px-4 py-2 text-left sm:text-right">
+                      <span className="block text-[10px] font-semibold uppercase text-[var(--sl-ink-3)]">
+                        <T k="pay.amount" />
                       </span>
-                      <span className="mt-0.5 block text-lg font-black text-slate-950">
+                      <span className="mt-0.5 block text-lg font-black text-[var(--sl-ink)]">
                         {formatRupees(firmPayment.amountPaise)}
                       </span>
-                      <span className="mt-1 block text-[11px] font-bold uppercase text-slate-600">
-                        {allocationPaymentLabel(firmPayment.paymentStatus)}
+                      <span className="mt-1 block text-[11px] text-[var(--sl-ink-2)]">
+                        <T k={allocationPaymentLabel(firmPayment.paymentStatus)} />
                       </span>
                     </div>
                   </div>
@@ -539,15 +542,12 @@ export default function OrderPaymentPage() {
                   {canPayOnline &&
                     !paid &&
                     firmPayment.onlinePaymentConfigured === false && (
-                    <div className="mt-4 rounded-xl border border-dashed border-amber-300 bg-amber-50 p-4">
-                      <p className="text-sm font-bold text-amber-950">
-                        Online Payment — Coming Soon
+                    <div className="mt-4 rounded-[var(--sl-r)] border border-dashed border-[var(--sl-warn-line)] bg-[var(--sl-warn-soft)] p-4">
+                      <p className="text-sm font-bold text-[var(--sl-warn)]">
+                        <T k="pay.onlineSoonTitle" />
                       </p>
-                      <p className="mt-1 text-xs font-medium text-amber-800">
-                        Cashfree is not available for this firm yet. Use Cash on
-                        Delivery when placing the order, or pay this allocation
-                        by bank/UPI transfer. No online payment session will be
-                        created.
+                      <p className="mt-1 text-xs font-medium text-[var(--sl-warn)]">
+                        <T k="pay.onlineSoonBody" />
                       </p>
                     </div>
                   )}
@@ -561,56 +561,57 @@ export default function OrderPaymentPage() {
                           verifyingFirmOrderId === firmPayment.firmOrderId
                         }
                         onClick={() => void handlePayNow(firmPayment.firmOrderId)}
-                        className="btn-press rounded-xl bg-slate-950 px-4 py-2.5 text-xs font-bold text-white hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-60"
+                        className="btn-press rounded-[var(--sl-r)] bg-[var(--sl-graphite)] px-4 py-2.5 text-xs font-bold text-white hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-60"
                       >
-                        {payingFirmOrderId === firmPayment.firmOrderId
-                          ? "Opening payment..."
-                          : retryable
-                            ? "Retry Pay Now"
-                            : "Pay Now"}
+                        {payingFirmOrderId === firmPayment.firmOrderId ? (
+                          <T k="pay.opening" />
+                        ) : retryable ? (
+                          <T k="pay.retryPayNow" />
+                        ) : (
+                          <T k="orders.payNow" />
+                        )}
                       </button>
                       {verifyingFirmOrderId === firmPayment.firmOrderId && (
-                        <p className="self-center text-xs text-slate-500">
-                          Checking payment with SpareLink...
+                        <p className="self-center text-xs text-[var(--sl-ink-3)]">
+                          <T k="pay.checking" />
                         </p>
                       )}
                     </div>
                   )}
 
                   {paid && (
-                    <p className="mt-4 text-xs font-semibold text-emerald-700">
-                      This allocation is paid. Other firms on this order remain
-                      independent.
+                    <p className="mt-4 text-xs font-semibold text-[var(--sl-ok)]">
+                      <T k="pay.paidIndependent" />
                     </p>
                   )}
 
                   {canPayBank &&
                     firmPayment.paymentMethod === "bank_transfer" && (
-                    <div className="mt-5 rounded-xl border border-slate-200 bg-slate-50/70 p-4">
-                      <h4 className="text-sm font-bold text-slate-900">
-                        Bank / UPI transfer for this firm
+                    <div className="mt-5 rounded-[var(--sl-r)] border border-[var(--sl-rule)] bg-[var(--sl-sunken)] p-4">
+                      <h4 className="text-sm font-bold text-[var(--sl-ink)]">
+                        <T k="pay.bankForFirm" />
                       </h4>
                       {config.isConfigured ? (
                         <>
-                          <p className="mt-2 text-xs leading-5 text-slate-600">
+                          <p className="mt-2 text-xs leading-5 text-[var(--sl-ink-2)]">
                             {config.instructions}
                           </p>
                           <div className="mt-3 grid gap-3 sm:grid-cols-2">
                             {config.accountName && (
-                              <div className="rounded-xl border border-slate-200 bg-white p-3.5">
-                                <span className="block text-[11px] font-semibold uppercase text-slate-500">
-                                  Account Name
+                              <div className="rounded-[var(--sl-r)] border border-[var(--sl-rule)] bg-[var(--sl-surface)] p-3.5">
+                                <span className="block text-[11px] font-semibold uppercase text-[var(--sl-ink-3)]">
+                                  <T k="pay.accountName" />
                                 </span>
-                                <span className="mt-1 block font-bold text-slate-900">
+                                <span className="mt-1 block font-bold text-[var(--sl-ink)]">
                                   {config.accountName}
                                 </span>
                               </div>
                             )}
                             {config.accountNumber && (
-                              <div className="rounded-xl border border-slate-200 bg-white p-3.5">
+                              <div className="rounded-[var(--sl-r)] border border-[var(--sl-rule)] bg-[var(--sl-surface)] p-3.5">
                                 <div className="flex items-center justify-between">
-                                  <span className="text-[11px] font-semibold uppercase text-slate-500">
-                                    Account Number
+                                  <span className="text-[11px] font-semibold uppercase text-[var(--sl-ink-3)]">
+                                    <T k="pay.accountNumber" />
                                   </span>
                                   <button
                                     type="button"
@@ -620,35 +621,37 @@ export default function OrderPaymentPage() {
                                         `account-${firmPayment.firmOrderId}`,
                                       )
                                     }
-                                    className="text-[11px] font-bold text-emerald-700 hover:underline"
+                                    className="text-[11px] font-bold text-[var(--sl-ok)] hover:underline"
                                   >
                                     {copiedField ===
-                                    `account-${firmPayment.firmOrderId}`
-                                      ? "Copied!"
-                                      : "Copy"}
+                                    `account-${firmPayment.firmOrderId}` ? (
+                                      <T k="pay.copied" />
+                                    ) : (
+                                      <T k="pay.copy" />
+                                    )}
                                   </button>
                                 </div>
-                                <span className="mt-1 block font-mono text-sm font-bold text-slate-900">
+                                <span className="mt-1 block font-mono text-sm font-bold text-[var(--sl-ink)]">
                                   {config.accountNumber}
                                 </span>
                               </div>
                             )}
                             {config.ifscCode && (
-                              <div className="rounded-xl border border-slate-200 bg-white p-3.5">
-                                <span className="block text-[11px] font-semibold uppercase text-slate-500">
+                              <div className="rounded-[var(--sl-r)] border border-[var(--sl-rule)] bg-[var(--sl-surface)] p-3.5">
+                                <span className="block text-[11px] font-semibold uppercase text-[var(--sl-ink-3)]">
                                   IFSC
                                 </span>
-                                <span className="mt-1 block font-mono text-sm font-bold text-slate-900">
+                                <span className="mt-1 block font-mono text-sm font-bold text-[var(--sl-ink)]">
                                   {config.ifscCode}
                                 </span>
                               </div>
                             )}
                             {config.upiId && (
-                              <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-3.5 sm:col-span-2">
-                                <span className="block text-[11px] font-semibold uppercase text-emerald-900">
+                              <div className="rounded-[var(--sl-r)] border border-[var(--sl-ok-line)] bg-[var(--sl-ok-soft)] p-3.5 sm:col-span-2">
+                                <span className="block text-[11px] font-semibold uppercase text-[var(--sl-ok)]">
                                   UPI ID
                                 </span>
-                                <span className="mt-1 block font-mono text-sm font-bold text-emerald-950">
+                                <span className="mt-1 block font-mono text-sm font-bold text-[var(--sl-ok)]">
                                   {config.upiId}
                                 </span>
                               </div>
@@ -656,14 +659,14 @@ export default function OrderPaymentPage() {
                           </div>
                         </>
                       ) : (
-                        <p className="mt-2 text-xs text-amber-800">
-                          Bank details for this firm are not configured yet.
+                        <p className="mt-2 text-xs text-[var(--sl-warn)]">
+                          <T k="pay.bankNotConfigured" />
                         </p>
                       )}
 
                       {latestUtr && (
-                        <p className="mt-3 text-xs text-slate-600">
-                          Latest UTR:{" "}
+                        <p className="mt-3 text-xs text-[var(--sl-ink-2)]">
+                          <T k="pay.latestUtr" />{" "}
                           <span className="font-mono font-bold">
                             {latestUtr.utrReference}
                           </span>{" "}
@@ -683,30 +686,36 @@ export default function OrderPaymentPage() {
                               required
                               value={utrReference}
                               onChange={(e) => setUtrReference(e.target.value)}
-                              placeholder="UTR / UPI reference"
-                              className="h-11 w-full rounded-xl border border-slate-200 bg-white px-3.5 font-mono text-sm outline-none focus:border-slate-950"
+                              aria-label={t("pay.utrPlaceholder")}
+                              placeholder={t("pay.utrPlaceholder")}
+                              className="h-11 w-full rounded-[var(--sl-r)] border border-[var(--sl-rule)] bg-[var(--sl-surface)] px-3.5 font-mono text-sm outline-none focus:border-[var(--sl-brand)]"
                             />
                             <input
                               type="date"
                               required
+                              aria-label={t("pay.paymentDate")}
                               value={paymentDate}
                               onChange={(e) => setPaymentDate(e.target.value)}
-                              className="h-11 w-full rounded-xl border border-slate-200 bg-white px-3.5 text-sm outline-none focus:border-slate-950"
+                              className="h-11 w-full rounded-[var(--sl-r)] border border-[var(--sl-rule)] bg-[var(--sl-surface)] px-3.5 text-sm outline-none focus:border-[var(--sl-brand)]"
                             />
                             <div className="flex gap-2">
                               <button
                                 type="submit"
                                 disabled={submitting}
-                                className="rounded-xl bg-slate-950 px-4 py-2 text-xs font-bold text-white disabled:opacity-60"
+                                className="rounded-[var(--sl-r)] bg-[var(--sl-graphite)] px-4 py-2 text-xs font-bold text-white disabled:opacity-60"
                               >
-                                {submitting ? "Submitting..." : "Submit UTR"}
+                                {submitting ? (
+                                  <T k="pay.submitting" />
+                                ) : (
+                                  <T k="orders.submitUtr" />
+                                )}
                               </button>
                               <button
                                 type="button"
                                 onClick={() => setUtrFirmOrderId(null)}
-                                className="rounded-xl border border-slate-300 px-4 py-2 text-xs font-semibold"
+                                className="rounded-[var(--sl-r)] border border-[var(--sl-rule-2)] px-4 py-2 text-xs font-semibold"
                               >
-                                Cancel
+                                <T k="common.cancel" />
                               </button>
                             </div>
                           </form>
@@ -717,9 +726,9 @@ export default function OrderPaymentPage() {
                               setUtrFirmOrderId(firmPayment.firmOrderId);
                               setUtrReference("");
                             }}
-                            className="mt-4 rounded-xl border border-slate-300 bg-white px-4 py-2 text-xs font-semibold text-slate-800"
+                            className="mt-4 rounded-[var(--sl-r)] border border-[var(--sl-rule-2)] bg-[var(--sl-surface)] px-4 py-2 text-xs font-semibold text-[var(--sl-ink)]"
                           >
-                            Submit UTR for this allocation
+                            <T k="pay.submitUtrFor" />
                           </button>
                         )
                       )}
@@ -730,7 +739,7 @@ export default function OrderPaymentPage() {
             })}
           </section>
         )}
-      </main>
-    </div>
+      </div>
+    </StorefrontShell>
   );
 }

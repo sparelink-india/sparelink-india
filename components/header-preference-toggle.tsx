@@ -22,77 +22,97 @@ function optionClass(active: boolean, compact: boolean) {
   const size = compact
     ? "h-7 min-w-7 px-1.5 text-[10px]"
     : "h-8 min-w-0 px-2 text-[11px] xl:min-w-[4.25rem] xl:px-2.5";
+  /* The active chip fills with a light surface and brand ink. Every value is a
+     token pair rather than `bg-white` + a raw brand colour: globals.css remaps
+     the `.bg-white` CLASS to a slate near-black under `html.dark`, so the old
+     pairing collapsed to burgundy on near-black (1.61:1) in dark mode. Tokens
+     remap with the theme, so the chip means the same thing in both. */
   if (active) {
-    return `${size} inline-flex items-center justify-center gap-1 rounded-full bg-white font-bold text-[var(--brand)] shadow-sm dark:bg-white`;
+    return `${size} inline-flex items-center justify-center gap-1 rounded-[var(--sl-r-xs)] bg-[var(--sl-surface)] font-bold text-[var(--sl-brand-ink)] shadow-sm`;
   }
-  return `${size} inline-flex items-center justify-center gap-1 rounded-full font-semibold text-white/75 hover:text-white`;
+  return `${size} inline-flex items-center justify-center gap-1 rounded-[var(--sl-r-xs)] font-semibold text-white/75 hover:text-white`;
 }
 
 function languageClass(active: boolean, compact: boolean) {
   const size = compact ? "h-7 min-w-8 px-1.5 text-[10px]" : "h-8 min-w-11 px-2.5 text-[11px]";
+  /* The active chip is filled brand with white ink on light, and a filled
+     light ink on a dark brand plate in dark — explicit token pairs instead of
+     `bg-white text-[var(--brand)]`, which globals.css's `.bg-white` remap
+     collapsed to burgundy on near-black (1.61:1). */
   if (active) {
-    return `${size} inline-flex items-center justify-center rounded-full bg-white font-bold text-[var(--brand)] shadow-sm`;
+    return `${size} inline-flex items-center justify-center rounded-[var(--sl-r-xs)] bg-[var(--sl-brand)] font-bold text-white shadow-sm dark:bg-[var(--sl-brand-soft)] dark:text-[var(--sl-brand-ink)]`;
   }
+  /* Inactive on the dark utility strip the group sits on a translucent white
+     tint, where `text-white/70` measured 4.15:1. /85 clears AA. */
   if (compact) {
-    return `${size} inline-flex items-center justify-center rounded-full font-semibold text-white/70 hover:text-white`;
+    return `${size} inline-flex items-center justify-center rounded-[var(--sl-r-xs)] font-semibold text-white/85 hover:text-white`;
   }
-  return `${size} inline-flex items-center justify-center rounded-full font-semibold text-slate-400 hover:text-slate-600 dark:text-slate-400 dark:hover:text-slate-200`;
+  return `${size} inline-flex items-center justify-center rounded-[var(--sl-r-xs)] font-semibold text-[var(--sl-ink-2)] hover:text-[var(--sl-ink)]`;
 }
 
 export function HeaderPreferenceToggle({ compact = false }: { compact?: boolean }) {
-  const { theme, locale, setTheme, setLocale } = useI18n();
+  const { t, theme, locale, setTheme, setLocale } = useI18n();
 
   return (
     <div
       role="group"
-      aria-label="Theme and language"
+      aria-label={`${t("settings.theme")} / ${t("settings.language")}`}
       className={
         compact
-          ? "inline-flex h-8 max-w-[210px] items-center gap-1 rounded-full border border-white/25 bg-white/15 px-1 shadow-sm backdrop-blur-sm"
-          : "inline-flex h-10 max-w-full shrink items-center gap-1 rounded-full border border-slate-200 bg-white px-1 shadow-[0_6px_16px_rgba(122,18,51,0.12)] lg:h-11 dark:border-[#2d3545] dark:bg-[#161b24]"
+          ? "inline-flex h-8 max-w-[210px] items-center gap-1 rounded-[var(--sl-r-sm)] border border-white/25 bg-white/15 px-1 shadow-sm backdrop-blur-sm"
+          : "inline-flex h-10 max-w-full shrink items-center gap-1 rounded-[var(--sl-r-sm)] border border-[var(--sl-rule)] bg-[var(--sl-surface)] px-1 shadow-[var(--sl-e-1)] lg:h-11"
       }
     >
       <div
         role="group"
-        aria-label="Theme"
-        className="flex items-center rounded-full bg-[var(--brand)] p-0.5"
+        aria-label={t("settings.theme")}
+        className="flex items-center rounded-[var(--sl-r-sm)] bg-[var(--sl-brand)] p-0.5"
       >
         <button
           type="button"
-          aria-label="Light theme"
-          title="Light theme"
+          aria-label={t("settings.light")}
+          title={t("settings.light")}
           aria-pressed={theme === "light"}
           onClick={() => setTheme("light")}
           className={optionClass(theme === "light", compact)}
         >
           <SunIcon className={compact ? "h-3.5 w-3.5" : "h-3.5 w-3.5"} />
-          {compact ? null : <span>Light</span>}
+          {compact ? null : <span>{t("settings.light")}</span>}
         </button>
         <button
           type="button"
-          aria-label="Dark theme"
-          title="Dark theme"
+          aria-label={t("settings.dark")}
+          title={t("settings.dark")}
           aria-pressed={theme === "dark"}
           onClick={() => setTheme("dark")}
           className={
             theme === "dark"
-              ? `${compact ? "h-7 min-w-7 px-1.5 text-[10px]" : "h-8 min-w-0 px-2 text-[11px] xl:min-w-[4.25rem] xl:px-2.5"} inline-flex items-center justify-center gap-1 rounded-full bg-[color-mix(in_srgb,var(--brand)_72%,black)] font-bold text-white shadow-sm`
+              ? `${compact ? "h-7 min-w-7 px-1.5 text-[10px]" : "h-8 min-w-0 px-2 text-[11px] xl:min-w-[4.25rem] xl:px-2.5"} inline-flex items-center justify-center gap-1 rounded-[var(--sl-r-xs)] bg-[color-mix(in_srgb,var(--sl-brand)_72%,black)] font-bold text-white shadow-sm`
               : optionClass(false, compact)
           }
         >
           <MoonIcon className={compact ? "h-3.5 w-3.5" : "h-3.5 w-3.5"} />
-          {compact ? null : <span>Dark</span>}
+          {compact ? null : <span>{t("settings.dark")}</span>}
         </button>
       </div>
       <div
         role="group"
-        aria-label="Language"
-        className={compact ? "flex items-center rounded-full bg-white/20 p-0.5" : "flex items-center rounded-full bg-slate-100 p-0.5 dark:bg-[#10141c]"}
+        aria-label={t("settings.language")}
+        className={
+          compact
+            ? "flex items-center rounded-[var(--sl-r-sm)] bg-white/20 p-0.5"
+            : "flex items-center rounded-[var(--sl-r-sm)] bg-[var(--sl-sunken)] p-0.5"
+        }
       >
+        {/* axe requires the accessible name to CONTAIN the visible label.
+            "हि"/"हिंदी" never matched a name that only said "Hindi", which
+            failed label-content-name-mismatch on the compact chip. Each name
+            now leads with exactly what is painted, then names the language
+            through the dictionary. */}
         <button
           type="button"
-          aria-label="English"
-          title="English"
+          aria-label={`EN (${t("settings.english")})`}
+          title={t("settings.english")}
           aria-pressed={locale === "en"}
           lang="en"
           onClick={() => setLocale("en")}
@@ -102,8 +122,8 @@ export function HeaderPreferenceToggle({ compact = false }: { compact?: boolean 
         </button>
         <button
           type="button"
-          aria-label="Hindi"
-          title="Hindi"
+          aria-label={compact ? `हि (${t("settings.hindi")})` : `हिंदी (${t("settings.hindi")})`}
+          title={t("settings.hindi")}
           aria-pressed={locale === "hi"}
           lang="hi"
           onClick={() => setLocale("hi")}

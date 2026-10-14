@@ -44,7 +44,7 @@ export function StorefrontBreadcrumbs({
             <li key={`${crumb.label}-${index}`} className="flex items-center gap-1.5">
               {index > 0 ? (
                 <svg
-                  className="h-3 w-3 shrink-0 text-ink-500/60"
+                  className="h-3 w-3 shrink-0 text-[var(--sl-ink-3)]/60"
                   fill="none"
                   viewBox="0 0 24 24"
                   stroke="currentColor"
@@ -59,12 +59,12 @@ export function StorefrontBreadcrumbs({
               {crumb.href && !isLast ? (
                 <Link
                   href={crumb.href}
-                  className="rounded font-medium text-brand-700 underline-offset-2 transition-colors duration-200 hover:text-brand-800 hover:underline"
+                  className="rounded font-medium text-[var(--sl-brand-ink)] underline-offset-2 transition-colors duration-200 hover:text-[var(--sl-brand-ink)] hover:underline"
                 >
                   {crumb.label}
                 </Link>
               ) : (
-                <span className="font-medium text-ink-500" aria-current="page">
+                <span className="font-medium text-[var(--sl-ink-2)]" aria-current="page">
                   {crumb.label}
                 </span>
               )}

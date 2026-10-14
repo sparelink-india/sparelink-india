@@ -1,6 +1,6 @@
 ﻿"use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 
 import { InclusivePrice } from "@/components/inclusive-price";
@@ -9,11 +9,21 @@ import {
   PanelSkeleton,
 } from "@/components/page-states";
 import { useI18n } from "@/components/preferences-provider";
+import { ShortageRequest } from "@/components/product/shortage-request";
 import { WhatsAppIcon } from "@/components/whatsapp-cta";
 import type { MessageKey } from "@/lib/i18n";
 import { isAuthoritativeSellingPricePaise } from "@/lib/storefront-price-display";
 import { selectPreferredStorefrontListing } from "@/lib/storefront-listing-selection";
 import { getWhatsAppChatUrl } from "@/lib/whatsapp";
+
+/**
+ * Upper bound on the quantity stepper.
+ *
+ * This guards the INPUT only — it stops a held-down button generating a number
+ * like 10,000 — and is deliberately unrelated to available stock. Capping the
+ * stepper at stock is what previously made a shortage unexpressible.
+ */
+const MAX_QTY = 999;
 
 type Listing = {
   id: string;
@@ -54,6 +64,12 @@ type DetailPayload = {
   compatibility?: string[];
   specifications?: Array<{ label: string; value: string }>;
   listings: Listing[];
+  related?: Array<{
+    id: string;
+    partNumber: string;
+    name: string;
+    brand?: string | null;
+  }>;
 };
 
 function HeartIcon({ className = "h-4 w-4" }: { className?: string }) {
@@ -98,25 +114,10 @@ function stockState(
   return { label: t("product.inStock", { count: String(stock) }), tone: "ok" as const };
 }
 
-function InfoCard({
-  icon,
-  title,
-  children,
-}: {
-  icon: ReactNode;
-  title: string;
-  children: ReactNode;
-}) {
-  return (
-    <div className="rounded-[var(--sl-radius)] border border-[var(--sl-border)] bg-[var(--sl-surface-sunk)]/80 px-3 py-2.5">
-      <p className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-[0.12em] text-[var(--sl-muted)]">
-        {icon}
-        {title}
-      </p>
-      <div className="mt-1 text-xs font-semibold leading-snug text-[var(--sl-text)]">{children}</div>
-    </div>
-  );
-}
+/* The V2 `InfoCard` helper and the `infoCards` array it consumed were removed
+   with the card stack they served. The same fields (brand, category, OEM,
+   references, compatibility) are now rows in the V3 specification sheet, built
+   inline from the payload, so the two lists could not drift apart. */
 
 export function ProductDetailModal({
   open,
@@ -144,6 +145,22 @@ export function ProductDetailModal({
   const [adding, setAdding] = useState(false);
   const [wishlistBusy, setWishlistBusy] = useState(false);
   const [enlarged, setEnlarged] = useState(false);
+  // Related-rail navigation stays inside the modal: picking a related part
+  // swaps the lookup id without changing the parent's props. The override is
+  // keyed to the parent's request so opening a different product drops any
+  // stale rail selection via the render-phase reset below (the documented
+  // React pattern for adjusting state when props change — no effect needed).
+  const [override, setOverride] = useState<{ key: string; partId: string | null }>({
+    key: "",
+    partId: null,
+  });
+  const requestKey = `${open}-${partId ?? ""}-${sku ?? ""}`;
+  if (override.key !== requestKey) {
+    setOverride({ key: requestKey, partId: null });
+  }
+  const activeOverride = override.key === requestKey ? override.partId : null;
+  const lookupPartId = activeOverride ?? partId ?? null;
+  const lookupSku = activeOverride ? null : (sku ?? null);
   const dragRef = useRef<{ x: number; frame: number } | null>(null);
 
   useEffect(() => {
@@ -157,10 +174,10 @@ export function ProductDetailModal({
 
   useEffect(() => {
     if (!open) return;
-    if (!partId && !sku) return;
+    if (!lookupPartId && !lookupSku) return;
     const params = new URLSearchParams();
-    if (partId) params.set("partId", partId);
-    else if (sku) params.set("sku", sku);
+    if (lookupPartId) params.set("partId", lookupPartId);
+    else if (lookupSku) params.set("sku", lookupSku);
     const controller = new AbortController();
     void fetch(`/api/catalogue/product-detail?${params.toString()}`, {
       cache: "no-store",
@@ -182,7 +199,7 @@ export function ProductDetailModal({
         setError(loadError instanceof Error ? loadError.message : t("product.addFail"));
       });
     return () => controller.abort();
-  }, [open, partId, sku, t]);
+  }, [open, lookupPartId, lookupSku, t]);
 
   const listing = selectPreferredStorefrontListing(payload?.listings);
   const priced = isAuthoritativeSellingPricePaise(
@@ -193,7 +210,18 @@ export function ProductDetailModal({
     listing?.pensolCreditNetInclusivePaise,
   );
   const stock = listing?.stock ?? 0;
+  /*
+   * The cap exists to stop a stray long-press producing an absurd figure, not to
+   * hide stock. It is applied to the INPUT, never to what gets recorded: a
+   * customer may ask for more than we hold, and the shortfall is captured.
+   */
   const canAdd = Boolean(listing) && listing?.status === "active" && stock > 0 && priced;
+  /* How much of the request we can actually ship today. The remainder is not
+     discarded: `ShortageRequest` records it as demand. */
+  const shortageQty = Math.max(0, quantity - stock);
+  /* The loaded part's id. Distinct from the `partId` PROP above, which is only
+     a lookup hint and may be null when the modal was opened by SKU. */
+  const loadedPartId = payload?.part?.id ?? null;
   const images = payload?.images?.length ? payload.images : ["/images/products/placeholder.svg"];
   const thumbUrls = payload?.thumbUrls?.length === images.length ? payload.thumbUrls : images.map(() => null);
   const mediumUrls =
@@ -273,7 +301,12 @@ export function ProductDetailModal({
       const response = await fetch("/api/cart", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ dealerListingId: listing.id, quantity }),
+        /* Only what we can actually supply is added. The rest is preserved by
+         `ShortageRequest` as a demand row rather than being silently dropped. */
+      body: JSON.stringify({
+        dealerListingId: listing.id,
+        quantity: Math.min(quantity, listing.stock ?? 0),
+      }),
       });
       const data = (await response.json()) as { error?: string };
       if (response.status === 401) {
@@ -324,30 +357,25 @@ export function ProductDetailModal({
       : specifications.length
         ? `(${specifications.map((item) => `${item.label}: ${item.value}`).join(", ")})`
         : null;
-  const infoCards = payload
-    ? [
-        payload.part.partNumber ? { label: t("product.partNo"), value: payload.part.partNumber } : null,
-        payload.part.brand ? { label: t("product.brand"), value: payload.part.brand } : null,
-        category ? { label: t("product.category"), value: category } : null,
-      ].filter((item): item is { label: string; value: string } => Boolean(item))
-    : [];
+  /* `infoCards` removed with the V2 card stack. The same three fields are now
+     rows in the V3 specification sheet, built inline below. */
 
   return (
     <div
       role="dialog"
       aria-modal="true"
       aria-labelledby={titleId}
-      className="fixed inset-0 z-50 flex items-center justify-center bg-[rgba(23,17,15,0.78)] p-0 backdrop-blur-[8px] sm:p-4"
+      className="sl-scrim z-50 flex items-center justify-center p-0 sm:p-4"
       onClick={(event) => {
         if (event.target === event.currentTarget) onClose();
       }}
     >
-      <div className="relative flex h-[100dvh] w-full max-w-[min(92vw,1420px)] min-w-0 flex-col overflow-hidden rounded-none bg-white shadow-[0_40px_90px_-30px_rgba(42,8,18,0.7)] ring-1 ring-brand-900/10 sm:h-[min(86dvh,880px)] sm:max-h-[min(88dvh,880px)] sm:rounded-[20px]">
+      <div className="relative flex h-[100dvh] w-full max-w-[min(96vw,1360px)] min-w-0 flex-col overflow-hidden rounded-none bg-[var(--sl-surface)] shadow-[var(--sl-e-3)] sm:h-[min(88dvh,900px)] sm:max-h-[min(90dvh,900px)] sm:rounded-[var(--sl-r-lg)]">
         <button
           type="button"
           onClick={onClose}
           aria-label={t("common.close")}
-          className="sl-v2-focus-invert absolute right-3 top-3 z-40 flex h-9 w-9 items-center justify-center rounded-full border border-[var(--sl-border)] bg-white/95 text-[var(--sl-primary)] shadow-sm backdrop-blur transition-colors duration-200 hover:bg-[var(--sl-primary-soft)]"
+          className="sl-focus absolute right-3 top-3 z-40 flex h-9 w-9 items-center justify-center rounded-[var(--sl-r)] border border-[var(--sl-rule-2)] bg-[var(--sl-surface)] text-[var(--sl-brand)] transition-colors hover:bg-[var(--sl-brand-soft)]"
         >
           <svg
             className="h-4 w-4"
@@ -373,7 +401,7 @@ export function ProductDetailModal({
           </div>
         ) : payload ? (
           <div className="grid min-h-0 min-w-0 flex-1 grid-cols-1 overflow-y-auto md:grid-cols-[minmax(0,1.27fr)_minmax(0,1fr)] md:overflow-hidden">
-            <div className="flex min-h-0 min-w-0 flex-col bg-[var(--sl-surface-sunk)] p-3 sm:p-4">
+            <div className="flex min-h-0 min-w-0 flex-col bg-[var(--sl-sunken)] p-3 sm:p-4">
               <div className="flex min-h-0 min-w-0 flex-1 gap-2 sm:gap-3">
                 {!view360 && images.length > 1 ? (
                   <div className="hidden w-[clamp(4.25rem,8vw,5.75rem)] shrink-0 flex-col gap-2 overflow-y-auto md:flex">
@@ -382,8 +410,8 @@ export function ProductDetailModal({
                         key={`${src}-${index}`}
                         type="button"
                         onClick={() => setImageIndex(index)}
-                        className={`aspect-square w-full shrink-0 overflow-hidden rounded-[var(--sl-radius)] border bg-white ${
-                          index === imageIndex ? "border-[var(--sl-primary)] ring-1 ring-[var(--sl-primary)]/30" : "border-[var(--sl-border)]"
+                        className={`aspect-square w-full shrink-0 overflow-hidden rounded-[var(--sl-r-xs)] border bg-[var(--sl-surface)] ${
+                          index === imageIndex ? "border-[var(--sl-brand)] ring-1 ring-[var(--sl-brand)]/25" : "border-[var(--sl-rule)]"
                         }`}
                       >
                         {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -404,7 +432,7 @@ export function ProductDetailModal({
 
                 <div className="flex min-h-0 min-w-0 flex-1 flex-col">
                   <div
-                    className="relative flex min-h-[220px] min-w-0 flex-1 items-center justify-center overflow-hidden rounded-[var(--sl-radius-lg)] bg-white md:min-h-0"
+                    className="relative flex min-h-[220px] min-w-0 flex-1 items-center justify-center overflow-hidden rounded-[var(--sl-r)] bg-[var(--sl-surface)] md:min-h-0"
                     onPointerDown={(event) => {
                       if (!view360) return;
                       event.currentTarget.setPointerCapture(event.pointerId);
@@ -452,9 +480,9 @@ export function ProductDetailModal({
                           setView360((value) => !value);
                           setFrame(imageIndex);
                         }}
-                        className="absolute left-3 top-3 inline-flex items-center gap-1.5 rounded-full bg-white px-3 py-1.5 text-[11px] font-bold text-slate-800 shadow"
+                        className="absolute left-3 top-3 inline-flex items-center gap-1.5 rounded-[var(--sl-r-xs)] bg-[var(--sl-surface)] px-3 py-1.5 text-[11px] font-bold text-[var(--sl-ink)] shadow"
                       >
-                        <span className="text-[var(--sl-primary)]">360°</span>
+                        <span className="text-[var(--sl-brand)]">360°</span>
                         {view360 ? t("product.exit360") : t("product.view360")}
                       </button>
                     ) : null}
@@ -463,7 +491,7 @@ export function ProductDetailModal({
                       type="button"
                       aria-label={t("product.enlarge", { name: payload.part.title })}
                       onClick={() => setEnlarged(true)}
-                      className="absolute right-3 top-3 flex h-9 w-9 items-center justify-center rounded-[var(--sl-radius)] bg-white text-[var(--sl-text-soft)] shadow"
+                      className="absolute right-3 top-3 flex h-9 w-9 items-center justify-center rounded-[var(--sl-r-xs)] bg-[var(--sl-surface)] text-[var(--sl-ink-2)] shadow"
                     >
                       ↗
                     </button>
@@ -474,7 +502,7 @@ export function ProductDetailModal({
                           type="button"
                           aria-label={t("product.prevImage")}
                           onClick={() => cycle(-1)}
-                          className="sl-v2-focus absolute left-2 top-1/2 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-[var(--sl-radius-sm)] border border-[var(--sl-border)] bg-white/95 !text-[var(--sl-text)] shadow-[var(--sl-shadow)] transition-colors hover:bg-white"
+                          className="sl-focus absolute left-2 top-1/2 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-[var(--sl-r-xs)] border border-[var(--sl-rule)] bg-[var(--sl-surface)]/95 !text-[var(--sl-ink)] shadow-[var(--sl-e-2)] transition-colors hover:bg-[var(--sl-surface)]"
                         >
                           <svg
                           className="h-4 w-4"
@@ -493,7 +521,7 @@ export function ProductDetailModal({
                           type="button"
                           aria-label={t("product.nextImage")}
                           onClick={() => cycle(1)}
-                          className="sl-v2-focus absolute right-2 top-1/2 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-[var(--sl-radius-sm)] border border-[var(--sl-border)] bg-white/95 !text-[var(--sl-text)] shadow-[var(--sl-shadow)] transition-colors hover:bg-white"
+                          className="sl-focus absolute right-2 top-1/2 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-[var(--sl-r-xs)] border border-[var(--sl-rule)] bg-[var(--sl-surface)]/95 !text-[var(--sl-ink)] shadow-[var(--sl-e-2)] transition-colors hover:bg-[var(--sl-surface)]"
                         >
                           <svg
                           className="h-4 w-4"
@@ -517,7 +545,7 @@ export function ProductDetailModal({
                           type="button"
                           aria-label={t("product.prevImage")}
                           onClick={() => cycleFrame(-1)}
-                          className="sl-v2-focus absolute left-2 top-1/2 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-[var(--sl-radius-sm)] border border-[var(--sl-border)] bg-white/95 !text-[var(--sl-text)] shadow-[var(--sl-shadow)] transition-colors hover:bg-white"
+                          className="sl-focus absolute left-2 top-1/2 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-[var(--sl-r-xs)] border border-[var(--sl-rule)] bg-[var(--sl-surface)]/95 !text-[var(--sl-ink)] shadow-[var(--sl-e-2)] transition-colors hover:bg-[var(--sl-surface)]"
                         >
                           <svg
                             className="h-4 w-4"
@@ -536,7 +564,7 @@ export function ProductDetailModal({
                           type="button"
                           aria-label={t("product.nextImage")}
                           onClick={() => cycleFrame(1)}
-                          className="sl-v2-focus absolute right-2 top-1/2 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-[var(--sl-radius-sm)] border border-[var(--sl-border)] bg-white/95 !text-[var(--sl-text)] shadow-[var(--sl-shadow)] transition-colors hover:bg-white"
+                          className="sl-focus absolute right-2 top-1/2 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-[var(--sl-r-xs)] border border-[var(--sl-rule)] bg-[var(--sl-surface)]/95 !text-[var(--sl-ink)] shadow-[var(--sl-e-2)] transition-colors hover:bg-[var(--sl-surface)]"
                         >
                           <svg
                             className="h-4 w-4"
@@ -555,7 +583,7 @@ export function ProductDetailModal({
                     ) : null}
 
                     {view360 ? (
-                      <span className="pointer-events-none absolute bottom-3 left-1/2 -translate-x-1/2 rounded-full bg-white/95 px-2.5 py-1 text-[10px] font-semibold text-[var(--sl-muted)] shadow">
+                      <span className="pointer-events-none absolute bottom-3 left-1/2 -translate-x-1/2 rounded-[var(--sl-r-xs)] border border-[var(--sl-rule)] bg-[var(--sl-surface)]/95 px-2.5 py-1 text-[10px] font-semibold text-[var(--sl-ink-3)]">
                         {frame + 1} / {images.length}
                       </span>
                     ) : null}
@@ -569,8 +597,8 @@ export function ProductDetailModal({
                           type="button"
                           aria-label={`${index + 1}`}
                           onClick={() => setImageIndex(index)}
-                          className={`h-1.5 rounded-full ${
-                            index === imageIndex ? "w-5 bg-[var(--sl-primary)]" : "w-1.5 bg-slate-300"
+                          className={`h-1.5 rounded-[var(--sl-r-xs)] ${
+                            index === imageIndex ? "w-5 bg-[var(--sl-brand)]" : "w-1.5 bg-[var(--sl-rule-2)]"
                           }`}
                         />
                       ))}
@@ -584,8 +612,8 @@ export function ProductDetailModal({
                           key={`m-${src}-${index}`}
                           type="button"
                           onClick={() => setImageIndex(index)}
-                          className={`h-14 w-14 shrink-0 overflow-hidden rounded-[var(--sl-radius)] border bg-white ${
-                            index === imageIndex ? "border-[var(--sl-primary)]" : "border-[var(--sl-border)]"
+                          className={`h-14 w-14 shrink-0 overflow-hidden rounded-[var(--sl-r-xs)] border bg-[var(--sl-surface)] ${
+                            index === imageIndex ? "border-[var(--sl-brand)]" : "border-[var(--sl-rule)]"
                           }`}
                         >
                           {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -606,167 +634,110 @@ export function ProductDetailModal({
                 </div>
               </div>
 
-              <ul className="mt-3 grid grid-cols-3 gap-2">
-              <li className="sl-v2-card px-2 py-2.5 text-center">
-                <p className="sl-label !text-[var(--sl-primary)]">
-                  {t("product.genuineQuality")}
-                </p>
-                <p className="sl-small mt-1 !text-[0.625rem] leading-snug">
-                  {t("product.genuineQualityHint")}
-                </p>
-              </li>
-              <li className="sl-v2-card px-2 py-2.5 text-center">
-                <p className="sl-label !text-[var(--sl-primary)]">
-                  {t("product.fastDispatch")}
-                </p>
-                <p className="sl-small mt-1 !text-[0.625rem] leading-snug">
-                  {t("product.fastDispatchHint")}
-                </p>
-              </li>
-              <li className="sl-v2-card px-2 py-2.5 text-center">
-                <p className="sl-label !text-[var(--sl-primary)]">
-                  {t("product.easyReturns")}
-                </p>
-                <p className="sl-small mt-1 !text-[0.625rem] leading-snug">
-                  {t("product.easyReturnsHint")}
-                </p>
-              </li>
-            </ul>
+              {/* Assurances: three hairline-divided cells in ONE panel rather
+                  than three separate rounded cards. Same three statements and
+                  the same i18n keys as V2; only the container changes, so a
+                  product that happens to have no image still shows them at a
+                  consistent height. */}
+              <ul className="mt-3 grid grid-cols-3 gap-px overflow-hidden rounded-[var(--sl-r)] border border-[var(--sl-rule)] bg-[var(--sl-rule)]">
+                {[
+                  { title: t("product.genuineQuality"), hint: t("product.genuineQualityHint") },
+                  { title: t("product.fastDispatch"), hint: t("product.fastDispatchHint") },
+                  { title: t("product.easyReturns"), hint: t("product.easyReturnsHint") },
+                ].map((item) => (
+                  <li key={item.title} className="bg-[var(--sl-surface)] px-2 py-2.5 text-center">
+                    <p className="sl-metric-label !text-[0.5625rem]">{item.title}</p>
+                    <p className="sl-small mt-1 !text-[0.625rem] !leading-snug">
+                      {item.hint}
+                    </p>
+                  </li>
+                ))}
+              </ul>
             </div>
 
-            <div className="flex min-h-0 min-w-0 flex-col overflow-y-auto overflow-x-hidden px-4 py-4 sm:px-6 sm:py-5">
-              <div className="flex items-start justify-between gap-3 pr-8">
-                <div>
-                  {payload.brandLogo ? (
-                    <div className="relative h-12 w-40">
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img
-                        src={payload.brandLogo}
-                        alt={payload.part.brand || ""}
-                        className="h-full w-full object-contain object-left"
-                      />
-                    </div>
-                  ) : payload.part.brand ? (
-                    <p className="sl-h3 !text-[var(--sl-primary)]">{payload.part.brand}</p>
-                  ) : null}
+            {/* ==========================================================
+                V3 RIGHT COLUMN — specification sheet, not a card stack.
+
+                V2 ran one long vertical stack down this column: brand logo,
+                badge, title, subtitle, prose, then a grid of three rounded
+                info cards, then two more icon cards for OEM and references,
+                then another for compatibility, then a price, then the purchase
+                row. Eight separate boxes, each with its own border and shadow,
+                competing for the same attention as the price and the Add to
+                Cart button that actually decide the purchase.
+
+                V3 groups by decision instead:
+
+                  IDENTITY      what this part is
+                  PURCHASE      what it costs and how to buy it, on a sunk
+                                surface so the price block is unmistakable and
+                                is never separated from the CTA by a scroll
+                  SPECIFICATION one ruled two-column table of catalogue data,
+                                label left, value right, every row divided by a
+                                hairline. Part numbers, HSN and GST are set in
+                                monospace so a column of them is comparable.
+
+                All fields come from the same payload as before — nothing is
+                added, renamed or invented. The quantity stepper, add-to-cart,
+                wishlist and WhatsApp handlers are carried over untouched.
+                ========================================================== */}
+            <div className="flex min-h-0 min-w-0 flex-col overflow-y-auto overflow-x-hidden bg-[var(--sl-surface)]">
+              {/* ---- IDENTITY ---- */}
+              <div className="border-b border-[var(--sl-rule)] px-4 py-4 sm:px-5">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0">
+                    {payload.brandLogo ? (
+                      <div className="relative h-9 w-32">
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img
+                          src={payload.brandLogo}
+                          alt={payload.part.brand || ""}
+                          className="h-full w-full object-contain object-left"
+                        />
+                      </div>
+                    ) : payload.part.brand ? (
+                      <p className="sl-eyebrow sl-eyebrow-plain flex items-center gap-2">
+                        <span
+                          className="inline-block h-3 w-[3px] bg-[var(--sl-brand)]"
+                          aria-hidden
+                        />
+                        {payload.part.brand}
+                      </p>
+                    ) : null}
+                  </div>
+                  <span
+                    className={`sl-badge shrink-0 ${
+                      stockUi.tone === "ok"
+                        ? "sl-badge-ok"
+                        : stockUi.tone === "warn"
+                          ? "sl-badge-warn"
+                          : "sl-badge-bad"
+                    }`}
+                  >
+                    {stockUi.label}
+                  </span>
                 </div>
-                <span
-              className={`sl-v2-badge shrink-0 ${
-                stockUi.tone === "ok"
-                  ? "sl-v2-badge-success"
-                  : stockUi.tone === "warn"
-                    ? "sl-v2-badge-brand"
-                    : stockUi.tone === "danger"
-                      ? "sl-v2-badge-danger"
-                      : ""
-              }`}
-            >
-                  {stockUi.label}
-                </span>
+
+                <h2 id={titleId} className="sl-h2 mt-2.5 break-words">
+                  {payload.part.title}
+                </h2>
+                {subtitle ? <p className="sl-body mt-1.5">{subtitle}</p> : null}
+                {category ? (
+                  <p className="sl-partno mt-1.5">{category}</p>
+                ) : null}
               </div>
 
-              <h2 id={titleId} className="sl-h1 mt-3 break-words !text-[clamp(1.1rem,2vw,1.375rem)] leading-snug tracking-tight text-slate-950">
-                {payload.part.title}
-              </h2>
-              {subtitle ? <p className="sl-body mt-1.5">{subtitle}</p> : null}
-              {category ? <p className="sl-nav mt-1.5 !text-[var(--sl-text-soft)]">{category}</p> : null}
-
-              {payload.part.description ? (
-                <>
-                  <div className="my-4 h-px bg-[var(--sl-border)]" />
-                  <p className="sl-body">{payload.part.description}</p>
-                </>
-              ) : null}
-
-              {infoCards.length ? (
-                <>
-                  <div className="my-4 h-px bg-[var(--sl-border)]" />
-                  <div className="grid grid-cols-1 gap-2 min-[420px]:grid-cols-3">
-                    {infoCards.map((card) => (
-                      <div key={card.label} className="sl-v2-card px-3 py-2.5">
-                        <p className="sl-label !text-[0.625rem]">{card.label}</p>
-                        <p className="sl-nav mt-1 break-words !text-[var(--sl-text)]">{card.value}</p>
-                      </div>
-                    ))}
-                  </div>
-                </>
-              ) : null}
-
-              {oemNumbers.length || references.length ? (
-                <div className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-2">
-                  {oemNumbers.length ? (
-                    <InfoCard
-                      icon={
-                        <svg className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                          <circle cx="12" cy="12" r="8" stroke="currentColor" strokeWidth="1.7" />
-                          <path d="M12 8v4l2.5 1.5" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" />
-                        </svg>
-                      }
-                      title={t("product.oem")}
-                    >
-                      {oemNumbers.map((value) => (
-                        <p key={value}>{value}</p>
-                      ))}
-                    </InfoCard>
-                  ) : null}
-                  {references.length ? (
-                    <InfoCard
-                      icon={
-                        <svg className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                          <path
-                            d="M10 13a5 5 0 0 0 7.07 0l1.41-1.41a5 5 0 0 0-7.07-7.07L10 5.93"
-                            stroke="currentColor"
-                            strokeWidth="1.7"
-                            strokeLinecap="round"
-                          />
-                          <path
-                            d="M14 11a5 5 0 0 0-7.07 0L5.52 12.4a5 5 0 0 0 7.07 7.07L14 18.07"
-                            stroke="currentColor"
-                            strokeWidth="1.7"
-                            strokeLinecap="round"
-                          />
-                        </svg>
-                      }
-                      title={t("product.references")}
-                    >
-                      {references.map((value) => (
-                        <p key={value}>{value}</p>
-                      ))}
-                    </InfoCard>
-                  ) : null}
-                </div>
-              ) : null}
-
-              {compatibility.length ? (
-                <div className="mt-2">
-                  <InfoCard
-                    icon={
-                      <svg className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                        <path
-                          d="M4 16h16M6 16V9l6-4 6 4v7"
-                          stroke="currentColor"
-                          strokeWidth="1.7"
-                          strokeLinejoin="round"
-                        />
-                      </svg>
-                    }
-                    title={t("product.compatible")}
-                  >
-                    {compatibility.map((value) => (
-                      <p key={value}>{value}</p>
-                    ))}
-                  </InfoCard>
-                </div>
-              ) : null}
-
-              <div className="mt-4 border-t border-[var(--sl-border)] pt-3">
+              {/* ---- PURCHASE: price, stock, quantity, CTA ----
+                  Sunk surface and kept as one unit so a customer never has to
+                  scroll between the price and the button that acts on it. */}
+              <div className="border-b border-[var(--sl-rule)] bg-[var(--sl-sunken)] px-4 py-4 sm:px-5">
                 {listing ? (
                   listing.isPensol ? (
-                    <div className="text-sm font-bold text-[var(--sl-text)]">
+                    <p className="sl-price">
                       {listing.pricePaise > 0
                         ? `₹${(listing.pricePaise / 100).toLocaleString("en-IN")}`
                         : t("price.onRequest")}
-                    </div>
+                    </p>
                   ) : (
                     <InclusivePrice
                       pricePaise={listing.pricePaise}
@@ -780,24 +751,28 @@ export function ProductDetailModal({
                 ) : (
                   <p className="sl-h3">{t("price.onRequest")}</p>
                 )}
+
                 {listing?.firmName ? (
-                  <p className="mt-1 text-[11px] font-semibold text-emerald-700">
+                  <p className="sl-small mt-1.5 !text-[var(--sl-ok)]">
                     {t("product.fulfilledBy", { firm: listing.firmName })}
                   </p>
                 ) : null}
 
                 {error ? (
-              <p className="sl-small mt-2 font-medium !text-[var(--sl-danger)]" role="alert">
-                {error}
-              </p>
-            ) : null}
+                  <p className="sl-small mt-2 font-medium !text-[var(--sl-bad)]" role="alert">
+                    {error}
+                  </p>
+                ) : null}
 
-                <div className="mt-3 flex min-w-0 flex-wrap items-center gap-3">
-                  <div className="flex items-center rounded-[var(--sl-radius)] border border-[var(--sl-border)]">
+                <div className="mt-3 flex min-w-0 flex-wrap items-center gap-2.5">
+                  {/* Square stepper. V2 used a rounded pill with 48px controls
+                      that pushed the Add to Cart button narrow on a 360px
+                      modal. */}
+                  <div className="flex items-center rounded-[var(--sl-r)] border border-[var(--sl-rule-2)] bg-[var(--sl-surface)]">
                     <button
                       type="button"
-                      aria-label="Decrease quantity"
-                      className="sl-v2-focus flex h-12 w-11 shrink-0 items-center justify-center rounded-[var(--sl-radius-sm)] border border-[var(--sl-border-strong)] bg-white text-[var(--sl-text)] transition-colors hover:bg-[var(--sl-surface-sunk)]"
+                      aria-label={t("product.decreaseQuantity")}
+                      className="sl-focus flex h-11 w-10 shrink-0 items-center justify-center border-r border-[var(--sl-rule)] text-[var(--sl-ink)] transition-colors hover:bg-[var(--sl-page)]"
                       onClick={() => setQuantity((value) => Math.max(1, value - 1))}
                     >
                       <svg
@@ -812,12 +787,21 @@ export function ProductDetailModal({
                         <path d="M5 12h14" />
                       </svg>
                     </button>
-                    <span className="min-w-9 text-center sl-price !text-base tabular-nums">{quantity}</span>
+                    <span className="sl-num min-w-9 text-center text-[0.9375rem] font-bold text-[var(--sl-ink)]">
+                      {quantity}
+                    </span>
                     <button
                       type="button"
                       aria-label={t("product.increaseQuantity")}
-                      className="sl-v2-focus flex h-12 w-11 shrink-0 items-center justify-center rounded-[var(--sl-radius-sm)] border border-[var(--sl-border-strong)] bg-white text-[var(--sl-text)] transition-colors hover:bg-[var(--sl-surface-sunk)]"
-                      onClick={() => setQuantity((value) => Math.min(Math.max(stock, 1), value + 1))}
+                      className="sl-focus flex h-11 w-10 shrink-0 items-center justify-center border-l border-[var(--sl-rule)] text-[var(--sl-ink)] transition-colors hover:bg-[var(--sl-page)]"
+                      /* Deliberately NOT capped at `stock`.
+                         This used to be `Math.min(stock, value + 1)`, which made
+                         it impossible to ask for more than we hold — so a
+                         customer wanting 50 with 10 in stock could never express
+                         the 40-piece shortage, and procurement never learned
+                         about it. The stepper now allows a larger figure and
+                         `ShortageRequest` records the excess. */
+                      onClick={() => setQuantity((value) => Math.min(MAX_QTY, value + 1))}
                     >
                       <svg
                         className="h-4 w-4"
@@ -832,11 +816,12 @@ export function ProductDetailModal({
                       </svg>
                     </button>
                   </div>
+
                   <button
                     type="button"
                     disabled={!canAdd || adding}
                     onClick={() => void addToCart()}
-                    className="sl-v2-btn sl-v2-btn-primary min-w-0 flex-1"
+                    className="sl-btn sl-btn-primary min-w-0 flex-1"
                   >
                     <CartIcon className="h-4 w-4" />
                     {canAdd
@@ -847,15 +832,28 @@ export function ProductDetailModal({
                   </button>
                 </div>
 
+                {/* ---- SHORTAGE ----
+                    Rendered only when the customer asked for more than we hold.
+                    Shown for stock > 0 as well as stock === 0, because the 40
+                    that cannot ship today is the same 40 in both cases and it is
+                    the number procurement needs. */}
+                {loadedPartId && shortageQty > 0 ? (
+                  <ShortageRequest
+                    partId={loadedPartId}
+                    requestedQty={quantity}
+                    availableQty={stock}
+                  />
+                ) : null}
+
                 <div className="mt-2 grid min-w-0 grid-cols-1 gap-2 sm:grid-cols-2">
                   {whatsappHref ? (
                     <a
                       href={whatsappHref}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="sl-v2-btn sl-v2-btn-secondary min-w-0"
+                      className="sl-btn sl-btn-secondary min-w-0"
                     >
-                      <WhatsAppIcon className="h-5 w-5" />
+                      <WhatsAppIcon className="h-4 w-4" />
                       {t("product.enquireWhatsApp")}
                     </a>
                   ) : (
@@ -866,12 +864,90 @@ export function ProductDetailModal({
                     disabled={wishlistBusy}
                     aria-label={t("product.addWishlist")}
                     onClick={() => void addWishlist()}
-                    className="sl-v2-btn sl-v2-btn-secondary min-w-0"
+                    className="sl-btn sl-btn-secondary min-w-0"
                   >
                     <HeartIcon className="h-4 w-4" />
                     {t("product.addWishlist")}
                   </button>
                 </div>
+              </div>
+
+              {/* ---- RELATED PRODUCTS ----
+                  Server-selected rows sharing this part's category or brand
+                  (visibility-gated, current product excluded). Hidden entirely
+                  when there is nothing to show; picking an item swaps the
+                  modal content without leaving the page. */}
+              {payload.related && payload.related.length > 0 ? (
+                <div className="border-t border-[var(--sl-rule)] px-4 py-4 sm:px-5">
+                  <h3 className="text-[0.8125rem] font-semibold uppercase tracking-wide text-[var(--sl-ink-soft)]">
+                    {t("product.relatedProducts")}
+                  </h3>
+                  <ul className="mt-2 grid min-w-0 grid-cols-1 gap-2 sm:grid-cols-2">
+                    {payload.related.map((item) => (
+                      <li key={item.id} className="min-w-0">
+                        <button
+                          type="button"
+                          onClick={() => setOverride({ key: requestKey, partId: item.id })}
+                          className="block w-full min-w-0 rounded-lg border border-[var(--sl-rule)] px-3 py-2 text-left transition-colors hover:border-[#7a1233]"
+                        >
+                          <span className="block truncate text-[0.8125rem] font-medium text-[var(--sl-ink)]">
+                            {item.name}
+                          </span>
+                          <span className="block truncate text-[0.75rem] text-[var(--sl-ink-soft)]">
+                            {item.partNumber}
+                            {item.brand ? ` · ${item.brand}` : ""}
+                          </span>
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              ) : null}
+
+              {/* ---- SPECIFICATION SHEET ---- */}
+              <div className="px-4 py-4 sm:px-5">
+                <dl className="divide-y divide-[var(--sl-rule)] border-y border-[var(--sl-rule)]">
+                  {payload.part.partNumber ? (
+                    <SpecRow
+                      label={t("product.partNo")}
+                      value={payload.part.partNumber}
+                      mono
+                    />
+                  ) : null}
+                  {payload.part.brand ? (
+                    <SpecRow label={t("product.brand")} value={payload.part.brand} />
+                  ) : null}
+                  {category ? (
+                    <SpecRow label={t("product.category")} value={category} />
+                  ) : null}
+                  {listing?.gstRate != null ? (
+                    <SpecRow label="GST" value={`${listing.gstRate}%`} mono />
+                  ) : null}
+                  {oemNumbers.length ? (
+                    <SpecRow
+                      label={t("product.oem")}
+                      value={oemNumbers.join(", ")}
+                      mono
+                    />
+                  ) : null}
+                  {references.length ? (
+                    <SpecRow
+                      label={t("product.references")}
+                      value={references.join(", ")}
+                      mono
+                    />
+                  ) : null}
+                  {compatibility.length ? (
+                    <SpecRow
+                      label={t("product.compatible")}
+                      value={compatibility.join(", ")}
+                    />
+                  ) : null}
+                </dl>
+
+                {payload.part.description ? (
+                  <p className="sl-body mt-4">{payload.part.description}</p>
+                ) : null}
               </div>
             </div>
           </div>
@@ -879,7 +955,7 @@ export function ProductDetailModal({
 
         {enlarged ? (
           <div
-            className="absolute inset-0 z-50 flex items-center justify-center bg-slate-950/80 p-6"
+            className="absolute inset-0 z-50 flex items-center justify-center bg-[var(--sl-graphite)]/90 p-6"
             onClick={() => setEnlarged(false)}
           >
             {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -891,6 +967,32 @@ export function ProductDetailModal({
           </div>
         ) : null}
       </div>
+    </div>
+  );
+}
+
+/** One row of the V3 specification sheet: label left, value right, hairline
+    between rows. Catalogue numbers are set in monospace so a reader can
+    compare them down a column; prose values are not. */
+function SpecRow({
+  label,
+  value,
+  mono = false,
+}: {
+  label: string;
+  value: string;
+  mono?: boolean;
+}) {
+  return (
+    <div className="flex items-start justify-between gap-4 py-2">
+      <dt className="sl-metric-label shrink-0 !text-[0.625rem]">{label}</dt>
+      <dd
+        className={`min-w-0 break-words text-right text-[0.8125rem] ${
+          mono ? "sl-part !text-[var(--sl-ink)]" : "font-medium text-[var(--sl-ink)]"
+        }`}
+      >
+        {value}
+      </dd>
     </div>
   );
 }

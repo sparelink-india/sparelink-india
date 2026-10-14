@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
@@ -13,6 +13,7 @@ import { useI18n } from "@/components/preferences-provider";
 import { WhatsAppCta } from "@/components/whatsapp-cta";
 import { UTILITY_STRIP } from "@/lib/brand";
 import { getWhatsAppChatUrl } from "@/lib/whatsapp";
+import { PromoBannerStrip } from "@/components/promo-banner-strip";
 
 type FacetOption = { value: string; count: number };
 type OrderStockFilter = "all" | "in_stock";
@@ -35,6 +36,9 @@ type StorefrontHeaderProps = {
   onStockFilterChange?: (value: OrderStockFilter) => void;
   onClearFilters?: () => void;
   onCartItemAdded?: (listingId: string, unitPaise?: number) => void;
+  hideSearch?: boolean;
+  /** Optional enabled promotional banners for the top strip. */
+  banners?: Array<{ id: string; title: string; image_key: string; alt_text: string; destination_url: string }>;
 };
 
 function CartIcon() {
@@ -81,7 +85,7 @@ function HelpIcon() {
 function CountBadge({ count }: { count: number }) {
   if (count <= 0) return null;
   return (
-    <span className="absolute -right-2 -top-2 inline-flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-[var(--sl-primary)] px-1 text-[10px] font-bold leading-none text-white tabular-nums ring-2 ring-white">
+    <span className="absolute -right-2 -top-2 inline-flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-[var(--sl-brand)] px-1 text-[10px] font-bold leading-none text-white tabular-nums ring-2 ring-white">
       {count > 99 ? "99+" : count}
     </span>
   );
@@ -125,6 +129,7 @@ export function StorefrontHeader({
   onStockFilterChange,
   onClearFilters,
   onCartItemAdded,
+  banners,
 }: StorefrontHeaderProps) {
   const { t } = useI18n();
   const router = useRouter();
@@ -142,6 +147,11 @@ export function StorefrontHeader({
   const toggleMenu =
     onMobileMenuToggle ?? (() => setInternalMenuOpen((open) => !open));
   const searchValue = onQueryChange ? query : localQuery;
+
+  /* ================= PROMO BANNER ================= */
+  const promoBanner = (
+    <PromoBannerStrip banners={banners || []} />
+  );
 
   function submitSearch(nextQuery?: string) {
     const resolved = (nextQuery ?? searchValue).trim();
@@ -164,7 +174,7 @@ export function StorefrontHeader({
     });
   }
 
-  function renderSearchField(compact = false, withFilterRow = false) {
+  function renderSearchField(compact = false) {
     return (
       <div className={compact ? "sl-search sl-search-compact" : "sl-search"}>
         <HeaderSearchField
@@ -189,7 +199,7 @@ export function StorefrontHeader({
           }
         }}
         panelHost={panelHost}
-        suppressFilters={withFilterRow}
+        
         orderMode={orderMode}
         orderPage={orderPage}
         categoryOptions={categoryOptions}
@@ -212,10 +222,10 @@ export function StorefrontHeader({
       <Link
         href={href}
         aria-current={active ? "page" : undefined}
-        className={`sl-nav sl-v2-focus relative inline-flex h-9 shrink-0 items-center rounded-[var(--sl-radius-sm)] px-2.5 transition-colors duration-200 ${
+        className={`sl-nav sl-focus relative inline-flex h-9 shrink-0 items-center rounded-sm px-2.5 transition-colors duration-200 ${
           active
-            ? "bg-[var(--sl-primary-soft)] font-bold text-[var(--sl-primary)]"
-            : "text-ink-700 hover:bg-[var(--sl-primary-soft)] hover:text-[var(--sl-primary)]"
+            ? "bg-brand-50 font-bold text-[var(--sl-brand)]"
+            : "text-ink hover:bg-brand-50 hover:text-[var(--sl-brand)]"
         }`}
       >
         {label}
@@ -225,7 +235,7 @@ export function StorefrontHeader({
 
   if (orderPage) {
     return (
-      <header className="bg-[var(--sl-cream)] text-[var(--sl-text)]">
+      <header className="bg-[var(--sl-surface)] text-[var(--sl-ink)]">
         <div className="sl-container py-5 md:py-8">
           <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
             <div>
@@ -238,12 +248,12 @@ export function StorefrontHeader({
             </div>
             <Link
               href="/?focus=search"
-              className="sl-v2-btn sl-v2-btn-primary self-start"
+              className="sl-btn sl-btn-primary self-start"
             >
               Create New Order
             </Link>
           </div>
-          <div className="sl-v2-card relative mt-5 p-3">{renderSearchField()}</div>
+          <div className="sl-panel relative mt-5 p-3">{renderSearchField()}</div>
         </div>
         <ProductDetailModal
           key={detailTarget?.partId || detailTarget?.sku || "no-product"}
@@ -259,9 +269,10 @@ export function StorefrontHeader({
   }
 
   return (
-    <header className="sticky top-0 z-40 border-b border-[var(--sl-border)] bg-white/92 backdrop-blur-xl">
+    <header className="sticky top-0 z-40 border-b border-[var(--sl-rule)] bg-white/92 backdrop-blur-xl">
+      {promoBanner}
       {/* ---------- V2 UTILITY STRIP ---------- */}
-      <div className="bg-[var(--sl-primary-dark)] text-white">
+      <div className="bg-[var(--sl-graphite)] text-white">
         <div className="sl-container flex h-8 items-center gap-4">
           <p className="sl-nav hidden min-w-0 truncate text-white/70 md:block">
             {UTILITY_STRIP}
@@ -272,20 +283,20 @@ export function StorefrontHeader({
           >
             <Link
               href="/help-support"
-              className="sl-nav sl-v2-focus-invert inline-flex items-center gap-1.5 rounded px-1 text-white/80 transition-colors hover:text-white"
+              className="sl-nav sl-focus-invert inline-flex items-center gap-1.5 rounded px-1 text-white/80 transition-colors hover:text-white"
             >
               <HelpIcon />
               <span className="hidden sm:inline">{t("nav.needHelp")}</span>
             </Link>
             <Link
               href="/track-order"
-              className="sl-nav sl-v2-focus-invert rounded px-1 text-white/80 transition-colors hover:text-white"
+              className="sl-nav sl-focus-invert rounded px-1 text-white/80 transition-colors hover:text-white"
             >
               {t("nav.track")}
             </Link>
             <Link
               href="/login/dealer"
-              className="sl-nav sl-v2-focus-invert inline-flex items-center gap-1.5 rounded border border-white/25 px-2 py-1 text-white transition-colors hover:bg-white/10"
+              className="sl-nav sl-focus-invert inline-flex items-center gap-1.5 rounded border border-white/25 px-2 py-1 text-white transition-colors hover:bg-white/10"
             >
               {t("nav.dealer")}
             </Link>
@@ -298,7 +309,7 @@ export function StorefrontHeader({
 
       {/* ---------- V2 MAIN HEADER: logo | search | account | cart | lang ----------
 
-          RESPONSIVE ARCHITECTURE — three tiers, no font shrinking.
+          RESPONSIVE ARCHITECTURE â€” three tiers, no font shrinking.
 
           Row 2 previously held logo + a 42rem search + a LABELLED account link
           + a LABELLED cart link + wishlist + the preference toggle: roughly
@@ -316,7 +327,7 @@ export function StorefrontHeader({
         <div className="flex items-center gap-2 py-2.5 sm:gap-3 xl:gap-5">
           <button
             type="button"
-            className="sl-v2-focus inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-[var(--sl-radius-sm)] border border-[var(--sl-border-strong)] text-[var(--sl-primary)] transition-colors hover:bg-[var(--sl-primary-soft)] lg:hidden"
+            className="sl-focus inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-sm border border-[var(--sl-rule-strong)] text-[var(--sl-brand)] transition-colors hover:bg-brand-50 lg:hidden"
             aria-label={t("nav.menu")}
             aria-expanded={menuOpen}
             onClick={toggleMenu}
@@ -333,7 +344,7 @@ export function StorefrontHeader({
               beside it. This is the fix for the earlier overlap. */}
           <div className="hidden min-w-0 flex-1 lg:block">
             <div className="mx-auto w-full max-w-[22rem] xl:max-w-[42rem]">
-              {renderSearchField(true, true)}
+              {renderSearchField(true)}
             </div>
           </div>
 
@@ -341,14 +352,14 @@ export function StorefrontHeader({
             {/* Account. Icon-only on tablet, labelled from lg up. */}
             <Link
               href="/login"
-              className="sl-v2-focus inline-flex h-11 w-11 shrink-0 items-center justify-center gap-2 rounded-[var(--sl-radius-sm)] text-ink-700 transition-colors hover:bg-[var(--sl-primary-soft)] hover:text-[var(--sl-primary)] xl:w-auto xl:justify-start xl:px-2.5"
+              className="sl-focus inline-flex h-11 w-11 shrink-0 items-center justify-center gap-2 rounded-sm text-ink transition-colors hover:bg-brand-50 hover:text-[var(--sl-brand)] xl:w-auto xl:justify-start xl:px-2.5"
             >
               <UserIcon />
               <span className="sl-nav hidden xl:inline">{t("nav.loginRegister")}</span>
             </Link>
             <Link
               href="/wishlist"
-              className="sl-v2-focus relative hidden h-11 w-11 shrink-0 items-center justify-center rounded-[var(--sl-radius-sm)] text-ink-700 transition-colors hover:bg-[var(--sl-primary-soft)] hover:text-[var(--sl-primary)] sm:inline-flex"
+              className="sl-focus relative hidden h-11 w-11 shrink-0 items-center justify-center rounded-sm text-ink transition-colors hover:bg-brand-50 hover:text-[var(--sl-brand)] sm:inline-flex"
               aria-label={t("nav.wishlist")}
             >
               <span className="relative inline-flex">
@@ -358,7 +369,7 @@ export function StorefrontHeader({
             </Link>
             <Link
               href="/cart"
-              className="sl-v2-focus relative inline-flex h-11 w-11 shrink-0 items-center justify-center gap-2 rounded-[var(--sl-radius-sm)] bg-[var(--sl-primary)] text-white shadow-[var(--sl-shadow-brand)] transition-colors hover:bg-[var(--sl-primary-dark)] xl:w-auto xl:px-3"
+              className="sl-focus relative inline-flex h-11 w-11 shrink-0 items-center justify-center gap-2 rounded-sm bg-[var(--sl-brand)] text-white shadow-brand transition-colors hover:bg-[var(--sl-brand-hover)] xl:w-auto xl:px-3"
               aria-label={t("nav.cart")}
             >
               <span className="relative inline-flex">
@@ -409,12 +420,12 @@ export function StorefrontHeader({
 
       {/* ---------- V2 PRIMARY NAV ---------- */}
       <nav
-        className="hidden border-t border-[var(--sl-border)] bg-[var(--sl-surface-sunk)] lg:block"
+        className="hidden border-t border-[var(--sl-rule)] bg-[var(--sl-surface)] lg:block"
         aria-label="Primary"
       >
         <div className="sl-container flex min-w-0 items-center gap-0.5 overflow-x-auto py-1">
           <CategoriesMenu />
-          <span aria-hidden className="mx-1 h-4 w-px shrink-0 bg-[var(--sl-border)]" />
+          <span aria-hidden className="mx-1 h-4 w-px shrink-0 bg-[var(--sl-rule)]" />
           {navLink("/", t("nav.home"))}
           {navLink("/brands", t("nav.brands"))}
           {navLink("/vehicle-fitment", t("nav.fitment"))}
@@ -424,7 +435,7 @@ export function StorefrontHeader({
           <div className="ml-auto flex shrink-0 items-center gap-1.5 pl-2">
             <Link
               href="/wishlist"
-              className="sl-v2-focus relative inline-flex h-9 items-center gap-1.5 rounded-[var(--sl-radius-sm)] px-2 text-ink-700 transition-colors hover:bg-[var(--sl-primary-soft)] hover:text-[var(--sl-primary)]"
+              className="sl-focus relative inline-flex h-9 items-center gap-1.5 rounded-sm px-2 text-ink transition-colors hover:bg-brand-50 hover:text-[var(--sl-brand)]"
               aria-label={t("nav.wishlist")}
             >
               <span className="relative inline-flex">
@@ -433,7 +444,7 @@ export function StorefrontHeader({
               </span>
               <span className="sl-nav hidden xl:inline">{t("nav.wishlist")}</span>
             </Link>
-            <WhatsAppCta href={whatsappHref} className="sl-v2-btn sl-v2-btn-primary !min-h-9 !px-3.5 !py-0 !text-[0.8125rem]" />
+            <WhatsAppCta href={whatsappHref} className="sl-btn sl-btn-primary !min-h-9 !px-3.5 !py-0 !text-[0.8125rem]" />
           </div>
         </div>
       </nav>
@@ -450,7 +461,7 @@ export function StorefrontHeader({
 
       {/* ---------- V2 MOBILE DRAWER ---------- */}
       {menuOpen ? (
-        <div className="max-h-[calc(100dvh-7rem)] overflow-y-auto border-t border-[var(--sl-border)] bg-white lg:hidden">
+        <div className="max-h-[calc(100dvh-7rem)] overflow-y-auto border-t border-[var(--sl-rule)] bg-white lg:hidden">
           <div className="sl-container py-4">
             <CategoriesMenu />
             <div className="mt-3 grid grid-cols-2 gap-1.5">
@@ -474,10 +485,10 @@ export function StorefrontHeader({
                   <Link
                     key={item.href}
                     href={item.href}
-                    className={`sl-nav flex min-h-11 items-center rounded-[var(--sl-radius-sm)] border px-3 transition-colors ${
+                    className={`sl-nav flex min-h-11 items-center rounded-sm border px-3 transition-colors ${
                       active
-                        ? "border-[var(--sl-primary-tint)] bg-[var(--sl-primary-soft)] font-bold text-[var(--sl-primary)]"
-                        : "border-[var(--sl-border)] bg-[var(--sl-surface)] text-ink-700"
+                        ? "border-[var(--sl-brand-line)] bg-brand-50 font-bold text-[var(--sl-brand)]"
+                        : "border-[var(--sl-rule)] bg-[var(--sl-surface)] text-ink"
                     }`}
                   >
                     {item.label}
@@ -488,12 +499,12 @@ export function StorefrontHeader({
             <div className="mt-3 flex flex-col gap-2">
               <Link
                 href="/login"
-                className="sl-v2-btn sl-v2-btn-primary w-full"
+                className="sl-btn sl-btn-primary w-full"
               >
                 <UserIcon />
                 {t("nav.loginRegister")}
               </Link>
-              <WhatsAppCta href={whatsappHref} className="sl-v2-btn sl-v2-btn-secondary w-full" />
+              <WhatsAppCta href={whatsappHref} className="sl-btn sl-btn-secondary w-full" />
             </div>
           </div>
         </div>
@@ -501,3 +512,5 @@ export function StorefrontHeader({
     </header>
   );
 }
+
+

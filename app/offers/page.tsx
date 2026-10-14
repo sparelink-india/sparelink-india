@@ -58,9 +58,9 @@ export default function OffersPage() {
   }
 
   return (
-    <div className="sl-page flex min-h-screen flex-col">
+    <div className="flex min-h-screen flex-col bg-[var(--sl-page)] text-[var(--sl-ink)]">
       <StorefrontHeader />
-      <main className="sl-container sl-container-wide sl-page-main flex-1">
+      <main className="sl-container sl-page-main flex-1">
         <StorefrontBreadcrumbs
           className="mb-4"
           crumbs={[
@@ -68,8 +68,10 @@ export default function OffersPage() {
             { label: t("nav.offers") },
           ]}
         />
-        <h1 className="sl-type-page">{t("offers.title")}</h1>
-        {error ? <p className="mt-4 text-sm text-red-700">{error}</p> : null}
+        <div className="mb-5 flex flex-wrap items-baseline gap-3 border-b border-[var(--sl-rule)] pb-3">
+          <h1 className="sl-display">{t("offers.title")}</h1>
+        </div>
+        {error ? <p className="mt-4 text-sm text-[var(--sl-bad)]">{error}</p> : null}
         {message ? <div className="mt-4"><Notice>{message}</Notice></div> : null}
         {offers.length === 0 ? (
           <div className="mt-8">
@@ -93,8 +95,8 @@ export default function OffersPage() {
                 special > 0 &&
                 special < regular;
               return (
-                <article key={`${offer.partId || offer.partNumber || index}`} className="sl-v2-card sl-v2-card-hover sl-v2-rule group flex flex-col overflow-hidden">
-                  <div className="relative aspect-[4/3] w-full overflow-hidden bg-[var(--sl-surface-sunk)]">
+                <article key={`${offer.partId || offer.partNumber || index}`} className="sl-panel group flex flex-col overflow-hidden">
+                  <div className="relative aspect-[4/3] w-full overflow-hidden bg-[var(--sl-sunken)]">
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img
                       src={offer.thumbUrl || offer.imageUrl || "/images/products/placeholder.svg"}
@@ -117,7 +119,7 @@ export default function OffersPage() {
                   <div className="flex flex-1 flex-col p-3.5">
                     {offer.partNumber ? (
                       <p className="sl-partno">
-                        <span className="sr-only">Part number: </span>
+                        <span className="sr-only">{t("partNo.srLabel")}</span>
                         {offer.partNumber}
                       </p>
                     ) : null}
@@ -131,7 +133,7 @@ export default function OffersPage() {
                     <p className="sl-price mt-0.5">₹{(special / 100).toLocaleString("en-IN")}</p>
                   ) : null}
                   {showDiscount ? (
-                    <p className="sl-v2-badge sl-v2-badge-success mt-2 w-fit">
+                    <p className="sl-badge sl-badge-ok mt-2 w-fit">
                       {t("offers.save", { amount: ((regular! - special!) / 100).toLocaleString("en-IN") })}
                     </p>
                   ) : null}
@@ -139,13 +141,13 @@ export default function OffersPage() {
                     <button
                       type="button"
                       onClick={() => void addToCart(offer)}
-                      className="sl-v2-btn sl-v2-btn-primary w-full !min-h-11 !text-[0.8125rem]"
+                      className="sl-btn sl-btn-primary w-full !min-h-11 !text-[0.8125rem]"
                     >
                       {t("product.addToCart")}
                     </button>
                     <Link
                       href={offer.partNumber ? `/?q=${encodeURIComponent(offer.partNumber)}` : "/"}
-                      className="sl-v2-btn sl-v2-btn-secondary w-full !min-h-11 !text-[0.8125rem]"
+                      className="sl-btn sl-btn-secondary w-full !min-h-11 !text-[0.8125rem]"
                     >
                       {t("offers.details")}
                     </Link>

@@ -9,6 +9,7 @@ import { SiteFooter } from "@/components/site-footer";
 import { StorefrontHeader } from "@/components/storefront-header";
 import { MobileBottomNav } from "@/components/mobile/mobile-bottom-nav";
 import { useI18n } from "@/components/preferences-provider";
+import type { MessageKey } from "@/lib/i18n";
 import { isAuthoritativeSellingPricePaise } from "@/lib/storefront-price-display";
 
 type CartItem = {
@@ -50,7 +51,14 @@ type CartData = {
 };
 
 /* Checkout progression labels, in completion order. Rendered as a static
-   numbered rail: the checkout is one page, so these are not navigation. */
+   numbered rail: the checkout is one page, so these are not navigation.
+
+   The ORDER is the real flow this page implements and is deliberately not
+   rearranged. It is Customer -> Address -> Delivery -> Payment -> Review,
+   because the payment method is chosen before the final review is submitted,
+   and confirmation is the result of submitting rather than a step the customer
+   walks through. Relabelling these to a prettier sequence would misdescribe
+   what actually happens. */
 const CHECKOUT_STEPS = [
   "checkout.stepCustomer",
   "checkout.stepAddress",
@@ -58,6 +66,116 @@ const CHECKOUT_STEPS = [
   "checkout.stepPayment",
   "checkout.stepReview",
 ] as const;
+
+/**
+ * V3 checkout progress rail.
+ *
+ * Replaces a 2/3/5-column grid of five separate bordered boxes. That grid had
+ * two problems: at `sm` and `md` it wrapped into two and three rows, so the
+ * "progression" read as a wrapped list rather than a sequence; and each step
+ * was a closed box, so there was no visual thread running through the five of
+ * them.
+ *
+ * V3 is a rail: numbered nodes joined by a 1px connector, so the five steps
+ * read as one ordered thing. The node number is set in tabular monospace and
+ * zero-padded, which is what makes it a document outline rather than a row of
+ * circles.
+ *
+ * ON MOBILE the labels are replaced by the count ("3 / 5") plus the current
+ * step, because five labelled nodes cannot fit a 375px screen without either
+ * truncating every label or wrapping the rail.
+ *
+ * Nothing here is interactive. The whole checkout is one form on one page, so
+ * the rail is an orientation aid, and it is marked up as an ordered list with
+ * `aria-current="step"` on the node the customer is working through.
+ */
+function CheckoutRail({
+  steps,
+  label,
+}: {
+  /* MessageKey, not string: `t` only accepts keys from the dictionary, and
+     widening to `string` silently loses that check for every future step. */
+  steps: readonly MessageKey[];
+  label: string;
+}) {
+  const { t } = useI18n();
+  return (
+    <nav aria-label={label} className="mt-5">
+      {/* ---- mobile: compact indicator ---- */}
+      <div className="lg:hidden">
+        <div className="flex items-baseline justify-between gap-3">
+          <p className="sl-metric-label flex items-center gap-2">
+            <span
+              className="inline-block h-[3px] w-5 bg-[var(--sl-brand)]"
+              aria-hidden
+            />
+            {t(steps[0])}
+          </p>
+          <p className="sl-num shrink-0 text-[0.75rem] font-bold text-[var(--sl-ink-3)]">
+            5 {t("checkout.stepsLabel")}
+          </p>
+        </div>
+        {/* Five segments; all filled, because the page is one form and every
+            step is on screen at once. The bar communicates scale, not
+            completion — a partially filled bar would be a false claim. */}
+        <ol className="mt-2 flex gap-1" aria-label={label}>
+          {steps.map((step) => (
+            <li
+              key={step}
+              className="h-1 flex-1 rounded-[1px] bg-[var(--sl-brand)]"
+              aria-hidden
+            >
+              <span className="sr-only">{t(step)}</span>
+            </li>
+          ))}
+        </ol>
+      </div>
+
+      {/* ---- desktop: the full rail ---- */}
+      <ol className="hidden lg:flex lg:items-stretch">
+        {steps.map((step, index) => {
+          const isFirst = index === 0;
+          return (
+            <li
+              key={step}
+              aria-current={isFirst ? "step" : undefined}
+              className="flex min-w-0 flex-1 items-center"
+            >
+              <span className="flex min-w-0 items-center gap-2.5">
+                <span
+                  className={`inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-[2px] text-[0.6875rem] font-bold tabular-nums ${
+                    isFirst
+                      ? "bg-[var(--sl-brand)] text-white"
+                      : "border border-[var(--sl-rule-strong)] bg-[var(--sl-surface)] text-[var(--sl-ink-3)]"
+                  }`}
+                >
+                  {String(index + 1).padStart(2, "0")}
+                </span>
+                <span
+                  className={`sl-nav min-w-0 truncate ${
+                    isFirst
+                      ? "text-[var(--sl-ink)]"
+                      : "text-[var(--sl-ink-3)]"
+                  }`}
+                >
+                  {t(step)}
+                </span>
+              </span>
+              {/* The connector. Skipped on the last node so the rail terminates
+                  cleanly instead of trailing a stray rule. */}
+              {index < steps.length - 1 ? (
+                <span
+                  className="mx-3 h-px min-w-4 flex-1 bg-[var(--sl-rule)]"
+                  aria-hidden
+                />
+              ) : null}
+            </li>
+          );
+        })}
+      </ol>
+    </nav>
+  );
+}
 
 export default function CheckoutPage() {
   const router = useRouter();
@@ -328,14 +446,14 @@ export default function CheckoutPage() {
         existing.totalPaise += lineTotal;
       } else {
         groups.set(key, {
-          firmName: item.firmName || "Fulfillment firm",
+          firmName: item.firmName || t("checkout.fulfillmentFirm"),
           itemCount: 1,
           totalPaise: lineTotal,
         });
       }
     }
     return [...groups.values()];
-  }, [cart?.items]);
+  }, [cart?.items, t]);
   const effectivePaymentMethod =
     paymentMethod === "online_payment" && !cartSupportsOnlinePayment
       ? "cash_on_delivery"
@@ -352,7 +470,7 @@ export default function CheckoutPage() {
 
   return (
     <div
-      className={`sl-container sl-container-wide sl-page-main text-[var(--sl-text)] ${
+      className={`flex min-h-screen flex-col bg-[var(--sl-page)] text-[var(--sl-ink)] ${
         cart && cart.items.length > 0
           ? "pb-[calc(var(--mobile-nav-height)+var(--safe-bottom)+4.75rem)] md:pb-0"
           : "storefront-mobile-pad"
@@ -360,9 +478,11 @@ export default function CheckoutPage() {
     >
       <StorefrontHeader cartCount={cart?.itemCount ?? 0} />
 
-      <div className="mx-auto max-w-5xl px-3 py-5 sm:px-6 sm:py-8 lg:py-10">
+      {/* The checkout body is this page's <main>. It was a <div>, which
+          left /checkout as the only customer route with no main landmark. */}
+      <main className="mx-auto max-w-5xl px-3 py-5 sm:px-6 sm:py-8 lg:py-10">
         <div className="mb-3 flex flex-wrap items-center justify-between gap-2 sm:mb-4">
-          <Link href="/cart" className="text-xs font-semibold text-[var(--sl-primary)] hover:underline">
+          <Link href="/cart" className="text-xs font-semibold text-[var(--sl-brand-ink)] hover:underline">
             {t("cart.continue")}
           </Link>
           <SignOutButton />
@@ -373,39 +493,22 @@ export default function CheckoutPage() {
           step is hidden. Numbering communicates the order of completion
           without implying a wizard the page does not have.
         */}
-        <ol
-          className="mt-5 grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-5"
-          aria-label={t("checkout.stepsLabel")}
-        >
-          {CHECKOUT_STEPS.map((step) => (
-            <li
-              key={step}
-              className="flex items-center gap-2.5 rounded-[var(--sl-radius-sm)] border border-[var(--sl-border)] bg-white px-3 py-2.5"
-            >
-              <span className="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[var(--sl-primary-soft)] text-[0.6875rem] font-bold text-[var(--sl-primary)] tabular-nums">
-                {CHECKOUT_STEPS.indexOf(step) + 1}
-              </span>
-              <span className="sl-nav min-w-0 truncate text-[var(--sl-text-soft)]">
-                {t(step)}
-              </span>
-            </li>
-          ))}
-        </ol>
+        <CheckoutRail steps={CHECKOUT_STEPS} label={t("checkout.stepsLabel")} />
 
-        <h1 className="sl-h1 text-xl min-[360px]:text-2xl sm:text-3xl">
+        <h1 className="sl-h1">
           {t("cart.checkout")}
         </h1>
-        <p className="mt-1 text-sm text-[var(--sl-muted)]">
+        <p className="mt-1 text-sm text-[var(--sl-ink-3)]">
           {t("cart.genuine")}
         </p>
 
         {loading && (
           <div className="mt-6 space-y-4 sm:mt-8">
-            <div className="sl-v2-card p-4 sm:p-6" aria-busy="true" aria-live="polite">
-              <div className="sl-skeleton h-6 w-2/5" />
-              <div className="sl-skeleton mt-3 h-11 w-full" />
-              <div className="sl-skeleton mt-3 h-11 w-full" />
-              <div className="sl-skeleton mt-3 h-11 w-3/5" />
+            <div className="sl-panel p-4 sm:p-6" aria-busy="true" aria-live="polite">
+              <div className="sl-skel h-6 w-2/5" />
+              <div className="sl-skel mt-3 h-11 w-full" />
+              <div className="sl-skel mt-3 h-11 w-full" />
+              <div className="sl-skel mt-3 h-11 w-3/5" />
             </div>
           </div>
         )}
@@ -413,10 +516,10 @@ export default function CheckoutPage() {
         {!loading && error && (
           <div
             role="alert"
-            className="mt-6 flex items-start gap-3 rounded-[var(--sl-radius)] border border-rose-200 bg-rose-50 p-3 text-sm font-medium text-rose-800 sm:p-4"
+            className="mt-6 flex items-start gap-3 rounded-[var(--sl-r)] border border-[var(--sl-bad-line)] bg-[var(--sl-bad-soft)] p-3 text-sm font-medium text-[var(--sl-bad)] sm:p-4"
           >
             <svg
-              className="mt-0.5 h-5 w-5 shrink-0 text-rose-600"
+              className="mt-0.5 h-5 w-5 shrink-0 text-[var(--sl-bad)]"
               viewBox="0 0 20 20"
               fill="currentColor"
             >
@@ -431,14 +534,14 @@ export default function CheckoutPage() {
         )}
 
         {!loading && !error && (!cart || !cart.items.length) && (
-          <div className="mt-6 rounded-[var(--sl-radius-lg)] border border-dashed border-[var(--sl-border-strong)] bg-white p-8 text-center shadow-xs sm:mt-8 sm:p-12">
-            <p className="font-bold text-[var(--sl-text)]">{t("cart.emptyTitle")}</p>
-            <p className="mt-1 text-sm text-[var(--sl-muted)]">
+          <div className="mt-6 rounded-[var(--sl-r-lg)] border border-dashed border-[var(--sl-rule-strong)] bg-[var(--sl-surface)] p-8 text-center shadow-xs sm:mt-8 sm:p-12">
+            <p className="font-bold text-[var(--sl-ink)]">{t("cart.emptyTitle")}</p>
+            <p className="mt-1 text-sm text-[var(--sl-ink-3)]">
               {t("cart.emptyBody")}
             </p>
             <Link
               href="/"
-              className="btn-press mt-5 inline-flex min-h-11 items-center justify-center gap-2 rounded-[var(--sl-radius)] bg-slate-950 px-5 py-2.5 text-xs font-bold text-white hover:bg-slate-800"
+              className="sl-btn sl-btn-primary sl-press mt-5 text-xs"
             >
               {t("cart.find")}
             </Link>
@@ -454,26 +557,26 @@ export default function CheckoutPage() {
           >
             {/* Delivery Address & Payment Method Form */}
             <div className="min-w-0 space-y-4 sm:space-y-6">
-              <section className="sl-v2-card p-4 sm:p-6">
+              <section className="sl-panel p-4 sm:p-6">
                 <div className="flex flex-wrap items-start justify-between gap-2">
                   <h2 className="sl-h2 flex items-center gap-2.5 text-base sm:text-lg">
-                    <span className="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[var(--sl-primary)] text-[0.6875rem] font-bold text-white tabular-nums">1</span>
+                    <span className="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-[2px] bg-[var(--sl-brand)] text-[0.6875rem] font-bold text-white tabular-nums">1</span>
                     {t("checkout.addressTitle")}
                   </h2>
                   {addressPrefilled ? (
-                    <span className="shrink-0 text-[11px] font-semibold text-emerald-700">
+                    <span className="shrink-0 text-[11px] font-semibold text-[var(--sl-ok)]">
                       {t("checkout.prefilled")}
                     </span>
                   ) : null}
                 </div>
-                <p className="mt-1 text-xs text-[var(--sl-muted)]">
+                <p className="sl-hint">
                   {t("checkout.addressHint")}
                 </p>
 
                 <div className="mt-4 grid gap-3 min-[390px]:gap-4 sm:mt-5 sm:grid-cols-2">
                   <label className="block sm:col-span-2">
-                    <span className="mb-1 block text-xs font-semibold text-[var(--sl-text-soft)]">
-                      {t("register.fullName")} <span className="text-rose-500">*</span>
+                    <span className="sl-label">
+                      {t("register.fullName")} <span className="text-[var(--sl-bad)]">*</span>
                     </span>
                     <input
                       required
@@ -481,13 +584,13 @@ export default function CheckoutPage() {
                       value={fullName}
                       onChange={(e) => setFullName(e.target.value)}
                       placeholder={t("checkout.phName")}
-                      className="h-11 w-full min-w-0 rounded-[var(--sl-radius)] border border-[var(--sl-border)] bg-[var(--sl-surface-sunk)]/50 px-3 text-sm font-medium outline-none transition-all focus:border-brand-600 focus:bg-white focus:ring-2 focus:ring-[var(--sl-primary)]/20 sm:px-3.5"
+                      className="sl-input h-11 w-full min-w-0 sm:px-3.5"
                     />
                   </label>
 
                   <label className="block min-w-0">
-                    <span className="mb-1 block text-xs font-semibold text-[var(--sl-text-soft)]">
-                      {t("checkout.mobile10")} <span className="text-rose-500">*</span>
+                    <span className="sl-label">
+                      {t("checkout.mobile10")} <span className="text-[var(--sl-bad)]">*</span>
                     </span>
                     <input
                       required
@@ -497,13 +600,13 @@ export default function CheckoutPage() {
                       value={phone}
                       onChange={(e) => setPhone(e.target.value)}
                       placeholder="+91XXXXXXXXXX"
-                      className="h-11 w-full min-w-0 rounded-[var(--sl-radius)] border border-[var(--sl-border)] bg-[var(--sl-surface-sunk)]/50 px-3 text-sm font-medium outline-none transition-all focus:border-brand-600 focus:bg-white focus:ring-2 focus:ring-[var(--sl-primary)]/20 sm:px-3.5"
+                      className="sl-input h-11 w-full min-w-0 sm:px-3.5"
                     />
                   </label>
 
                   <label className="block min-w-0">
-                    <span className="mb-1 block text-xs font-semibold text-[var(--sl-text-soft)]">
-                      {t("profile.pincode")} <span className="text-rose-500">*</span>
+                    <span className="sl-label">
+                      {t("profile.pincode")} <span className="text-[var(--sl-bad)]">*</span>
                     </span>
                     <input
                       required
@@ -512,14 +615,14 @@ export default function CheckoutPage() {
                       maxLength={6}
                       value={pincode}
                       onChange={(e) => setPincode(e.target.value)}
-                      placeholder="e.g. 380001"
-                      className="h-11 w-full min-w-0 rounded-[var(--sl-radius)] border border-[var(--sl-border)] bg-[var(--sl-surface-sunk)]/50 px-3 text-sm font-medium outline-none transition-all focus:border-brand-600 focus:bg-white focus:ring-2 focus:ring-[var(--sl-primary)]/20 sm:px-3.5"
+                      placeholder={t("profile.phPincode")}
+                      className="sl-input h-11 w-full min-w-0 sm:px-3.5"
                     />
                   </label>
 
                   <label className="block sm:col-span-2">
-                    <span className="mb-1 block text-xs font-semibold text-[var(--sl-text-soft)]">
-                      {t("checkout.line1")} <span className="text-rose-500">*</span>
+                    <span className="sl-label">
+                      {t("checkout.line1")} <span className="text-[var(--sl-bad)]">*</span>
                     </span>
                     <input
                       required
@@ -527,12 +630,12 @@ export default function CheckoutPage() {
                       value={addressLine1}
                       onChange={(e) => setAddressLine1(e.target.value)}
                       placeholder={t("checkout.phLine1")}
-                      className="h-11 w-full min-w-0 rounded-[var(--sl-radius)] border border-[var(--sl-border)] bg-[var(--sl-surface-sunk)]/50 px-3 text-sm font-medium outline-none transition-all focus:border-brand-600 focus:bg-white focus:ring-2 focus:ring-[var(--sl-primary)]/20 sm:px-3.5"
+                      className="sl-input h-11 w-full min-w-0 sm:px-3.5"
                     />
                   </label>
 
                   <label className="block sm:col-span-2">
-                    <span className="mb-1 block text-xs font-semibold text-[var(--sl-text-soft)]">
+                    <span className="sl-label">
                       {t("checkout.landmarkOptional")}
                     </span>
                     <input
@@ -540,13 +643,13 @@ export default function CheckoutPage() {
                       value={addressLine2}
                       onChange={(e) => setAddressLine2(e.target.value)}
                       placeholder={t("checkout.phLandmark")}
-                      className="h-11 w-full min-w-0 rounded-[var(--sl-radius)] border border-[var(--sl-border)] bg-[var(--sl-surface-sunk)]/50 px-3 text-sm font-medium outline-none transition-all focus:border-brand-600 focus:bg-white focus:ring-2 focus:ring-[var(--sl-primary)]/20 sm:px-3.5"
+                      className="sl-input h-11 w-full min-w-0 sm:px-3.5"
                     />
                   </label>
 
                   <label className="block min-w-0">
-                    <span className="mb-1 block text-xs font-semibold text-[var(--sl-text-soft)]">
-                      {t("checkout.cityDistrict")} <span className="text-rose-500">*</span>
+                    <span className="sl-label">
+                      {t("checkout.cityDistrict")} <span className="text-[var(--sl-bad)]">*</span>
                     </span>
                     <input
                       required
@@ -554,13 +657,13 @@ export default function CheckoutPage() {
                       value={city}
                       onChange={(e) => setCity(e.target.value)}
                       placeholder={t("checkout.phCity")}
-                      className="h-11 w-full min-w-0 rounded-[var(--sl-radius)] border border-[var(--sl-border)] bg-[var(--sl-surface-sunk)]/50 px-3 text-sm font-medium outline-none transition-all focus:border-brand-600 focus:bg-white focus:ring-2 focus:ring-[var(--sl-primary)]/20 sm:px-3.5"
+                      className="sl-input h-11 w-full min-w-0 sm:px-3.5"
                     />
                   </label>
 
                   <label className="block min-w-0">
-                    <span className="mb-1 block text-xs font-semibold text-[var(--sl-text-soft)]">
-                      {t("checkout.state")} <span className="text-rose-500">*</span>
+                    <span className="sl-label">
+                      {t("checkout.state")} <span className="text-[var(--sl-bad)]">*</span>
                     </span>
                     <input
                       required
@@ -568,104 +671,119 @@ export default function CheckoutPage() {
                       value={state}
                       onChange={(e) => setState(e.target.value)}
                       placeholder={t("checkout.phState")}
-                      className="h-11 w-full min-w-0 rounded-[var(--sl-radius)] border border-[var(--sl-border)] bg-[var(--sl-surface-sunk)]/50 px-3 text-sm font-medium outline-none transition-all focus:border-brand-600 focus:bg-white focus:ring-2 focus:ring-[var(--sl-primary)]/20 sm:px-3.5"
+                      className="sl-input h-11 w-full min-w-0 sm:px-3.5"
                     />
                   </label>
                 </div>
               </section>
 
               {/* Fulfillment & Transport Preference */}
-              <section className="sl-v2-card p-4 sm:p-6">
+              <section className="sl-panel p-4 sm:p-6">
                 <h2 className="sl-h2 flex items-center gap-2.5 text-base sm:text-lg">
-                  <span className="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[var(--sl-primary)] text-[0.6875rem] font-bold text-white tabular-nums">2</span>
+                  <span className="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-[2px] bg-[var(--sl-brand)] text-[0.6875rem] font-bold text-white tabular-nums">2</span>
                   {t("checkout.fulfillTitle")}
                 </h2>
-                <p className="mt-1 text-xs text-[var(--sl-muted)]">
+                <p className="sl-hint">
                   {t("checkout.fulfillHint")}
                 </p>
 
                 <div className="mt-4 space-y-3">
                   <div className="grid grid-cols-1 gap-2.5 min-[390px]:grid-cols-3 min-[390px]:gap-3">
-                    <label className="flex min-h-11 cursor-pointer items-center gap-2.5 rounded-[var(--sl-radius)] border border-[var(--sl-border)] p-3 text-xs font-bold text-slate-800 has-checked:border-brand-600 has-checked:bg-[var(--sl-primary-soft)]/60 sm:p-3.5">
+                    <label className="flex min-h-11 cursor-pointer items-center gap-2.5 rounded-[var(--sl-r)] border border-[var(--sl-rule)] p-3 text-xs font-bold text-[var(--sl-ink)] has-checked:border-[var(--sl-brand-hover)] has-checked:bg-[var(--sl-brand-soft)]/60 sm:p-3.5">
                       <input
                         type="radio"
                         name="shipMethod"
                         value="courier"
                         checked={shippingMethod === "courier"}
                         onChange={() => setShippingMethod("courier")}
-                        className="shrink-0"
+                        className="sl-check shrink-0"
                       />
                       <span className="leading-snug">{t("register.courier")}</span>
                     </label>
 
-                    <label className="flex min-h-11 cursor-pointer items-center gap-2.5 rounded-[var(--sl-radius)] border border-[var(--sl-border)] p-3 text-xs font-bold text-slate-800 has-checked:border-brand-600 has-checked:bg-[var(--sl-primary-soft)]/60 sm:p-3.5">
+                    <label className="flex min-h-11 cursor-pointer items-center gap-2.5 rounded-[var(--sl-r)] border border-[var(--sl-rule)] p-3 text-xs font-bold text-[var(--sl-ink)] has-checked:border-[var(--sl-brand-hover)] has-checked:bg-[var(--sl-brand-soft)]/60 sm:p-3.5">
                       <input
                         type="radio"
                         name="shipMethod"
                         value="self_pickup"
                         checked={shippingMethod === "self_pickup"}
                         onChange={() => setShippingMethod("self_pickup")}
-                        className="shrink-0"
+                        className="sl-check shrink-0"
                       />
                       <span className="leading-snug">{t("register.pickup")}</span>
                     </label>
 
-                    <label className="flex min-h-11 cursor-pointer items-center gap-2.5 rounded-[var(--sl-radius)] border border-[var(--sl-border)] p-3 text-xs font-bold text-slate-800 has-checked:border-brand-600 has-checked:bg-[var(--sl-primary-soft)]/60 sm:p-3.5">
+                    <label className="flex min-h-11 cursor-pointer items-center gap-2.5 rounded-[var(--sl-r)] border border-[var(--sl-rule)] p-3 text-xs font-bold text-[var(--sl-ink)] has-checked:border-[var(--sl-brand-hover)] has-checked:bg-[var(--sl-brand-soft)]/60 sm:p-3.5">
                       <input
                         type="radio"
                         name="shipMethod"
                         value="transport"
                         checked={shippingMethod === "transport"}
                         onChange={() => setShippingMethod("transport")}
-                        className="shrink-0"
+                        className="sl-check shrink-0"
                       />
                       <span className="leading-snug">{t("register.transport")}</span>
                     </label>
                   </div>
 
                   {shippingMethod === "transport" && (
-                    <div className="space-y-3 rounded-[var(--sl-radius)] border border-[var(--sl-border)] bg-[var(--sl-surface-sunk)] p-3 animate-in fade-in sm:p-4">
-                      <p className="text-xs font-bold text-[var(--sl-text)]">
+                    <div className="space-y-3 rounded-[var(--sl-r)] border border-[var(--sl-rule)] bg-[var(--sl-sunken)] p-3 sl-fade-in sm:p-4">
+                      <p className="text-xs font-bold text-[var(--sl-ink)]">
                         {t("checkout.transportDetails")}
                       </p>
                       <div className="grid gap-3 sm:grid-cols-3">
                         <div className="min-w-0">
-                          <span className="mb-1 block text-xs font-semibold text-[var(--sl-text-soft)]">
-                            {t("checkout.transporterName")} <span className="text-rose-500">*</span>
-                          </span>
+                          <label
+                            htmlFor="co-transport-name"
+                            className="sl-label"
+                          >
+                            {t("checkout.transporterName")} <span className="text-[var(--sl-bad)]">*</span>
+                          </label>
                           <input
+                            id="co-transport-name"
+                            name="transportName"
                             required={shippingMethod === "transport"}
                             value={transportName}
                             onChange={(e) => setTransportName(e.target.value)}
                             placeholder={t("checkout.phTransporter")}
-                            className="h-11 w-full min-w-0 rounded-[var(--sl-radius)] border border-[var(--sl-border)] bg-white px-3 text-xs font-medium outline-none focus:border-slate-950 sm:h-10"
+                            className="sl-input h-11 w-full min-w-0 text-xs sm:h-10"
                           />
                         </div>
 
                         <div className="min-w-0">
-                          <span className="mb-1 block text-xs font-semibold text-[var(--sl-text-soft)]">
+                          <label
+                            htmlFor="co-transport-phone"
+                            className="sl-label"
+                          >
                             {t("checkout.transportContact")}
-                          </span>
+                          </label>
                           <input
+                            id="co-transport-phone"
+                            name="transportPhone"
                             type="tel"
                             inputMode="tel"
                             value={transportPhone}
                             onChange={(e) => setTransportPhone(e.target.value)}
                             placeholder={t("checkout.phTransportPhone")}
-                            className="h-11 w-full min-w-0 rounded-[var(--sl-radius)] border border-[var(--sl-border)] bg-white px-3 text-xs font-medium outline-none focus:border-slate-950 sm:h-10"
+                            className="sl-input h-11 w-full min-w-0 text-xs sm:h-10"
                           />
                         </div>
 
                         <div className="min-w-0">
-                          <span className="mb-1 block text-xs font-semibold text-[var(--sl-text-soft)]">
+                          <label
+                            htmlFor="co-transport-gstin"
+                            className="sl-label"
+                          >
                             {t("checkout.transportGstin")}
-                          </span>
+                          </label>
                           <input
+                            id="co-transport-gstin"
+                            name="transportGstin"
                             maxLength={15}
                             value={transportGstin}
                             onChange={(e) => setTransportGstin(e.target.value.toUpperCase())}
                             placeholder={t("profile.phTransportGstin")}
-                            className="h-11 w-full min-w-0 rounded-[var(--sl-radius)] border border-[var(--sl-border)] bg-white px-3 font-mono text-xs font-medium outline-none focus:border-slate-950 sm:h-10"
+                            className="sl-input h-11 w-full min-w-0 px-3 font-mono text-xs sm:h-10"
                           />
                         </div>
                       </div>
@@ -675,35 +793,35 @@ export default function CheckoutPage() {
               </section>
 
               {/* B2B / GST Information */}
-              <section className="sl-v2-card p-4 sm:p-6">
+              <section className="sl-panel p-4 sm:p-6">
                 <div className="flex flex-wrap items-start justify-between gap-2">
                   <h2 className="sl-h2 flex items-center gap-2.5 text-base sm:text-lg">
-                    <span className="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[var(--sl-primary)] text-[0.6875rem] font-bold text-white tabular-nums">3</span>
+                    <span className="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-[2px] bg-[var(--sl-brand)] text-[0.6875rem] font-bold text-white tabular-nums">3</span>
                     {t("checkout.gstTitle")}
                   </h2>
-                  <span className="shrink-0 rounded bg-slate-100 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-[var(--sl-text-soft)]">
+                  <span className="shrink-0 rounded bg-[var(--sl-sunken)] px-2 py-0.5 text-[10px]  tracking-wider text-[var(--sl-ink-2)]">
                     {t("checkout.b2bBadge")}
                   </span>
                 </div>
-                <p className="mt-1 text-xs text-[var(--sl-muted)]">
+                <p className="sl-hint">
                   {t("checkout.gstHint")}
                 </p>
 
                 <div className="mt-4 grid gap-3 min-[390px]:gap-4 sm:mt-5 sm:grid-cols-2">
                   <label className="block sm:col-span-2">
-                    <span className="mb-1 block text-xs font-semibold text-[var(--sl-text-soft)]">
+                    <span className="sl-label">
                       {t("register.business")}
                     </span>
                     <input
                       value={businessNameInput}
                       onChange={(e) => setBusinessNameInput(e.target.value)}
                       placeholder={t("checkout.phBusiness")}
-                      className="h-11 w-full min-w-0 rounded-[var(--sl-radius)] border border-[var(--sl-border)] bg-[var(--sl-surface-sunk)]/50 px-3 text-sm font-medium outline-none transition-all focus:border-brand-600 focus:bg-white focus:ring-2 focus:ring-[var(--sl-primary)]/20 sm:px-3.5"
+                      className="sl-input h-11 w-full min-w-0 sm:px-3.5"
                     />
                   </label>
 
                   <label className="block sm:col-span-2">
-                    <span className="mb-1 block text-xs font-semibold text-[var(--sl-text-soft)]">
+                    <span className="sl-label">
                       {t("checkout.buyerGstin")}
                     </span>
                     <input
@@ -711,37 +829,37 @@ export default function CheckoutPage() {
                       onChange={(e) => setGstinInput(e.target.value.toUpperCase())}
                       maxLength={15}
                       autoCapitalize="characters"
-                      placeholder="e.g. 24AAACR1234K1Z0"
-                      className={`h-11 w-full min-w-0 rounded-[var(--sl-radius)] border bg-[var(--sl-surface-sunk)]/50 px-3 font-mono text-sm font-medium outline-none transition-all focus:bg-white focus:ring-2 sm:px-3.5 ${
+                      placeholder={t("register.phGstin")}
+                      className={`sl-input h-11 w-full min-w-0 px-3 font-mono sm:px-3.5 ${
                         gstinInput.trim() && gstinValidation
                           ? gstinValidation.valid
-                            ? "border-emerald-500 text-emerald-950 focus:border-emerald-600 focus:ring-emerald-500/10"
-                            : "border-rose-300 text-rose-950 focus:border-rose-500 focus:ring-rose-500/10"
-                          : "border-[var(--sl-border)] focus:border-slate-950 focus:ring-slate-950/10"
+                            ? "border-[var(--sl-ok)] text-[var(--sl-ok)]"
+                            : "border-[var(--sl-bad-line)] text-[var(--sl-bad)]"
+                          : ""
                       }`}
                     />
 
                     {/* GST Validation Status Banner */}
                     {gstinInput.trim() && gstinValidation && (
                       <div
-                        className={`mt-2 flex items-start gap-1.5 rounded-[var(--sl-radius-sm)] p-2 text-xs font-medium ${
+                        className={`mt-2 flex items-start gap-1.5 rounded-[2px] p-2 text-xs font-medium ${
                           gstinValidation.valid
-                            ? "border border-emerald-200 bg-emerald-50 text-emerald-800"
-                            : "border border-rose-200 bg-rose-50 text-rose-700"
+                            ? "border border-[var(--sl-rule-strong)] bg-[var(--sl-ok-soft)] text-[var(--sl-ok)]"
+                            : "border border-[var(--sl-bad-line)] bg-[var(--sl-bad-soft)] text-[var(--sl-bad)]"
                         }`}
                       >
                         {gstinValidation.valid ? (
                           <>
-                            <svg className="mt-0.5 h-4 w-4 shrink-0 text-emerald-600" viewBox="0 0 20 20" fill="currentColor">
+                            <svg className="mt-0.5 h-4 w-4 shrink-0 text-[var(--sl-ok)]" viewBox="0 0 20 20" fill="currentColor">
                               <path fillRule="evenodd" d="M16.704 4.153a.75.75 0 01.143 1.052l-8 10.5a.75.75 0 01-1.127.075l-4.5-4.5a.75.75 0 011.06-1.06l3.894 3.893 7.48-9.817a.75.75 0 011.05-.143z" clipRule="evenodd" />
                             </svg>
                             <span className="min-w-0 break-words">
-                              {gstinValidation.message} (State: {gstinValidation.stateName})
+                              {gstinValidation.message} · {t("checkout.state")}: {gstinValidation.stateName}
                             </span>
                           </>
                         ) : (
                           <>
-                            <svg className="mt-0.5 h-4 w-4 shrink-0 text-rose-500" viewBox="0 0 20 20" fill="currentColor">
+                            <svg className="mt-0.5 h-4 w-4 shrink-0 text-[var(--sl-bad)]" viewBox="0 0 20 20" fill="currentColor">
                               <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-8-5a.75.75 0 01.75.75v4.5a.75.75 0 01-1.5 0v-4.5A.75.75 0 0110 5zm0 10a1 1 0 100-2 1 1 0 000 2z" clipRule="evenodd" />
                             </svg>
                             <span className="min-w-0 break-words">{gstinValidation.message}</span>
@@ -753,25 +871,25 @@ export default function CheckoutPage() {
                 </div>
               </section>
 
-              <section className="sl-v2-card p-4 sm:p-6">
+              <section className="sl-panel p-4 sm:p-6">
                 <h2 className="sl-h2 flex items-center gap-2.5 text-base sm:text-lg">
-                  <span className="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[var(--sl-primary)] text-[0.6875rem] font-bold text-white tabular-nums">4</span>
+                  <span className="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-[2px] bg-[var(--sl-brand)] text-[0.6875rem] font-bold text-white tabular-nums">4</span>
                   {t("checkout.payTitle")}
                 </h2>
-                <p className="mt-1 text-xs text-[var(--sl-muted)]">
+                <p className="sl-hint">
                   {t("checkout.payHint")}
                 </p>
 
                 {hasPensol ? (
-                  <div className="mt-4 space-y-3 rounded-[var(--sl-radius)] border border-amber-200 bg-amber-50/60 p-3 sm:p-4">
-                    <p className="text-sm font-bold text-[var(--sl-text)]">{t("checkout.pensolPayTitle")}</p>
+                  <div className="mt-4 space-y-3 rounded-[var(--sl-r)] border border-[var(--sl-rule-strong)] bg-[var(--sl-warn-soft)] p-3 sm:p-4">
+                    <p className="text-sm font-bold text-[var(--sl-ink)]">{t("checkout.pensolPayTitle")}</p>
                     <label className="flex min-h-11 cursor-pointer items-start gap-3">
                       <input
                         type="radio"
                         name="pensolSettlement"
                         checked={pensolSettlement === "cash"}
                         onChange={() => setPensolSettlement("cash")}
-                        className="mt-1 shrink-0"
+                        className="sl-check mt-1 shrink-0"
                       />
                       <span className="min-w-0 text-sm leading-snug">
                         {t("checkout.pensolCash")}
@@ -783,13 +901,13 @@ export default function CheckoutPage() {
                         name="pensolSettlement"
                         checked={pensolSettlement === "credit"}
                         onChange={() => setPensolSettlement("credit")}
-                        className="mt-1 shrink-0"
+                        className="sl-check mt-1 shrink-0"
                       />
                       <span className="min-w-0 text-sm leading-snug">
                         {t("checkout.pensolCredit")}
                       </span>
                     </label>
-                    <p className="break-words text-xs text-[var(--sl-text-soft)]">
+                    <p className="break-words text-xs text-[var(--sl-ink-2)]">
                       {cart?.items
                         .filter((item) => item.isPensol)
                         .map((item) => {
@@ -806,69 +924,69 @@ export default function CheckoutPage() {
                 ) : null}
 
                 <div className="mt-4 space-y-3">
-                  <label className="flex min-h-11 cursor-pointer items-start gap-3 rounded-[var(--sl-radius)] border border-[var(--sl-border)] p-3.5 transition-colors hover:bg-[var(--sl-surface-sunk)] has-checked:border-brand-600 has-checked:bg-[var(--sl-primary-soft)]/60/50 sm:gap-3.5 sm:p-4">
+                  <label className="flex min-h-11 cursor-pointer items-start gap-3 rounded-[var(--sl-r)] border border-[var(--sl-rule)] p-3.5 transition-colors hover:bg-[var(--sl-sunken)] has-checked:border-[var(--sl-brand-hover)] has-checked:bg-[var(--sl-brand-soft)]/60 sm:gap-3.5 sm:p-4">
                     <input
                       type="radio"
                       name="paymentMethod"
                       value="cash_on_delivery"
                       checked={effectivePaymentMethod === "cash_on_delivery"}
                       onChange={() => setPaymentMethod("cash_on_delivery")}
-                      className="mt-0.5 shrink-0"
+                      className="sl-check mt-0.5 shrink-0"
                     />
                     <div className="min-w-0">
-                      <span className="block text-sm font-bold text-[var(--sl-text)]">
+                      <span className="block text-sm font-bold text-[var(--sl-ink)]">
                         {t("checkout.cod")}
                       </span>
-                      <span className="mt-0.5 block text-xs leading-snug text-[var(--sl-muted)]">
+                      <span className="mt-0.5 block text-xs leading-snug text-[var(--sl-ink-3)]">
                         {t("checkout.codHint")}
                       </span>
                     </div>
                   </label>
 
-                  <label className="flex min-h-11 cursor-pointer items-start gap-3 rounded-[var(--sl-radius)] border border-[var(--sl-border)] p-3.5 transition-colors hover:bg-[var(--sl-surface-sunk)] has-checked:border-brand-600 has-checked:bg-[var(--sl-primary-soft)]/60/50 sm:gap-3.5 sm:p-4">
+                  <label className="flex min-h-11 cursor-pointer items-start gap-3 rounded-[var(--sl-r)] border border-[var(--sl-rule)] p-3.5 transition-colors hover:bg-[var(--sl-sunken)] has-checked:border-[var(--sl-brand-hover)] has-checked:bg-[var(--sl-brand-soft)]/60 sm:gap-3.5 sm:p-4">
                     <input
                       type="radio"
                       name="paymentMethod"
                       value="bank_transfer"
                       checked={effectivePaymentMethod === "bank_transfer"}
                       onChange={() => setPaymentMethod("bank_transfer")}
-                      className="mt-0.5 shrink-0"
+                      className="sl-check mt-0.5 shrink-0"
                     />
                     <div className="min-w-0">
-                      <span className="block text-sm font-bold text-[var(--sl-text)]">
+                      <span className="block text-sm font-bold text-[var(--sl-ink)]">
                         {t("checkout.bank")}
                       </span>
-                      <span className="mt-0.5 block text-xs leading-snug text-[var(--sl-muted)]">
+                      <span className="mt-0.5 block text-xs leading-snug text-[var(--sl-ink-3)]">
                         {t("checkout.bankHint")}
                       </span>
                     </div>
                   </label>
 
                   {cartSupportsOnlinePayment ? (
-                    <label className="flex min-h-11 cursor-pointer items-start gap-3 rounded-[var(--sl-radius)] border border-[var(--sl-border)] p-3.5 transition-colors hover:bg-[var(--sl-surface-sunk)] has-checked:border-brand-600 has-checked:bg-[var(--sl-primary-soft)]/60/50 sm:gap-3.5 sm:p-4">
+                    <label className="flex min-h-11 cursor-pointer items-start gap-3 rounded-[var(--sl-r)] border border-[var(--sl-rule)] p-3.5 transition-colors hover:bg-[var(--sl-sunken)] has-checked:border-[var(--sl-brand-hover)] has-checked:bg-[var(--sl-brand-soft)]/60 sm:gap-3.5 sm:p-4">
                       <input
                         type="radio"
                         name="paymentMethod"
                         value="online_payment"
                         checked={effectivePaymentMethod === "online_payment"}
                         onChange={() => setPaymentMethod("online_payment")}
-                        className="mt-0.5 shrink-0"
+                        className="sl-check mt-0.5 shrink-0"
                       />
                       <div className="min-w-0">
-                        <span className="block text-sm font-bold text-[var(--sl-text)]">
+                        <span className="block text-sm font-bold text-[var(--sl-ink)]">
                           {t("checkout.online")}
                         </span>
-                        <span className="mt-0.5 block text-xs leading-snug text-[var(--sl-muted)]">
+                        <span className="mt-0.5 block text-xs leading-snug text-[var(--sl-ink-3)]">
                           {t("checkout.onlineHint")}
                         </span>
                       </div>
                     </label>
                   ) : (
-                    <div className="rounded-[var(--sl-radius)] border border-dashed border-[var(--sl-border-strong)] bg-[var(--sl-surface-sunk)] p-3.5 sm:p-4">
-                      <span className="block text-sm font-bold text-[var(--sl-text)]">
+                    <div className="rounded-[var(--sl-r)] border border-dashed border-[var(--sl-rule-strong)] bg-[var(--sl-sunken)] p-3.5 sm:p-4">
+                      <span className="block text-sm font-bold text-[var(--sl-ink)]">
                         {t("checkout.comingSoon")}
                       </span>
-                      <span className="mt-0.5 block text-xs leading-snug text-[var(--sl-muted)]">
+                      <span className="mt-0.5 block text-xs leading-snug text-[var(--sl-ink-3)]">
                         {t("checkout.onlineUnavailable")}
                       </span>
                     </div>
@@ -878,24 +996,24 @@ export default function CheckoutPage() {
             </div>
 
             {/* Authoritative Order Summary Sidebar */}
-            <aside aria-label="Order breakdown" className="min-w-0 lg:sticky lg:top-24">
-              <div className="rounded-[var(--sl-radius-lg)] border border-[var(--sl-border)] bg-white p-4 shadow-sm sm:p-6 lg:sticky lg:top-20">
+            <aside aria-label={t("checkout.summary")} className="min-w-0 lg:sticky lg:top-24">
+              <div className="rounded-[var(--sl-r-lg)] border border-[var(--sl-rule)] bg-[var(--sl-surface)] p-4 shadow-sm sm:p-6 lg:sticky lg:top-20">
                 <h2 className="sl-h2 text-base sm:text-lg">
                   {t("checkout.summary")}
                 </h2>
 
                 {/* Line Items */}
-                <div className="mt-4 divide-y divide-slate-100 border-b border-slate-100 pb-4 text-xs">
+                <div className="mt-4 divide-y divide-[var(--sl-rule)] border-b border-[var(--sl-rule)] pb-4 text-xs">
                   {cart.items.map((item) => (
                     <div
                       key={item.id}
                       className="flex items-start justify-between gap-3 py-2.5 first:pt-0"
                     >
                       <div className="min-w-0 flex-1">
-                        <p className="break-words font-semibold text-[var(--sl-text)]">
+                        <p className="break-words font-semibold text-[var(--sl-ink)]">
                           {item.partName || t("checkout.sparePart")} × {item.quantity}
                         </p>
-                        <p className="mt-0.5 break-words text-[var(--sl-muted)]">
+                        <p className="mt-0.5 break-words text-[var(--sl-ink-3)]">
                           {isAuthoritativeSellingPricePaise(
                             item.listInclusivePaise,
                             item.netInclusivePaise,
@@ -904,18 +1022,18 @@ export default function CheckoutPage() {
                             ? `${t("price.listRate")}: ₹${(((item.listInclusivePaise ?? item.pricePaise) * item.quantity) / 100).toLocaleString("en-IN")}`
                             : t("price.onRequest")}
                           {item.gstRate !== undefined && (
-                            <span className="ml-1.5 font-medium text-emerald-700">
+                            <span className="ml-1.5 font-medium text-[var(--sl-ok)]">
                               (GST {item.gstRate}%)
                             </span>
                           )}
                         </p>
                         {(item.discountPercent ?? 0) > 0 ? (
-                          <p className="text-[11px] font-semibold text-[var(--sl-primary)]">
+                          <p className="text-[11px] font-semibold text-[var(--sl-brand-ink)]">
                             {t("price.inclTaxDiscount", { percent: String(item.discountPercent) })}
                           </p>
                         ) : null}
                       </div>
-                      <span className="shrink-0 tabular-nums font-bold text-[var(--sl-text)]">
+                      <span className="shrink-0 tabular-nums font-bold text-[var(--sl-ink)]">
                         {isAuthoritativeSellingPricePaise(
                           item.listInclusivePaise,
                           item.netInclusivePaise,
@@ -940,19 +1058,19 @@ export default function CheckoutPage() {
                 </div>
 
                 {firmBreakdown.length > 1 ? (
-                  <div className="mt-3 space-y-1.5 border-b border-slate-100 pb-4 text-xs">
+                  <div className="mt-3 space-y-1.5 border-b border-[var(--sl-rule)] pb-4 text-xs">
                     {firmBreakdown.map((group) => (
                       <div
                         key={group.firmName}
-                        className="flex items-start justify-between gap-3 text-[var(--sl-text-soft)]"
+                        className="flex items-start justify-between gap-3 text-[var(--sl-ink-2)]"
                       >
                         <span className="min-w-0 break-words">
                           {group.firmName}
-                          <span className="ml-1 text-[var(--sl-muted)]">
+                          <span className="ml-1 text-[var(--sl-ink-3)]">
                             ({group.itemCount})
                           </span>
                         </span>
-                        <span className="shrink-0 tabular-nums font-semibold text-[var(--sl-text)]">
+                        <span className="shrink-0 tabular-nums font-semibold text-[var(--sl-ink)]">
                           ₹{(group.totalPaise / 100).toLocaleString("en-IN")}
                         </span>
                       </div>
@@ -962,44 +1080,44 @@ export default function CheckoutPage() {
 
                 {/* Financial Breakdown */}
                 <div className="mt-4 space-y-2.5 text-xs">
-                  <div className="flex items-center justify-between gap-3 text-[var(--sl-text-soft)]">
+                  <div className="flex items-center justify-between gap-3 text-[var(--sl-ink-2)]">
                     <span className="min-w-0">{t("checkout.subtotalPlain")}</span>
-                    <span className="shrink-0 tabular-nums font-semibold text-[var(--sl-text)]">
+                    <span className="shrink-0 tabular-nums font-semibold text-[var(--sl-ink)]">
                       ₹{(itemsSubtotalPaise / 100).toLocaleString("en-IN")}
                     </span>
                   </div>
 
-                  <div className="flex items-center justify-between gap-3 text-[var(--sl-text-soft)]">
+                  <div className="flex items-center justify-between gap-3 text-[var(--sl-ink-2)]">
                     <span className="inline-flex min-w-0 flex-wrap items-center gap-1">
                       <span>{t("checkout.gstTax")}</span>
-                      <span className="rounded border border-emerald-200/60 bg-emerald-50 px-1 py-0.2 text-[10px] font-bold text-emerald-700">
+                      <span className="rounded border border-[var(--sl-ok-line)] bg-[var(--sl-ok-soft)] px-1 py-0.2 text-[10px] font-bold text-[var(--sl-ok)]">
                         {t("checkout.itemized")}
                       </span>
                     </span>
-                    <span className="shrink-0 tabular-nums font-semibold text-emerald-700">
+                    <span className="shrink-0 tabular-nums font-semibold text-[var(--sl-ok)]">
                       ₹{(gstPaise / 100).toLocaleString("en-IN")}
                     </span>
                   </div>
 
-                  <div className="flex items-center justify-between gap-3 text-[var(--sl-text-soft)]">
+                  <div className="flex items-center justify-between gap-3 text-[var(--sl-ink-2)]">
                     <span className="min-w-0">{t("checkout.shippingHandle")}</span>
-                    <span className="max-w-[55%] shrink-0 text-right tabular-nums font-semibold text-emerald-700">
+                    <span className="max-w-[55%] shrink-0 text-right tabular-nums font-semibold text-[var(--sl-ok)]">
                       {shippingPaise === 0
                         ? t("checkout.freeStd")
                         : `₹${(shippingPaise / 100).toLocaleString("en-IN")}`}
                     </span>
                   </div>
 
-                  <div className="border-t border-[var(--sl-border)] pt-3.5">
+                  <div className="border-t border-[var(--sl-rule)] pt-3.5">
                     <div className="flex items-baseline justify-between gap-3">
-                      <span className="text-sm font-bold text-slate-950">
+                      <span className="text-sm font-bold text-[var(--sl-ink)]">
                         {t("checkout.grand")}
                       </span>
                       <div className="min-w-0 text-right">
-                        <span className="text-xl font-extrabold tabular-nums text-slate-950">
+                        <span className="text-xl font-extrabold tabular-nums text-[var(--sl-ink)]">
                           ₹{(grandTotalPaise / 100).toLocaleString("en-IN")}
                         </span>
-                        <p className="text-[10px] text-[var(--sl-muted)]">
+                        <p className="text-[10px] text-[var(--sl-ink-3)]">
                           {t("checkout.inclusive")}
                         </p>
                       </div>
@@ -1011,7 +1129,7 @@ export default function CheckoutPage() {
                 <button
                   type="submit"
                   disabled={submitting}
-                  className="btn-press mt-6 hidden w-full items-center justify-center gap-2 rounded-[var(--sl-radius)] bg-slate-950 py-3.5 text-center text-sm font-bold text-white shadow-md transition-all hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-60 md:flex"
+                  className="sl-btn sl-btn-primary sl-btn-block sl-press mt-6 hidden md:flex disabled:opacity-60"
                 >
                   {submitting ? (
                     <>
@@ -1044,16 +1162,16 @@ export default function CheckoutPage() {
             </aside>
           </form>
         )}
-      </div>
-      <SiteFooter />
+      </main>
+            <SiteFooter />
       {showMobileCheckoutCta && cart ? (
-        <div className="fixed inset-x-0 bottom-[calc(var(--mobile-nav-height)+var(--safe-bottom))] z-40 border-t border-[var(--sl-border)] bg-white/95 px-3 py-2 backdrop-blur md:hidden">
+        <div className="fixed inset-x-0 bottom-[calc(var(--mobile-nav-height)+var(--safe-bottom))] z-40 border-t border-[var(--sl-rule)] bg-[var(--sl-surface)]/95 px-3 py-2 backdrop-blur md:hidden">
           <div className="mx-auto flex max-w-lg items-center gap-2.5 min-[360px]:gap-3">
             <div className="min-w-0 flex-1">
-              <p className="text-[11px] font-semibold uppercase tracking-wide text-[var(--sl-muted)]">
+              <p className="text-[11px] font-semibold uppercase tracking-wide text-[var(--sl-ink-3)]">
                 {t("checkout.grand")}
               </p>
-              <p className="truncate text-lg font-extrabold tabular-nums text-slate-950">
+              <p className="truncate text-lg font-extrabold tabular-nums text-[var(--sl-ink)]">
                 ₹{(grandTotalPaise / 100).toLocaleString("en-IN")}
               </p>
             </div>
@@ -1061,7 +1179,7 @@ export default function CheckoutPage() {
               type="submit"
               form="checkout-form"
               disabled={submitting}
-              className="btn-press inline-flex min-h-12 max-w-[58%] shrink-0 items-center justify-center rounded-[var(--sl-radius)] bg-[var(--sl-primary)] px-3.5 text-sm font-bold text-white disabled:cursor-not-allowed disabled:opacity-60 min-[360px]:px-5"
+              className="sl-btn sl-btn-primary sl-press min-h-12 max-w-[58%] shrink-0 px-3.5 text-sm font-bold disabled:opacity-60 min-[360px]:px-5"
             >
               <span className="truncate">
                 {submitting ? t("checkout.placing") : placeOrderLabel}

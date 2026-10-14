@@ -1,340 +1,212 @@
-"use client";
-
-/* Hero uses pre-cut product rasters; next/image crop would clip edges. */
-/* eslint-disable @next/next/no-img-element */
-
+import Image from "next/image";
 import Link from "next/link";
-import { useState } from "react";
 
 import { useI18n } from "@/components/preferences-provider";
-import type { MessageKey } from "@/lib/i18n";
-
-type SearchModeIcon = "hash" | "tag" | "badge" | "car" | "code";
 
 /**
- * Discoverability hints for the real search box below. These do NOT create a
- * second search path — tapping one seeds the same query the customer would
- * have typed, which flows through the existing `onQuickSearch` handler.
- */
-/**
- * Prominent "search by" affordances.
+ * V3 hero - final approved artwork with the interaction layer.
  *
- * Reduced to four. HSN is deliberately NOT a prominent pill — it would make the
- * row a five-pill strip and dilute the primary action. HSN search still works
- * exactly as before: the input is free text, the same endpoint parses it, and
- * the header search exposes HSN in its own placeholder. Only its prominence
- * changed, never its behaviour.
+ * THE ARTWORK
+ * -----------
+ * `public/images/hero/hero-final-reference.png`, 2158x729 (aspect 2.960),
+ * rendered as one composite bitmap and never reconstructed from parts. It bakes
+ * in its own left column (burgundy rule, "AUTO SPARE PARTS", the two headline
+ * lines, the supporting sentence) AND its own two CTA buttons, plus nine
+ * circular marker dots over the vehicles. None of that is redrawn in HTML -
+ * doing so would print the text twice. The visible headline is preserved for
+ * assistive technology with one `sr-only` heading.
+ *
+ * It is `object-contain` inside a container locked to the native ratio, and
+ * `max-w-[1600px]`, so the bitmap is never upscaled past a 0.74x downscale and
+ * never cropped. `object-cover` is deliberately not used: the vehicles and the
+ * Pensol range sit close to both edges, so a cover-crop would slice a wheel or
+ * a bottle.
+ *
+ * WHY THE MARKER DOTS WERE INERT
+ * ------------------------------
+ * The nine dots in the artwork are the vehicle interaction points, and each one
+ * now has a real anchor over it. The dot centres below were NOT eyeballed: the
+ * 2158x729 PNG was decoded in Node and the dots were found by ring template
+ * matching (a bright annulus with a dark core, scored as
+ * mean(ring luminance) - mean(core luminance)) with non-maximum suppression over
+ * the vehicle band only. The strongest score was 189; the accepted set sits
+ * above 153. Two candidates scoring 170.8 and 166.2 were rejected after
+ * cropping and inspecting them - both were false positives on the cream
+ * background beside the baked headline, not markers. Every accepted centre was
+ * then re-confirmed on a contact sheet with a crosshair drawn through it, and
+ * the eight vehicles were identified by eye from those crops.
+ *
+ * The white saloon carries TWO dots (1593,337 and 1619,367); one target spans
+ * both so the whole car is live rather than leaving a dead dot on screen.
+ *
+ * VEHICLE DESTINATIONS
+ * --------------------
+ * Every vehicle dot goes to `/vehicle-fitment`, which is the real, existing
+ * vehicle browsing experience. This application has no vehicle-class parts
+ * taxonomy: the only vehicle-class slugs that resolve
+ * (heavy-commercial-vehicle, passenger-vehicle, agriculture, earthmover) are
+ * water-pump segments, and they are either empty (heavy commercial returns 0
+ * products) or an accidental `nameContains` text match. The scooter
+ * specifically has no destination at all, and `/category/agriculture` resolves
+ * to a text search that really matches "Agriculture & Tractor Oils".
+ *
+ * `/vehicle-fitment` (the index) reads NO searchParams, so these links are bare
+ * paths. No query parameters were invented. The `aria-label`s still describe the
+ * vehicle class so assistive tech gets the right name; the destination is the
+ * fitment browser until a real vehicle-class taxonomy exists.
+ *
+ * THE CLICK LAYER
+ * ---------------
+ * The bitmap is decorative chrome and must never take a click, so it is
+ * `pointer-events-none`. All targets live in ONE dedicated overlay layer
+ * (`absolute inset-0 z-20 pointer-events-none`) above the image, and each anchor
+ * opts back in with `pointer-events-auto`. The artwork wrapper carries
+ * `isolate` so the hero owns a clean stacking context and cannot interleave
+ * with the sticky header or the All-Categories panel.
+ *
+ * The layer, not the anchors, carries the `hidden md:block` display gate. If
+ * `display` were declared on the anchors as well - once in the base layer and
+ * once as `hidden` - the winner would depend on the order the two utilities are
+ * emitted in the stylesheet rather than the order they appear in the class
+ * string. Gating display on the single wrapper removes that ambiguity.
+ *
+ * There is no visible chrome anywhere: no background, border, shadow, label,
+ * arrow, tooltip, dot or card. The only decoration is a `focus-visible` outline,
+ * which is not rendered until the element is focused and so never alters the
+ * artwork at rest.
+ *
+ * SIZING
+ * ------
+ * Boxes are in source pixels and converted to percentages, so a target stays
+ * welded to its object at every width without re-tuning. At a 1440px viewport
+ * (1440/2158 = 0.667 scale) every target is at least 44x44 CSS px - see the
+ * printed table in REPORT. No two boxes overlap.
  */
-const SEARCH_MODES: {
-  label: string;
-  example: string;
-  q: string;
-  icon: SearchModeIcon;
-}[] = [
-  { label: "Part Number", example: "856, M-856, 101", q: "856", icon: "hash" },
-  { label: "Part Name", example: "water pump, brake pad", q: "Water Pump", icon: "tag" },
-  { label: "Vehicle", example: "Bolero, Swift, Creta", q: "Bolero", icon: "car" },
-  { label: "Brand", example: "CI Automotive, Pensol", q: "CI Automotive", icon: "badge" },
-];
 
-const VEHICLE_TYPES: {
-  key: MessageKey;
+const HERO_SRC = "/images/hero/hero-final-reference.png";
+const HERO_WIDTH = 2158;
+const HERO_HEIGHT = 729;
+
+type Target = {
   href: string;
-  icon: "car" | "suv" | "muv" | "lcv" | "hcv" | "bike" | "tractor" | "off";
-}[] = [
-  { key: "hero.vehCars", href: "/vehicle-fitment", icon: "car" },
-  { key: "hero.vehSuvs", href: "/vehicle-fitment", icon: "suv" },
-  { key: "hero.vehMuvs", href: "/vehicle-fitment", icon: "muv" },
-  { key: "hero.vehLcvs", href: "/vehicle-fitment", icon: "lcv" },
-  { key: "hero.vehHcvs", href: "/vehicle-fitment", icon: "hcv" },
-  { key: "hero.vehTwo", href: "/vehicle-fitment", icon: "bike" },
-  { key: "hero.vehTractors", href: "/vehicle-fitment", icon: "tractor" },
-  { key: "hero.vehOff", href: "/vehicle-fitment", icon: "off" },
+  label: string;
+  /** Bounds in 2158x729 source pixels: left, top, right, bottom. */
+  box: [number, number, number, number];
+  kind: "vehicle" | "part" | "cta";
+};
+
+const pct = (b: Target["box"]) => ({
+  left: `${(b[0] / HERO_WIDTH) * 100}%`,
+  top: `${(b[1] / HERO_HEIGHT) * 100}%`,
+  width: `${((b[2] - b[0]) / HERO_WIDTH) * 100}%`,
+  height: `${((b[3] - b[1]) / HERO_HEIGHT) * 100}%`,
+});
+
+const FITMENT = "/vehicle-fitment";
+
+const TARGETS: Target[] = [
+  /* ---- 8 vehicles, centred on the detected marker dot ---- */
+  { kind: "vehicle", href: FITMENT, label: "Heavy Commercial Vehicle Parts", box: [924, 233, 994, 303] },
+  { kind: "vehicle", href: FITMENT, label: "Light Commercial Vehicle Parts", box: [1093, 284, 1163, 354] },
+  { kind: "vehicle", href: FITMENT, label: "Passenger Vehicle Parts", box: [1292, 289, 1362, 359] },
+  /* the saloon has two dots; this spans both */
+  { kind: "vehicle", href: FITMENT, label: "Passenger Vehicle Parts", box: [1566, 310, 1646, 394] },
+  { kind: "vehicle", href: FITMENT, label: "Agriculture Vehicle Parts", box: [1721, 246, 1791, 316] },
+  { kind: "vehicle", href: FITMENT, label: "Earthmover Parts", box: [1980, 244, 2050, 314] },
+  { kind: "vehicle", href: FITMENT, label: "Motorcycle Parts", box: [1799, 379, 1869, 449] },
+  { kind: "vehicle", href: FITMENT, label: "Scooter Parts", box: [1999, 388, 2069, 458] },
+
+  /* ---- 5 part categories ---- */
+  { kind: "part", href: "/category/braking-system", label: "Brake Parts", box: [874, 444, 1010, 578] },
+  { kind: "part", href: "/category/filters", label: "Filters", box: [1059, 437, 1183, 578] },
+  /* corrected: the first pass sat on empty background above the ribbed damper
+     and clipped the AP-LR pail; the object is lower than estimated. */
+  { kind: "part", href: "/category/shock-absorbers-shockers", label: "Shockers", box: [1310, 468, 1400, 537] },
+  { kind: "part", href: "/category/greases", label: "Grease Products", box: [1190, 452, 1305, 618] },
+  { kind: "part", href: "/category/lubricants", label: "Oil and Lubricants", box: [1458, 396, 1566, 608] },
+
+  /* ---- the two baked-in CTA buttons ---- */
+  { kind: "cta", href: "#categories", label: "Shop Spare Parts", box: [52, 454, 346, 521] },
+  { kind: "cta", href: "/login/dealer", label: "Dealer Bulk Order", box: [367, 454, 665, 521] },
 ];
 
-export function HomeHero({
-  onQuickSearch,
-}: {
-  onQuickSearch: (query: string) => void;
-}) {
+export function HomeHero() {
   const { t } = useI18n();
-  const [heroQuery, setHeroQuery] = useState("");
-
-  const submitHeroSearch = (value: string) => {
-    const trimmed = value.trim();
-    if (!trimmed) return;
-    onQuickSearch(trimmed);
-  };
-
   return (
-    <section id="search" className="relative">
-      <div className="hero-reference relative overflow-hidden text-white">
-        <img
-          src="/images/hero/sparelink-clean-hero-bg.png?v=4"
-          alt=""
-          className="hero-scene-img pointer-events-none absolute inset-0 h-full w-full object-cover"
-        />
-        <div className="pointer-events-none absolute inset-0 hero-scene-veil" aria-hidden />
-        {/*
-          Burgundy identity wash — lightened after screenshot review.
-
-          Screenshot review showed the automotive photography was still not
-          readable through the overlay. The wash is now
-          0.56 / 0.16 / 0.28 / 0.68 (previously 0.72 / 0.30 / 0.42 / 0.80),
-          which opens the middle band to 0.16 so the vehicle photo reads through
-          clearly, while the top and bottom bands still anchor the burgundy
-          identity and preserve white-text contrast for the headline, the
-          search field and the CTAs.
-          */}
-        <div
-          className="pointer-events-none absolute inset-0"
-          style={{
-            background:
-              "linear-gradient(180deg, rgba(42,8,18,0.56) 0%, rgba(42,8,18,0.16) 34%, rgba(74,12,32,0.28) 68%, rgba(42,8,18,0.68) 100%)",
-          }}
-          aria-hidden
-        />
-        <div
-          className="pointer-events-none absolute inset-0"
-          style={{ background: "var(--sl-grad-sheen)" }}
-          aria-hidden
+    <section
+      id="search"
+      aria-labelledby="hero-heading"
+      className="border-b border-[var(--sl-rule)] bg-[var(--sl-page)]"
+    >
+      {/* `isolate` gives the hero its own stacking context. */}
+      <div
+        className="relative isolate mx-auto w-full max-w-[1600px]"
+        style={{ aspectRatio: `${HERO_WIDTH} / ${HERO_HEIGHT}` }}
+      >
+        <Image
+          src={HERO_SRC}
+          alt="SpareLink India catalogue: a container truck, mini truck, red SUV, white saloon, tractor and backhoe loader, a motorcycle and a scooter, above a display of Pensol lubricants and grease with brake parts, oil filters and a shock absorber."
+          fill
+          priority
+          sizes="100vw"
+          /* No `quality` override: this project does not configure
+             images.qualities, so Next's default of 75 applies. */
+          /* The bitmap is decorative. Without pointer-events-none the <img> is a
+             positioned sibling competing for the same area and swallows hits
+             that should reach an overlay. */
+          className="pointer-events-none select-none object-contain"
         />
 
-        {/*
-          DESIGN RESET — the hero is now ONE purpose: find the right spare part.
-          The previous build stacked six decorative product cut-out panels and
-          three clipped "hero-panel" figures around the search (12 <img>, 6
-          <figure>, 16 chips and ~23 CTA elements inside the hero band). They
-          competed with the single most important element on the page and read
-          as collage rather than premium. The real product photography now
-          lives in the page background only, and the search owns the frame.
-        */}
-        {/*
-          Content wrapper. `justify-center` with padding, and no fixed height,
-          so the block always fits its content — the CTAs were previously
-          clipped because the container had a large py on top of a fixed
-          desktop hero height.
-        */}
-        <div className="relative z-[3] mx-auto flex w-full max-w-3xl flex-col items-center justify-center px-4 py-10 text-center sm:py-12 lg:py-9">
-          <p className="sl-label !text-[var(--sl-gold-soft)]">{t("hero.eyebrow")}</p>
-          {/*
-            Headline reflowed from three forced lines to two. The previous
-            `block` span per line fragmented "India's Trusted / Auto Parts /
-            Distributor & Dealer" into a tall narrow stack; rendering the first
-            two segments as one flowing line lets the browser break where the
-            text actually needs it.
-          */}
-          <h1 className="sl-display !text-white max-w-2xl">
-            <span className="text-white">
-              {t("hero.titleLine1")} {t("hero.titleLine3")}
-            </span>{" "}
-            <span className="sl-text-grad">{t("hero.titleAccent")}</span>
-          </h1>
-          <p className="sl-body !text-white/80 max-w-xl">{t("hero.subtitle")}</p>
+        {/* The visible headline lives in the bitmap; this keeps it in the
+            accessibility tree and for crawlers without printing it twice.
+            It reuses the two title keys the hero already renders visibly, so
+            a Hindi visitor gets a Hindi document outline instead of an
+            English one that only screen readers ever encounter. */}
+        <h1 id="hero-heading" className="sr-only">
+          {t("hero.v3title1")} {t("hero.v3title2")}
+        </h1>
 
-          {/* Primary interaction: the real search. Submits through the same
-              onQuickSearch handler the quick chips already use. */}
-          <form
-            className="mt-6 w-full sm:mt-7"
-            role="search"
-            onSubmit={(event) => {
-              event.preventDefault();
-              submitHeroSearch(heroQuery);
-            }}
-          >
-            <label htmlFor="hero-search-input" className="sr-only">
-              Search automotive spare parts by part number, name, brand, vehicle or HSN
-            </label>
-              <div className="sl-search sl-search-invert shadow-[0_18px_50px_-18px_rgba(0,0,0,0.85)]">
-                <span className="sl-search-icon">
-                  <SearchGlyph />
-                </span>
-                <input
-                  id="hero-search-input"
-                  type="search"
-                  value={heroQuery}
-                  onChange={(event) => setHeroQuery(event.target.value)}
-                  placeholder="Search part number, name, brand or vehicle…"
-                  autoComplete="off"
-                  className="sl-search-input"
-                />
-                <button
-                  type="submit"
-                  disabled={!heroQuery.trim()}
-                  className="sl-search-submit"
-                >
-                  <span className="hidden sm:inline">Search</span>
-                  <SearchGlyph className="h-4 w-4 sm:hidden" />
-                </button>
-              </div>
-
-              {/* Horizontally scrollable on narrow screens so 320px never
-                  overflows; wraps naturally from sm upward. */}
-              <div className="-mx-1 mt-3 flex gap-1.5 overflow-x-auto px-1 pb-1 sm:flex-wrap sm:justify-center sm:overflow-visible">
-                <span className="sr-only">Search by</span>
-                <span
-                  className="hidden shrink-0 items-center pr-1 text-[10px] font-semibold uppercase tracking-[0.14em] text-white/55 sm:inline-flex"
-                  aria-hidden
-                >
-                  Search by
-                </span>
-                {SEARCH_MODES.map((mode) => (
-                  <button
-                    key={mode.label}
-                    type="button"
-                    onClick={() => {
-                      setHeroQuery(mode.q);
-                      submitHeroSearch(mode.q);
-                    }}
-                    title={mode.example}
-                    className="sl-chip sl-chip-invert h-8 min-h-8 shrink-0 px-3 text-[11px] font-semibold"
-                  >
-                    <SearchModeGlyph kind={mode.icon} />
-                    {mode.label}
-                  </button>
-                ))}
-              </div>
-            </form>
-
-            <div className="mt-5 flex flex-wrap items-center justify-center gap-2.5 sm:mt-6 sm:gap-3">
-              <Link href="#categories" className="sl-v2-btn sl-v2-btn-ghost-invert text-[13px] sm:text-sm">
-                {t("hero.browse")}
-              </Link>
-              <Link
-                href="/vehicle-fitment"
-                className="sl-v2-btn sl-v2-btn-ghost-invert inline-flex items-center gap-2 text-[13px] sm:text-sm"
-              >
-                <CarIcon />
-                {t("hero.findVehicle")}
-              </Link>
-            </div>
+        {/* ONE dedicated overlay layer above the artwork. The layer ignores
+            pointer events; each anchor opts back in. */}
+        <div className="pointer-events-none absolute inset-0 z-20 hidden md:block">
+          {TARGETS.map((target) => (
+            <Link
+              key={`${target.kind}-${target.label}-${target.box.join("_")}`}
+              href={target.href}
+              /* aria-label only. A `title` attribute makes the browser paint a
+                 native tooltip over the artwork on hover, which is exactly the
+                 visible label these hotspots must not have. The accessible name
+                 is unaffected - aria-label wins over title anyway. */
+              aria-label={target.label}
+              data-hero-target={target.kind}
+              data-hero-label={target.label}
+              className="pointer-events-auto absolute cursor-pointer border-0 bg-transparent p-0 text-transparent shadow-none outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-0 focus-visible:outline-[var(--sl-brand)]"
+              style={pct(target.box)}
+            />
+          ))}
         </div>
       </div>
 
-      {/*
-        Vehicle discovery strip. Previously a bare row of 8 bare icon links,
-        which read as an old catalogue nav bar. It now has a clear label and
-        each type is a proper compact card with a consistent hover state. The
-        vehicle types themselves are unchanged and still link to the real
-        /vehicle-fitment route.
-      */}
-      <div className="border-b border-[var(--sl-border)]/70 bg-[var(--sl-cream)]">
-        <div className="sl-container py-5">
-          <p className="sl-label">Find parts for your vehicle</p>
-          <ul className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-4 lg:grid-cols-8">
-            {VEHICLE_TYPES.map((item) => (
-              <li key={item.key}>
+      {/* Phones: the artwork is a ~127px strip, so the overlays are removed and
+          the part categories are offered as a plain text row. Unchanged from
+          the previous pass; the vehicle markers are not repeated here because
+          the artwork's own dots are not tappable at that size either. */}
+      <div className="sl-container border-t border-[var(--sl-rule)] py-3 md:hidden">
+        <nav aria-label="Shop by part category">
+          <ul className="flex flex-wrap items-center gap-x-4 gap-y-1.5">
+            {TARGETS.filter((target) => target.kind === "part").map((target) => (
+              <li key={target.href}>
                 <Link
-                  href={item.href}
-                  className="group flex min-h-[68px] flex-col items-center justify-center gap-1.5 rounded-[var(--sl-radius-sm)] border border-[var(--sl-border)] bg-white px-2 py-2 text-center transition-colors duration-200 hover:border-brand-300 hover:bg-white hover:shadow-[0_4px_14px_-8px_rgba(42,8,18,0.35)]"
+                  href={target.href}
+                  className="sl-focus text-[0.8125rem] font-semibold text-[var(--sl-ink-2)] transition-colors hover:text-[var(--sl-brand)]"
                 >
-                  <span className="text-[var(--sl-primary)] transition-transform duration-200 group-hover:scale-110">
-                    <VehicleGlyph kind={item.icon} />
-                  </span>
-                  <span className="text-[10px] font-semibold uppercase leading-tight tracking-wide text-[var(--sl-text-soft)] group-hover:text-[var(--sl-primary)]">
-                    {t(item.key)}
-                  </span>
+                  {target.label}
                 </Link>
               </li>
             ))}
           </ul>
-        </div>
+        </nav>
       </div>
-
-      {/*
-        DESIGN RESET: the standalone "quick searches" chip band is removed.
-        It duplicated the "Search by" chips directly under the search field —
-        two chip rows in one band was the single biggest source of clutter in
-        the hero. The five "Search by" chips (Part Number / Part Name / Brand /
-        Vehicle / HSN) remain, they are the restrained discovery affordance, and
-        they submit through the same real `onQuickSearch` handler. The vehicle
-        strip above keeps every vehicle entry point.
-      */}
     </section>
-  );
-}
-
-function SearchGlyph({ className = "h-5 w-5" }: { className?: string }) {
-  return (
-    <svg
-      className={`${className} shrink-0 text-white/75`}
-      fill="none"
-      viewBox="0 0 24 24"
-      stroke="currentColor"
-      strokeWidth="1.9"
-      aria-hidden
-    >
-      <circle cx="11" cy="11" r="6.5" />
-      <path strokeLinecap="round" strokeLinejoin="round" d="m20 20-3.6-3.6" />
-    </svg>
-  );
-}
-
-function SearchModeGlyph({ kind }: { kind: SearchModeIcon }) {
-  const common = "h-3.5 w-3.5 shrink-0";
-  return (
-    <svg
-      className={common}
-      fill="none"
-      viewBox="0 0 24 24"
-      stroke="currentColor"
-      strokeWidth="1.9"
-      aria-hidden
-    >
-      {kind === "hash" ? (
-        <path strokeLinecap="round" d="M9 4 7 20M17 4l-2 16M4 9h16M3 15h16" />
-      ) : kind === "tag" ? (
-        <path
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          d="M3 12.5V4h8.5L21 13.5 13.5 21 3 12.5Zm4-4h.01"
-        />
-      ) : kind === "badge" ? (
-        <path
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          d="M12 3 4 6v6c0 4.5 3.2 8 8 9 4.8-1 8-4.5 8-9V6l-8-3Z"
-        />
-      ) : kind === "car" ? (
-        <path
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          d="M3 13l2-5h14l2 5M5 17a1.5 1.5 0 100-3 1.5 1.5 0 000 3zm14 0a1.5 1.5 0 100-3 1.5 1.5 0 000 3zM4 13h16"
-        />
-      ) : (
-        <path
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          d="m8 8-4 4 4 4m8-8 4 4-4 4m-2-11-4 14"
-        />
-      )}
-    </svg>
-  );
-}
-
-function VehicleGlyph({ kind }: { kind: (typeof VEHICLE_TYPES)[number]["icon"] }) {
-  const common = "h-7 w-7 text-current";
-  return (
-    <svg className={common} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.6" aria-hidden>
-      {kind === "bike" ? (
-        <path strokeLinecap="round" strokeLinejoin="round" d="M5 17a3 3 0 100-6 3 3 0 000 6zm14 0a3 3 0 100-6 3 3 0 000 6zM8 14l4-7h3l2 4" />
-      ) : kind === "hcv" || kind === "lcv" ? (
-        <path strokeLinecap="round" strokeLinejoin="round" d="M3 16V8h11v8M14 10h4l3 4v2h-7M6 18a2 2 0 100-4 2 2 0 000 4zm10 0a2 2 0 100-4 2 2 0 000 4z" />
-      ) : kind === "tractor" ? (
-        <path strokeLinecap="round" strokeLinejoin="round" d="M4 17a3 3 0 106 0M14 17a4 4 0 108 0M7 17V8h6l3 4h4" />
-      ) : kind === "off" ? (
-        <path strokeLinecap="round" strokeLinejoin="round" d="M4 16l3-6h10l3 6M7 16a2 2 0 100 0zm10 0a2 2 0 100 0zM3 20h18" />
-      ) : (
-        <path strokeLinecap="round" strokeLinejoin="round" d="M3 13l2-5h14l2 5M5 17a1.5 1.5 0 100-3 1.5 1.5 0 000 3zm14 0a1.5 1.5 0 100-3 1.5 1.5 0 000 3zM4 13h16" />
-      )}
-    </svg>
-  );
-}
-
-function CarIcon() {
-  return (
-    <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.8">
-      <path strokeLinecap="round" strokeLinejoin="round" d="M3 13l2-5h14l2 5M5 17a1.5 1.5 0 100-3 1.5 1.5 0 000 3zm14 0a1.5 1.5 0 100-3 1.5 1.5 0 000 3zM4 13h16" />
-    </svg>
   );
 }

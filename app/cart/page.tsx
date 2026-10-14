@@ -223,7 +223,7 @@ export default function CartPage() {
 
   return (
     <div
-      className={`sl-container sl-container-wide sl-page-main text-[var(--sl-text)] ${
+      className={`flex min-h-screen flex-col bg-[var(--sl-page)] text-[var(--sl-ink)] ${
         !loading && !isCartEmpty && cart && !hasUnpricedItems
           ? "pb-[calc(var(--mobile-nav-height)+var(--safe-bottom)+4.75rem)] md:pb-0"
           : "storefront-mobile-pad"
@@ -232,24 +232,23 @@ export default function CartPage() {
       <StorefrontHeader cartCount={cart?.itemCount ?? 0} />
 
       {/* Main Content */}
-      <main className="sl-container sl-container-wide sl-page-main">
+      <main className="sl-container sl-page-main flex-1">
         {/* Title & Stats */}
-        <div className="flex flex-wrap items-baseline justify-between gap-2 border-b border-[var(--sl-border)] pb-5">
+        <div className="flex flex-wrap items-baseline justify-between gap-2 border-b border-[var(--sl-rule)] pb-5">
           <div>
-            <h1 className="sl-h1 text-2xl sm:text-3xl">
-              {t("cart.title")}
-            </h1>
+            <h1 className="sl-h1">{t("cart.title")}</h1>
             <div className="mt-3 flex items-center gap-3">
-              <Link href="/" className="text-xs font-semibold text-[var(--sl-primary)] hover:underline">
+              <Link href="/" className="text-xs font-semibold text-[var(--sl-brand-ink)] hover:underline">
                 {t("cart.continue")}
               </Link>
               <SignOutButton />
             </div>
-            <p className="mt-1 text-sm text-[var(--sl-muted)]">{t("cart.genuine")}</p>
+            <p className="mt-1 text-sm text-[var(--sl-ink-3)]">{t("cart.genuine")}</p>
           </div>
           {!loading && !isCartEmpty && (
-            <span className="inline-flex items-center rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-[var(--sl-text-soft)]">
-              {cart?.itemCount} item{cart?.itemCount === 1 ? "" : "s"}
+            <span className="sl-badge sl-badge-neutral">
+              {cart?.itemCount}{" "}
+              {cart?.itemCount === 1 ? t("category.item") : t("category.items")}
             </span>
           )}
         </div>
@@ -258,10 +257,10 @@ export default function CartPage() {
         {error && (
           <div
             role="alert"
-            className="mt-6 flex items-start gap-3 rounded-[var(--sl-radius)] border border-rose-200 bg-rose-50 p-4 text-sm text-rose-800 shadow-sm animate-in fade-in"
+            className="mt-6 flex items-start gap-3 rounded-[var(--sl-r)] border border-[var(--sl-bad-line)] bg-[var(--sl-bad-soft)] p-4 text-sm text-[var(--sl-bad)] shadow-sm sl-fade-in"
           >
             <svg
-              className="mt-0.5 h-5 w-5 shrink-0 text-rose-600"
+              className="mt-0.5 h-5 w-5 shrink-0 text-[var(--sl-bad)]"
               viewBox="0 0 20 20"
               fill="currentColor"
             >
@@ -274,7 +273,7 @@ export default function CartPage() {
             <div className="flex-1 font-medium">{error}</div>
             <button
               onClick={() => setError("")}
-              className="text-xs font-semibold text-rose-600 hover:text-rose-900"
+              className="text-xs font-semibold text-[var(--sl-bad)] hover:text-[var(--sl-bad)]"
               aria-label={t("common.dismiss")}
             >
               {t("common.dismiss")}
@@ -285,11 +284,11 @@ export default function CartPage() {
         {actionMessage && (
           <div
             role="status"
-            className="mt-6 flex items-center justify-between rounded-[var(--sl-radius)] border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-800 shadow-sm animate-in fade-in"
+            className="mt-6 flex items-center justify-between rounded-[var(--sl-r)] border border-[var(--sl-ok-line)] bg-[var(--sl-ok-soft)] p-4 text-sm text-[var(--sl-ok)] shadow-sm sl-fade-in"
           >
             <div className="flex items-center gap-2.5">
               <svg
-                className="h-5 w-5 text-emerald-600"
+                className="h-5 w-5 text-[var(--sl-ok)]"
                 viewBox="0 0 20 20"
                 fill="currentColor"
               >
@@ -303,7 +302,7 @@ export default function CartPage() {
             </div>
             <button
               onClick={() => setActionMessage("")}
-              className="text-xs font-semibold text-emerald-700 hover:text-emerald-950"
+              className="text-xs font-semibold text-[var(--sl-ok)] hover:text-[var(--sl-ok)]"
               aria-label={t("common.dismiss")}
             >
               {t("common.dismiss")}
@@ -317,14 +316,14 @@ export default function CartPage() {
             {[1, 2].map((i) => (
               <div
                 key={i}
-                className="sl-skeleton h-24 w-full"
+                className="sl-skel h-24 w-full"
               >
                 <div className="flex gap-4">
-                  <div className="sl-skeleton h-24 w-28 !rounded-[var(--sl-radius)]" />
+                  <div className="sl-skel h-24 w-28 !rounded-[var(--sl-r)]" />
                   <div className="flex-1 space-y-3">
-                    <div className="sl-skeleton h-5 w-1/3" />
-                    <div className="sl-skeleton h-4 w-1/4" />
-                    <div className="sl-skeleton h-8 w-28" />
+                    <div className="sl-skel h-5 w-1/3" />
+                    <div className="sl-skel h-4 w-1/4" />
+                    <div className="sl-skel h-8 w-28" />
                   </div>
                 </div>
               </div>
@@ -333,24 +332,24 @@ export default function CartPage() {
         )}
 
         {!loading && cart?.requiresLogin && (
-          <div className="sl-v2-card mt-10 p-10 text-center sm:p-14">
+          <div className="sl-panel mt-10 p-10 text-center sm:p-14">
             <h2 className="sl-h2">{t("cart.signInTitle")}</h2>
             <p className="sl-body mx-auto mt-2 max-w-sm">
               {t("cart.signInBody")}
             </p>
             <Link
               href="/login"
-              className="sl-v2-btn sl-v2-btn-primary mt-7"
+              className="sl-btn sl-btn-primary mt-7"
             >
-              Sign in
+              {t("cart.signIn")}
             </Link>
           </div>
         )}
 
         {/* Empty State */}
         {!loading && !cart?.requiresLogin && isCartEmpty && (
-          <div className="mt-10 rounded-[var(--sl-radius-lg)] border border-dashed border-[var(--sl-border-strong)] bg-white p-12 text-center shadow-sm sm:p-16">
-            <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-[var(--sl-radius-lg)] bg-slate-100 text-[var(--sl-muted)]">
+          <div className="mt-10 rounded-[var(--sl-r-lg)] border border-dashed border-[var(--sl-rule-strong)] bg-[var(--sl-surface)] p-12 text-center shadow-sm sm:p-16">
+            <div className="sl-state-icon mx-auto h-20 w-20">
               <svg
                 className="h-10 w-10"
                 fill="none"
@@ -374,7 +373,7 @@ export default function CartPage() {
             <div className="mt-7 flex flex-wrap justify-center gap-3">
               <Link
                 href="/"
-                className="sl-v2-btn sl-v2-btn-primary"
+                className="sl-btn sl-btn-primary"
               >
                 <svg
                   className="h-4 w-4"
@@ -400,12 +399,16 @@ export default function CartPage() {
           <div className="mt-8 grid gap-8 lg:grid-cols-[1fr_360px]">
             {/* Cart Items List */}
             <section
-              aria-label="Cart items"
+              aria-label={t("cart.title")}
               className="space-y-4"
             >
               {cart.items.map((item) => {
                 const isUpdating = Boolean(updatingIds[item.id]);
-                const maxStock = item.stock ?? 999;
+                // A missing inventory row means the server knows zero
+                // sellable units (validateAvailableStock rejects any qty
+                // against null stock), so the stepper must not offer "+".
+                // The previous `?? 999` enabled increments the API rejects.
+                const maxStock = item.stock ?? 0;
                 const canIncrease = item.quantity < maxStock && !isUpdating;
                 const canDecrease = item.quantity > 1 && !isUpdating;
                 const isPriced = isAuthoritativeSellingPricePaise(
@@ -422,7 +425,7 @@ export default function CartPage() {
                 return (
                   <article
                     key={item.id}
-                    className={`sl-v2-card sl-v2-card-hover group relative overflow-hidden p-4 sm:p-5 ${
+                    className={`sl-panel group relative overflow-hidden p-4 sm:p-5 ${
                       isUpdating ? "opacity-70 pointer-events-none" : ""
                     }`}
                   >
@@ -434,8 +437,8 @@ export default function CartPage() {
                         onClick={() =>
                           setLightboxImage({
                             src: item.imageUrl || "/images/products/placeholder.svg",
-                            alt: item.partName || "Automotive part",
-                            name: item.partName || "Automotive Spare Part",
+                            alt: item.partName || t("product.partFallback"),
+                            name: item.partName || t("product.partFallback"),
                             partNumber: item.partNumber,
                           })
                         }
@@ -444,19 +447,21 @@ export default function CartPage() {
                             e.preventDefault();
                             setLightboxImage({
                               src: item.imageUrl || "/images/products/placeholder.svg",
-                              alt: item.partName || "Automotive part",
-                              name: item.partName || "Automotive Spare Part",
+                              alt: item.partName || t("product.partFallback"),
+                              name: item.partName || t("product.partFallback"),
                               partNumber: item.partNumber,
                             });
                           }
                         }}
-                        aria-label={`Enlarge image for ${item.partName || "part"}`}
-                        className="relative aspect-[4/3] w-full shrink-0 cursor-zoom-in overflow-hidden rounded-[var(--sl-radius)] border border-slate-100 bg-slate-100 sm:w-28 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-950"
+                        aria-label={t("product.enlarge", {
+                          name: item.partName || t("product.partFallback"),
+                        })}
+                        className="sl-focus relative aspect-[4/3] w-full shrink-0 cursor-zoom-in overflow-hidden rounded-[var(--sl-r)] border border-[var(--sl-rule)] bg-[var(--sl-sunken)] sm:w-28"
                       >
                         {/* eslint-disable-next-line @next/next/no-img-element */}
                         <img
                           src={item.thumbUrl || item.imageUrl || "/images/products/placeholder.svg"}
-                          alt={item.partName || "Automotive part"}
+                          alt={item.partName || t("product.partFallback")}
                           width={112}
                           height={84}
                           loading="lazy"
@@ -473,7 +478,7 @@ export default function CartPage() {
                           }}
                         />
                         {item.partBrand && (
-                          <span className="absolute bottom-1 left-1 rounded bg-slate-900/80 px-1.5 py-0.5 text-[10px] font-semibold uppercase text-white backdrop-blur-xs">
+                          <span className="absolute bottom-1 left-1 rounded bg-[var(--sl-graphite-2)]/80 px-1.5 py-0.5 text-[10px] font-semibold uppercase text-white backdrop-blur-xs">
                             {item.partBrand}
                           </span>
                         )}
@@ -483,18 +488,18 @@ export default function CartPage() {
                       <div className="flex-1 min-w-0">
                         <div className="flex items-start justify-between gap-2">
                           <div>
-                            <h2 className="text-base font-bold text-slate-950 sm:text-lg">
-                              {item.partName || "Automotive Spare Part"}
+                            <h2 className="sl-h3">
+                              {item.partName || t("product.partFallback")}
                             </h2>
                             {item.partNumber && (
-                              <p className="mt-0.5 inline-flex items-center gap-1.5 font-mono text-xs font-semibold text-[var(--sl-muted)]">
+                              <p className="mt-0.5 inline-flex items-center gap-1.5 font-mono text-xs font-semibold text-[var(--sl-ink-3)]">
                                 <span>{t("product.partHash", { number: item.partNumber ?? "" })}</span>
                               </p>
                             )}
                           </div>
                           {/* Subtotal (mobile view) */}
                           <div className="text-right sm:hidden">
-                            <span className="text-base font-bold text-slate-950">
+                            <span className="text-base font-bold text-[var(--sl-ink)]">
                               ₹{itemTotalRupees.toLocaleString("en-IN")}
                             </span>
                           </div>
@@ -503,9 +508,9 @@ export default function CartPage() {
                         {/* Distributor & Stock Meta */}
                         <div className="mt-2 flex flex-wrap items-center gap-2 text-xs">
                           {item.firmName && (
-                            <span className="inline-flex items-center gap-1 rounded-md bg-emerald-50 px-2 py-0.5 font-medium text-emerald-800 border border-emerald-200/60">
+                            <span className="sl-badge sl-badge-ok inline-flex items-center gap-1">
                               <svg
-                                className="h-3 w-3 text-emerald-600"
+                                className="h-3 w-3 text-[var(--sl-ok)]"
                                 viewBox="0 0 20 20"
                                 fill="currentColor"
                               >
@@ -521,47 +526,47 @@ export default function CartPage() {
 
                           {item.stock !== null && (
                             <span
-                              className={`inline-flex items-center rounded-md px-2 py-0.5 font-medium ${
-                                item.stock > 10
-                                  ? "bg-slate-100 text-[var(--sl-text-soft)]"
-                                  : "bg-amber-50 text-amber-800 border border-amber-200"
+                              className={`sl-badge ${
+                                item.stock > 10 ? "sl-badge-neutral" : "sl-badge-warn"
                               }`}
                             >
                               {item.stock > 10
-                                ? `${item.stock} in stock`
-                                : `Only ${item.stock} left in stock`}
+                                ? t("product.inStock", { count: item.stock })
+                                : t("cart.stockLeft", { count: item.stock })}
                             </span>
                           )}
                         </div>
 
                         {/* Controls & Pricing Bar */}
-                        <div className="mt-4 flex flex-wrap items-center justify-between gap-4 border-t border-slate-100 pt-3.5">
+                        <div className="mt-4 flex flex-wrap items-center justify-between gap-4 border-t border-[var(--sl-rule)] pt-3.5">
                           {/* Unit price */}
                           <div className="flex flex-col">
                             {isPriced ? (
                               <>
-                            <span className="text-[11px] text-[var(--sl-muted)]">
-                              List ₹{listRupees.toLocaleString("en-IN")} · Incl. GST
+                            <span className="sl-meta tabular-nums">
+                              {t("price.listRate")} ₹{listRupees.toLocaleString("en-IN")} · {t("price.inclGst")}
                             </span>
                             <div className="flex items-baseline gap-2">
-                            <span className="text-sm font-semibold text-slate-800">
+                            <span className="text-sm font-semibold text-[var(--sl-ink)]">
                               ₹{unitPriceRupees.toLocaleString("en-IN")}
                             </span>
                             {mrpRupees && mrpRupees > unitPriceRupees && (
-                              <span className="text-xs text-[var(--sl-muted)] line-through">
+                              <span className="text-xs text-[var(--sl-ink-3)] line-through">
                                 ₹{mrpRupees.toLocaleString("en-IN")}
                               </span>
                             )}
-                            <span className="text-[11px] text-[var(--sl-muted)]">/ unit net</span>
+                            <span className="text-[11px] text-[var(--sl-ink-3)]">
+                {t("cart.unitNet")}
+              </span>
                             </div>
                             {(item.discountPercent ?? 0) > 0 ? (
-                              <span className="text-[11px] font-semibold text-[var(--sl-primary)]">
-                                {item.discountPercent}% Incl. Tax Discount
+                              <span className="text-[11px] font-semibold text-[var(--sl-brand-ink)]">
+                                {t("price.inclTaxDiscount", { percent: item.discountPercent ?? 0 })}
                               </span>
                             ) : null}
                               </>
                             ) : (
-                              <span className="text-sm font-bold text-slate-800">
+                              <span className="text-sm font-bold text-[var(--sl-ink)]">
                                 {t("price.onRequest")}
                               </span>
                             )}
@@ -570,7 +575,7 @@ export default function CartPage() {
                           {/* Controls: [ - ] qty [ + ] and Delete */}
                           <div className="flex items-center gap-4">
                             {/* Quantity Controls */}
-                            <div className="inline-flex items-center rounded-[var(--sl-radius)] border border-[var(--sl-border-strong)] bg-[var(--sl-surface-sunk)]/70 p-0.5 shadow-xs">
+                            <div className="inline-flex items-center rounded-[var(--sl-r)] border border-[var(--sl-rule-strong)] bg-[var(--sl-sunken)]/70 p-0.5 shadow-xs">
                               <button
                                 type="button"
                                 onClick={() =>
@@ -580,8 +585,8 @@ export default function CartPage() {
                                   )
                                 }
                                 disabled={!canDecrease}
-                                aria-label={`Decrease quantity of ${item.partName || "item"}`}
-                                className="flex h-8 w-8 items-center justify-center rounded-[var(--sl-radius-sm)] text-[var(--sl-text-soft)] transition-colors hover:bg-white hover:text-slate-950 active:bg-slate-200 disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-transparent"
+                                aria-label={t("product.decreaseQuantity")}
+                                className="sl-focus flex h-8 w-8 items-center justify-center rounded-[2px] text-[var(--sl-ink-2)] transition-colors hover:bg-[var(--sl-surface)] hover:text-[var(--sl-ink)] active:bg-[var(--sl-sunken-2)] disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-transparent"
                               >
                                 <svg
                                   className="h-3.5 w-3.5"
@@ -599,7 +604,7 @@ export default function CartPage() {
                               </button>
 
                               <span
-                                className="flex h-8 w-10 items-center justify-center font-mono text-sm font-bold text-[var(--sl-text)] select-none"
+                                className="flex h-8 w-10 items-center justify-center font-mono text-sm font-bold text-[var(--sl-ink)] select-none"
                                 aria-live="polite"
                               >
                                 {item.quantity}
@@ -614,8 +619,8 @@ export default function CartPage() {
                                   )
                                 }
                                 disabled={!canIncrease}
-                                aria-label={`Increase quantity of ${item.partName || "item"}`}
-                                className="flex h-8 w-8 items-center justify-center rounded-[var(--sl-radius-sm)] text-[var(--sl-text-soft)] transition-colors hover:bg-white hover:text-slate-950 active:bg-slate-200 disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-transparent"
+                                aria-label={t("product.increaseQuantity")}
+                                className="sl-focus flex h-8 w-8 items-center justify-center rounded-[2px] text-[var(--sl-ink-2)] transition-colors hover:bg-[var(--sl-surface)] hover:text-[var(--sl-ink)] active:bg-[var(--sl-sunken-2)] disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-transparent"
                               >
                                 <svg
                                   className="h-3.5 w-3.5"
@@ -635,7 +640,7 @@ export default function CartPage() {
 
                             {/* Subtotal (desktop view) */}
                             <div className="hidden min-w-[90px] text-right sm:block">
-                              <span className="text-base font-bold text-slate-950">
+                              <span className="text-base font-bold text-[var(--sl-ink)]">
                                 {isPriced
                                   ? `₹${itemTotalRupees.toLocaleString("en-IN")}`
                                   : t("price.onRequest")}
@@ -649,8 +654,8 @@ export default function CartPage() {
                                 void removeItem(item.id, item.partName)
                               }
                               disabled={isUpdating}
-                              aria-label={`Remove ${item.partName || "item"} from cart`}
-                              className="inline-flex items-center gap-1.5 rounded-[var(--sl-radius-sm)] px-2.5 py-1.5 text-xs font-semibold text-rose-600 transition-colors hover:bg-rose-50 hover:text-rose-700 active:scale-95 disabled:cursor-not-allowed disabled:opacity-50"
+                              aria-label={t("cart.removeItem", { name: item.partName || t("product.partFallback") })}
+                              className="inline-flex items-center gap-1.5 rounded-[2px] px-2.5 py-1.5 text-xs font-semibold text-[var(--sl-bad)] transition-colors hover:bg-[var(--sl-bad-soft)] hover:text-[var(--sl-bad)] active:scale-95 disabled:cursor-not-allowed disabled:opacity-50"
                             >
                               <svg
                                 className="h-4 w-4"
@@ -678,14 +683,22 @@ export default function CartPage() {
 
             {/* Order Summary Sidebar. Sticky on desktop so the total and the
                 checkout action stay visible while the item list scrolls. */}
-            <aside aria-label="Order summary">
-              <div className="sl-v2-card sticky top-24 p-5 sm:p-6">
-                <h2 className="sl-h2">{t("cart.summary")}</h2>
+            <aside aria-label={t("cart.summary")}>
+              <div className="sl-panel sticky top-[var(--v3-header-h)] p-5 sm:p-6">
+                <h2 className="sl-h2 flex items-center gap-2">
+                  <span
+                    className="inline-block h-4 w-[3px] bg-[var(--sl-brand)]"
+                    aria-hidden
+                  />
+                  {t("cart.summary")}
+                </h2>
 
-                <div className="mt-5 space-y-3 text-sm">
-                  <div className="flex items-center justify-between text-[var(--sl-text-soft)]">
-                    <span>{t("cart.subtotal", { count: cart.itemCount })}</span>
-                    <span className="font-semibold text-[var(--sl-text)]">
+                <dl className="mt-4 divide-y divide-[var(--sl-rule)] border-y border-[var(--sl-rule)]">
+                  <div className="flex items-baseline justify-between gap-3 py-2.5">
+                    <dt className="sl-metric-label !text-[0.625rem]">
+                      {t("cart.subtotal", { count: cart.itemCount })}
+                    </dt>
+                    <dd className="sl-num shrink-0 text-[0.875rem] font-semibold text-[var(--sl-ink)]">
                       ₹
                       {(
                         (cart.subtotalPaise ??
@@ -695,17 +708,19 @@ export default function CartPage() {
                           )) /
                         100
                       ).toLocaleString("en-IN")}
-                    </span>
+                    </dd>
                   </div>
 
-                  <div className="flex items-center justify-between text-[var(--sl-text-soft)]">
-                    <span className="inline-flex items-center gap-1">
-                      <span>{t("cart.gst")}</span>
-                      <span className="rounded bg-emerald-50 px-1.5 py-0.2 text-[10px] font-bold text-emerald-700 border border-emerald-200/60">
+                  <div className="flex items-baseline justify-between gap-3 py-2.5">
+                    <dt className="flex items-center gap-2">
+                      <span className="sl-metric-label !text-[0.625rem]">
+                        {t("cart.gst")}
+                      </span>
+                      <span className="sl-badge sl-badge-ok !text-[0.5rem]">
                         {t("cart.itemized")}
                       </span>
-                    </span>
-                    <span className="font-semibold text-emerald-700">
+                    </dt>
+                    <dd className="sl-num shrink-0 text-[0.875rem] font-semibold text-[var(--sl-ok)]">
                       ₹
                       {(
                         (cart.gstPaise ??
@@ -720,42 +735,46 @@ export default function CartPage() {
                           )) /
                         100
                       ).toLocaleString("en-IN")}
-                    </span>
+                    </dd>
                   </div>
 
-                  <div className="flex items-center justify-between text-[var(--sl-text-soft)]">
-                    <span>{t("cart.fulfill")}</span>
-                    <span className="font-semibold text-emerald-600">
+                  <div className="flex items-baseline justify-between gap-3 py-2.5">
+                    <dt className="sl-metric-label !text-[0.625rem]">
+                      {t("cart.fulfill")}
+                    </dt>
+                    <dd className="sl-num shrink-0 text-[0.875rem] font-semibold text-[var(--sl-ink-2)]">
                       {(cart.shippingPaise ?? 0) === 0
                         ? t("cart.freeStandard")
                         : `₹${((cart.shippingPaise ?? 0) / 100).toLocaleString("en-IN")}`}
-                    </span>
+                    </dd>
                   </div>
+                </dl>
 
-                  <div className="border-t border-[var(--sl-border)] pt-4">
-                    <div className="flex items-baseline justify-between">
-                      <span className="sl-h3">{t("cart.total")}</span>
-                      <div className="text-right">
-                        <span className="sl-price !text-2xl">
-                          ₹{(cart.totalPaise / 100).toLocaleString("en-IN")}
-                        </span>
-                        <p className="sl-small mt-0.5">
-                          {t("cart.includesGst")}
-                        </p>
-                      </div>
-                    </div>
+                {/* Payable total in its own sunk band: the only large figure
+                    in the panel, so the eye lands on it first. */}
+                <div className="mt-4 flex items-end justify-between gap-3 bg-[var(--sl-sunken)] px-3 py-3">
+                  <div className="min-w-0">
+                    <p className="sl-metric-label !text-[0.625rem]">
+                      {t("cart.total")}
+                    </p>
+                    <p className="sl-meta mt-1 !text-[0.6875rem]">
+                      {t("cart.includesGst")}
+                    </p>
                   </div>
+                  <p className="sl-num shrink-0 text-[1.5rem] font-extrabold leading-none tracking-tight text-[var(--sl-ink)]">
+                    ₹{(cart.totalPaise / 100).toLocaleString("en-IN")}
+                  </p>
                 </div>
 
                 {/* Checkout CTA */}
                 {hasUnpricedItems ? (
-                  <p className="mt-6 rounded-[var(--sl-radius)] border border-amber-200 bg-amber-50 px-3 py-3 text-center text-sm font-semibold text-amber-900">
+                  <p className="mt-5 border border-[var(--sl-warn-line)] bg-[var(--sl-warn-soft)] px-3 py-2.5 text-center text-[0.8125rem] font-semibold text-[var(--sl-warn)]">
                     {t("price.onRequest")}
                   </p>
                 ) : (
                 <Link
                   href={cart.requiresLogin ? "/login" : "/checkout"}
-                  className="sl-v2-btn sl-v2-btn-primary mt-6 hidden w-full md:inline-flex"
+                  className="sl-btn sl-btn-primary mt-6 hidden w-full md:inline-flex"
                 >
                   <span>{t("cart.checkout")}</span>
                   <svg
@@ -781,10 +800,10 @@ export default function CartPage() {
                   claims. It is now one guarantee line plus a separate, translated
                   GST-invoicing line.
                 */}
-                <div className="mt-6 space-y-2.5 border-t border-[var(--sl-border)] pt-5">
-                  <p className="sl-small flex items-center gap-2">
+                <div className="mt-6 space-y-2.5 border-t border-[var(--sl-rule)] pt-5">
+                  <p className="sl-meta flex items-center gap-2">
                     <svg
-                      className="h-4 w-4 shrink-0 text-[var(--sl-success)]"
+                      className="h-4 w-4 shrink-0 text-[var(--sl-ok)]"
                       viewBox="0 0 20 20"
                       fill="currentColor"
                       aria-hidden
@@ -797,9 +816,9 @@ export default function CartPage() {
                     </svg>
                     <span>{t("cart.genuine")}</span>
                   </p>
-                  <p className="sl-small flex items-center gap-2">
+                  <p className="sl-meta flex items-center gap-2">
                     <svg
-                      className="h-4 w-4 shrink-0 text-[var(--sl-success)]"
+                      className="h-4 w-4 shrink-0 text-[var(--sl-ok)]"
                       viewBox="0 0 20 20"
                       fill="currentColor"
                       aria-hidden
@@ -824,24 +843,24 @@ export default function CartPage() {
         <div
           role="dialog"
           aria-modal="true"
-          aria-label={`Enlarged product image of ${lightboxImage.name}`}
+          aria-label={t("photo.viewingAria", { name: lightboxImage.name })}
           onClick={(e) => {
             if (e.target === e.currentTarget) {
               setLightboxImage(null);
             }
           }}
-          className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 p-4 sm:p-6 backdrop-blur-sm animate-in fade-in"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-[var(--sl-overlay)] p-4 sm:p-6 backdrop-blur-sm sl-fade-in"
         >
-          <div className="relative flex max-h-[90vh] w-full max-w-3xl flex-col overflow-hidden rounded-[var(--sl-radius-lg)] bg-white shadow-[0_40px_90px_-30px_rgba(42,8,18,0.6)] ring-1 ring-brand-900/10">
+          <div className="relative flex max-h-[90vh] w-full max-w-3xl flex-col overflow-hidden rounded-[var(--sl-r-lg)] bg-[var(--sl-surface)] shadow-[var(--sl-e-3)] ring-1 ring-[var(--sl-brand-hover)]">
             {/* Modal Header */}
-            <div className="flex items-center justify-between border-b border-slate-100 px-5 py-3.5 bg-[var(--sl-surface-sunk)]/50">
+            <div className="flex items-center justify-between border-b border-[var(--sl-rule)] px-5 py-3.5 bg-[var(--sl-sunken)]/50">
               <div className="flex items-center gap-2">
                 {lightboxImage.partNumber && (
-                  <span className="rounded bg-slate-900 px-2 py-0.5 font-mono text-xs font-bold text-white">
+                  <span className="rounded bg-[var(--sl-graphite-2)] px-2 py-0.5 font-mono text-xs font-bold text-white">
                     #{lightboxImage.partNumber}
                   </span>
                 )}
-                <h2 className="text-sm font-bold text-[var(--sl-text)] truncate">
+                <h2 className="text-sm font-bold text-[var(--sl-ink)] truncate">
                   {lightboxImage.name}
                 </h2>
               </div>
@@ -851,7 +870,7 @@ export default function CartPage() {
                 type="button"
                 onClick={() => setLightboxImage(null)}
                 aria-label={t("common.close")}
-                className="flex h-8 w-8 items-center justify-center rounded-[var(--sl-radius-sm)] text-[var(--sl-muted)] transition-colors hover:bg-slate-200 hover:text-[var(--sl-text)] active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-950"
+                className="sl-focus flex h-8 w-8 items-center justify-center rounded-[2px] text-[var(--sl-ink-3)] transition-colors hover:bg-[var(--sl-sunken)] hover:text-[var(--sl-ink)] active:scale-95"
               >
                 <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
@@ -860,12 +879,12 @@ export default function CartPage() {
             </div>
 
             {/* Modal Body / Image View */}
-            <div className="flex flex-1 items-center justify-center overflow-hidden bg-slate-100 p-4 sm:p-8">
+            <div className="flex flex-1 items-center justify-center overflow-hidden bg-[var(--sl-sunken)] p-4 sm:p-8">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 src={lightboxImage.src}
                 alt={lightboxImage.alt}
-                className="max-h-[60vh] w-full object-contain rounded-[var(--sl-radius-sm)] transition-transform"
+                className="max-h-[60vh] w-full object-contain rounded-[2px] transition-transform"
                 onError={(e) => {
                   (e.currentTarget as HTMLImageElement).src =
                     "/images/products/placeholder.svg";
@@ -874,7 +893,7 @@ export default function CartPage() {
             </div>
 
             {/* Modal Footer */}
-            <div className="flex items-center justify-between border-t border-slate-100 px-5 py-3 text-xs text-[var(--sl-muted)] bg-white">
+            <div className="flex items-center justify-between border-t border-[var(--sl-rule)] px-5 py-3 text-xs text-[var(--sl-ink-3)] bg-[var(--sl-surface)]">
               <span>{t("photo.certified")}</span>
               <span className="hidden sm:inline">{t("photo.closeHint")}</span>
             </div>
@@ -883,17 +902,17 @@ export default function CartPage() {
       )}
       <SiteFooter />
       {!loading && !isCartEmpty && cart && !hasUnpricedItems ? (
-        <div className="fixed inset-x-0 bottom-[calc(var(--mobile-nav-height)+var(--safe-bottom))] z-40 border-t border-[var(--sl-border)] bg-white/95 px-3 py-2 backdrop-blur md:hidden">
+        <div className="fixed inset-x-0 bottom-[calc(var(--mobile-nav-height)+var(--safe-bottom))] z-40 border-t border-[var(--sl-rule)] bg-[var(--sl-surface)]/95 px-3 py-2 backdrop-blur md:hidden">
           <div className="mx-auto flex max-w-lg items-center gap-3">
             <div className="min-w-0 flex-1">
-              <p className="text-[11px] font-semibold uppercase tracking-wide text-[var(--sl-muted)]">{t("cart.total")}</p>
-              <p className="truncate text-lg font-extrabold text-slate-950">
+              <p className="sl-metric-label !text-[0.5625rem]">{t("cart.total")}</p>
+              <p className="sl-num truncate text-[1.125rem] font-extrabold text-[var(--sl-ink)]">
                 ₹{(cart.totalPaise / 100).toLocaleString("en-IN")}
               </p>
             </div>
             <Link
               href={cart.requiresLogin ? "/login" : "/checkout"}
-              className="btn-press inline-flex min-h-12 shrink-0 items-center justify-center rounded-[var(--sl-radius)] bg-[var(--sl-primary)] px-5 text-sm font-bold text-white"
+              className="sl-btn sl-btn-primary shrink-0 !min-h-12 px-5 !text-[0.875rem]"
             >
               {t("cart.checkout")}
             </Link>

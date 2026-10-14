@@ -51,12 +51,12 @@ function CartIcon() {
       fill="none"
       viewBox="0 0 24 24"
       stroke="currentColor"
-      strokeWidth="1.9"
+      strokeWidth="1.8"
       strokeLinecap="round"
       strokeLinejoin="round"
       aria-hidden
     >
-      <path d="M3 3h2l.4 2M7 13h10l3-8H6.4M7 13L5.4 5M7 13l-2 6h14M10 21a1 1 0 100-2 1 1 0 000 2zm8 0a1 1 0 100-2 1 1 0 000 2z" />
+      <path d="M2.5 3h2.2l.5 2.4M7 13h10.2l3-8.4H6.3M7 13 5.3 5.2M7 13l-2.1 6.1h14.2M10 21.2a1.1 1.1 0 100-2.2 1.1 1.1 0 000 2.2zm8 0a1.1 1.1 0 100-2.2 1.1 1.1 0 000 2.2z" />
     </svg>
   );
 }
@@ -68,7 +68,7 @@ function CheckIcon() {
       fill="none"
       viewBox="0 0 24 24"
       stroke="currentColor"
-      strokeWidth="2.2"
+      strokeWidth="2.3"
       strokeLinecap="round"
       strokeLinejoin="round"
       aria-hidden
@@ -79,16 +79,30 @@ function CheckIcon() {
 }
 
 /**
- * V2 catalogue product card.
+ * V3 catalogue product card.
  *
- * Hierarchy is deliberately fixed so a grid of these reads as a parts
- * catalogue rather than a marketplace listing:
- *   image stage → brand → name → part number → price → stock → add to cart.
+ * The composition is a SPECIFICATION ENTRY, not a marketplace listing. V2
+ * stacked loose text vertically — brand in brand colour, then name, then part
+ * number, then price, then a pill badge, then a full-width rounded button —
+ * and every card in a grid was a soft raised box. That is why a V2 grid read
+ * as a consumer template.
  *
- * The part number uses the monospaced `.sl-partno` treatment because it is
- * catalogue data a mechanic will read aloud or copy, not prose. Pricing logic
- * is untouched — `InclusivePrice` and `isAuthoritativeSellingPricePaise` remain
- * the single source of truth for what is displayed.
+ * V3 is three ruled bands:
+ *
+ *   SHELF LABEL   a hairline strip carrying the brand in tracked caps behind a
+ *                 3px burgundy rule — the label on a parts-catalogue shelf
+ *   IMAGE         a square, consistent well. The image is the single largest
+ *                 element on the card, per the V3 brief
+ *   DATA BLOCK    name, then a hairline-divided identifier row, then a ruled
+ *                 price band, then a ruled action row where the stock state and
+ *                 the call to action share one line
+ *
+ * Every division is a 1px rule and the gutters between rules are visible, so a
+ * grid of these reads as a printed catalogue page rather than a card gallery.
+ * Radii are 3px and there is no resting shadow; depth appears on hover only.
+ *
+ * Pricing is untouched. `InclusivePrice` and `isAuthoritativeSellingPricePaise`
+ * remain the single source of truth for what is displayed, exactly as in V2.
  */
 export function StorefrontProductCard({
   name,
@@ -123,15 +137,15 @@ export function StorefrontProductCard({
     Boolean(listing) && status === "active" && stock > 0 && isPriced;
 
   if (compact) {
-    /* Dense row used inside search facets and related-parts rails. */
+    /* Dense single-line row for search facets and related-parts rails. */
     return (
       <article
-        className={`sl-v2-card sl-v2-card-hover flex items-center gap-3 overflow-hidden p-2 ${className}`}
+        className={`sl-panel flex items-center gap-3 p-2 transition-[box-shadow,transform] duration-150 ease-[var(--sl-ease)] hover:-translate-y-0.5 hover:shadow-[var(--sl-e-3)] ${className}`}
       >
         <button
           type="button"
           onClick={onOpen}
-          className="sl-v2-focus h-16 w-16 shrink-0 overflow-hidden rounded-[var(--sl-radius-sm)] bg-[var(--sl-surface-sunk)]"
+          className="sl-focus h-14 w-14 shrink-0 overflow-hidden rounded-[var(--sl-r-xs)] bg-[var(--sl-sunken)]"
           aria-label={t("photo.enlargeAria", { name })}
         >
           <CatalogueProductImage
@@ -145,14 +159,12 @@ export function StorefrontProductCard({
           />
         </button>
         <div className="min-w-0 flex-1">
-          <h3 className="sl-h3 line-clamp-2 !text-sm">{name}</h3>
-          {partNumber ? <p className="sl-partno mt-0.5">{partNumber}</p> : null}
+          {partNumber ? <p className="sl-partno">{partNumber}</p> : null}
+          <h3 className="sl-clamp-2 text-[0.8125rem] font-semibold leading-snug text-[var(--sl-ink)]">
+            {name}
+          </h3>
         </div>
-        <span
-          className={`sl-v2-badge shrink-0 ${
-            isAvailable ? "sl-v2-badge-success" : "sl-v2-badge-danger"
-          }`}
-        >
+        <span className={`sl-badge shrink-0 ${isAvailable ? "sl-badge-ok" : "sl-badge-bad"}`}>
           {isAvailable ? t("product.inStockShort") : t("product.outOfStockShort")}
         </span>
       </article>
@@ -161,14 +173,41 @@ export function StorefrontProductCard({
 
   return (
     <article
-      className={`sl-v2-card sl-v2-card-hover sl-v2-rule group flex flex-col overflow-hidden ${className}`}
+      className={`sl-panel group flex flex-col overflow-hidden transition-[box-shadow,transform] duration-150 ease-[var(--sl-ease)] hover:-translate-y-0.5 hover:shadow-[var(--sl-e-3)] ${className}`}
     >
-      {/* ---- Image stage: the visual focus. One consistent ratio, clean
-           surface, no gradient tint, no floating frame. ---- */}
+      {/* ---- BAND 1: SHELF LABEL -------------------------------------- */}
+      <div className="flex items-center gap-2 border-b border-[var(--sl-rule)] bg-[var(--sl-sunken)] px-3 py-1.5">
+        <span
+          className="inline-block h-3 w-[3px] shrink-0 bg-[var(--sl-brand)]"
+          aria-hidden
+        />
+        {brand ? (
+          <span className="sl-label mb-0 sl-clamp-1 !text-[0.625rem] !text-[var(--sl-ink-2)]">
+            {brand}
+          </span>
+        ) : (
+          /* Keep the label strip height constant whether or not the record
+             carries a brand, so a grid never develops a ragged top edge. No
+             placeholder brand name is invented. */
+          <span className="text-[0.6875rem] text-[var(--sl-ink-3)]" aria-hidden>
+            &mdash;
+          </span>
+        )}
+        {badge ? (
+          <span className="sl-badge sl-badge-copper ml-auto shrink-0 !text-[0.5625rem]">
+            {badge}
+          </span>
+        ) : null}
+      </div>
+
+      {/* ---- BAND 2: IMAGE --------------------------------------------
+          Square, not 4:3. Spare parts are photographed on a neutral ground and
+          a square well is the only ratio in which they all sit at the same
+          visual weight; 4:3 left a band of dead cream under every product. */}
       <button
         type="button"
         onClick={onOpen}
-        className="sl-v2-focus relative block aspect-[4/3] w-full shrink-0 overflow-hidden bg-[var(--sl-surface-sunk)]"
+        className="sl-focus relative block aspect-square w-full shrink-0 overflow-hidden bg-[var(--sl-sunken)]"
         aria-label={t("photo.enlargeAria", { name })}
       >
         <CatalogueProductImage
@@ -177,37 +216,34 @@ export function StorefrontProductCard({
           mediumUrl={mediumUrl || listing?.mediumUrl}
           alt={name}
           size="thumb"
-          className="h-full w-full p-3 transition-transform duration-300 group-hover:scale-[1.03]"
+          className="h-full w-full p-4 transition-transform duration-300 group-hover:scale-[1.04]"
           imgClassName="h-full w-full object-contain"
         />
-        {badge ? (
-          <span className="sl-v2-badge sl-v2-badge-brand absolute left-2 top-2">
-            {badge}
+        {/* Part number is stamped on the image corner: it is the identifier a
+            mechanic scans for, so it should be readable without reading prose. */}
+        {partNumber ? (
+          <span className="sl-partno absolute bottom-0 left-0 max-w-[85%] truncate rounded-tr-[var(--sl-r-xs)] bg-[var(--sl-surface)] px-1.5 py-0.5 !text-[0.6875rem]">
+            {partNumber}
           </span>
         ) : null}
       </button>
 
-      <div className="flex min-w-0 flex-1 flex-col p-3.5">
-        {brand ? <p className="sl-label !text-[var(--sl-primary)]">{brand}</p> : null}
-
-        <h3 className="sl-h3 mt-1 line-clamp-2 transition-colors duration-200 group-hover:text-[var(--sl-primary)]">
-          {name}
-        </h3>
-
-        {partNumber ? (
-          <p className="sl-partno mt-1.5">
-            <span className="sr-only">Part number: </span>
-            {partNumber}
-          </p>
-        ) : null}
-
-        {application ? (
-          <p className="sl-small mt-1.5 line-clamp-1">{application}</p>
-        ) : null}
+      {/* ---- BAND 3: DATA BLOCK --------------------------------------- */}
+      <div className="flex min-w-0 flex-1 flex-col">
+        <div className="px-3 pt-3">
+          <h3 className="sl-h3 sl-clamp-2 leading-snug transition-colors group-hover:text-[var(--sl-brand)]">
+            {name}
+          </h3>
+          {application ? (
+            <p className="sl-small sl-clamp-1 mt-1">{application}</p>
+          ) : null}
+        </div>
 
         {listing ? (
-          <div className="mt-auto flex flex-1 flex-col pt-3">
-            <div className="flex flex-wrap items-baseline gap-x-2 gap-y-1">
+          <>
+            {/* Price band, ruled top and bottom. Tabular figures so a column
+                of cards lines up digit for digit. */}
+            <div className="mt-3 flex flex-wrap items-baseline gap-x-2 gap-y-1 border-y border-[var(--sl-rule)] px-3 py-2">
               {isPriced ? (
                 <InclusivePrice
                   pricePaise={listing.pricePaise}
@@ -227,53 +263,49 @@ export function StorefrontProductCard({
               ) : null}
             </div>
 
-            <div className="mt-2.5 flex items-center justify-between gap-2">
-              <span
-                className={`sl-v2-badge ${
-                  isAvailable ? "sl-v2-badge-success" : "sl-v2-badge-danger"
-                }`}
-              >
+            {/* Action row: state on the left, action on the right, one line. */}
+            <div className="mt-auto flex items-center gap-2 px-3 py-2.5">
+              <span className={`sl-badge ${isAvailable ? "sl-badge-ok" : "sl-badge-bad"}`}>
                 {isAvailable
                   ? t("product.inStock", { count: stock })
                   : t("product.outOfStock")}
               </span>
+              <button
+                type="button"
+                disabled={!isAvailable || adding || justAdded}
+                onClick={onAdd}
+                className={`sl-btn sl-btn-sm ml-auto !min-h-9 ${
+                  justAdded || isAvailable
+                    ? "sl-btn-primary"
+                    : "!border-[var(--sl-rule)] !bg-[var(--sl-sunken)] !text-[var(--sl-ink-3)]"
+                }`}
+              >
+                {adding ? (
+                  t("product.adding")
+                ) : justAdded ? (
+                  <>
+                    <CheckIcon />
+                    {t("product.addedShort")}
+                  </>
+                ) : (
+                  <>
+                    <CartIcon />
+                    {t("product.addToCart")}
+                  </>
+                )}
+              </button>
             </div>
-
+          </>
+        ) : (
+          <div className="mt-auto border-t border-[var(--sl-rule)] px-3 py-2.5">
             <button
               type="button"
-              disabled={!isAvailable || adding || justAdded}
-              onClick={onAdd}
-              className={`sl-v2-btn mt-2.5 w-full !min-h-11 !text-[0.8125rem] ${
-                justAdded
-                  ? "sl-v2-btn-primary"
-                  : isAvailable
-                    ? "sl-v2-btn-primary"
-                    : "!border-[var(--sl-border)] !bg-[var(--sl-surface-sunk)] !text-[var(--sl-muted)]"
-              }`}
+              onClick={onOpen}
+              className="sl-btn sl-btn-secondary sl-btn-sm w-full"
             >
-              {adding ? (
-                t("product.adding")
-              ) : justAdded ? (
-                <>
-                  <CheckIcon />
-                  {t("product.addedShort")}
-                </>
-              ) : (
-                <>
-                  <CartIcon />
-                  {t("product.addToCart")}
-                </>
-              )}
+              {t("offers.details")}
             </button>
           </div>
-        ) : (
-          <button
-            type="button"
-            onClick={onOpen}
-            className="sl-v2-btn sl-v2-btn-secondary mt-auto w-full !min-h-11 !text-[0.8125rem]"
-          >
-            {t("offers.details")}
-          </button>
         )}
       </div>
     </article>

@@ -9,6 +9,14 @@ import {
 } from "@/lib/business-contacts";
 import { getTelHref } from "@/lib/support-contacts";
 import { getWhatsAppChatUrl } from "@/lib/whatsapp";
+import { pageMetadata } from "@/lib/seo";
+
+export const metadata = pageMetadata({
+  title: "Contact SpareLink India",
+  description:
+    "Talk to Ambaji Traders, Hind Motors or India Sales about parts, fitment, dealer enquiries or order support. Phone, WhatsApp and email contacts.",
+  path: "/contact-us",
+});
 
 /**
  * V2 Contact page.
@@ -97,18 +105,20 @@ export default function ContactUsPage() {
   }>;
 
   return (
-    <StorefrontShell wide>
+    <StorefrontShell>
       {/* ---------- PAGE HEADER ---------- */}
       <div className="max-w-2xl">
-        <p className="sl-label">
+        <p className="sl-eyebrow">
           <T k="nav.contact" />
         </p>
-        <h1 className="sl-h1 mt-2">
+        <div className="mb-5 flex flex-wrap items-baseline gap-3 border-b border-[var(--sl-rule)] pb-3">
+          <h1 className="sl-display">
           <T k="contact.title" />
         </h1>
         <p className="sl-body mt-2.5">
           <T k="contact.intro" />
         </p>
+        </div>
       </div>
 
       {/* ---------- CONTACT CHANNELS ----------
@@ -119,14 +129,14 @@ export default function ContactUsPage() {
             <a
               key={channel.key}
               href={channel.href}
-              className="sl-v2-card sl-v2-card-hover sl-v2-rule group flex items-start gap-3.5 p-5"
+              className="sl-panel  group flex items-start gap-3.5 p-5"
             >
-              <span className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-[var(--sl-radius-sm)] bg-[var(--sl-primary-soft)] text-[var(--sl-primary)]">
+              <span className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-[2px] bg-[var(--sl-brand-soft)] text-[var(--sl-brand-ink)]">
                 {channel.icon}
               </span>
               <span className="min-w-0">
-                <span className="sl-label block">{channel.label}</span>
-                <span className="sl-h3 mt-1 block break-words transition-colors group-hover:text-[var(--sl-primary)]">
+                <span className="sl-eyebrow sl-eyebrow-plain block">{channel.label}</span>
+                <span className="sl-h3 mt-1 block break-words transition-colors group-hover:text-[var(--sl-brand-ink)]">
                   {channel.value}
                 </span>
               </span>
@@ -138,7 +148,7 @@ export default function ContactUsPage() {
       {/* ---------- SUPPORT HIERARCHY ----------
           Routes the user to the right self-service destination before they
           reach for a person. */}
-      <section className="sl-band border-t border-[var(--sl-border)]" aria-labelledby="contact-support">
+      <section className="sl-band border-t border-[var(--sl-rule)]" aria-labelledby="contact-support">
         <div className="max-w-2xl">
           <h2 id="contact-support" className="sl-h2">
             <T k="nav.help" />
@@ -149,12 +159,12 @@ export default function ContactUsPage() {
         </div>
 
         <div className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-          <Link href="/help-support" className="sl-v2-card sl-v2-card-hover sl-v2-rule group flex items-start gap-3.5 p-5">
-            <span className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-[var(--sl-radius-sm)] bg-[var(--sl-primary-soft)] text-[var(--sl-primary)]">
+          <Link href="/help-support" className="sl-panel  group flex items-start gap-3.5 p-5">
+            <span className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-[2px] bg-[var(--sl-brand-soft)] text-[var(--sl-brand-ink)]">
               <HelpIcon />
             </span>
             <span>
-              <span className="sl-h3 block transition-colors group-hover:text-[var(--sl-primary)]">
+              <span className="sl-h3 block transition-colors group-hover:text-[var(--sl-brand-ink)]">
                 <T k="help.submit" />
               </span>
               <span className="sl-small mt-1 block">
@@ -163,15 +173,15 @@ export default function ContactUsPage() {
             </span>
           </Link>
 
-          <Link href="/track-order" className="sl-v2-card sl-v2-card-hover sl-v2-rule group flex items-start gap-3.5 p-5">
-            <span className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-[var(--sl-radius-sm)] bg-[var(--sl-primary-soft)] text-[var(--sl-primary)]">
+          <Link href="/track-order" className="sl-panel  group flex items-start gap-3.5 p-5">
+            <span className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-[2px] bg-[var(--sl-brand-soft)] text-[var(--sl-brand-ink)]">
               <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
                 <path d="M6 3h9l4 4v14H6z" />
                 <path d="M15 3v4h4M9 12h6M9 16h4" />
               </svg>
             </span>
             <span>
-              <span className="sl-h3 block transition-colors group-hover:text-[var(--sl-primary)]">
+              <span className="sl-h3 block transition-colors group-hover:text-[var(--sl-brand-ink)]">
                 <T k="nav.track" />
               </span>
               <span className="sl-small mt-1 block">
@@ -180,15 +190,15 @@ export default function ContactUsPage() {
             </span>
           </Link>
 
-          <Link href="/returns-refunds" className="sl-v2-card sl-v2-card-hover sl-v2-rule group flex items-start gap-3.5 p-5">
-            <span className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-[var(--sl-radius-sm)] bg-[var(--sl-primary-soft)] text-[var(--sl-primary)]">
+          <Link href="/returns-refunds" className="sl-panel  group flex items-start gap-3.5 p-5">
+            <span className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-[2px] bg-[var(--sl-brand-soft)] text-[var(--sl-brand-ink)]">
               <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
                 <path d="M3 12a9 9 0 109-9 9 9 0 00-6.4 2.7L3 8" />
                 <path d="M3 3v5h5" />
               </svg>
             </span>
             <span>
-              <span className="sl-h3 block transition-colors group-hover:text-[var(--sl-primary)]">
+              <span className="sl-h3 block transition-colors group-hover:text-[var(--sl-brand-ink)]">
                 <T k="legal.returns" />
               </span>
               <span className="sl-small mt-1 block">
@@ -200,8 +210,8 @@ export default function ContactUsPage() {
       </section>
 
       {/* ---------- PRIMARY CTA ---------- */}
-      <section className="sl-band border-t border-[var(--sl-border)]">
-        <div className="sl-v2-card p-6 sm:p-8">
+      <section className="sl-band border-t border-[var(--sl-rule)]">
+        <div className="sl-panel p-6 sm:p-8">
           <h2 className="sl-h3">
             <T k="help.title" />
           </h2>
@@ -209,14 +219,19 @@ export default function ContactUsPage() {
             <T k="contact.intro" />
           </p>
           <div className="mt-5 flex flex-wrap gap-2.5">
-            <WhatsAppCta href={whatsappHref} className="sl-v2-btn sl-v2-btn-primary" />
+            <WhatsAppCta
+              href={whatsappHref}
+              className="sl-btn sl-btn-primary"
+              tone="inherit"
+            />
+
             {telHref ? (
-              <a href={telHref} className="sl-v2-btn sl-v2-btn-secondary">
+              <a href={telHref} className="sl-btn sl-btn-secondary">
                 <PhoneIcon />
                 <T k="help.call" />
               </a>
             ) : null}
-            <a href={`mailto:${PUBLIC_DISPLAY_EMAIL}`} className="sl-v2-btn sl-v2-btn-secondary">
+            <a href={`mailto:${PUBLIC_DISPLAY_EMAIL}`} className="sl-btn sl-btn-secondary">
               <MailIcon />
               <T k="help.emailUs" />
             </a>

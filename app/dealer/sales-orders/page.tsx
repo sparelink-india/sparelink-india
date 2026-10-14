@@ -1,6 +1,10 @@
 "use client";
-import Link from "next/link";
+
 import { useEffect, useState } from "react";
+import { useI18n } from "@/components/preferences-provider";
+import { DealerBackLink } from "@/components/dealer-back-link";
+import { Notice } from "@/components/page-states";
+import { StorefrontShell } from "@/components/storefront-shell";
 
 type SO = {
   id: string;
@@ -18,6 +22,10 @@ type SearchHit = {
 };
 
 export default function DealerSalesOrdersPage() {
+  /* These labels were hardcoded English, so the dealer order views were
+     untranslated. The view is unchanged; only the copy is looked up now. */
+  const { t } = useI18n();
+
   const [orders, setOrders] = useState<SO[]>([]);
   const [error, setError] = useState("");
   const [partyName, setPartyName] = useState("");
@@ -38,11 +46,11 @@ export default function DealerSalesOrdersPage() {
   useEffect(() => {
     const timeout = window.setTimeout(() => {
       void load().catch((e) =>
-        setError(e instanceof Error ? e.message : "Load failed"),
+        setError(e instanceof Error ? e.message : t("orders.loadFail")),
       );
     }, 0);
     return () => window.clearTimeout(timeout);
-  }, []);
+  }, [t]);
 
   const search = async () => {
     const r = await fetch(
@@ -51,7 +59,7 @@ export default function DealerSalesOrdersPage() {
     );
     const d = await r.json();
     if (!r.ok) {
-      setError(d.error || "Search failed");
+      setError(d.error || t("product.searchFail"));
       return;
     }
     setHits(d.hits ?? []);
@@ -79,54 +87,49 @@ export default function DealerSalesOrdersPage() {
       setPartyName("");
       await load();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Create failed");
+      setError(err instanceof Error ? err.message : t("quickOrder.failed"));
     } finally {
       setSaving(false);
     }
   };
 
   return (
-    <main className="min-h-screen bg-zinc-50 text-zinc-950">
-      <header className="border-b bg-white">
-        <div className="mx-auto flex max-w-6xl justify-between px-6 py-4">
-          <Link href="/dealer" className="text-xl font-bold">
-            SpareLink India
-          </Link>
-          <span className="text-sm">Dealer sales orders</span>
-        </div>
-      </header>
-      <div className="mx-auto max-w-6xl px-6 py-10">
-        <div className="flex items-center justify-between">
-          <h1 className="text-3xl font-bold">B2B sales orders</h1>
-          <Link href="/dealer" className="text-sm text-blue-600 hover:underline">
-            Back
-          </Link>
+    <StorefrontShell>
+      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[var(--sl-rule)] pb-4">
+        <span className="sl-eyebrow">{t("dealer.salesOrdersTitle")}</span>
+      </div>
+      <div className="pt-6">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <h1 className="sl-h2">{t("dealer.b2bSalesTitle")}</h1>
+          <DealerBackLink href="/dealer">{t("dealer.back")}</DealerBackLink>
         </div>
         {error && (
-          <p className="mt-5 rounded-lg bg-red-50 p-3 text-sm text-red-700">
-            {error}
-          </p>
+          <div className="mt-5">
+            <Notice tone="error">{error}</Notice>
+          </div>
         )}
-        <form onSubmit={create} className="mt-8 space-y-3 rounded-xl border bg-white p-6">
+        <form onSubmit={create} className="sl-panel mt-8 space-y-3 p-6">
           <input
+            aria-label={t("dealer.sales.partyName")}
             value={partyName}
             onChange={(e) => setPartyName(e.target.value)}
-            placeholder="Party name (defaults to your business)"
-            className="w-full rounded border px-3 py-2 text-sm"
+            placeholder={t("dealer.sales.partyName")}
+            className="sl-input"
           />
           <div className="flex gap-2">
             <input
+              aria-label={t("dealer.sales.searchParts")}
               value={q}
               onChange={(e) => setQ(e.target.value)}
-              placeholder="Search parts..."
-              className="flex-1 rounded border px-3 py-2 text-sm"
+              placeholder={t("dealer.sales.searchParts")}
+              className="sl-input min-w-0 flex-1"
             />
             <button
               type="button"
               onClick={() => void search()}
-              className="rounded border px-3 py-2 text-sm"
+              className="sl-btn sl-btn-secondary shrink-0"
             >
-              Search
+              {t("dealer.sales.search")}
             </button>
           </div>
           {hits.map((h, i) => (
@@ -145,17 +148,18 @@ export default function DealerSalesOrdersPage() {
                   },
                 ]);
               }}
-              className="block w-full rounded border px-2 py-1 text-left text-sm disabled:opacity-40"
+              className="sl-btn sl-btn-secondary sl-btn-block justify-start whitespace-normal text-left"
             >
               {h.partNumber} · {h.name}
             </button>
           ))}
           {lines.map((l, i) => (
             <div key={`${l.dealerListingId}-${i}`} className="flex gap-2 text-sm">
-              <span className="flex-1">{l.label}</span>
+              <span className="min-w-0 flex-1">{l.label}</span>
               <input
                 type="number"
                 min={1}
+                aria-label={t("dealer.sales.quantityFor", { label: l.label })}
                 value={l.quantity}
                 onChange={(e) =>
                   setLines((prev) =>
@@ -164,31 +168,31 @@ export default function DealerSalesOrdersPage() {
                     ),
                   )
                 }
-                className="w-20 rounded border px-2"
+                className="sl-input w-20 shrink-0"
               />
             </div>
           ))}
           <button
             disabled={saving || !lines.length}
-            className="rounded bg-zinc-950 px-4 py-2 text-sm text-white disabled:opacity-50"
+            className="sl-btn sl-btn-primary"
           >
-            Create draft SO
+            {t("dealer.quickOrderSubmit")}
           </button>
         </form>
         <div className="mt-8 space-y-2">
           {orders.map((o) => (
             <div
               key={o.id}
-              className="flex justify-between rounded-xl border bg-white p-4 text-sm"
+              className="sl-panel flex flex-wrap items-start justify-between gap-x-4 gap-y-1 p-4 text-sm"
             >
               <span>
                 <b>{o.soNumber}</b> · {o.partyName} · {o.status}
               </span>
-              <span>₹{(o.totalPaise / 100).toLocaleString("en-IN")}</span>
+              <span className="sl-num">₹{(o.totalPaise / 100).toLocaleString("en-IN")}</span>
             </div>
           ))}
         </div>
       </div>
-    </main>
+    </StorefrontShell>
   );
 }

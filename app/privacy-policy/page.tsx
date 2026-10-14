@@ -8,6 +8,14 @@ import {
   PUBLIC_SUPPORT_INBOX,
   PUBLIC_SUPPORT_PHONE,
 } from "@/lib/business-contacts";
+import { pageMetadata } from "@/lib/seo";
+
+export const metadata = pageMetadata({
+  title: "Privacy Policy",
+  description:
+    "How SpareLink India collects, uses and protects the personal and business details you share when you order, register or enquire.",
+  path: "/privacy-policy",
+});
 
 export default function PrivacyPolicyPage() {
   return (
@@ -108,6 +116,92 @@ export default function PrivacyPolicyPage() {
                   <T k="privacy.cookiesBody" />
                 </p>
               </div>
+              <div id="sec-privacy-measurementtitle" data-toc>
+                <h2 className="sl-h2 mt-8">
+                  <T k="privacy.measurementTitle" />
+                </h2>
+                <p>
+                  <T k="privacy.measurementBody" />
+                </p>
+                <h3 className="sl-h3 mt-6">
+                  <T k="privacy.measurementWhatTitle" />
+                </h3>
+                <ul className="list-disc space-y-1 pl-5">
+                  <li>
+                    <T k="privacy.measurementWhat1" />
+                  </li>
+                  <li>
+                    <T k="privacy.measurementWhat2" />
+                  </li>
+                  <li>
+                    <T k="privacy.measurementWhat3" />
+                  </li>
+                  <li>
+                    <T k="privacy.measurementWhat4" />
+                  </li>
+                  <li>
+                    <T k="privacy.measurementWhat5" />
+                  </li>
+                </ul>
+                <h3 className="sl-h3 mt-6">
+                  <T k="privacy.measurementNeverTitle" />
+                </h3>
+                <ul className="list-disc space-y-1 pl-5">
+                  <li>
+                    <T k="privacy.measurementNever1" />
+                  </li>
+                  <li>
+                    <T k="privacy.measurementNever2" />
+                  </li>
+                  <li>
+                    <T k="privacy.measurementNever3" />
+                  </li>
+                  <li>
+                    <T k="privacy.measurementNever4" />
+                  </li>
+                  <li>
+                    <T k="privacy.measurementNever5" />
+                  </li>
+                </ul>
+                <h3 className="sl-h3 mt-6">
+                  <T k="privacy.measurementChoiceTitle" />
+                </h3>
+                <p>
+                  <T k="privacy.measurementChoiceBody" />
+                </p>
+              </div>
+              <div id="sec-privacy-locationtitle" data-toc>
+                <h2 className="sl-h2 mt-8">
+                  <T k="privacy.locationTitle" />
+                </h2>
+                <p>
+                  <T k="privacy.locationBody" />
+                </p>
+              </div>
+              <div id="sec-privacy-screenshotstitle" data-toc>
+                <h2 className="sl-h2 mt-8">
+                  <T k="privacy.screenshotsTitle" />
+                </h2>
+                <p>
+                  <T k="privacy.screenshotsBody" />
+                </p>
+              </div>
+              <div id="sec-privacy-retentiontitle" data-toc>
+                <h2 className="sl-h2 mt-8">
+                  <T k="privacy.retentionTitle" />
+                </h2>
+                <p>
+                  <T k="privacy.retentionBody" />
+                </p>
+              </div>
+              <div id="sec-privacy-measurementaccesstitle" data-toc>
+                <h2 className="sl-h2 mt-8">
+                  <T k="privacy.measurementAccessTitle" />
+                </h2>
+                <p>
+                  <T k="privacy.measurementAccessBody" />
+                </p>
+              </div>
               <div id="sec-privacy-requeststitle" data-toc>
                 <h2 className="sl-h2 mt-8">
                   <T k="privacy.requestsTitle" />
@@ -125,7 +219,7 @@ export default function PrivacyPolicyPage() {
                   <br />
                   <T k="common.email" />: {PUBLIC_DISPLAY_EMAIL}
                 </p>
-                <Link href="/help-support" className="mt-2 inline-block font-semibold text-[var(--sl-primary)] underline">
+                <Link href="/help-support" className="mt-2 inline-block font-semibold text-[var(--sl-brand-ink)] underline">
                   <T k="nav.help" />
                 </Link>
               </div>

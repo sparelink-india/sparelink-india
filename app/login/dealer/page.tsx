@@ -9,9 +9,9 @@ import { StorefrontHeader } from "@/components/storefront-header";
 import { useI18n } from "@/components/preferences-provider";
 
 /**
- * V2 Dealer Login — same split-panel architecture as customer login but with a
- * distinct B2B register: the copy names the bulk-ordering functionality that
- * actually exists, and no claim is made that isn't substantiated.
+ * Dealer Login — same shell as customer login but with a distinct B2B
+ * register: the copy names the bulk-ordering functionality that actually
+ * exists, and no claim is made that isn't substantiated.
  *
  * Authentication is unchanged: same endpoint, same `expectedRole: "dealer"`
  * payload, same session-flags pre-check, same redirects.
@@ -60,7 +60,7 @@ export default function DealerLoginPage() {
   }
 
   return (
-    <div className="sl-page flex min-h-screen flex-col">
+    <div className="flex min-h-screen flex-col bg-[var(--sl-page)] text-[var(--sl-ink)]">
       <StorefrontHeader />
       <AuthShell
         variant="dealer"
@@ -73,11 +73,11 @@ export default function DealerLoginPage() {
           { title: t("auth.dealerB3"), body: t("auth.dealerB3Body") },
         ]}
         footerNote={
-          <p className="sl-small text-center">
+          <p className="sl-meta text-center text-[var(--sl-graphite-ink-2)]">
             {t("dealer.customer")}{" "}
             <Link
               href="/login"
-              className="sl-v2-focus font-bold text-[var(--sl-primary)] hover:underline"
+              className="sl-focus font-bold text-[var(--v3-gold)] hover:underline"
             >
               {t("dealer.customerLogin")}
             </Link>
@@ -86,7 +86,7 @@ export default function DealerLoginPage() {
       >
         <form onSubmit={handleLogin} className="space-y-4">
           <div>
-            <label htmlFor="dealer-username" className="sl-label block">
+            <label htmlFor="dealer-username" className="sl-label">
               {t("login.username")}
             </label>
             <input
@@ -97,13 +97,13 @@ export default function DealerLoginPage() {
               value={username}
               onChange={(event) => setUsername(event.target.value)}
               placeholder={t("login.username")}
-              className="sl-v2-input mt-1.5"
+              className="sl-input"
               required
             />
           </div>
 
           <div>
-            <label htmlFor="dealer-password" className="sl-label block">
+            <label htmlFor="dealer-password" className="sl-label">
               {t("login.password")}
             </label>
             <input
@@ -114,7 +114,7 @@ export default function DealerLoginPage() {
               value={password}
               onChange={(event) => setPassword(event.target.value)}
               placeholder={t("login.password")}
-              className="sl-v2-input mt-1.5"
+              className="sl-input"
               required
             />
           </div>
@@ -122,7 +122,7 @@ export default function DealerLoginPage() {
           <button
             type="submit"
             disabled={busy}
-            className="sl-v2-btn sl-v2-btn-primary w-full"
+            className="sl-btn sl-btn-primary sl-btn-block"
           >
             {busy ? t("product.adding") : t("dealer.submit")}
           </button>

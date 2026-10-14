@@ -1,6 +1,10 @@
 "use client";
-import Link from "next/link";
+
 import { useEffect, useState } from "react";
+import { useI18n } from "@/components/preferences-provider";
+import { DealerBackLink } from "@/components/dealer-back-link";
+import { Notice } from "@/components/page-states";
+import { StorefrontShell } from "@/components/storefront-shell";
 
 type OrderLine = {
   orderItemId: string;
@@ -15,6 +19,10 @@ type OrderLine = {
 };
 
 export default function DealerOrdersPage() {
+  /* These labels were hardcoded English, so the dealer order views were
+     untranslated. The view is unchanged; only the copy is looked up now. */
+  const { t } = useI18n();
+
   const [orders, setOrders] = useState<OrderLine[]>([]);
   const [error, setError] = useState("");
 
@@ -26,56 +34,49 @@ export default function DealerOrdersPage() {
         if (!r.ok) throw new Error(d.error);
         setOrders(d.orders);
       } catch (e) {
-        setError(e instanceof Error ? e.message : "Load failed");
+        setError(e instanceof Error ? e.message : t("orders.loadFail"));
       }
     };
     const timeout = window.setTimeout(() => void load(), 0);
     return () => window.clearTimeout(timeout);
-  }, []);
+  }, [t]);
 
   return (
-    <main className="min-h-screen bg-zinc-50 text-zinc-950">
-      <header className="border-b bg-white">
-        <div className="mx-auto flex max-w-6xl justify-between px-6 py-4">
-          <Link href="/dealer" className="text-xl font-bold">
-            SpareLink India
-          </Link>
-          <span className="text-sm">Dealer orders</span>
-        </div>
-      </header>
-      <div className="mx-auto max-w-6xl px-6 py-10">
-        <div className="flex items-center justify-between">
-          <h1 className="text-3xl font-bold">Order lines</h1>
-          <Link href="/dealer" className="text-sm text-blue-600 hover:underline">
-            Back
-          </Link>
+    <StorefrontShell>
+      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[var(--sl-rule)] pb-4">
+        <span className="sl-eyebrow">{t("dealer.ordersTitle")}</span>
+      </div>
+      <div className="pt-6">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <h1 className="sl-h2">{t("dealer.orderLines")}</h1>
+          <DealerBackLink href="/dealer">{t("dealer.back")}</DealerBackLink>
         </div>
         {error && (
-          <p className="mt-5 rounded-lg bg-red-50 p-3 text-sm text-red-700">
-            {error}
-          </p>
+          <div className="mt-5">
+            <Notice tone="error">{error}</Notice>
+          </div>
         )}
         <div className="mt-8 space-y-2">
           {orders.map((o) => (
             <div
               key={o.orderItemId}
-              className="flex justify-between rounded-xl border bg-white p-4 text-sm"
+              className="sl-panel flex flex-wrap items-start justify-between gap-x-4 gap-y-1 p-4 text-sm"
             >
               <span>
                 <b>#{o.orderNumber}</b> · {o.partNumber} · {o.partName} ×{" "}
                 {o.quantity}
               </span>
-              <span>
+              <span className="sl-num">
                 ₹{(o.totalPaise / 100).toLocaleString("en-IN")} ·{" "}
                 {o.orderStatus}
               </span>
             </div>
           ))}
           {!orders.length && !error && (
-            <p className="text-sm text-zinc-500">No order lines yet.</p>
+            <p className="sl-small text-[var(--sl-ink-3)]">{t("dealer.noOrderLines")}</p>
           )}
         </div>
       </div>
-    </main>
+    </StorefrontShell>
   );
 }

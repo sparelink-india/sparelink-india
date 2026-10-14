@@ -1,19 +1,26 @@
 @import "tailwindcss";
 
+/* ===================================================================
+   SPARELINK V2 — TOKEN LAYER (ALIGNED WITH PRECISION)
+   All semantic tokens now point to Precision (sparelink.css) values.
+   This layer only exists so Tailwind utilities can reference them.
+   No component styles here — Precision owns the component layer.
+   =================================================================== */
+
 :root {
-  /* Brand background is cream #f8f4f0, not grey and not burgundy. */
-  --background: #f8f4f0;
-  --foreground: #1a1a1a;
-  --brand: #7a1233;
-  --brand-dark: #611029;
-  --brand-danger: #c81e1e;
-  --surface: #ffffff;
-  --surface-muted: #f1f5f9;
-  --border-subtle: #e2e8f0;
-  --radius-sm: 0.75rem;
-  --radius-md: 1rem;
-  --radius-lg: 1.25rem;
-  --shadow-xs: 0 1px 2px rgba(15, 23, 42, 0.05);
+  /* Background/foreground — aligned with Precision */
+  --background: #f7f3ef;  /* --sl-page */
+  --foreground: #14100e;  /* --sl-ink */
+  --brand: #7a1233;       /* --sl-brand */
+  --brand-dark: #611029;  /* --sl-brand-hover */
+  --brand-danger: #9b1c17; /* --sl-bad */
+  --surface: #ffffff;      /* --sl-surface */
+  --surface-muted: #f1ebe5; /* --sl-sunken */
+  --border-subtle: #e6dfd9; /* --sl-rule */
+  --radius-sm: 6px;        /* --sl-r-sm */
+  --radius-md: 8px;        /* --sl-r */
+  --radius-lg: 12px;       /* --sl-r-lg */
+  --shadow-xs: 0 1px 2px rgb(23 17 15 / 0.05); /* --sl-e-1 without rule */
   --touch-min: 44px;
   --mobile-header-offset: 0px;
   --mobile-nav-height: 3.75rem;
@@ -21,63 +28,213 @@
   --safe-bottom: env(safe-area-inset-bottom, 0px);
   --safe-left: env(safe-area-inset-left, 0px);
   --safe-right: env(safe-area-inset-right, 0px);
+
+  /* ===================================================================
+     DESIGN.MD TOKENS — Mechanical Telemetry Schematic
+     Mapped to existing Precision tokens where possible.
+     New tokens prefixed with --dt- for "Design Tokens".
+     =================================================================== */
+
+  /* ===== COPPER PRIMARY (Precision Copper) ===== */
+  --dt-copper-50: #fdf5e9;
+  --dt-copper-100: #faf0e1;
+  --dt-copper-200: #ecd5b0;   /* --sl-copper-line */
+  --dt-copper-300: #d4b87d;
+  --dt-copper-400: #c19a56;
+  --dt-copper-500: #b45309;   /* --sl-copper */
+  --dt-copper-600: #92400e;   /* --sl-copper-hover */
+  --dt-copper-700: #8a4208;   /* --sl-copper-ink */
+  --dt-copper-800: #6d3306;
+  --dt-copper-900: #572905;
+
+  /* Precision Copper (DESIGN.md primary) */
+  --dt-copper-primary: #c27835;        /* DESIGN.md primary */
+  --dt-copper-primary-hover: #d97706;   /* DESIGN.md primary hover */
+  --dt-copper-primary-container: #cb7f3b;
+  --dt-copper-on-primary: #4d2600;
+  --dt-copper-on-primary-container: #432100;
+
+  /* ===== BURGUNDY SECONDARY (Automotive Burgundy) ===== */
+  --dt-burgundy-50: #fdf4f7;      /* --sl-brand-soft */
+  --dt-burgundy-100: #fbf0f3;     /* --sl-brand-softer */
+  --dt-burgundy-100: #e8cdd7;     /* --sl-brand-line */
+  --dt-burgundy-200: #d8b3c4;
+  --dt-burgundy-300: #c07a94;
+  --dt-burgundy-400: #a84e6e;
+  --dt-burgundy-500: #7a1233;     /* --sl-brand */
+  --dt-burgundy-600: #611029;     /* --sl-brand-hover */
+  --dt-burgundy-700: #4d0b20;     /* --sl-brand-active */
+  --dt-burgundy-800: #3a0818;
+  --dt-burgundy-900: #1d040c;
+
+  /* Automotive Burgundy (DESIGN.md secondary) */
+  --dt-burgundy-primary: #8b1e2b;        /* DESIGN.md secondary */
+  --dt-burgundy-on-primary: #f7f7f8;
+  --dt-burgundy-container: #8b1e2b;
+  --dt-burgundy-on-container: #ff9e9f;
+
+  /* ===== STATUS COLORS (Calibrated Signals) ===== */
+  --dt-success: #4d8b31;        /* Nominal / Verified OEM */
+  --dt-success-soft: #e7f4ee;   /* --sl-ok-soft */
+  --dt-success-line: #bfe0d1;   /* --sl-ok-line */
+
+  --dt-warning: #d97706;        /* Warning / Tolerance Drift */
+  --dt-warning-soft: #fbf1df;   /* --sl-warn-soft */
+  --dt-warning-line: #ecd7ab;   /* --sl-warn-line */
+
+  --dt-danger: #9f1239;         /* Critical / Non-fitment Fault */
+  --dt-danger-soft: #fbeceb;    /* --sl-bad-soft */
+  --dt-danger-line: #eec4c1;    /* --sl-bad-line */
+
+  /* ===== MECHANICAL SURFACES (Dark Graphite Framework) ===== */
+  --dt-graphite-0: #101214;      /* Chassis Ground */
+  --dt-graphite-1: #181a1e;      /* Substrate Cell */
+  --dt-graphite-2: #22252b;      /* Active Drawer / Header Cell */
+  --dt-graphite-3: #2b2f38;      /* Structural Lines & Grids */
+  --dt-graphite-4: #333539;      /* Surface Variant */
+
+  /* ===== MECHANICAL BORDERS ===== */
+  --dt-border-mechanical: #2b2f38;      /* 1px mechanical partition */
+  --dt-border-strong: #3d444e;          /* Strong mechanical line */
+
+  /* ===== COPPER FOCUS/ELEVATION ===== */
+  --dt-focus-ring: #c27835;      /* Precision Copper focus ring */
+  --dt-elevation-accent: #c27835;  /* Copper tracing for elevation */
+
+  /* ===== TYPOGRAPHY SCALE (Design.md) ===== */
+  --dt-space-xs: 0.25rem;   /* 4px */
+  --dt-space-sm: 0.5rem;    /* 8px */
+  --dt-space-md: 0.75rem;   /* 12px */
+  --dt-space-lg: 1.25rem;   /* 20px */
+  --dt-space-xl: 2rem;      /* 32px */
+
+  /* Mechanical spacing (4px base) */
+  --dt-gutter: 1rem;        /* 16px desktop */
+  --dt-gutter-mobile: 0.5rem; /* 8px mobile */
+  --dt-margin: 1.5rem;
+  --dt-margin-mobile: 0.75rem;
+
+  /* Mechanical borders (1px solid) */
+  --dt-border-mechanical: #2b2f38;
+  --dt-border-strong: #3d444e;
+
+  /* Copper focus/elevation */
+  --dt-focus-ring: #c27835;
+  --dt-elevation-copper: 0 0 0 1px #c27835;
+
+  /* Mechanical radius (opt-in via .mechanical class) */
+  --dt-radius-mechanical: 0px;
+  --dt-radius-chamfer: 4px;  /* 45-degree chamfer for badges */
+
+  /* Spacing scale (4px base) */
+  --dt-space-xs: 0.25rem;   /* 4px */
+  --dt-space-sm: 0.5rem;    /* 8px */
+  --dt-space-md: 0.75rem;   /* 12px */
+  --dt-space-lg: 1.25rem;   /* 20px */
+  --dt-space-xl: 2rem;      /* 32px */
+
+  --dt-gutter: 1rem;
+  --dt-gutter-mobile: 0.5rem;
+  --dt-margin: 1.5rem;
+  --dt-margin-mobile: 0.75rem;
+
+  /* Mechanical borders */
+  --dt-border-mechanical: #2b2f38;
+  --dt-border-strong: #3d444e;
+
+  /* Copper focus/elevation */
+  --dt-focus-ring: #c27835;
+  --dt-elevation-copper: 0 0 0 1px #c27835;
+
+  /* Mechanical radius (opt-in) */
+  --dt-radius-mechanical: 0px;
+  --dt-radius-chamfer: 4px;
+
+  /* Spacing scale (4px base) */
+  --dt-space-xs: 0.25rem;
+  --dt-space-sm: 0.5rem;
+  --dt-space-md: 0.75rem;
+  --dt-space-lg: 1.25rem;
+  --dt-space-xl: 2rem;
+
+  --dt-gutter: 1rem;
+  --dt-gutter-mobile: 0.5rem;
+  --dt-margin: 1.5rem;
+  --dt-margin-mobile: 0.75rem;
+}
+
+/* Dark mode tokens — aligned with Precision's html.dark values */
+html.dark {
+  --background: #0f1216;  /* --sl-page dark */
+  --foreground: #eef2f6;  /* --sl-ink dark */
+  --brand: #7a1233;
+  --brand-dark: #9b3a5a;
+  --brand-danger: #f08c85; /* --sl-bad dark */
+  --surface: #171b22;      /* --sl-surface dark */
+  --surface-muted: #1e232b; /* --sl-sunken dark */
+  --border-subtle: #2b323c; /* --sl-rule dark */
+
+  /* ===== DESIGN.MD DARK MODE TOKENS ===== */
+  /* Mechanical Telemetry Schematic - Dark First */
+
+  /* ===== MECHANICAL SURFACES (Dark) ===== */
+  --dt-graphite-0: #101214;      /* Chassis Ground */
+  --dt-graphite-1: #181a1e;      /* Substrate Cell */
+  --dt-graphite-2: #22252b;      /* Active Drawer / Header Cell */
+  --dt-graphite-3: #2b2f38;      /* Structural Lines & Grids */
+  --dt-graphite-4: #333539;      /* Surface Variant */
+
+  /* ===== COPPER PRIMARY (Dark) ===== */
+  --dt-copper-primary: #ffb77d;        /* DESIGN.md primary (light copper) */
+  --dt-copper-primary-hover: #d97706;   /* DESIGN.md primary hover */
+  --dt-copper-primary-container: #cb7f3b;
+  --dt-copper-on-primary: #4d2600;
+  --dt-copper-on-primary-container: #432100;
+
+  /* ===== BURGUNDY SECONDARY (Dark) ===== */
+  --dt-burgundy-primary: #8b1e2b;        /* DESIGN.md secondary */
+  --dt-burgundy-on-primary: #f7f7f8;
+  --dt-burgundy-container: #8b1e2b;
+  --dt-burgundy-on-container: #ff9e9f;
+
+  /* ===== STATUS COLORS (Dark) ===== */
+  --dt-success: #4d8b31;        /* Nominal / Verified OEM */
+  --dt-success-soft: #10251c;   /* --sl-ok-soft dark */
+  --dt-success-line: #1f4536;   /* --sl-ok-line dark */
+
+  --dt-warning: #e0b062;        /* Warning / Tolerance Drift */
+  --dt-warning-soft: #2a2010;   /* --sl-warn-soft dark */
+  --dt-warning-line: #4a3a1c;   /* --sl-warn-line dark */
+
+  --dt-danger: #f08c85;         /* Critical / Non-fitment Fault */
+  --dt-danger-soft: #2b1315;    /* --sl-bad-soft dark */
+  --dt-danger-line: #4d2224;    /* --sl-bad-line dark */
+
+  /* ===== MECHANICAL SURFACES (Dark) ===== */
+  --dt-graphite-0: #101214;
+  --dt-graphite-1: #181a1e;
+  --dt-graphite-2: #22252b;
+  --dt-graphite-3: #2b2f38;
+  --dt-graphite-4: #333539;
+
+  /* ===== MECHANICAL BORDERS (Dark) ===== */
+  --dt-border-mechanical: #2b2f38;
+  --dt-border-strong: #3d444e;
+
+  /* ===== COPPER FOCUS/ELEVATION (Dark) ===== */
+  --dt-focus-ring: #ffb77d;
+  --dt-elevation-copper: 0 0 0 1px #ffb77d;
+
+  /* ===== MECHANICAL BORDERS (Dark) ===== */
+  --dt-border-mechanical: #2b2f38;
+  --dt-border-strong: #3d444e;
 }
 
 /* ===================================================================
-   SPARELINK V2 — CANONICAL TOKEN LAYER
-   Every colour, radius, shadow, type step and container in the customer
-   storefront resolves to one of these. Nothing below hard-codes a brand
-   colour. Roles are explicit so burgundy is used as identity/action and
-   never as a surface coating.
+   TAILWIND THEME MAPPING
+   Maps Precision's semantic tokens to Tailwind utilities.
+   All values sourced from Precision (sparelink.css).
    =================================================================== */
-
-:root {
-  /* Brand */
-  --sl-primary: #7a1233;
-  --sl-primary-dark: #611029;
-  --sl-primary-soft: #fdf6f8;
-  --sl-primary-tint: #f5ccdb;
-  --sl-cream: #f8f4f0;
-  --sl-gold: #c99b4a;
-  --sl-gold-soft: #e2c48c;
-
-  /* Surfaces */
-  --sl-surface: #ffffff;
-  --sl-surface-sunk: #fbf8f7;
-
-  /* Text */
-  --sl-text: #17110f;
-  --sl-text-soft: #4a403c;
-  --sl-muted: #7a6f6a;
-
-  /* Lines + state */
-  --sl-border: #e8ded9;
-  --sl-border-strong: #d9c9c2;
-  --sl-success: #0f6b4f;
-  --sl-success-soft: #e7f5ef;
-  --sl-danger: #a3211b;
-  --sl-danger-soft: #fbeceb;
-  --sl-focus: rgba(122, 18, 51, 0.32);
-
-  /* Shape */
-  --sl-radius-sm: 0.5rem;
-  --sl-radius: 0.75rem;
-  --sl-radius-lg: 1rem;
-
-  /* Depth — deliberately restrained */
-  --sl-shadow-xs: 0 1px 2px rgba(23, 17, 15, 0.05);
-  --sl-shadow: 0 2px 6px -1px rgba(23, 17, 15, 0.07), 0 1px 2px rgba(23, 17, 15, 0.04);
-  --sl-shadow-lg: 0 14px 32px -14px rgba(23, 17, 15, 0.18);
-  --sl-shadow-brand: 0 8px 22px -10px rgba(122, 18, 51, 0.45);
-
-  /* Rhythm */
-  --sl-container: 1240px;
-  --sl-container-wide: 1360px;
-  --sl-band-y: 2.5rem;
-  --sl-band-y-lg: 3.5rem;
-
-  --sl-ease: cubic-bezier(0.16, 1, 0.3, 1);
-}
 
 @theme inline {
   --color-background: var(--background);
@@ -87,996 +244,102 @@
      scripts render from the intended families. */
   --font-sans: var(--font-geist-sans), var(--font-hi), system-ui, sans-serif;
   --font-mono: var(--font-geist-mono), ui-monospace, monospace;
+  /* Design.md typography: Space Grotesk for headings, JetBrains Mono for data */
+  --font-display: var(--font-space-grotesk), var(--font-hi), system-ui, sans-serif;
+  --font-data: var(--font-jetbrains-mono), ui-monospace, monospace;
+
+  /* Brand palette — from Precision */
+  --color-brand-50: #fdf4f7;   /* --sl-brand-soft */
+  --color-brand-100: #fbf0f3;  /* --sl-brand-softer */
+  --color-brand-200: #e8cdd7;  /* --sl-brand-line */
+  --color-brand-300: #d8b3c4;
+  --color-brand-400: #c07a94;
+  --color-brand-500: #a84e6e;
+  --color-brand-600: #7a1233;  /* --sl-brand */
+  --color-brand-700: #611029;  /* --sl-brand-hover */
+  --color-brand-800: #4d0b20;  /* --sl-brand-active */
+  --color-brand-900: #3a0818;
+  --color-brand-950: #1d040c;
+
+  /* Graphite neutrals — from Precision */
+  --color-graphite-50: #f7f2ee;
+  --color-graphite-100: #efe8e4;
+  --color-graphite-200: #d8cbc3;
+  --color-graphite-300: #b8a094;
+  --color-graphite-400: #8f7163;
+  --color-graphite-500: #6e645e;  /* --sl-ink-3 */
+  --color-graphite-600: #4a423d;  /* --sl-ink-2 */
+  --color-graphite-700: #3a2d28;  /* --sl-graphite-3 */
+  --color-graphite-800: #241b18;  /* --sl-graphite-2 */
+  --color-graphite-900: #17110f;  /* --sl-graphite */
+  --color-graphite-950: #0b0806;
+
+  /* Copper provenance accent — from Precision */
+  --color-copper-50: #fdf5e9;
+  --color-copper-100: #faf0e1;
+  --color-copper-200: #ecd5b0;   /* --sl-copper-line */
+  --color-copper-300: #d4b87d;
+  --color-copper-400: #c19a56;
+  --color-copper-500: #b45309;   /* --sl-copper */
+  --color-copper-600: #92400e;   /* --sl-copper-hover */
+  --color-copper-700: #8a4208;   /* --sl-copper-ink */
+  --color-copper-800: #6d3306;
+  --color-copper-900: #572905;
+
+  /* Surface palette — from Precision */
+  --color-page: #f7f3ef;       /* --sl-page */
+  --color-surface: #ffffff;     /* --sl-surface */
+  --color-sunken: #f1ebe5;      /* --sl-sunken */
+  --color-sunken-2: #e9e1da;    /* --sl-sunken-2 */
+
+  /* Rule palette — from Precision */
+  --color-rule: #e6dfd9;        /* --sl-rule */
+  --color-rule-2: #d8cec6;      /* --sl-rule-2 */
+  --color-rule-strong: #bfb2a8; /* --sl-rule-strong */
+
+  /* Ink palette — from Precision */
+  --color-ink: #14100e;         /* --sl-ink */
+  --color-ink-2: #4a423d;       /* --sl-ink-2 */
+  --color-ink-3: #6e645e;       /* --sl-ink-3 */
+
+  /* State colors — from Precision */
+  --color-ok: #0f6b4f;          /* --sl-ok */
+  --color-ok-soft: #e7f4ee;     /* --sl-ok-soft */
+  --color-ok-line: #bfe0d1;     /* --sl-ok-line */
+  --color-warn: #8a5a12;        /* --sl-warn */
+  --color-warn-soft: #fbf1df;   /* --sl-warn-soft */
+  --color-warn-line: #ecd7ab;   /* --sl-warn-line */
+  --color-bad: #9b1c17;         /* --sl-bad */
+  --color-bad-soft: #fbeceb;    /* --sl-bad-soft */
+  --color-bad-line: #eec4c1;    /* --sl-bad-line */
+  --color-info: #1d4ed8;        /* --sl-info */
+  --color-info-soft: #eef2ff;   /* --sl-info-soft */
+  --color-info-line: #c7d2fe;   /* --sl-info-line */
+
+  /* Shadows — from Precision */
+  --shadow-xs: 0 1px 2px rgb(23 17 15 / 0.05);
+  --shadow-sm: 0 1px 2px rgb(23 17 15 / 0.05), 0 1px 0 var(--color-rule);
+  --shadow-md: 0 2px 4px rgb(23 17 15 / 0.05), 0 6px 14px -8px rgb(23 17 15 / 0.16), 0 0 0 1px var(--color-rule);
+  --shadow-lg: 0 4px 8px rgb(23 17 15 / 0.06), 0 18px 36px -14px rgb(23 17 15 / 0.26), 0 0 0 1px var(--color-rule);
+  --shadow-brand: 0 4px 8px rgb(122 18 51 / 0.25);
+
+  /* Radius — from Precision */
+  --radius-xs: 4px;     /* --sl-r-xs */
+  --radius-sm: 6px;     /* --sl-r-sm */
+  --radius: 8px;        /* --sl-r */
+  --radius-md: 10px;    /* --sl-r-md */
+  --radius-lg: 12px;    /* --sl-r-lg */
+  --radius-xl: 16px;    /* --sl-r-xl */
+  --radius-pill: 999px; /* --sl-r-pill */
+
+  /* Container — from Precision */
+  --container: 1320px;  /* --sl-container */
 }
 
 /* ===================================================================
-   SPARELINK CUSTOMER DESIGN SYSTEM — "Burgundy Premium"
-   Single source of truth for the customer-facing visual language.
-   Additive only: nothing here changes existing behaviour, it gives the
-   storefront one recognisable burgundy identity instead of ad-hoc greys.
+   BASE STYLES
+   Only global resets and universal concerns. Components are in Precision.
    =================================================================== */
-
-@theme {
-  /* Burgundy / wine ramp, anchored on the canonical --brand #7a1233. */
-  --color-brand-50: #fdf6f8;
-  --color-brand-100: #fbe9ef;
-  --color-brand-200: #f5ccdb;
-  --color-brand-300: #eba3bd;
-  --color-brand-400: #d9719a;
-  --color-brand-500: #c04374;
-  --color-brand-600: #9b1b4b;
-  --color-brand-700: #7a1233;
-  --color-brand-800: #611029;
-  --color-brand-900: #4a0c20;
-  --color-brand-950: #2a0812;
-
-  /* Charcoal neutrals used for body text and neutral surfaces. */
-  --color-ink-500: #64748b;
-  --color-ink-700: #334155;
-  --color-ink-900: #0f172a;
-
-  /* Brand gold #c99b4a, used sparingly for premium highlights. The lighter
-     tone is only the readable-on-burgundy variant. */
-  --color-gold-300: #e2c48c;
-  --color-gold-500: #c99b4a;
-}
-
-:root {
-  /* Burgundy gradient language */
-  --sl-grad-hero: linear-gradient(135deg, #2a0812 0%, #4a0c20 38%, #611029 68%, #7a1233 100%);
-  --sl-grad-brand: linear-gradient(135deg, #7a1233 0%, #9b1b4b 55%, #b02a5c 100%);
-  --sl-grad-brand-soft: linear-gradient(135deg, #fdf6f8 0%, #fbe9ef 100%);
-  --sl-grad-sheen: radial-gradient(
-    ellipse 80% 60% at 18% 8%,
-    rgba(217, 113, 154, 0.28) 0%,
-    transparent 62%
-  );
-
-  /* Premium surface + elevation language */
-  --sl-surface: #ffffff;
-  --sl-surface-sunk: #fbf7f8;
-  --sl-hairline: rgba(122, 18, 51, 0.1);
-  --sl-hairline-strong: rgba(122, 18, 51, 0.18);
-  --sl-ring-brand: rgba(122, 18, 51, 0.14);
-
-  --sl-shadow-xs: 0 1px 2px rgba(42, 8, 18, 0.05);
-  --sl-shadow-sm: 0 1px 3px rgba(42, 8, 18, 0.06), 0 1px 2px rgba(42, 8, 18, 0.04);
-  --sl-shadow-md: 0 6px 16px -4px rgba(42, 8, 18, 0.1), 0 2px 6px -2px rgba(42, 8, 18, 0.05);
-  --sl-shadow-lg: 0 18px 40px -12px rgba(42, 8, 18, 0.18), 0 4px 12px -4px rgba(42, 8, 18, 0.07);
-  --sl-shadow-brand: 0 10px 30px -10px rgba(122, 18, 51, 0.45);
-
-  --sl-radius-sm: 0.625rem;
-  --sl-radius-md: 0.875rem;
-  --sl-radius-lg: 1.125rem;
-  --sl-radius-xl: 1.5rem;
-
-  --sl-ease: cubic-bezier(0.16, 1, 0.3, 1);
-}
-
-/* ------------------------------------------------------------ containers */
-
-/*
- * ONE container + gutter + vertical rhythm for the whole storefront.
- *
- * Analysis found the header/footer running at max-w-[1688px] while every page
- * invented its own width (3xl / 4xl / 5xl / 6xl / 7xl), so the logo left edge
- * never lined up with page content on any route. These four classes are the
- * only widths a customer page may use, and they all share one gutter and one
- * vertical rhythm.
- */
-.sl-container {
-  width: 100%;
-  margin-inline: auto;
-  padding-inline: 1rem;
-  max-width: 1240px;
-}
-
-@media (min-width: 640px) {
-  .sl-container {
-    padding-inline: 1.5rem;
-  }
-}
-
-/* Browse/grid pages: categories, brands, fitment, homepage, cart, checkout. */
-.sl-container-wide {
-  max-width: 1360px;
-}
-
-/* Prose pages: policies, about, contact, help. Keeps line length readable. */
-.sl-container-prose {
-  max-width: 760px;
-}
-
-/* About-us needs slightly more room for its firm sections. */
-.sl-container-prose-lg {
-  max-width: 900px;
-}
-
-/* Focused single-column: login, register, change password, track order. */
-.sl-container-narrow {
-  max-width: 480px;
-}
-
-/* One vertical rhythm for every page shell. */
-.sl-page-main {
-  padding-block: 1.5rem;
-}
-
-@media (min-width: 768px) {
-  .sl-page-main {
-    padding-block: 2.5rem;
-  }
-}
-
-/*
- * ONE spacing rhythm for the whole storefront. Every major band uses
- * .sl-band, every page shell uses .sl-page-main. These are deliberately
- * tighter than the previous values, which left large dead gaps between
- * sections on a 1900px viewport.
- */
-.sl-band {
-  padding-block: 2rem;
-}
-
-@media (min-width: 768px) {
-  .sl-band {
-    padding-block: 2.75rem;
-  }
-}
-
-@media (min-width: 1280px) {
-  .sl-band {
-    padding-block: 3.25rem;
-  }
-}
-
-/* ------------------------------------------------------------ search field */
-
-/*
- * ONE search geometry for the header, hero, order page and search page.
- *
- * Analysis found three different search products: the header dropped its
- * border and radius on desktop (`md:rounded-none md:border-0`), the hero used
- * a frosted pill, and the order page used a third structure. These tokens give
- * every search the same height, radius, icon inset, focus treatment and button.
- */
-.sl-search {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  height: 3rem;
-  padding-inline: 0.875rem  0.375rem;
-  background: #fff;
-  border: 1px solid var(--sl-hairline-strong);
-  border-radius: 999px;
-  box-shadow: var(--sl-shadow-xs);
-  transition:
-    border-color 0.18s var(--sl-ease),
-    box-shadow 0.18s var(--sl-ease);
-}
-
-.sl-search:hover {
-  border-color: var(--color-brand-300);
-}
-
-.sl-search:focus-within {
-  border-color: var(--color-brand-600);
-  box-shadow: 0 0 0 3px var(--sl-ring-brand);
-}
-
-/* Search on a dark/burgundy surface (hero). */
-.sl-search-invert {
-  background: rgba(255, 255, 255, 0.1);
-  border-color: rgba(255, 255, 255, 0.24);
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
-  color: #fff;
-}
-
-.sl-search-invert:focus-within {
-  background: rgba(255, 255, 255, 0.16);
-  border-color: var(--color-gold-300);
-  box-shadow: 0 0 0 3px rgba(243, 217, 164, 0.28);
-}
-
-.sl-search-icon {
-  display: inline-flex;
-  flex-shrink: 0;
-  color: var(--color-ink-500);
-}
-
-.sl-search-invert .sl-search-icon {
-  color: rgba(255, 255, 255, 0.72);
-}
-
-.sl-search-input {
-  min-width: 0;
-  flex: 1;
-  height: 100%;
-  background: transparent;
-  border: 0;
-  font-size: 0.9375rem;
-  color: var(--color-ink-900);
-  outline: none;
-}
-
-.sl-search-input::placeholder {
-  color: var(--color-ink-500);
-}
-
-.sl-search-invert .sl-search-input {
-  color: #fff;
-}
-
-.sl-search-invert .sl-search-input::placeholder {
-  color: rgba(255, 255, 255, 0.62);
-}
-
-.sl-search-clear {
-  display: inline-flex;
-  height: 2rem;
-  width: 2rem;
-  flex-shrink: 0;
-  align-items: center;
-  justify-content: center;
-  border-radius: 999px;
-  color: var(--color-ink-500);
-  background: transparent;
-  transition:
-    background-color 0.16s var(--sl-ease),
-    color 0.16s var(--sl-ease);
-}
-
-.sl-search-clear:hover {
-  background: var(--color-brand-50);
-  color: var(--color-brand-700);
-}
-
-.sl-search-submit {
-  display: inline-flex;
-  flex-shrink: 0;
-  align-items: center;
-  justify-content: center;
-  gap: 0.375rem;
-  height: 2.5rem;
-  padding-inline: 1.125rem;
-  border-radius: 999px;
-  background: var(--sl-grad-brand);
-  color: #fff;
-  font-size: 0.875rem;
-  font-weight: 650;
-  box-shadow: var(--sl-shadow-brand);
-  transition:
-    filter 0.18s var(--sl-ease),
-    box-shadow 0.18s var(--sl-ease);
-}
-
-.sl-search-submit:hover {
-  filter: brightness(1.07);
-}
-
-.sl-search-submit:disabled {
-  opacity: 0.45;
-  cursor: not-allowed;
-  box-shadow: none;
-}
-
-/* Compact variant for the header. The hero owns the large search, so the
-   header field must read as a supporting control, not a second hero. */
-.sl-search-compact {
-  height: 2.5rem;
-  padding-inline: 0.625rem 0.25rem;
-}
-
-.sl-search-compact .sl-search-input {
-  font-size: 0.875rem;
-}
-
-.sl-search-submit-compact {
-  height: 2rem;
-  padding-inline: 0.75rem;
-  font-size: 0.8125rem;
-}
-
-/* --------------------------------------------------------------- surfaces */
-
-.sl-page {
-  background:
-    radial-gradient(ellipse 90% 60% at 50% 0%, rgba(122, 18, 51, 0.04) 0%, transparent 60%),
-    #f8f4f0;
-  color: var(--color-ink-900);
-}
-
-.sl-surface {
-  background: var(--sl-surface);
-  border: 1px solid var(--sl-hairline);
-  border-radius: var(--sl-radius-lg);
-  box-shadow: var(--sl-shadow-sm);
-}
-
-.sl-surface-sunk {
-  background: var(--sl-surface-sunk);
-  border: 1px solid var(--sl-hairline);
-  border-radius: var(--sl-radius-md);
-}
-
-/* Premium card: layered surface, soft brand hairline, restrained lift. */
-.sl-card {
-  position: relative;
-  background: var(--sl-surface);
-  border: 1px solid var(--sl-hairline);
-  border-radius: var(--sl-radius-lg);
-  box-shadow: var(--sl-shadow-sm);
-  transition:
-    transform 0.24s var(--sl-ease),
-    box-shadow 0.24s var(--sl-ease),
-    border-color 0.24s var(--sl-ease);
-}
-
-.sl-card-hover:hover {
-  transform: translateY(-3px);
-  border-color: var(--sl-hairline-strong);
-  box-shadow: var(--sl-shadow-lg);
-}
-
-/* Top-edge brand accent that appears on hover/focus. */
-.sl-card-accent::before {
-  content: "";
-  position: absolute;
-  inset: 0 0 auto 0;
-  height: 2px;
-  border-radius: var(--sl-radius-lg) var(--sl-radius-lg) 0 0;
-  background: var(--sl-grad-brand);
-  opacity: 0;
-  transition: opacity 0.24s var(--sl-ease);
-}
-
-.sl-card-accent:hover::before,
-.sl-card-accent:focus-within::before {
-  opacity: 1;
-}
-
-/* ------------------------------------------------------------- gradients */
-
-.sl-grad-hero {
-  background: var(--sl-grad-hero);
-  color: #fff;
-}
-
-.sl-grad-brand {
-  background: var(--sl-grad-brand);
-  color: #fff;
-}
-
-.sl-grad-brand-soft {
-  background: var(--sl-grad-brand-soft);
-  color: var(--color-brand-800);
-}
-
-/* Text that carries the brand gradient (headline accents). */
-.sl-text-grad {
-  background: linear-gradient(100deg, #f5ccdb 0%, #d9719a 38%, #f3d9a4 100%);
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
-}
-
-/* ===================================================================
-   SPARELINK V2 — TYPOGRAPHY SCALE + PRIMITIVE LAYER
-   Every step below resolves to a token in the canonical layer above.
-   Ten named type roles; nothing arbitrary. Display and H1 are the only
-   sizes permitted to be loud, so a dense catalogue page never shouts.
-   =================================================================== */
-
-.sl-display {
-  font-size: clamp(1.9rem, 1.15rem + 2.9vw, 3rem);
-  font-weight: 800;
-  line-height: 1.06;
-  letter-spacing: -0.032em;
-}
-
-.sl-h1 {
-  font-size: clamp(1.5rem, 1.2rem + 1.3vw, 2rem);
-  font-weight: 800;
-  line-height: 1.14;
-  letter-spacing: -0.024em;
-  color: var(--sl-text);
-}
-
-.sl-h2 {
-  font-size: clamp(1.2rem, 1.05rem + 0.75vw, 1.55rem);
-  font-weight: 750;
-  line-height: 1.2;
-  letter-spacing: -0.018em;
-  color: var(--sl-text);
-}
-
-.sl-h3 {
-  font-size: 1rem;
-  font-weight: 700;
-  line-height: 1.35;
-  letter-spacing: -0.01em;
-  color: var(--sl-text);
-}
-
-.sl-body {
-  font-size: 0.9375rem;
-  line-height: 1.6;
-  color: var(--sl-text-soft);
-}
-
-.sl-small {
-  font-size: 0.8125rem;
-  line-height: 1.5;
-  color: var(--sl-muted);
-}
-
-.sl-label {
-  font-size: 0.6875rem;
-  font-weight: 700;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-  color: var(--sl-muted);
-}
-
-/* Part numbers are catalogue data, not prose: monospaced and visually distinct. */
-.sl-partno {
-  font-family: var(--font-mono), ui-monospace, monospace;
-  font-size: 0.75rem;
-  font-weight: 650;
-  letter-spacing: 0.01em;
-  color: var(--sl-text-soft);
-}
-
-.sl-price {
-  font-size: 1.125rem;
-  font-weight: 800;
-  letter-spacing: -0.015em;
-  color: var(--sl-text);
-  font-variant-numeric: tabular-nums;
-}
-
-.sl-price-strike {
-  font-size: 0.8125rem;
-  color: var(--sl-muted);
-  text-decoration: line-through;
-  font-variant-numeric: tabular-nums;
-}
-
-.sl-nav {
-  font-size: 0.8125rem;
-  font-weight: 600;
-  letter-spacing: 0.005em;
-}
-
-/* ------------------------------------------------------------------ surfaces */
-
-/* Cards are white on cream. Nothing else is a card. */
-.sl-v2-card {
-  background: var(--sl-surface);
-  border: 1px solid var(--sl-border);
-  border-radius: var(--sl-radius);
-  box-shadow: var(--sl-shadow-xs);
-}
-
-.sl-v2-card-hover {
-  transition:
-    transform 0.22s var(--sl-ease),
-    box-shadow 0.22s var(--sl-ease),
-    border-color 0.22s var(--sl-ease);
-}
-
-.sl-v2-card-hover:hover {
-  transform: translateY(-2px);
-  border-color: var(--sl-border-strong);
-  box-shadow: var(--sl-shadow-lg);
-}
-
-/* Hairline brand rule on hover — quieter than the old accent bar. */
-.sl-v2-rule {
-  position: relative;
-}
-
-.sl-v2-rule::after {
-  content: "";
-  position: absolute;
-  inset: auto 0 0 0;
-  height: 2px;
-  background: var(--sl-primary);
-  transform: scaleX(0);
-  transform-origin: left;
-  transition: transform 0.28s var(--sl-ease);
-}
-
-.sl-v2-rule:hover::after,
-.sl-v2-rule:focus-within::after {
-  transform: scaleX(1);
-}
-
-/* -------------------------------------------------------------------- buttons */
-
-/* One language, four intents. */
-.sl-v2-btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.5rem;
-  min-height: 2.75rem;
-  padding-inline: 1.125rem;
-  border: 1px solid transparent;
-  border-radius: var(--sl-radius-sm);
-  font-size: 0.875rem;
-  font-weight: 650;
-  line-height: 1;
-  white-space: nowrap;
-  transition:
-    background-color 0.18s var(--sl-ease),
-    border-color 0.18s var(--sl-ease),
-    color 0.18s var(--sl-ease),
-    box-shadow 0.18s var(--sl-ease),
-    transform 0.12s var(--sl-ease);
-}
-
-.sl-v2-btn:active {
-  transform: translateY(1px);
-}
-
-.sl-v2-btn-primary {
-  background: var(--sl-primary);
-  color: #fff;
-  box-shadow: var(--sl-shadow-brand);
-}
-
-.sl-v2-btn-primary:hover {
-  background: var(--sl-primary-dark);
-}
-
-.sl-v2-btn-secondary {
-  background: var(--sl-surface);
-  color: var(--sl-primary);
-  border-color: var(--sl-border-strong);
-}
-
-.sl-v2-btn-secondary:hover {
-  background: var(--sl-primary-soft);
-  border-color: var(--sl-primary-tint);
-}
-
-.sl-v2-btn-ghost {
-  background: transparent;
-  color: var(--sl-text-soft);
-}
-
-.sl-v2-btn-ghost:hover {
-  background: var(--sl-primary-soft);
-  color: var(--sl-primary);
-}
-
-.sl-v2-btn-danger {
-  background: var(--sl-danger);
-  color: #fff;
-}
-
-/*
- * Inverse ghost button for use on a burgundy / dark field.
- * It previously had no definition at all, so buttons on the dark closing band
- * fell back to the base .sl-v2-btn colour (--sl-text, near-black) and were
- * effectively unreadable against #7a1233.
- */
-.sl-v2-btn-ghost-invert {
-  background: transparent;
-  color: #fff;
-  border-color: rgba(255, 255, 255, 0.55);
-}
-
-.sl-v2-btn-ghost-invert:hover {
-  background: rgba(255, 255, 255, 0.14);
-  border-color: #fff;
-  color: #fff;
-}
-
-.sl-v2-btn:disabled,
-.sl-v2-btn[aria-disabled="true"] {
-  opacity: 0.45;
-  cursor: not-allowed;
-  box-shadow: none;
-}
-
-/* --------------------------------------------------------------------- inputs */
-
-.sl-v2-input {
-  width: 100%;
-  min-height: 2.75rem;
-  padding-inline: 0.75rem;
-  background: var(--sl-surface);
-  border: 1px solid var(--sl-border-strong);
-  border-radius: var(--sl-radius-sm);
-  font-size: 0.9375rem;
-  color: var(--sl-text);
-  transition:
-    border-color 0.18s var(--sl-ease),
-    box-shadow 0.18s var(--sl-ease);
-}
-
-.sl-v2-input::placeholder {
-  color: var(--sl-muted);
-}
-
-.sl-v2-input:focus {
-  outline: none;
-  border-color: var(--sl-primary);
-  box-shadow: 0 0 0 3px var(--sl-focus);
-}
-
-.sl-v2-input:disabled {
-  background: var(--sl-surface-sunk);
-  color: var(--sl-muted);
-}
-
-.sl-v2-input[aria-invalid="true"] {
-  border-color: var(--sl-danger);
-}
-
-.sl-v2-input[aria-invalid="true"]:focus {
-  box-shadow: 0 0 0 3px rgba(163, 33, 27, 0.25);
-}
-
-/* --------------------------------------------------------------------- badges */
-
-/* Rendered only where the underlying data actually exists. */
-.sl-v2-badge {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.25rem;
-  padding: 0.125rem 0.4375rem;
-  border-radius: 0.3125rem;
-  border: 1px solid var(--sl-border);
-  background: var(--sl-surface-sunk);
-  font-size: 0.6875rem;
-  font-weight: 700;
-  letter-spacing: 0.03em;
-  text-transform: uppercase;
-  color: var(--sl-text-soft);
-}
-
-.sl-v2-badge-brand {
-  background: var(--sl-primary-soft);
-  border-color: var(--sl-primary-tint);
-  color: var(--sl-primary);
-}
-
-.sl-v2-badge-success {
-  background: var(--sl-success-soft);
-  border-color: #bfe3d4;
-  color: var(--sl-success);
-}
-
-.sl-v2-badge-danger {
-  background: var(--sl-danger-soft);
-  border-color: #f0c8c5;
-  color: var(--sl-danger);
-}
-
-/* ------------------------------------------------------------------ focus ring */
-
-/* Single definition for the whole storefront. */
-.sl-v2-focus:focus-visible {
-  outline: 2px solid var(--sl-primary);
-  outline-offset: 2px;
-  border-radius: var(--sl-radius-sm);
-}
-
-.sl-v2-focus-invert:focus-visible {
-  outline: 2px solid #fff;
-  outline-offset: 2px;
-  border-radius: var(--sl-radius-sm);
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .sl-v2-card-hover,
-  .sl-v2-btn,
-  .sl-v2-input,
-  .sl-v2-rule::after {
-    transition: none;
-  }
-
-  .sl-v2-card-hover:hover {
-    transform: none;
-  }
-}
-
-/* ----------------------------------------------------------- typography */
-
-/*
- * Controlled type scale. Premium means hierarchy, not oversized type
- * everywhere: hero is the only place allowed to be loud.
- */
-.sl-type-hero {
-  font-size: clamp(2rem, 1.35rem + 3.1vw, 3.6rem);
-  font-weight: 800;
-  line-height: 1.05;
-  letter-spacing: -0.03em;
-}
-
-.sl-type-page {
-  font-size: clamp(1.5rem, 1.2rem + 1.3vw, 2.15rem);
-  font-weight: 800;
-  line-height: 1.15;
-  letter-spacing: -0.022em;
-  color: var(--color-ink-900);
-}
-
-.sl-type-section {
-  font-size: clamp(1.25rem, 1.05rem + 0.9vw, 1.75rem);
-  font-weight: 800;
-  line-height: 1.18;
-  letter-spacing: -0.02em;
-  color: var(--color-ink-900);
-}
-
-.sl-type-card {
-  font-size: 0.9375rem;
-  font-weight: 700;
-  line-height: 1.35;
-  color: var(--color-ink-900);
-}
-
-.sl-type-label {
-  font-size: 0.6875rem;
-  font-weight: 700;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-  color: var(--color-ink-500);
-}
-
-/* Critical automotive identifiers: part number / OEM / HSN. Monospace so
-   digits stay scannable and copyable. */
-.sl-type-partno {
-  font-family: var(--font-mono), ui-monospace, monospace;
-  font-size: 0.75rem;
-  font-weight: 700;
-  letter-spacing: 0.01em;
-  color: var(--color-ink-700);
-}
-
-.sl-type-price {
-  font-size: 1.0625rem;
-  font-weight: 800;
-  letter-spacing: -0.01em;
-  color: var(--color-ink-900);
-}
-
-.sl-type-meta {
-  font-size: 0.75rem;
-  line-height: 1.45;
-  color: var(--color-ink-500);
-}
-
-.sl-eyebrow {
-  font-size: 0.6875rem;
-  font-weight: 700;
-  letter-spacing: 0.18em;
-  text-transform: uppercase;
-  color: var(--color-brand-600);
-}
-
-.sl-eyebrow-invert {
-  color: var(--color-brand-200);
-}
-
-.sl-section-title {
-  font-weight: 800;
-  letter-spacing: -0.02em;
-  color: var(--color-ink-900);
-  line-height: 1.12;
-}
-
-.sl-hairline {
-  border-color: var(--sl-hairline);
-}
-
-/* -------------------------------------------------------------- buttons */
-
-.sl-btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.5rem;
-  min-height: 2.75rem;
-  padding: 0 1.25rem;
-  border-radius: 999px;
-  font-size: 0.875rem;
-  font-weight: 650;
-  line-height: 1;
-  white-space: nowrap;
-  border: 1px solid transparent;
-  transition:
-    transform 0.18s var(--sl-ease),
-    box-shadow 0.18s var(--sl-ease),
-    background-color 0.18s var(--sl-ease),
-    border-color 0.18s var(--sl-ease),
-    color 0.18s var(--sl-ease);
-}
-
-.sl-btn:active {
-  transform: translateY(1px) scale(0.99);
-}
-
-.sl-btn-primary {
-  background: var(--sl-grad-brand);
-  color: #fff;
-  box-shadow: var(--sl-shadow-brand);
-}
-
-.sl-btn-primary:hover {
-  box-shadow: 0 14px 34px -10px rgba(122, 18, 51, 0.6);
-  filter: brightness(1.06);
-}
-
-.sl-btn-secondary {
-  background: #fff;
-  color: var(--color-brand-700);
-  border-color: var(--sl-hairline-strong);
-  box-shadow: var(--sl-shadow-xs);
-}
-
-.sl-btn-secondary:hover {
-  border-color: var(--color-brand-300);
-  background: var(--color-brand-50);
-}
-
-.sl-btn-ghost-invert {
-  background: rgba(255, 255, 255, 0.1);
-  color: #fff;
-  border-color: rgba(255, 255, 255, 0.32);
-  backdrop-filter: blur(6px);
-  -webkit-backdrop-filter: blur(6px);
-}
-
-.sl-btn-ghost-invert:hover {
-  background: rgba(255, 255, 255, 0.2);
-  border-color: rgba(255, 255, 255, 0.5);
-}
-
-.sl-btn:disabled,
-.sl-btn[aria-disabled="true"] {
-  opacity: 0.5;
-  cursor: not-allowed;
-  box-shadow: none;
-}
-
-/* --------------------------------------------------------------- badges */
-
-.sl-chip {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.375rem;
-  min-height: 2.125rem;
-  padding: 0 0.875rem;
-  border-radius: 999px;
-  border: 1px solid var(--sl-hairline-strong);
-  background: #fff;
-  color: var(--color-ink-700);
-  font-size: 0.8125rem;
-  font-weight: 550;
-  transition:
-    border-color 0.18s var(--sl-ease),
-    background-color 0.18s var(--sl-ease),
-    color 0.18s var(--sl-ease),
-    transform 0.18s var(--sl-ease);
-}
-
-.sl-chip:hover {
-  border-color: var(--color-brand-300);
-  background: var(--color-brand-50);
-  color: var(--color-brand-700);
-}
-
-.sl-chip-invert {
-  background: rgba(255, 255, 255, 0.08);
-  border-color: rgba(255, 255, 255, 0.22);
-  color: rgba(255, 255, 255, 0.94);
-}
-
-.sl-chip-invert:hover {
-  background: rgba(255, 255, 255, 0.18);
-  border-color: rgba(255, 255, 255, 0.45);
-  color: #fff;
-}
-
-.sl-badge {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.3125rem;
-  padding: 0.1875rem 0.5rem;
-  border-radius: 0.375rem;
-  font-size: 0.6875rem;
-  font-weight: 700;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-}
-
-.sl-badge-brand {
-  background: var(--color-brand-50);
-  color: var(--color-brand-700);
-  border: 1px solid var(--color-brand-200);
-}
-
-.sl-badge-neutral {
-  background: #f4f4f6;
-  color: var(--color-ink-700);
-  border: 1px solid rgba(15, 23, 42, 0.08);
-}
-
-.sl-badge-success {
-  background: #ecfdf5;
-  color: #065f46;
-  border: 1px solid #a7f3d0;
-}
-
-/* ------------------------------------------------------- focus / motion */
-
-.sl-focus:focus-visible {
-  outline: 2px solid var(--color-brand-600);
-  outline-offset: 2px;
-  border-radius: var(--sl-radius-sm);
-}
-
-.sl-focus-invert:focus-visible {
-  outline: 2px solid #fff;
-  outline-offset: 2px;
-  border-radius: var(--sl-radius-sm);
-}
-
-/* Skeleton loading placeholder. */
-.sl-skeleton {
-  background: linear-gradient(
-    90deg,
-    rgba(122, 18, 51, 0.06) 25%,
-    rgba(122, 18, 51, 0.12) 37%,
-    rgba(122, 18, 51, 0.06) 63%
-  );
-  background-size: 400% 100%;
-  animation: sl-shimmer 1.4s ease-in-out infinite;
-  border-radius: var(--sl-radius-sm);
-}
-
-/* The shimmer is decorative motion. With reduced motion requested it becomes a
-   flat tint so loading states still read as loading, without animating. */
-@media (prefers-reduced-motion: reduce) {
-  .sl-skeleton {
-    animation: none;
-    background: rgba(122, 18, 51, 0.08);
-  }
-}
-
-@keyframes sl-shimmer {
-  0% {
-    background-position: 100% 50%;
-  }
-  100% {
-    background-position: 0 50%;
-  }
-}
-
-/* Premium section wrapper was superseded by .sl-band (single rhythm). */
-/* `.sl-divider` keeps the soft brand hairline. */
-.sl-divider {
-  height: 1px;
-  background: linear-gradient(
-    90deg,
-    transparent 0%,
-    var(--sl-hairline-strong) 22%,
-    var(--sl-hairline-strong) 78%,
-    transparent 100%
-  );
-}
-
-/* Dark surfaces (hero panels, footer) inherit the burgundy identity. */
-.sl-deep {
-  background: var(--sl-grad-hero);
-  color: #fff;
-}
 
 html,
 body {
@@ -1086,391 +349,60 @@ body {
   overflow-x: hidden;
 }
 
-html.dark {
-  color-scheme: dark;
-  --background: #0c0e12;
-  --foreground: #e8eef6;
+/* Single focus ring definition for the whole storefront — Precision's .sl-focus */
+:focus-visible {
+  outline: 2px solid var(--color-brand-600);
+  outline-offset: 2px;
+  border-radius: var(--radius-sm);
 }
 
-html.dark .bg-white {
-  background-color: #161b24;
-}
-
-html.dark .bg-slate-50,
-html.dark .bg-slate-50\/70,
-html.dark .bg-slate-50\/80,
-html.dark .bg-slate-50\/50 {
-  background-color: #10141c;
-}
-
-html.dark .bg-slate-100 {
-  background-color: #1a1f29;
-}
-
-html.dark .text-slate-950,
-html.dark .text-slate-900,
-html.dark .text-zinc-900,
-html.dark .text-slate-800,
-html.dark .text-zinc-800 {
-  color: #f1f5f9;
-}
-
-html.dark .text-slate-700,
-html.dark .text-slate-600,
-html.dark .text-zinc-500,
-html.dark .text-slate-500 {
-  color: #cbd5e1;
-}
-
-html.dark .border-slate-100,
-html.dark .border-slate-200,
-html.dark .border-slate-200\/80,
-html.dark .border-slate-200\/90,
-html.dark .border-zinc-200,
-html.dark .border-zinc-300,
-html.dark .border-slate-300 {
-  border-color: #2d3545;
-}
-
-html.dark input,
-html.dark textarea,
-html.dark select {
-  background-color: #10141c;
-  color: #f1f5f9;
-  border-color: #3d4658;
-}
-
-html.dark header,
-html.dark .sticky.top-0 {
-  border-color: #2d3545;
-}
-
-html.dark input::placeholder,
-html.dark textarea::placeholder {
-  color: #94a3b8;
-}
-
-html.dark .hover\:bg-zinc-50:hover,
-html.dark .hover\:bg-slate-50:hover {
-  background-color: #1f2633;
-}
-
-html.dark .bg-rose-50,
-html.dark .bg-red-50,
-html.dark .bg-amber-50,
-html.dark .bg-green-50,
-html.dark .bg-emerald-50 {
-  background-color: #1a2430;
-}
-
-html.dark .text-rose-800,
-html.dark .text-red-700,
-html.dark .text-amber-950,
-html.dark .text-green-700,
-html.dark .text-emerald-800,
-html.dark .text-emerald-700 {
-  color: #fecdd3;
-}
-
-html.dark .text-emerald-700 {
-  color: #6ee7b7;
-}
-
-.hero-automotive-bg {
-  background: #2a0812;
-  color: #fff;
-}
-
-.hero-reference {
-  isolation: isolate;
-  height: auto;
-  /* Reduced so vehicle/category discovery is reachable in the first screen.
-     The previous 600px desktop block plus a 67px strip consumed the viewport. */
-  max-height: 460px;
-  background: #12040a;
-  color: #fff;
-}
-
-.hero-scene-img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  object-position: 50% 42%;
-}
-
-.hero-scene-veil {
-  z-index: 2;
-  background: radial-gradient(ellipse at 50% 42%, rgba(8, 1, 4, 0.18) 0%, rgba(8, 1, 4, 0.04) 42%, transparent 68%);
-}
-
-.hero-eyebrow,
-.hero-subhead {
-  text-shadow: 0 1px 10px rgba(0, 0, 0, 0.4);
-}
-
-.hero-stage {
-  display: flex;
-  flex-direction: column;
-}
-
-.hero-center {
-  order: 1;
-  padding: 1.25rem 0.75rem 0.75rem;
-}
-
-.hero-mobile-panels {
-  order: 2;
-}
-
-.hero-eyebrow {
-  font-size: 10px;
-  font-weight: 700;
-  letter-spacing: 0.22em;
-  text-transform: uppercase;
-  color: rgba(255, 255, 255, 0.92);
-}
-
-.hero-headline {
-  margin-top: 0.5rem;
-  /* Reduced from 2.15rem mobile / 3.15-3.6rem desktop. The headline was
-     competing with the search; it is now clearly secondary to it. */
-  font-size: 1.6rem;
-  font-weight: 800;
-  line-height: 1.12;
-  letter-spacing: -0.025em;
-  text-shadow: 0 2px 14px rgba(0, 0, 0, 0.45);
-}
-
-.hero-subhead {
-  margin-top: 0.7rem;
-  font-size: 13px;
-  font-weight: 500;
-  letter-spacing: 0.02em;
-  color: rgba(255, 255, 255, 0.92);
-}
-
-.hero-cta {
-  display: inline-flex;
-  min-height: 2.65rem;
-  align-items: center;
-  justify-content: center;
-  border-radius: 999px;
-  border: 1px solid rgba(255, 255, 255, 0.88);
-  background: rgba(122, 18, 51, 0.78);
-  padding: 0 1.35rem;
-  font-size: 0.875rem;
-  font-weight: 600;
-  color: #fff;
-}
-
-.hero-cta:hover {
-  background: rgba(155, 27, 69, 0.88);
-}
-
-.hero-badges {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 0.85rem 1rem;
-  margin-top: 1.15rem;
-  width: min(100%, 28rem);
-}
-
-.hero-col {
-  z-index: 3;
-  flex-direction: column;
-  justify-content: space-between;
-  gap: 0.45rem;
-  padding: 0.55rem 0;
-}
-
-.hero-panel {
-  position: relative;
-  display: flex;
-  flex: 1;
-  min-height: 7.25rem;
-  flex-direction: column;
-  justify-content: flex-start;
-  gap: 0.35rem;
-  background:
-    linear-gradient(180deg, rgba(86, 14, 36, 0.92) 0%, rgba(28, 6, 16, 0.94) 100%);
-  box-shadow: inset 0 0 22px rgba(255, 48, 72, 0.2);
-  filter:
-    drop-shadow(0 0 1px rgba(255, 90, 110, 0.95))
-    drop-shadow(0 0 7px rgba(210, 24, 48, 0.5));
-}
-
-.hero-panel-left {
-  clip-path: polygon(0% 10%, 100% 0%, 86% 100%, 0% 90%);
-  padding: 1.65rem 2.2rem 0.7rem 1.45rem;
-}
-
-.hero-panel-right {
-  clip-path: polygon(14% 0%, 100% 10%, 100% 90%, 0% 100%);
-  padding: 1.65rem 1.35rem 0.7rem 2.3rem;
-}
-
-.hero-panel-img,
-.hero-cutout-lg {
-  display: block;
-  flex: 1 1 auto;
-  width: 96%;
-  max-width: 98%;
-  min-height: 0;
-  height: auto;
-  margin: 0 auto;
-  object-fit: contain;
-  object-position: center bottom;
-  filter: drop-shadow(0 8px 12px rgba(0, 0, 0, 0.35));
-}
-
-.hero-photo-knockout {
-  mix-blend-mode: multiply;
-  filter: saturate(1.08) contrast(1.04);
-}
-
-.hero-pump-img {
-  mix-blend-mode: normal;
-  filter: drop-shadow(0 6px 10px rgba(0, 0, 0, 0.35));
-}
-
-.hero-pump-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  align-items: end;
-  justify-items: center;
-  column-gap: 0.15rem;
-  row-gap: 0;
-  margin-top: auto;
-  width: 100%;
-  flex: 1 1 auto;
-  min-height: 0;
-}
-
-.hero-pensol-row {
-  display: flex;
-  width: 100%;
-  flex: 1 1 auto;
-  min-height: 0;
-  align-items: flex-end;
-  justify-content: center;
-  gap: 0;
-  margin-top: auto;
-}
-
-.hero-product-label {
-  display: block;
-  position: relative;
-  z-index: 1;
-  width: 100%;
-  max-width: 100%;
-  font-size: 10px;
-  font-weight: 800;
-  letter-spacing: 0.1em;
-  line-height: 1.2;
-  text-transform: uppercase;
-  color: #fff;
-  text-align: left;
-}
-
-.hero-product-label::after {
-  content: "";
-  display: block;
-  width: 2.35rem;
-  height: 2px;
-  margin-top: 0.32rem;
-  background: #f0c14b;
-}
-
-.hero-stat-badge {
-  background: radial-gradient(circle at 50% 35%, #4a1424 0%, #16060c 78%);
-  box-shadow:
-    0 0 0 1px rgba(240, 193, 75, 0.55),
-    0 0 0 3px rgba(140, 20, 40, 0.85),
-    inset 0 0 10px rgba(255, 48, 72, 0.28);
-}
-
-.hero-vehicle-strip {
-  height: 67px;
-}
-
-@media (min-width: 1024px) {
-  .hero-reference {
-    /* Height adapts to content (the block is auto-height); this cap simply
-       stops it dominating the first screen on very large monitors. */
-    min-height: 400px;
-    max-height: 460px;
-  }
-
-  .hero-stage {
-    display: grid;
-    height: 100%;
-    grid-template-columns: 272px minmax(0, 1fr) 272px;
-    align-items: stretch;
-  }
-
-  .hero-center {
-    order: 0;
-    padding: 1.1rem 0.5rem 0.85rem;
-  }
-
-  .hero-col {
-    display: flex;
-    height: 100%;
-  }
-
-  .hero-panel {
-    min-height: 175px;
-    max-height: 185px;
-  }
-
-  .hero-headline {
-    font-size: 2.1rem;
-  }
-
-  .hero-subhead {
-    font-size: 14px;
-  }
-
-  .hero-badges {
-    display: flex;
-    width: auto;
-    justify-content: center;
-    gap: 1.35rem;
-    margin-top: 1.35rem;
-  }
-
-  .hero-panel-img,
-  .hero-cutout-lg {
-    width: 98%;
-    max-height: 11.35rem;
+/* Motion is opt-out, never opt-in — aligned with Precision */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
   }
 }
 
-@media (min-width: 1280px) {
-  .hero-stage {
-    grid-template-columns: 286px minmax(0, 1fr) 286px;
-  }
+/* ===================================================================
+   SKELETON LOADING PLACEHOLDER
+   Uses Precision's shimmer tokens. The Precision layer also defines .sl-skel
+   but this provides a Tailwind-compatible class name.
+   =================================================================== */
 
-  .hero-headline {
-    font-size: 2.3rem;
+.sl-skeleton {
+  background: linear-gradient(
+    90deg,
+    var(--color-sunken) 25%,
+    var(--color-sunken-2) 37%,
+    var(--color-sunken) 63%
+  );
+  background-size: 400% 100%;
+  animation: sl-shimmer 1.4s ease-in-out infinite;
+  border-radius: var(--radius-sm);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sl-skeleton {
+    animation: none;
+    background: var(--color-sunken);
   }
 }
 
-@media (min-width: 1440px) {
-  .hero-stage {
-    grid-template-columns: 300px minmax(0, 1fr) 300px;
-  }
-
-  .hero-headline {
-    font-size: 2.45rem;
-  }
+@keyframes sl-shimmer {
+  0% { background-position: 100% 50%; }
+  100% { background-position: 0 50%; }
 }
 
-.btn-press:active {
-  transform: scale(0.98);
-}
+/* ===================================================================
+   MOBILE APP SHELL HELPERS
+   Used by header, footer, mobile nav so all three share definitions.
+   =================================================================== */
 
-/* Mobile app shell */
 .mobile-bottom-nav {
   position: fixed;
   left: 0;
@@ -1518,38 +450,79 @@ html.dark .text-emerald-700 {
   min-width: var(--touch-min);
 }
 
-:focus-visible {
-  outline: 2px solid var(--brand);
-  outline-offset: 2px;
+/* ===================================================================
+   UTILITIES
+   =================================================================== */
+
+.sl-sr {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
 }
 
-.fitment-logo-plate {
-  background: transparent;
+.sl-skip {
+  position: absolute;
+  left: var(--safe-left);
+  top: -4rem;
+  z-index: 100;
+  padding: 0.75rem 1rem;
+  background: var(--brand);
+  color: #fff;
+  font-weight: 650;
+  border-radius: var(--radius-sm);
+  transition: top 0.2s var(--sl-ease);
 }
 
-html.dark .fitment-logo-plate {
-  border-radius: 0.5rem;
-  background: #f8fafc;
-  padding: 0.35rem 0.5rem;
+.sl-skip:focus {
+  top: var(--safe-top);
 }
 
-.card-hover {
-  transition:
-    transform 0.2s cubic-bezier(0.16, 1, 0.3, 1),
-    box-shadow 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+/* Skip link targets main content */
+main[id="main-content"] {
+  scroll-margin-top: 4rem;
 }
 
-.card-hover:hover {
-  transform: translateY(-2px);
-}
+/* ===================================================================
+   LEGACY SEARCH FIELD SUPPORT
+   Header search still uses .v3-search from v3.css. These rules ensure it
+   renders correctly on both light and dark graphite surfaces.
+   Scoped narrowly so they can be deleted when v3.css is removed.
+   =================================================================== */
 
-@media (prefers-reduced-motion: reduce) {
-  *,
-  ::before,
-  ::after {
-    animation-duration: 0.01ms !important;
-    animation-iteration-count: 1 !important;
-    transition-duration: 0.01ms !important;
-    scroll-behavior: auto !important;
+@layer components {
+  .sl-masthead-search .v3-search,
+  .sl-hero-search .v3-search {
+    background: var(--surface) !important;
+    border-color: var(--color-rule-2) !important;
+    border-radius: var(--radius) !important;
+    box-shadow: 0 2px 12px -6px rgb(0 0 0 / 0.7), 0 0 0 1px rgb(255 255 255 / 0.07) !important;
+    transition: border-color var(--sl-dur-1) var(--sl-ease), box-shadow var(--sl-dur-1) var(--sl-ease);
+  }
+
+  .sl-masthead-search .v3-search:focus-within,
+  .sl-hero-search .v3-search:focus-within {
+    border-color: var(--brand) !important;
+    box-shadow: 0 0 0 3px rgb(240 169 190 / 0.28), 0 2px 12px -6px rgb(0 0 0 / 0.7) !important;
+  }
+
+  /* Search input inside hero/masthead - ensure dark mode works */
+  .sl-hero-search .sl-search-input,
+  .sl-masthead-search .sl-search-input {
+    background: var(--surface);
+    color: var(--foreground);
+    border-color: transparent;
+  }
+
+  html.dark .sl-hero-search .sl-search-input,
+  html.dark .sl-masthead-search .sl-search-input {
+    background: var(--sl-sunken) !important;
+    color: var(--sl-ink) !important;
+    border-color: transparent !important;
   }
 }

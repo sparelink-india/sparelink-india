@@ -10,9 +10,9 @@ import { StorefrontHeader } from "@/components/storefront-header";
 import { useI18n } from "@/components/preferences-provider";
 
 /**
- * V2 Login — split-panel composition. Authentication logic is byte-identical to
- * the previous version: same `/api/auth/username-login` endpoint, same payload,
- * same redirect handling. Only the presentation is new.
+ * Login — Precision shell over the V3 composition. Authentication logic is
+ * byte-identical to the previous version: same `/api/auth/username-login`
+ * endpoint, same payload, same redirect handling. Only the presentation is new.
  */
 export default function LoginPage() {
   const router = useRouter();
@@ -50,7 +50,7 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="sl-page flex min-h-screen flex-col">
+    <div className="flex min-h-screen flex-col bg-[var(--sl-page)] text-[var(--sl-ink)]">
       <StorefrontHeader />
       <AuthShell
         eyebrow={t("auth.loginEyebrow")}
@@ -62,22 +62,22 @@ export default function LoginPage() {
           { title: t("auth.loginB3"), body: t("auth.loginB3Body") },
         ]}
         footerNote={
-          <div className="sl-v2-card p-4">
-            <p className="sl-small">
+          <div className="sl-panel sl-panel-pad">
+            <p className="sl-meta">
               {t("login.new")}{" "}
               <Link
                 href="/register"
-                className="sl-v2-focus font-bold text-[var(--sl-primary)] hover:underline"
+                className="sl-focus font-bold text-[var(--sl-brand-ink)] hover:underline"
               >
                 {t("login.register")}
               </Link>
             </p>
-            <div className="mt-3 border-t border-[var(--sl-border)] pt-3">
-              <p className="sl-small">
+            <div className="mt-3 border-t border-[var(--sl-rule)] pt-3">
+              <p className="sl-meta">
                 {t("login.dealerLink")}{" "}
                 <Link
                   href="/login/dealer"
-                  className="sl-v2-focus font-bold text-[var(--sl-primary)] hover:underline"
+                  className="sl-focus font-bold text-[var(--sl-brand-ink)] hover:underline"
                 >
                   {t("nav.dealer")}
                 </Link>
@@ -88,7 +88,7 @@ export default function LoginPage() {
       >
         <form onSubmit={handlePasswordLogin} className="space-y-4" noValidate={false}>
           <div>
-            <label htmlFor="login-username" className="sl-label block">
+            <label htmlFor="login-username" className="sl-label">
               {t("login.username")}
             </label>
             <input
@@ -99,13 +99,13 @@ export default function LoginPage() {
               value={username}
               onChange={(event) => setUsername(event.target.value)}
               placeholder={t("login.username")}
-              className="sl-v2-input mt-1.5"
+              className="sl-input"
               required
             />
           </div>
 
           <div>
-            <label htmlFor="login-password" className="sl-label block">
+            <label htmlFor="login-password" className="sl-label">
               {t("login.password")}
             </label>
             <input
@@ -116,7 +116,7 @@ export default function LoginPage() {
               value={password}
               onChange={(event) => setPassword(event.target.value)}
               placeholder={t("login.password")}
-              className="sl-v2-input mt-1.5"
+              className="sl-input"
               required
             />
           </div>
@@ -124,7 +124,7 @@ export default function LoginPage() {
           <button
             type="submit"
             disabled={busy}
-            className="sl-v2-btn sl-v2-btn-primary w-full"
+            className="sl-btn sl-btn-primary sl-btn-block"
           >
             {busy ? t("product.adding") : t("login.submit")}
           </button>
@@ -139,7 +139,7 @@ export default function LoginPage() {
 
         <Link
           href="/"
-          className="sl-v2-focus sl-small mt-5 inline-flex items-center gap-1.5 hover:text-[var(--sl-primary)]"
+          className="sl-focus sl-meta mt-5 inline-flex items-center gap-1.5 hover:text-[var(--sl-brand-ink)]"
         >
           <svg
             className="h-3.5 w-3.5"

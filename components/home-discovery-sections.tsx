@@ -3,15 +3,48 @@
 import Link from "next/link";
 
 import { useI18n } from "@/components/preferences-provider";
-import { VehicleQuickSelector } from "@/components/vehicle-quick-selector";
 
 /**
- * Homepage discovery sections that complete the customer journey:
- * find by vehicle -> why trust -> order -> support.
+ * V3 homepage discovery sections: dealer -> order.
  *
- * Trust rule: every statement here is a verifiable fact about the actual
- * product (real payment methods, real fulfilment firms, real policies).
- * No invented statistics, no "10,000+ customers", no "India's #1".
+ * `HomeWhySpareLink` has been DELETED. It became dead code when the homepage
+ * trust section was rebuilt inline in home-client.tsx, where the five
+ * indicators now live as a single hairline-divided strip. Keeping it would have
+ * meant maintaining a second, contradictory set of trust claims on the same
+ * page. Nothing imports it.
+ *
+ * `HomeFindByVehicle` has ALSO been DELETED, and this is the fix for the
+ * duplicated Vehicle Fitment section. It was the second render of the
+ * homepage's vehicle finder: the same `VehicleQuickSelector` panel — the same
+ * make selector, model selector, saved-garage list, "Show Compatible Parts"
+ * action and save-to-garage behaviour — appearing twice on one page under two
+ * different headings ("Find Parts for Your Vehicle" directly under the hero, and
+ * "Make, model, year and variant" further down). Both were independent
+ * additions: the quick finder was moved up under the hero for the V3 brief and
+ * this older section at position 5 was never removed. Two panels with two
+ * headings, both offering "find parts by vehicle", is a duplicate regardless of
+ * how the strings differ.
+ *
+ * The surviving block is the one under the hero (`home-client.tsx` section 2).
+ * It is the primary: it is the first thing below the headline, it is the one
+ * the hero's own search entry points past, and its heading is the clearer of
+ * the two. The promotional banner slider now occupies the space this section
+ * used to hold, so the page gains a merchandising slot without the page gaining
+ * a duplicate finder.
+ *
+ * The two remaining sections keep their role in the journey but are set on
+ * the Precision system — a graphite band with a gold rule kept as the
+ * firm-identity accent — and, critically, every string now comes from the
+ * dictionary. All eight headings and bodies in this file were previously
+ * hardcoded English literals, so the Hindi homepage was rendering English in
+ * the vehicle finder, the dealer band and the closing band.
+ *
+ * The translucent surfaces are also gone. These sections used
+ * `bg-white/70` and a 70%-opaque rule, so each band was a
+ * semi-transparent layer stacked on the cream page and the hairlines between
+ * bands were 70% opaque — the page read as four translucent sheets rather than
+ * a set of distinct sections. The bands are solid, and the rules are
+ * full-opacity.
  */
 
 function ArrowGlyph({ className = "h-4 w-4" }: { className?: string }) {
@@ -31,89 +64,69 @@ function ArrowGlyph({ className = "h-4 w-4" }: { className?: string }) {
   );
 }
 
-function ShieldGlyph() {
-  return (
-    <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.7" aria-hidden>
-      <path strokeLinecap="round" strokeLinejoin="round" d="M12 3l8 3v6c0 5-3.5 8.5-8 10-4.5-1.5-8-5-8-10V6l8-3z" />
-    </svg>
-  );
-}
-
-function RupeeGlyph() {
-  return (
-    <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.7" aria-hidden>
-      <path strokeLinecap="round" d="M7 6h10M7 10h10M7 6c4 0 6 2 6 4s-2 4-6 4c2.5 0 6 2 8 4" />
-    </svg>
-  );
-}
-
 function TruckGlyph() {
   return (
-    <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.7" aria-hidden>
-      <path strokeLinecap="round" strokeLinejoin="round" d="M3 7h11v8H3V7zm11 3h4l3 3v2h-7v-5zM7 18a1.5 1.5 0 100-3 1.5 1.5 0 000 3zm10 0a1.5 1.5 0 100-3 1.5 1.5 0 000 3z" />
+    <svg
+      className="h-5 w-5"
+      fill="none"
+      viewBox="0 0 24 24"
+      stroke="currentColor"
+      strokeWidth="1.7"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden
+    >
+      <path d="M3 7h11v8H3V7zm11 3h4l3 3v2h-7v-5zM7 18a1.5 1.5 0 100-3 1.5 1.5 0 000 3zm10 0a1.5 1.5 0 100-3 1.5 1.5 0 000 3z" />
     </svg>
   );
 }
 
-function HeadsetGlyph() {
-  return (
-    <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.7" aria-hidden>
-      <path strokeLinecap="round" strokeLinejoin="round" d="M4 12a8 8 0 1116 0v5a2 2 0 01-2 2h-2v-7h4M4 12v5a2 2 0 002 2h2v-7H4" />
-    </svg>
-  );
-}
-
-function CarGlyph() {
-  return (
-    <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.7" aria-hidden>
-      <path strokeLinecap="round" strokeLinejoin="round" d="M3 13l2-5h14l2 5M5 17a1.5 1.5 0 100-3 1.5 1.5 0 000 3zm14 0a1.5 1.5 0 100-3 1.5 1.5 0 000 3zM4 13h16" />
-    </svg>
-  );
-}
-
-/** FIND BY VEHICLE — reuses the existing, real VehicleQuickSelector. */
-export function HomeFindByVehicle() {
+/**
+ * DEALER / BULK ORDER.
+ *
+ * The bulk part-number tool lives at /dealer, behind the existing dealer layout
+ * guard (session + role === "dealer"). Buyers are sent to /login/dealer rather
+ * than straight to /dealer, because /dealer bounces non-dealers to "/" and that
+ * would be a confusing dead end.
+ *
+ * V3 composition change: this was a white card floating on a 70%-opaque white
+ * band, so the band and the card were the same colour and the card had no edge
+ * to sit against. It is now a full-width charcoal band with a gold rule — the
+ * one place on the homepage that changes register, which is what separates the
+ * B2B proposition from the retail sections above it.
+ */
+export function HomeDealerCta() {
   const { t } = useI18n();
 
   return (
-    <section id="find-vehicle" className="sl-band border-b border-[var(--sl-border)]/70 bg-white/60">
-      <div className="sl-container sl-container-wide">
-        <div className="max-w-2xl">
-          <p className="sl-label">{t("hero.findVehicle")}</p>
-          <h2 className="sl-h2 mt-1.5">Make, model, year and variant</h2>
-          <p className="mt-2 text-sm leading-relaxed text-[var(--sl-muted)]">
-            Select your vehicle to see parts that actually fit it.
-          </p>
-        </div>
-
-        <div className="mt-7 grid gap-5 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-start">
-          <div className="sl-surface p-4 sm:p-5">
-            {/*
-              `limit={6}` keeps this homepage affordance compact: at most six
-              saved vehicles, with a "N more" link to the full experience. The
-              full /vehicle-fitment page is untouched and still lists every
-              vehicle and model.
-            */}
-            <VehicleQuickSelector limit={6} />
-          </div>
-          <Link
-            href="/vehicle-fitment"
-            className="sl-v2-btn sl-v2-btn-secondary w-full shrink-0 lg:w-auto"
-          >
-            <CarGlyph />
-            {t("vehicleSelect.browseAll")}
-            <svg
-              className="h-3.5 w-3.5"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-              strokeWidth="2.2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
+    <section className="relative overflow-hidden bg-[var(--sl-graphite)] text-[var(--sl-graphite-ink)]">
+      <div
+        className="pointer-events-none absolute inset-x-0 top-0 h-[3px]"
+        style={{ background: "var(--v3-gold)" }}
+        aria-hidden
+      />
+      <div className="sl-container py-9 sm:py-11">
+        <div className="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
+          <div className="flex min-w-0 items-start gap-4">
+            <span
+              className="flex h-11 w-11 shrink-0 items-center justify-center rounded-[var(--sl-r-xs)] bg-white/10 text-[var(--v3-gold)]"
               aria-hidden
             >
-              <path d="M5 12h14M13 6l6 6-6 6" />
-            </svg>
+              <TruckGlyph />
+            </span>
+            <div className="min-w-0">
+              <h2 className="sl-h2 text-[var(--sl-graphite-ink)]">{t("homeDealer.title")}</h2>
+              <p className="mt-1.5 max-w-xl text-[0.8125rem] leading-relaxed text-[var(--sl-graphite-ink-2)]">
+                {t("homeDealer.body")}
+              </p>
+            </div>
+          </div>
+          <Link
+            href="/login/dealer"
+            className="sl-btn sl-btn-dark shrink-0 self-start lg:self-auto"
+          >
+            {t("homeDealer.cta")}
+            <ArrowGlyph className="h-3.5 w-3.5" />
           </Link>
         </div>
       </div>
@@ -122,178 +135,39 @@ export function HomeFindByVehicle() {
 }
 
 /**
- * Dealer / bulk-order entry point.
+ * CLOSING ORDER BAND.
  *
- * The bulk part-number tool now lives at /dealer, behind the existing dealer
- * layout guard (session + role === "dealer"). Buyers are sent to
- * /login/dealer rather than straight to /dealer, because /dealer bounces
- * non-dealers to "/" and that would be a confusing dead end. Buyers who
- * already hold a dealer account simply sign in there.
+ * Flat charcoal with a gold rule, replacing V2's two stacked decorative
+ * gradients whose only purpose was to make a full-bleed block look premium.
+ *
+ * The action set is reduced to two. V3 offered Browse / Cart / Help, where
+ * "Cart" and "Help" are both reachable from the header on every page, so a
+ * third and fourth button in the closing band duplicated persistent navigation
+ * and pushed the primary action off the right edge at 1024px.
  */
-export function HomeDealerCta() {
-  return (
-    <section className="sl-band border-b border-[var(--sl-border)]/70 bg-white/70">
-      <div className="sl-container sl-container-wide">
-        <div className="sl-surface flex flex-col gap-5 p-5 sm:flex-row sm:items-center sm:justify-between sm:p-7">
-          <div className="flex items-start gap-4">
-            <span
-              className="flex h-12 w-12 shrink-0 items-center justify-center rounded-[var(--sl-radius)] bg-[var(--sl-primary)] text-white"
-              aria-hidden
-            >
-              <svg
-                className="h-6 w-6"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-                strokeWidth="1.7"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  d="M3 16V7h11v9M14 10h4l3 3v3h-7M7 18a1.5 1.5 0 100-3 1.5 1.5 0 000 3zm10 0a1.5 1.5 0 100-3 1.5 1.5 0 000 3z"
-                />
-              </svg>
-            </span>
-            <div>
-              <h2 className="sl-h2 text-lg">Dealer / Bulk Order</h2>
-              <p className="mt-1 text-sm text-[var(--sl-muted)]">
-                Login for faster bulk ordering. Enter part numbers with
-                quantities and build a bulk cart in one go.
-              </p>
-            </div>
-          </div>
-          <Link href="/login/dealer" className="sl-v2-btn sl-v2-btn-primary shrink-0">
-            Dealer login
-            <svg
-              className="h-4 w-4"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-              strokeWidth="2.1"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              aria-hidden
-            >
-              <path d="M5 12h14M13 6l6 6-6 6" />
-            </svg>
-          </Link>
-        </div>
-      </div>
-    </section>
-  );
-}
-
-/** WHY SPARELINK — verifiable facts only. */
-export function HomeWhySpareLink() {
-  const { t } = useI18n();
-
-  const reasons = [
-    {
-      icon: <RupeeGlyph />,
-      title: "All prices include GST",
-      body: "Every listed price is the final payable amount, so what you see is what you pay.",
-      href: "/offers",
-      cta: t("nav.offers"),
-    },
-    {
-      icon: <TruckGlyph />,
-      title: "Pay how you prefer",
-      body: "Cash on delivery, bank transfer, or online payment through a secure gateway.",
-      href: "/help-support",
-      cta: t("nav.help"),
-    },
-    {
-      icon: <ShieldGlyph />,
-      title: "Documented policies",
-      body: "Clear shipping, returns and terms published before you order.",
-      href: "/shipping-policy",
-      cta: t("legal.shipping"),
-    },
-    {
-      icon: <HeadsetGlyph />,
-      title: "Dealer-grade support",
-      body: "Talk to us on WhatsApp or raise a support request from your account.",
-      href: "/contact-us",
-      cta: t("nav.contact"),
-    },
-  ];
-
-  return (
-    <section id="why-sparelink" className="sl-band border-b border-[var(--sl-border)]/70 bg-[var(--sl-primary-soft)]/30">
-      <div className="sl-container sl-container-wide">
-        <div className="max-w-2xl">
-          <p className="sl-label">{t("trust.title")}</p>
-          <h2 className="sl-h2 mt-1.5">Why trade through SpareLink India</h2>
-          <p className="sl-body mt-2 max-w-prose">
-            {/*
-              The full three-firm tagline is printed exactly ONCE, in the
-              footer legal band. Repeating it here put "A Group of Firms" twice
-              in a single viewport, so this line now states the distribution
-              relationship without restating the firm roster.
-            */}
-            {t("trust.fulfilledBy")}
-          </p>
-        </div>
-
-        <ul className="mt-7 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          {reasons.map((reason) => (
-            <li key={reason.title} className="sl-v2-card sl-v2-card-hover sl-v2-rule flex flex-col p-5">
-              <span className="flex h-11 w-11 items-center justify-center rounded-[var(--sl-radius)] bg-[var(--sl-primary)] text-white">
-                {reason.icon}
-              </span>
-              <h3 className="sl-h3 mt-4">{reason.title}</h3>
-              <p className="sl-small mt-1.5 flex-1">{reason.body}</p>
-              <Link
-                href={reason.href}
-                className="mt-4 inline-flex items-center gap-1.5 text-sm font-bold text-[var(--sl-primary)] transition-colors duration-200 hover:text-[var(--sl-primary)]"
-              >
-                {reason.cta}
-                <ArrowGlyph className="h-3.5 w-3.5" />
-              </Link>
-            </li>
-          ))}
-        </ul>
-      </div>
-    </section>
-  );
-}
-
-/** ORDER + SUPPORT closing band. */
 export function HomeOrderCta() {
   const { t } = useI18n();
 
   return (
-    <section className="relative overflow-hidden" style={{ background: "var(--sl-grad-hero)" }}>
+    <section className="relative overflow-hidden bg-[var(--sl-graphite)] text-[var(--sl-graphite-ink)]">
       <div
-        className="pointer-events-none absolute inset-0"
-        style={{ background: "var(--sl-grad-sheen)" }}
+        className="pointer-events-none absolute inset-x-0 top-0 h-[3px]"
+        style={{ background: "var(--v3-gold)" }}
         aria-hidden
       />
-      <div className="sl-container sl-container-wide py-12 sm:py-16">
+      <div className="sl-container py-12 sm:py-14">
         <div className="max-w-2xl">
-          {/*
-            Contrast fix. The type roles in globals.css are UNLAYERED, which
-            means they outrank Tailwind's layered `text-white`. Without the
-            `!` important modifier the heading rendered in --sl-text (near
-            black) straight onto the burgundy band. The paragraph was also
-            tinted at 80% opacity, which is too weak on a dark ground; it now
-            uses an opaque high-luminance tint.
-          */}
-          <h2 className="sl-h2 !text-white">Ready to order your parts?</h2>
-          <p className="mt-2.5 text-sm leading-relaxed text-[#f0d9e1]">
-            Search the catalogue, add parts to your cart, and choose the payment option that
-            works for you. Existing customers can sign in to see past orders and saved vehicles.
+          <h2 className="sl-h2 text-[var(--sl-graphite-ink)]">{t("homeOrder.title")}</h2>
+          <p className="mt-2.5 text-[0.875rem] leading-relaxed text-[var(--sl-graphite-ink-2)]">
+            {t("homeOrder.body")}
           </p>
-          <div className="mt-6 flex flex-col gap-3 sm:flex-row">
-            <Link href="/?focus=search" className="sl-v2-btn sl-v2-btn-primary sm:w-auto">
+          <div className="mt-6 flex flex-col gap-2.5 sm:flex-row">
+            <Link href="/?focus=search" className="sl-btn sl-btn-primary sm:w-auto">
               {t("hero.browse")}
               <ArrowGlyph />
             </Link>
-            <Link href="/cart" className="sl-v2-btn sl-v2-btn-ghost-invert sm:w-auto">
+            <Link href="/cart" className="sl-btn sl-btn-dark sm:w-auto">
               {t("nav.cart")}
-            </Link>
-            <Link href="/help-support" className="sl-v2-btn sl-v2-btn-ghost-invert sm:w-auto">
-              {t("nav.help")}
             </Link>
           </div>
         </div>

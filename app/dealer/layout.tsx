@@ -1,8 +1,15 @@
 import type { ReactNode } from "react";
+import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 
 import { getServerSession } from "@/lib/auth-server";
 import { isMustChangePassword } from "@/lib/must-change-password";
+
+/** The dealer portal is private; see the note in app/admin/layout.tsx. */
+export const metadata: Metadata = {
+  title: { default: "Dealer Portal", template: "%s | SpareLink India Dealer" },
+  robots: { index: false, follow: false },
+};
 
 export default async function DealerLayout({
   children,

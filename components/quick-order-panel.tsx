@@ -1,222 +1,468 @@
 "use client";
 
-import { useRouter } from "next/navigation";
-import { useRef, useState } from "react";
+/**
+ * Dealer Quick Order.
+ *
+ * WHY THIS WAS REWRITTEN
+ * The previous implementation searched with the public `/api/search/parts` and
+ * then posted the basket to `/api/cart`. `/api/cart` is buyer-only: it gates on
+ * `role === "buyer"`, so for an actual dealer every add returned 401 and the
+ * panel could never complete an order. The feature was structurally broken.
+ *
+ * The fix is NOT to relax the buyer gate on `/api/cart` - that would let dealer
+ * sessions create customer carts and is the wrong direction. Instead this panel
+ * now uses the dealer-specific path that already exists and is already correct:
+ *
+ *   - `/api/dealer/dashboard`  (GET)  -> the dealer's OWN listings, so every
+ *                                        line is resolved to a listing the
+ *                                        dealer actually owns;
+ *   - `/api/dealer/sales-orders` (POST) -> creates a DRAFT sales order.
+ *
+ * That endpoint already does the things a money-touching path must do:
+ * `stripClientMoneyFields` on the body and on every line, an active-listing
+ * existence check, an explicit `listing.dealerId !== profile.id` ownership
+ * check, and `resolvePartyEffectivePrice` for authoritative dealer pricing with
+ * `applyVerificationFallback: false`. GST and totals are computed server-side.
+ *
+ * This panel therefore only ever sends `dealerListingId` + `quantity`. It never
+ * sends a price, a GST figure, a total or a firm, and it never trusts a price it
+ * displays.
+ */
 
+import { useCallback, useEffect, useMemo, useState } from "react";
+
+import { InclusivePrice } from "@/components/inclusive-price";
 import { useI18n } from "@/components/preferences-provider";
 
-type QuickRow = { id: string; partNumber: string; qty: number };
+type DealerListing = {
+  id: string;
+  partName: string | null;
+  partNumber: string | null;
+  sku: string | null;
+  pricePaise: number;
+  status: string;
+  stock: number | null;
+};
 
-function newRow(id: string): QuickRow {
-  return { id, partNumber: "", qty: 1 };
+type BasketLine = {
+  dealerListingId: string;
+  partNumber: string;
+  partName: string;
+  quantity: number;
+  stock: number | null;
+  status: string;
+};
+
+function rupees(paise: number): string {
+  return `â‚¹${(paise / 100).toLocaleString("en-IN", {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  })}`;
 }
 
-/**
- * Frontend Quick Order using existing /api/search/parts + /api/cart.
- * Resolves each part number to the first active priced listing, then adds qty.
- */
-export function QuickOrderPanel({
-  onCartChange,
-}: {
-  onCartChange?: (delta: number) => void;
-}) {
+export function QuickOrderPanel() {
   const { t } = useI18n();
-  const router = useRouter();
-  const nextRowId = useRef(4);
-  const createRow = () => newRow(`row-${nextRowId.current++}`);
-  const [rows, setRows] = useState<QuickRow[]>(() => [newRow("row-1"), newRow("row-2"), newRow("row-3")]);
-  const [busy, setBusy] = useState(false);
-  const [message, setMessage] = useState("");
-  const [error, setError] = useState("");
 
-  function updateRow(id: string, patch: Partial<QuickRow>) {
-    setRows((prev) => prev.map((row) => (row.id === id ? { ...row, ...patch } : row)));
-  }
+  const [listings, setListings] = useState<DealerListing[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState("");
 
-  async function resolveListingId(partNumber: string): Promise<{ listingId: string; name: string } | null> {
-    const response = await fetch(
-      `/api/search/parts?q=${encodeURIComponent(partNumber)}&page=1&perPage=8`,
-      { cache: "no-store" },
-    );
-    const data = await response.json().catch(() => ({}));
-    if (!response.ok || !Array.isArray(data.results)) return null;
+  const [query, setQuery] = useState("");
+  const [basket, setBasket] = useState<BasketLine[]>([]);
+  const [partyName, setPartyName] = useState("");
+  const [notes, setNotes] = useState("");
 
-    const needle = partNumber.trim().toLowerCase();
-    const ranked = [...data.results].sort((a, b) => {
-      const aNo = String(a?.document?.part_number || "").toLowerCase();
-      const bNo = String(b?.document?.part_number || "").toLowerCase();
-      const aExact = aNo === needle ? 0 : aNo.includes(needle) ? 1 : 2;
-      const bExact = bNo === needle ? 0 : bNo.includes(needle) ? 1 : 2;
-      return aExact - bExact;
-    });
+  const [submitting, setSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState("");
+  const [success, setSuccess] = useState("");
 
-    for (const hit of ranked) {
-      const listings = Array.isArray(hit.listings) ? hit.listings : [];
-      const listing = listings.find(
-        (row: { status?: string; stock?: number | null; pricePaise?: number }) =>
-          row.status === "active" && row.stock !== null && row.stock !== undefined && row.stock > 0 && (row.pricePaise ?? 0) > 0,
-      );
-      if (listing?.id) {
-        return {
-          listingId: String(listing.id),
-          name: String(hit?.document?.name || partNumber),
+  useEffect(() => {
+    let cancelled = false;
+    void (async () => {
+      try {
+        const response = await fetch("/api/dealer/dashboard", {
+          cache: "no-store",
+        });
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}`);
+        }
+        const data = (await response.json()) as {
+          listings?: DealerListing[];
+          businessName?: string;
         };
+        if (cancelled) return;
+        setListings(Array.isArray(data.listings) ? data.listings : []);
+        if (!partyName && data.businessName) setPartyName(data.businessName);
+      } catch {
+        if (!cancelled) setLoadError(t("common.error"));
+      } finally {
+        if (!cancelled) setLoading(false);
       }
-    }
-    return null;
-  }
+    })();
+    return () => {
+      cancelled = true;
+    };
+    // `partyName` is intentionally not a dependency: it is seeded once from the
+    // dealer profile and is owned by the input from then on.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [t]);
 
-  async function addAll() {
-    const pending = rows
-      .map((row) => ({
-        partNumber: row.partNumber.trim(),
-        qty: Number.isFinite(row.qty) && row.qty > 0 ? Math.floor(row.qty) : 0,
-      }))
-      .filter((row) => row.partNumber && row.qty > 0);
+  const activeListings = useMemo(
+    () => listings.filter((row) => row.status === "active"),
+    [listings],
+  );
 
-    if (pending.length === 0) {
-      setError(t("quickOrder.empty"));
-      setMessage("");
-      return;
-    }
+  /** Match against the dealer's own listings only, by part number or name. */
+  const matches = useMemo(() => {
+    const needle = query.trim().toLowerCase();
+    if (needle.length < 1) return activeListings.slice(0, 12);
+    return activeListings
+      .filter((row) => {
+        const number = (row.partNumber ?? "").toLowerCase();
+        const name = (row.partName ?? "").toLowerCase();
+        const sku = (row.sku ?? "").toLowerCase();
+        return (
+          number.includes(needle) ||
+          sku.includes(needle) ||
+          name.includes(needle)
+        );
+      })
+      .slice(0, 12);
+  }, [activeListings, query]);
 
-    setBusy(true);
-    setError("");
-    setMessage("");
-    let added = 0;
-    const failures: string[] = [];
+  const inBasket = useCallback(
+    (dealerListingId: string) =>
+      basket.find((line) => line.dealerListingId === dealerListingId),
+    [basket],
+  );
+
+  /**
+   * Add one unit, merging into an existing line for the same listing.
+   * Quantity is capped by known stock so the panel cannot build a line the
+   * server will certainly reject.
+   */
+  const addLine = useCallback((listing: DealerListing) => {
+    setSuccess("");
+    setSubmitError("");
+    setBasket((current) => {
+      const existing = current.find(
+        (line) => line.dealerListingId === listing.id,
+      );
+      const cap =
+        listing.stock === null ? Number.MAX_SAFE_INTEGER : Math.max(0, listing.stock);
+
+      if (!existing) {
+        if (cap < 1) return current;
+        return [
+          ...current,
+          {
+            dealerListingId: listing.id,
+            partNumber: listing.partNumber ?? "",
+            partName: listing.partName ?? "",
+            quantity: 1,
+            stock: listing.stock,
+            status: listing.status,
+          },
+        ];
+      }
+
+      if (existing.quantity + 1 > cap) return current;
+      return current.map((line) =>
+        line.dealerListingId === listing.id
+          ? { ...line, quantity: line.quantity + 1 }
+          : line,
+      );
+    });
+  }, []);
+
+  const changeQuantity = useCallback(
+    (dealerListingId: string, next: number) => {
+      setBasket((current) =>
+        current
+          .map((line) =>
+            line.dealerListingId === dealerListingId
+              ? {
+                  ...line,
+                  quantity: Math.min(
+                    line.stock === null
+                      ? Math.max(1, next)
+                      : Math.max(1, Math.min(line.stock, next)),
+                    999,
+                  ),
+                }
+              : line,
+          )
+          .filter((line) => line.quantity > 0),
+      );
+    },
+    [],
+  );
+
+  const removeLine = useCallback((dealerListingId: string) => {
+    setBasket((current) =>
+      current.filter((line) => line.dealerListingId !== dealerListingId),
+    );
+  }, []);
+
+  /**
+   * Indicative total for the review table only.
+   *
+   * This is list price and is labelled as such. It is NOT the payable figure:
+   * the authoritative net price, GST and total are all computed server-side by
+   * `/api/dealer/sales-orders`, which strips every money field we send.
+   */
+  const indicativeListTotalPaise = useMemo(
+    () =>
+      basket.reduce((sum, line) => {
+        const listing = listings.find(
+          (row) => row.id === line.dealerListingId,
+        );
+        return sum + (listing ? listing.pricePaise * line.quantity : 0);
+      }, 0),
+    [basket, listings],
+  );
+
+  const blockedLines = basket.filter(
+    (line) => line.stock !== null && line.stock < line.quantity,
+  );
+
+  async function submit() {
+    setSubmitting(true);
+    setSubmitError("");
+    setSuccess("");
 
     try {
-      for (const row of pending) {
-        const resolved = await resolveListingId(row.partNumber);
-        if (!resolved) {
-          failures.push(row.partNumber);
-          continue;
-        }
-        const response = await fetch("/api/cart", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            dealerListingId: resolved.listingId,
-            quantity: row.qty,
-          }),
-        });
-        if (response.status === 401) {
-          router.push("/login");
-          return;
-        }
-        if (!response.ok) {
-          failures.push(row.partNumber);
-          continue;
-        }
-        added += row.qty;
-        onCartChange?.(row.qty);
+      const response = await fetch("/api/dealer/sales-orders", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          partyName: partyName.trim() || undefined,
+          notes: notes.trim() || undefined,
+          // Money fields are intentionally absent. The server prices these.
+          items: basket.map((line) => ({
+            dealerListingId: line.dealerListingId,
+            quantity: line.quantity,
+          })),
+        }),
+      });
+
+      const data = (await response.json().catch(() => null)) as
+        | { error?: string; salesOrder?: { soNumber?: string } }
+        | null;
+
+      if (!response.ok) {
+        setSubmitError(data?.error ?? `HTTP ${response.status}`);
+        return;
       }
 
-      if (added > 0) {
-        setMessage(t("quickOrder.added", { count: added }));
-        setRows([newRow(`row-${nextRowId.current++}`), newRow(`row-${nextRowId.current++}`), newRow(`row-${nextRowId.current++}`)]);
-      }
-      if (failures.length > 0) {
-        setError(t("quickOrder.failedParts", { parts: failures.join(", ") }));
-      }
+      setSuccess(
+        data?.salesOrder?.soNumber
+          ? `${t("dealer.quickOrderCreated")} ${data.salesOrder.soNumber}`
+          : t("dealer.quickOrderCreated"),
+      );
+      setBasket([]);
+      setNotes("");
     } catch {
-      setError(t("quickOrder.failed"));
+      setSubmitError(t("common.error"));
     } finally {
-      setBusy(false);
+      setSubmitting(false);
     }
   }
 
   return (
-    <section
-      aria-labelledby="quick-order-heading"
-      className="rounded-[var(--sl-radius-lg)] border border-[var(--sl-border)] bg-white p-3 shadow-xs sm:p-4"
-    >
-      <div className="flex items-end justify-between gap-2">
-        <div>
-          <p className="text-[11px] font-bold uppercase tracking-widest text-[var(--sl-primary)]">
-            {t("quickOrder.kicker")}
-          </p>
-          <h2 id="quick-order-heading" className="text-base font-bold text-slate-950">
-            {t("quickOrder.title")}
-          </h2>
-        </div>
-        <button
-          type="button"
-          className="min-h-10 rounded-[var(--sl-radius-sm)] border border-[var(--sl-border)] px-3 text-xs font-semibold text-[var(--sl-text-soft)]"
-          onClick={() => setRows((prev) => [...prev, createRow()])}
-        >
-          {t("quickOrder.addRow")}
-        </button>
-      </div>
-      <p className="mt-1 text-xs text-[var(--sl-muted)]">{t("quickOrder.hint")}</p>
+    <div className="sl-panel p-4 sm:p-5">
+      <label className="sl-label mb-1.5 block" htmlFor="dealer-quick-order-search">
+        {t("dealer.quickOrderSearch")}
+      </label>
+      <input
+        id="dealer-quick-order-search"
+        type="search"
+        value={query}
+        onChange={(event) => setQuery(event.target.value)}
+        placeholder={t("dealer.quickOrderSearchPlaceholder")}
+        className="sl-input"
+        autoComplete="off"
+      />
 
-      <div className="mt-3 space-y-2">
-        <div className="grid grid-cols-[minmax(0,1fr)_4.5rem_2.25rem] gap-2 text-[11px] font-semibold uppercase tracking-wide text-[var(--sl-muted)]">
-          <span>{t("quickOrder.partNumber")}</span>
-          <span>{t("quickOrder.qty")}</span>
-          <span className="sr-only">{t("quickOrder.removeRow")}</span>
-        </div>
-        {rows.map((row) => (
-          <div key={row.id} className="grid grid-cols-[minmax(0,1fr)_4.5rem_2.25rem] gap-2">
-            <label className="sr-only" htmlFor={`qo-pn-${row.id}`}>
-              {t("quickOrder.partNumber")}
-            </label>
-            <input
-              id={`qo-pn-${row.id}`}
-              value={row.partNumber}
-              onChange={(e) => updateRow(row.id, { partNumber: e.target.value })}
-              placeholder="M-648"
-              autoComplete="off"
-              className="min-h-11 rounded-[var(--sl-radius)] border border-[var(--sl-border)] bg-[var(--sl-surface-sunk)] px-3 font-mono text-sm outline-none focus:border-[var(--sl-primary)] focus:bg-white focus:ring-2 focus:ring-[var(--sl-primary)]/20"
-            />
-            <label className="sr-only" htmlFor={`qo-qty-${row.id}`}>
-              {t("quickOrder.qty")}
-            </label>
-            <input
-              id={`qo-qty-${row.id}`}
-              type="number"
-              min={1}
-              inputMode="numeric"
-              value={row.qty}
-              onChange={(e) =>
-                updateRow(row.id, { qty: Math.max(1, Number(e.target.value) || 1) })
-              }
-              className="min-h-11 rounded-[var(--sl-radius)] border border-[var(--sl-border)] bg-[var(--sl-surface-sunk)] px-2 text-center text-sm outline-none focus:border-[var(--sl-primary)] focus:bg-white focus:ring-2 focus:ring-[var(--sl-primary)]/20"
-            />
+      {loading ? (
+        <p className="sl-small mt-3">{t("common.loading")}</p>
+      ) : loadError ? (
+        <p className="sl-small mt-3 text-[var(--sl-bad)]">{loadError}</p>
+      ) : matches.length === 0 ? (
+        <p className="sl-small mt-3">
+          {query.trim()
+            ? t("dealer.quickOrderNoMatch")
+            : t("dealer.quickOrderNoListings")}
+        </p>
+      ) : (
+        <ul className="mt-3 divide-y divide-[var(--sl-rule)] border-y border-[var(--sl-rule)]">
+          {matches.map((listing) => {
+            const already = inBasket(listing.id);
+            const outOfStock = listing.stock !== null && listing.stock < 1;
+            return (
+              <li
+                key={listing.id}
+                className="flex flex-wrap items-center gap-x-3 gap-y-2 py-2.5"
+              >
+                <div className="min-w-0 flex-1">
+                  <p className="sl-partno">{listing.partNumber ?? "-"}</p>
+                  <p className="sl-small mt-0.5 line-clamp-1">
+                    {listing.partName ?? ""}
+                  </p>
+                  <p className="sl-small mt-0.5">
+                    {t("dealer.quickOrderListPrice")}{" "}
+                    <InclusivePrice pricePaise={listing.pricePaise} />
+                    {listing.stock === null ? null : (
+                      <>
+                        {" Â· "}
+                        {t("dealer.stock")}: {listing.stock}
+                      </>
+                    )}
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => addLine(listing)}
+                  disabled={outOfStock || Boolean(already)}
+                  className="sl-btn sl-btn-secondary sl-btn-sm shrink-0"
+                >
+                  {outOfStock ? t("product.outOfStock") : t("product.addToCart")}
+                </button>
+                {already ? (
+                  <span className="sl-num shrink-0 text-[var(--sl-ink-3)]">
+                    Ã—{already.quantity}
+                  </span>
+                ) : null}
+              </li>
+            );
+          })}
+        </ul>
+      )}
+
+      <div className="mt-5">
+        <h3 className="sl-h3">{t("dealer.quickOrderBasket")}</h3>
+
+        {basket.length === 0 ? (
+          <p className="sl-small mt-2">{t("dealer.quickOrderEmpty")}</p>
+        ) : (
+          <>
+            <ul className="mt-2 divide-y divide-[var(--sl-rule)] border-y border-[var(--sl-rule)]">
+              {basket.map((line) => (
+                <li
+                  key={line.dealerListingId}
+                  className="flex flex-wrap items-center gap-x-3 gap-y-2 py-2.5"
+                >
+                  <div className="min-w-0 flex-1">
+                    <p className="sl-partno">{line.partNumber || "-"}</p>
+                    <p className="sl-small mt-0.5 line-clamp-1">
+                      {line.partName}
+                    </p>
+                    {line.stock !== null && line.stock < line.quantity ? (
+                      <p className="sl-small mt-0.5 text-[var(--sl-bad)]">
+                        {t("dealer.quickOrderStockShort")} ({line.stock})
+                      </p>
+                    ) : null}
+                  </div>
+                  <label className="flex shrink-0 items-center gap-2">
+                    <span className="sr-only">
+                      {t("dealer.quickOrderQuantityFor")} {line.partNumber}
+                    </span>
+                    <input
+                      type="number"
+                      min={1}
+                      value={line.quantity}
+                      onChange={(event) =>
+                        changeQuantity(
+                          line.dealerListingId,
+                          Number(event.target.value) || 1,
+                        )
+                      }
+                      className="sl-input h-10 w-20 text-center"
+                    />
+                  </label>
+                  <button
+                    type="button"
+                    onClick={() => removeLine(line.dealerListingId)}
+                    className="sl-btn sl-btn-ghost sl-btn-sm shrink-0"
+                  >
+                    {t("cart.remove")}
+                  </button>
+                </li>
+              ))}
+            </ul>
+
+            <div className="mt-3 flex flex-wrap items-center justify-between gap-2">
+              <p className="sl-small">
+                {t("dealer.quickOrderIndicative")}{" "}
+                <span className="sl-num font-bold">
+                  {rupees(indicativeListTotalPaise)}
+                </span>
+              </p>
+              <p className="sl-small">{t("dealer.quickOrderFinalNote")}</p>
+            </div>
+
+            <div className="mt-4 grid gap-3 sm:grid-cols-2">
+              <label className="block min-w-0">
+                <span className="sl-label mb-1.5 block">
+                  {t("dealer.quickOrderParty")}
+                </span>
+                <input
+                  value={partyName}
+                  onChange={(event) => setPartyName(event.target.value)}
+                  className="sl-input"
+                  autoComplete="organization"
+                />
+              </label>
+              <label className="block min-w-0">
+                <span className="sl-label mb-1.5 block">
+                  {t("dealer.quickOrderNotes")}
+                </span>
+                <input
+                  value={notes}
+                  onChange={(event) => setNotes(event.target.value)}
+                  className="sl-input"
+                />
+              </label>
+            </div>
+
             <button
               type="button"
-              aria-label={t("quickOrder.removeRow")}
-              className="inline-flex min-h-11 items-center justify-center rounded-[var(--sl-radius)] border border-[var(--sl-border)] text-[var(--sl-muted)]"
-              onClick={() =>
-                setRows((prev) => (prev.length <= 1 ? [createRow()] : prev.filter((r) => r.id !== row.id)))
-              }
+              onClick={() => void submit()}
+              disabled={submitting || blockedLines.length > 0}
+              className="sl-btn sl-btn-primary mt-4 w-full sm:w-auto"
             >
-              ×
+              {submitting
+                ? t("common.loading")
+                : t("dealer.quickOrderSubmit")}
             </button>
-          </div>
-        ))}
+
+            {blockedLines.length > 0 ? (
+              <p
+                className="sl-small mt-2 text-[var(--sl-bad)]"
+                role="alert"
+              >
+                {t("dealer.quickOrderFixStock")}
+              </p>
+            ) : null}
+          </>
+        )}
+
+        {submitError ? (
+          <p className="sl-small mt-3 text-[var(--sl-bad)]" role="alert">
+            {submitError}
+          </p>
+        ) : null}
+        {success ? (
+          <p
+            className="sl-small mt-3 text-[var(--sl-ok)]"
+            role="status"
+            aria-live="polite"
+          >
+            {success}
+          </p>
+        ) : null}
       </div>
-
-      {error ? (
-        <p role="alert" className="mt-3 text-xs font-medium text-rose-700">
-          {error}
-        </p>
-      ) : null}
-      {message ? (
-        <p role="status" className="mt-3 text-xs font-medium text-emerald-700">
-          {message}
-        </p>
-      ) : null}
-
-      <button
-        type="button"
-        disabled={busy}
-        onClick={() => void addAll()}
-        className="btn-press mt-3 flex min-h-12 w-full items-center justify-center rounded-[var(--sl-radius)] bg-[var(--sl-primary)] text-sm font-bold text-white disabled:opacity-60"
-      >
-        {busy ? t("quickOrder.adding") : t("quickOrder.addAll")}
-      </button>
-    </section>
+    </div>
   );
 }
+
