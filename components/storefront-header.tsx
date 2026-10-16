@@ -295,10 +295,10 @@ export function StorefrontHeader({
               {t("nav.track")}
             </Link>
             <Link
-              href="/login/dealer"
+              href="/login"
               className="sl-nav sl-focus-invert inline-flex items-center gap-1.5 rounded border border-white/25 px-2 py-1 text-white transition-colors hover:bg-white/10"
             >
-              {t("nav.dealer")}
+              {t("nav.login")}
             </Link>
             <div className="md:hidden">
               <HeaderPreferenceToggle compact />
